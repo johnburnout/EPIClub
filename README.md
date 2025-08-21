@@ -13,7 +13,8 @@ Le logiciel repose sur une base de données mySQL pilotée par une interface acc
 * Dans la base de données, créez un utilisateur 'admin' (mot de passe hashé).
 * Modifier le fichier config_template.php avec les données de votre site
 * Renommer le fichier config__template.php en config.php
-* Accédez à votre site et connectez-vous...
+* Accédez à votre site page : "https://wotre.site/init_admin.php et crééz votre compte administrateur
+* Renommez ou détruisez le dossier init_admin.php
 ## Licence
 Logiciel sous licence libre (GPL) incluant la diffusion, la modification et l'utilisation à des fins non commerciales du ligiciel et de ses dérivés.
 L'auteur se réserve le droit de l'exploitration commerciale du logiciel et des services en lignes associés.
