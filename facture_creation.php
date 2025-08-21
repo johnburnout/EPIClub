@@ -132,7 +132,7 @@
 				throw new Exception('Erreur de téléchargement');
 			}
 			
-			$uploadDir = __DIR__.'/factures/';
+			$uploadDir = __DIR__.'/utilisateur/factures/';
 			if (!is_dir($uploadDir)) {
 				if (!mkdir($uploadDir, 0755, true)) {
 					throw new Exception('Impossible de créer le dossier de destination');
@@ -162,10 +162,10 @@
 		if (isset($maj['success']) or isset($creation['success'])) {
 			$ref = $donnees['reference'];
 			$id = $donnees['id'];
-			$journalfacture = __DIR__.'/enregistrements/journalfacture_'.$id.'.txt';
-			$journal = __DIR__.'/enregistrements/journal'.date('Y').'.txt';
+			$journalfacture = __DIR__.'/utilisateur/enregistrements/journalfacture_'.$id.'.txt';
+			$journal = __DIR__.'/utilisateur/enregistrements/journal'.date('Y').'.txt';
 			// Vérification des chemins avant écriture
-			$allowedPath = __DIR__.'/enregistrements/';
+			$allowedPath = __DIR__.'/utilisateur/enregistrements/';
 			if (strpos($journalfacture, $allowedPath) === 0 && strpos($journal, $allowedPath) === 0) {
 				$modifications = [];
 				

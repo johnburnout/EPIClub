@@ -16,10 +16,6 @@
             return ['donnees' => null, 'success' => false, 'error' => 'ID invalide'];
         }
         
-        if (empty(trim($utilisateur))) {
-            return ['donnees' => null, 'success' => false, 'error' => 'Nom d\'utilisateur vide'];
-        }
-        
         try {
             // Connexion à la base de données
             if ($connection === null) {
@@ -42,7 +38,7 @@
             reference,
             fichier
             FROM facture 
-            WHERE id = ? AND utilisateur = ? AND en_saisie = 1
+            WHERE id = ?
             LIMIT 1";  // Changement de ORDER BY à LIMIT 1 car on cherche un enregistrement spécifique
             
             $stmt = $connection->prepare($sql);
@@ -50,7 +46,7 @@
                 throw new Exception("Erreur de préparation de la requête: " . $connection->error);
             }
             
-            $stmt->bind_param('is', $id, $utilisateur);
+            $stmt->bind_param('i', $id);
             
             if (!$stmt->execute()) {
                 throw new Exception("Erreur d'exécution de la requête: " . $stmt->error);

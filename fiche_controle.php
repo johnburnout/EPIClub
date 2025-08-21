@@ -54,9 +54,9 @@
 	$donnees['verification_id'] = $_SESSION['controle_en_cours'] ?? $donnees['verification_id'];
 	
 	// Journalisation
-	$journalmat = __DIR__.'/enregistrements/journalmat'.$donnees['reference'].'.txt';
-	$journal = __DIR__.'/enregistrements/journal'.date('Y').'.txt';
-	$journalcontrole = __DIR__.'/enregistrements/journalcontrole'.$donnees['verification_id'].'.txt';
+	$journalmat = __DIR__.'/utilisateur/enregistrements/journalmat'.$donnees['reference'].'.txt';
+	$journal = __DIR__.'/utilisateur/enregistrements/journal'.date('Y').'.txt';
+	$journalcontrole = __DIR__.'/utilisateur/enregistrements/journalcontrole'.$donnees['verification_id'].'.txt';
 	
 	$donneesInitiales = $donnees;
 	

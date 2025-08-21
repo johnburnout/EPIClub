@@ -61,12 +61,12 @@
 				}
 				
 				// Journalisation
-				$journalmat = __DIR__.'/enregistrements/journalmat'.$reference.'.txt';
-				$journal = __DIR__.'/enregistrements/journal'.date('Y').'.txt';
+				$journalmat = __DIR__.'/utilisateur/enregistrements/journalmat'.$reference.'.txt';
+				$journal = __DIR__.'/utilisateur/enregistrements/journal'.date('Y').'.txt';
 				$ajoutjournal = date('Y/m/d').' '.$utilisateur.' - '.'Suppression de la fiche';
 				
 				// Vérification des chemins avant écriture
-				$allowedPath = __DIR__.'/enregistrements/';
+				$allowedPath = __DIR__.'/utilisateur/enregistrements/';
 				if (strpos($journalmat, $allowedPath) === 0 && strpos($journal, $allowedPath) === 0) {
 					try {
 						fichier_ecrire(['chemin' => $journalmat, 'texte' => $ajoutjournal]);

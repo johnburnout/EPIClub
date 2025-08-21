@@ -1,0 +1,10 @@
+config.php
+utilisateur/enregistrements/*
+utilisateur/images/*
+utilisateur/factures/*
+!utilisateur/images/null.jpeg
+utilisateur/qrcodes/*
+.DS_Store
+*.swp
+
+.DS_Store

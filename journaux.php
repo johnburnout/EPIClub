@@ -20,7 +20,7 @@ for ($i = 0; $i < 5; $i++) {
 	$annees_journaux[] = [
 		'annee' => $annee,
 		'chemin' => "enregistrements/". 'journal' . $annee . '.txt',
-		'existe' => file_exists(__DIR__.'/enregistrements/' . 'journal' . $annee . '.txt')
+		'existe' => file_exists(__DIR__.'/utilisateur/enregistrements/' . 'journal' . $annee . '.txt')
 	];
 	$total_journaux += $annees_journaux[$i]['existe'];
 }
@@ -98,7 +98,7 @@ for ($i = 0; $i < $total_controles; $i++) {
 	$controles_journaux[] = [
 	   'controle' => $donnees[$i]['date_verification'],
 		'chemin' => "enregistrements/" . 'journalcontrole' . $donnees[$i]['id'] . '.txt',
-		'existe' => file_exists(__DIR__.'/enregistrements/' . 'journalcontrole' . $donnees[$i]['id'] . '.txt')
+		'existe' => file_exists(__DIR__.'/utilisateur/enregistrements/' . 'journalcontrole' . $donnees[$i]['id'] . '.txt')
 	];
 }
 $lignes = max($total_journaux,$total_controles);

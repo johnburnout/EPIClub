@@ -107,10 +107,10 @@
 		// Journalisation
 		if (isset($maj['success']) or isset($creation['success'])) {
 			// Vérification des chemins avant écriture
-			$allowedPath = __DIR__.'/enregistrements/';
+			$allowedPath = __DIR__.'/utilisateur/enregistrements/';
 			//adresse journaux
-			$journalcontrole = __DIR__.'/enregistrements/journalcontrole'.$donnees['controle_id'].'.txt';
-			$journal = __DIR__.'/enregistrements/journal'.date('Y').'.txt';
+			$journalcontrole = __DIR__.'/utilisateur/enregistrements/journalcontrole'.$donnees['controle_id'].'.txt';
+			$journal = __DIR__.'/utilisateur/enregistrements/journal'.date('Y').'.txt';
 			
 			if (strpos($journalcontrole, $allowedPath) === 0 && strpos($journal, $allowedPath) === 0) {
 				$modifications = [];

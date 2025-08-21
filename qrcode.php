@@ -14,7 +14,7 @@ $id = $_GET['id'] ?? 0;
 $display = isset($_GET['display']); // Si ?display=1 est présent, on affiche
 
 // Dossier de sauvegarde
-$saveDir = __DIR__.'/qrcodes/';
+$saveDir = __DIR__.'/utilisateur/qrcodes/';
 $filename = $saveDir.'qrcode'.$id.'_'.$size.'.png';
 
 // Vérifier l'existence du fichier

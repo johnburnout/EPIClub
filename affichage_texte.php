@@ -26,7 +26,7 @@ if (!preg_match('/\.txt$/i', $cheminDemande)) {
 }
 
 // Normalisation des chemins
-$baseDir = realpath(__DIR__.'/enregistrements/');
+$baseDir = realpath(__DIR__.'/utilisateur/enregistrements/');
 $cheminComplet = realpath($cheminDemande);
 
 // Vérifier que le fichier est bien dans le répertoire autorisé

@@ -10,7 +10,7 @@
 	if (!$csrf_token || $csrf_token !== $_SESSION['csrf_token']) {
 		throw new Exception('Erreur de sécurité: Token CSRF invalide');
 	}
-
+	
 	if (!$isLoggedIn) {
 		header('Location: index.php?');
 		exit();
@@ -19,11 +19,13 @@
 	// #############################
 	// Initialisation des variables
 	// #############################
-
+	
 	$facture_id = isset($_GET['facture_id']) ? (int)$_GET['facture_id'] : (isset($_POST['facture_id']) ? (int)$_POST['facture_id'] : 0);
 	
+	$id = isset($_GET['id']) ? (int)$_GET['id'] : (isset($_POST['id']) ? (int)$_POST['id'] : 0);
+	
 	$retour = isset($_GET['retour']) ? $_GET['retour'] : (isset($_POST['retour']) ? $_POST['retour'] : '');
- 
+	
 	$defaults = [
 		'facture_id' => $facture_id,
 		'utilisateur' => $utilisateur,
@@ -42,19 +44,18 @@
 			$donnees[$key] = (int)$donnees[$key];
 		}
 	}
-	
 	// La facture est-elle en saisie ?
-	$enCours = (($donnees['facture_id'] != 0) && ($donnees['facture_id'] == intval($_SESSION['facture_en_saisie']));
+	$enCours = (($donnees['facture_id'] != 0) && ($donnees['facture_id'] == intval($_SESSION['facture_en_saisie'])));
 	
 	//adresses journaux
 	$id = $donnees['facture_id'];
-	$journalfacture = __DIR__.'/enregistrements/journalfacture_'.$id.'.txt';
-	$journal = __DIR__.'/enregistrements/journal'.date('Y').'.txt';
-
+	$journalfacture = __DIR__.'/utilisateur/enregistrements/journalfacture_'.$id.'.txt';
+	$journal = __DIR__.'/utilisateur/enregistrements/journal'.date('Y').'.txt';
+	
 	// #############################
 	// Gestion des opérations CRUD
 	// #############################
-	if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+	if ($_SERVER['REQUEST_METHOD'] === 'POST' || $_GET['edit'] == 'non') {
 		// Validation CSRF
 		try{
 			$donneesInitiales = $donnees;
@@ -70,14 +71,16 @@
 					$donnees[$key] = isset($_POST[$key]) ? $_POST[$key] : $donnees[$key];
 				}
 				// Traitement des champs du formulaire
-				$maj = mise_a_jour_facture([
-					'reference' => $donnees['reference'],
-					'date_facture' => $donnees['date_facture'],
-					'vendeur' => $donnees['vendeur'],
-					'utilisateur' => $utilisateur
-				], $donnees['facture_id']);
-				if (!$maj['success']) {
-					throw new Exception('Erreur lors de la mise à jour: ' . ($valid['error'] ?? 'Pas de lignes modifiées'));
+				if ($_GET['edit'] != 'non') {
+					$maj = mise_a_jour_facture([
+						'reference' => $donnees['reference'],
+						'date_facture' => $donnees['date_facture'],
+						'vendeur' => $donnees['vendeur'],
+						'utilisateur' => $utilisateur
+					], $donnees['facture_id']);
+					if (!$maj['success']) {
+						throw new Exception('Erreur lors de la mise à jour: ' . ($valid['error'] ?? 'Pas de lignes modifiées'));
+					}
 				}
 			}
 		} catch (Exception $e) {
@@ -85,14 +88,32 @@
 			$errorMessage = $e->getMessage();
 		}
 		if (!empty($_FILES['monfichier']['name']) && $donnees['facture_id'] > 0) {
-			$allowedExtensions = ['jpeg', 'jpg', 'gif', 'png'];
-			$allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif'];
+			$allowedExtensions = ['jpeg', 'jpg', 'gif', 'png', 'pdf'];
+			//$allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
+			$allowedMimeTypes = [
+				'image/jpeg', 'image/png', 'image/gif', 
+				'application/pdf', 
+				'application/x-pdf',          // Type MIME alternatif
+				'text/pdf'                    // Autre type possible
+			];
 			$maxFileSize = 2 * 1024 * 1024; // 2MB
 			
 			$fileInfo = new finfo(FILEINFO_MIME_TYPE);
 			$mimeType = $fileInfo->file($_FILES['monfichier']['tmp_name']);
 			
 			$fileExtension = strtolower(pathinfo($_FILES['monfichier']['name'], PATHINFO_EXTENSION));
+			
+			// DEBUG: Afficher les valeurs détectées
+			error_log("Fichier uploadé: " . $_FILES['monfichier']['name']);
+			error_log("Extension détectée: " . $fileExtension);
+			error_log("Type MIME détecté: " . $mimeType);
+			error_log("Extensions autorisées: " . implode(', ', $allowedExtensions));
+			error_log("Types MIME autorisés: " . implode(', ', $allowedMimeTypes));
+			
+			if (!in_array($mimeType, $allowedMimeTypes) || 
+				!in_array($fileExtension, $allowedExtensions)) {
+					throw new Exception('Type de fichier non autorisé. Extension: ' . $fileExtension . ', MIME: ' . $mimeType);
+				}
 			
 			if (!in_array($mimeType, $allowedMimeTypes) || 
 				!in_array($fileExtension, $allowedExtensions)) {
@@ -107,14 +128,14 @@
 				throw new Exception('Erreur de téléchargement');
 			}
 			
-			$uploadDir = __DIR__.'/factures/';
+			$uploadDir = __DIR__.'/utilisateur/factures/';
 			if (!is_dir($uploadDir)) {
 				if (!mkdir($uploadDir, 0755, true)) {
 					throw new Exception('Impossible de créer le dossier de destination');
 				}
 			}
 			
-			$newFilename = ($donnees['reference'] ?? 'file') . date('YmdHis') . '.' . $fileExtension;
+			$newFilename = ($donnees['reference'] ?? 'file') . '.' . $fileExtension;
 			$destination = $uploadDir . $newFilename;
 			
 			if (!move_uploaded_file($_FILES['monfichier']['tmp_name'], $destination)) {
@@ -138,7 +159,7 @@
 			$ref = $donnees['reference'];
 			
 			// Vérification des chemins avant écriture
-			$allowedPath = __DIR__.'/enregistrements/';
+			$allowedPath = __DIR__.'/utilisateur/enregistrements/';
 			if (strpos($journalfacture, $allowedPath) === 0 && strpos($journal, $allowedPath) === 0) {
 				$modifications = [];
 				
@@ -162,7 +183,6 @@
 			}
 		}
 	}
-	
 	$viewData = [
 		'date_facture' => $enCours ? sprintf('<input name="date_facture" type="date" required value="%s">', 
 			htmlspecialchars(date('Y-m-d',strtotime($donnees['date_facture'])) ?? '', ENT_QUOTES, 'UTF-8')) : date('d/m/Y', strtotime($donnees['date_facture'])),
@@ -171,7 +191,7 @@
 			htmlspecialchars($donnees['vendeur'] ?? '', ENT_QUOTES, 'UTF-8')) : htmlspecialchars($donnees['vendeur'] ?? '', ENT_QUOTES, 'UTF-8'),
 		'reference' => $enCours ? sprintf('<input type="text" name="reference" required value="s">', htmlspecialchars($donnees['reference'] ?? '', ENT_QUOTES, 'UTF-8')) : htmlspecialchars($donnees['reference'] ?? '', ENT_QUOTES, 'UTF-8'),
 		'facture_id' => (int)$donnees['facture_id'],
-		'hasFichier' => !empty($donnees['fichier']) && file_exists('factures/' . $donnees['fichier'])
+		'hasFichier' => !empty($donnees['fichier']) && file_exists(__DIR__.'/utilisateur/factures/' . $donnees['fichier'])
 	];
 	
 ?>
@@ -194,8 +214,6 @@
 			<?php if ($donnees['success']): ?>
 			<div class="alert alert-success"><?= $donnees['success'] ?></div>
 			<?php endif; ?>
-			
-			<?php if ($isLoggedIn): ?>
 			
 			<form method="post" enctype="multipart/form-data" id='form-controle'>
 				<input type="hidden" name="retour" value=$retour >
@@ -231,9 +249,8 @@
 						<tr>
 							<td rowspan="<?= $viewData['hasFichier'] ? '1' : '1' ?>">
 								<?php if ($viewData['hasFichier']): ?>
-								<?php if (!empty($donnees['fichier']) && file_exists('factures/' . $donnees['fichier'])): ?>
 								<?php if (strtolower(pathinfo($donnees['fichier'], PATHINFO_EXTENSION)) === 'pdf'): ?>
-								<a href="factures/<?= htmlspecialchars($donnees['fichier']) ?>" target="_blank">Voir le PDF</a>
+								<a href="utilisateur/factures/<?= htmlspecialchars($donnees['fichier']) ?>" target="_blank">Voir le PDF</a>
 								<?php else: ?>
 								<img src="factures/<?= htmlspecialchars($donnees['fichier']) ?>" 
 									class="epi-photo" 
@@ -241,8 +258,6 @@
 									width="400">
 								<?php endif; ?>
 								<?php endif; ?>
-								<?php endif; ?>
-								<br>
 								<input type='file' name='monfichier' accept='image/jpeg,image/png,image/gif, application/pdf'>
 							</td>
 						</tr>
@@ -257,19 +272,19 @@
 						<input type="button"  class="btn btn-danger" value="Annuler la facture" name="supprimer">
 					</a>
 					<?php else: ?>
-					<a href="index.php" >
-							<input type="button" name="retour" value="Retour à l'accueil" class="btn return-btn"></a>
+					<a href="<?= $retour ?>?csrf_token=<?= htmlspecialchars($csrf_token) ?>&id=<?= $id ?>" >
+						<input type="button" name="retour" value="Retour" class="btn return-btn"></a>
 					<?php endif; ?>
 					
 					<button type="submit" name="envoyer" class="btn btn-primary">
 						<?= $enCours ? 'Enregistrer les modifications' : 'Créer la facture' ?>
 					</button>
 					<a href="liste_facture.php?facture_id=<?= $viewData['facture_id']?>">
-					<?php if ($enCours): ?>
+						<?php if ($enCours): ?>
 						<input type="button"  class="btn btn-primary" value="Saisir la facture" name="saisir_facture">
-					<?php else: ?>
+						<?php else: ?>
 						<input type="button"  class="btn btn-primary" value="Afficher les EPI" name="afficher_epi">
-					<?php endif; ?>
+						<?php endif; ?>
 					</a>
 				</div>
 			</form>

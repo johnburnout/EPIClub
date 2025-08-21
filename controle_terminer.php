@@ -47,8 +47,8 @@
 			
 			
 			// journalisation de la cloture
-			$journal = __DIR__.'/enregistrements/journal'.date('Y').'.txt';
-			$journalcontrole = __DIR__.'/enregistrements/journalcontrole'.$_SESSION['controle_en_cours'].'.txt';
+			$journal = __DIR__.'/utilisateur/enregistrements/journal'.date('Y').'.txt';
+			$journalcontrole = __DIR__.'/utilisateur/enregistrements/journalcontrole'.$_SESSION['controle_en_cours'].'.txt';
 			
 			try {
 				// Préparation du contenu avec timestamp
@@ -93,12 +93,12 @@
 			
 			// Journalisation
 			if (!empty($reference)) {
-				$journalcontrole = __DIR__.'/enregistrements/journalcontrole'.$donnees['id'].'.txt';
-				$journal = __DIR__.'/enregistrements/journal'.date('Y').'.txt';
+				$journalcontrole = __DIR__.'/utilisateur/enregistrements/journalcontrole'.$donnees['id'].'.txt';
+				$journal = __DIR__.'/utilisateur/enregistrements/journal'.date('Y').'.txt';
 				$ajoutjournal = date('Y/m/d').' '.$utilisateur.' - '.'Clôture du contrôle'.PHP_EOL.'Motif : '.$remarque;
 				
 				// Écriture dans les journaux avec vérification des chemins
-				$allowedPaths = [__DIR__.'/enregistrements/'];
+				$allowedPaths = [__DIR__.'/utilisateur/enregistrements/'];
 				$isValidPath = false;
 				
 				foreach ($allowedPaths as $path) {

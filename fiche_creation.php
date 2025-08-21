@@ -128,7 +128,7 @@
 					throw new Exception('Erreur de téléchargement');
 				}
 				
-				$uploadDir = __DIR__."/images/";
+				$uploadDir = __DIR__."/utilisateur/images/";
 				if (!is_dir($uploadDir)) {
 					if (!mkdir($uploadDir, 0755, true)) {
 						throw new Exception('Impossible de créer le dossier de destination');
@@ -183,11 +183,11 @@
 			$reference = $donnees['reference'];
 			
 			//adresses journaux
-			$journalcontrole = __DIR__.'/enregistrements/journal'.$donnees['reference'].'.txt';
-			$journal = __DIR__.'/enregistrements/journal'.date('Y').'.txt';
+			$journalcontrole = __DIR__.'/utilisateur/enregistrements/journal'.$donnees['reference'].'.txt';
+			$journal = __DIR__.'/utilisateur/enregistrements/journal'.date('Y').'.txt';
 	
 			// Vérification des chemins avant écriture
-			$allowedPath = __DIR__.'/enregistrements/';
+			$allowedPath = __DIR__.'/utilisateur/enregistrements/';
 			if (strpos($journalcontrole, $allowedPath) === 0 && strpos($journal, $allowedPath) === 0) {
 				$modifications = [];
 				

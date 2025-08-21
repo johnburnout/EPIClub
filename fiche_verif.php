@@ -64,8 +64,8 @@
 			}
 			
 			//adresses journaux
-			$journalmat = __DIR__.'/enregistrements/journalmat'.$donnees['reference'].'.txt';
-			$journal = __DIR__.'/enregistrements/journal'.date('Y').'.txt';
+			$journalmat = __DIR__.'/utilisateur/enregistrements/journalmat'.$donnees['reference'].'.txt';
+			$journal = __DIR__.'/utilisateur/enregistrements/journal'.date('Y').'.txt';
 			
 			// Fusion des remarques
 			$remarques_temp = [];
@@ -152,7 +152,7 @@
 				throw new Exception('Erreur de téléchargement');
 			}
 			
-			$uploadDir = __DIR__."/images/";
+			$uploadDir = __DIR__."/utilisateur/images/";
 			if (!is_dir($uploadDir)) {
 				if (!mkdir($uploadDir, 0755, true)) {
 					throw new Exception('Impossible de créer le dossier de destination');
@@ -352,6 +352,9 @@
 									<input type="button" name="qrcode" value="QR-Code" class="btn btn-primary"/>
 								</a></td>
 							<td>
+								<a href="facture_verif.php?csrf_token=<?= htmlspecialchars($csrf_token) ?>&retour=fiche_verif.php&id=<?= htmlspecialchars($viewData['id']) ?>&facture_id=<?= $donnees["facture_id"] ?>&edit=non" >
+									<input type="button" name="facture" value="Facture" class="btn btn-primary" />
+								</a>
 								<a href="affichage_texte.php?csrf_token=<?= htmlspecialchars($csrf_token) ?>&url=<?= urlencode($journalmat) ?>&retour=fiche_verif.php&id=<?= htmlspecialchars($viewData['id']) ?>" >
 		   							<input type="button" name="journal" value="Journal" class="btn btn-primary" />
 								</a>
