@@ -74,6 +74,7 @@
 						Contrôler les EPI
 					</button>
 				</form>
+				<p></p>
 				<form action="journaux.php" method="post" class="mb-3">
 					<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
 					<button type="submit" class="btn btn-primary btn-block">
@@ -81,6 +82,7 @@
 					</button>
 				</form>
 				<?php if ($isAdmin): ?>
+				<p></p>
 				<form action="<?= htmlspecialchars($facture) ?>" method="post">
 					<input type="hidden" name="action" value="creation">
 					<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
@@ -102,12 +104,14 @@
 						Gestion des utilisateurs
 					</button>
 				</form>
+				<p></p>
 				<form action="liste_fabricants.php" method="post" class="mb-3">
 					<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
 					<button type="submit" class="btn btn-secondary btn-block">
 						Gestion des fabricants
 					</button>
 				</form>
+				<p></p>
 				<form action="liste_categories.php" method="post">
 					<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
 					<button type="submit" class="btn btn-secondary btn-block">

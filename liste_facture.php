@@ -16,13 +16,14 @@
 		exit();
 	}
 	
-	
 	// #############################
 	// Initialisation variables
 	// #############################
 	
+	$id = $_GET['id'] ?? 0;
+	$facture_id = $_GET['facture_id'] ?? intval($_SESSION['facture_en_saisie']) ?? 0;	
 	$retour = isset($_GET['retour']) ? $_GET['retour'] : (isset($_POST['retour']) ? $_POST['retour'] : 'index.php');
-			
+	$get = $id ? "?csrf_token=".$csrf_token."&id=".$id."&facture_id=".$facture_id."&retour=".$retour : '';
 	// #############################
 	// Connexion sécurisée à la base de données
 	// #############################
@@ -38,7 +39,6 @@
 	// #############################
 	// Gestion des factures en saisie
 	// #############################
-	$facture_id = intval($_SESSION['facture_en_saisie']);
 	$factureOuvert = ($facture_id > 0);
 	if (!$factureOuvert && $isLoggedIn) {
 		$facture = lecture_facture($_SESSION['facture_en_saisie'], $utilisateur);
@@ -65,7 +65,7 @@
 		$input = $_POST[$key] ?? $_SESSION[$key] ?? $default;
 		$params[$key] = sanitizeInput($input, is_numeric($default) ? 'int' : 'string');
 	}
-	$params['facture_id'] = intval($_SESSION['facture_en_saisie']);
+	$params['facture_id'] = $facture_id;
 	// Gestion des cookies sécurisés
 	if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		$_SESSION['debut'] = $params['debut'];
@@ -275,10 +275,12 @@
 			<div style="border-top: 1px solid var(--border-color);">
 				<form method="post" action="fiche_creation.php">
 					<p>
-						<a href="index.php">
-							<input type="button" value="Retour à l'accueil" class="btn btn-primary">
+						<a href="<?= $id ? 'fiche_verif.php'.$get :'index.php' ?>" >
+							<input type="button" value="Retour" class="btn btn-primary">
 						</a>
+						<?php if (!$id) :?>
 						<input type="submit" value="Créer une fiche EPI" class="btn btn-primary">
+						<?php endif; ?>
 						<input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
 						<input type="hidden" name="facture_id" value="<?= (int)$facture_id ?>">			  
 						<input type="hidden" name="retour" value="liste_facture.php">

@@ -48,8 +48,7 @@
 	$enCours = (($donnees['facture_id'] != 0) && ($donnees['facture_id'] == intval($_SESSION['facture_en_saisie'])));
 	
 	//adresses journaux
-	$id = $donnees['facture_id'];
-	$journalfacture = __DIR__.'/utilisateur/enregistrements/journalfacture_'.$id.'.txt';
+	$journalfacture = __DIR__.'/utilisateur/enregistrements/journalfacture_'.$facture_id.'.txt';
 	$journal = __DIR__.'/utilisateur/enregistrements/journal'.date('Y').'.txt';
 	
 	// #############################
@@ -218,7 +217,8 @@
 			<form method="post" enctype="multipart/form-data" id='form-controle'>
 				<input type="hidden" name="retour" value=$retour >
 				<input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
-				<input type="hidden" name="id" value="<?= $donnees['facture_id'] ?>">
+				<input type="hidden" name="facture_id" value="<?= $donnees['facture_id'] ?>">
+				<input type="hidden" name="id" value="<?= $id ?>">
 				
 				<table>
 					<tbody>
@@ -250,11 +250,11 @@
 							<td rowspan="<?= $viewData['hasFichier'] ? '1' : '1' ?>">
 								<?php if ($viewData['hasFichier']): ?>
 								<?php if (strtolower(pathinfo($donnees['fichier'], PATHINFO_EXTENSION)) === 'pdf'): ?>
-								<a href="utilisateur/factures/<?= htmlspecialchars($donnees['fichier']) ?>" target="_blank">Voir le PDF</a>
+								<a href="utilisateur/factures/<?= htmlspecialchars($donnees['fichier']) ?>" target="_blank"><img src="assets/images/pdf.png" alt="Icône PDF" width="50px" height="auto"></a>
 								<?php else: ?>
-								<img src="factures/<?= htmlspecialchars($donnees['fichier']) ?>" 
+								<img src="utilisateur/factures/<?= htmlspecialchars($donnees['fichier']) ?>" 
 									class="epi-photo" 
-									alt="Photo du matériel" 
+									alt="Photo de la facture" 
 									width="400">
 								<?php endif; ?>
 								<?php endif; ?>
@@ -277,9 +277,9 @@
 					<?php endif; ?>
 					
 					<button type="submit" name="envoyer" class="btn btn-primary">
-						<?= $enCours ? 'Enregistrer les modifications' : 'Créer la facture' ?>
+						<?= ($enCours || ($_GET['edit'] == 'non')) ? 'Enregistrer les modifications' : 'Créer la facture' ?>
 					</button>
-					<a href="liste_facture.php?facture_id=<?= $viewData['facture_id']?>">
+					<a href="liste_facture.php?csrf_token=<?=$csrf_token?>&facture_id=<?=$facture_id?>&retour=<?=$retour?>&id=<?=$id?>">
 						<?php if ($enCours): ?>
 						<input type="button"  class="btn btn-primary" value="Saisir la facture" name="saisir_facture">
 						<?php else: ?>

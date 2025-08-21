@@ -25,7 +25,6 @@
 	
 	$action = isset($_GET['action']) ? $_GET['action'] : 'affichage' ;
 	$action = isset($_POST['action']) ? $_POST['action'] : $action ;
-	$bouton = ($action == 'validation') ? 'Retour' : 'Abandonner';
 
 	// #############################
 	// Gestion des opérations CRUD
@@ -372,7 +371,7 @@
 					</a>
 					<?php endif; ?>
 					<a href="liste_selection.php?csrf_token=<?=$csrf_token?>">
-						<input type="button" value=<?= $viewData['isEditMode'] ? "Retour " : "Annuler" ;?> class="btn btn-secondary">
+						<input type="button" value=<?= $viewData['isEditMode'] ? "Retour " : "Annuler" ;?> class="btn return-btn">
 					</a>
 					
 					<button type="submit" name="envoyer" class="btn btn-primary">
