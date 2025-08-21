@@ -52,7 +52,7 @@
 			$avis = "L'utilisateur a été supprimé avec succès";
 			
 			// Réinitialisation auto_increment si table vide
-			if ($_GET['edit']) {
+			if (empty($_GET['edit'])) {
 				$connection->query("ALTER TABLE utilisateur AUTO_INCREMENT = 1");
 			}
 		} else {
