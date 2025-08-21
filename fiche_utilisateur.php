@@ -29,7 +29,7 @@
 		'est_actif' => 1,  // Filtre "actif" par défaut (1 = oui)
 		'id' => $id
 	];
-	 
+	 $isAdmin = $_POST['role'] == 'admin';
 	// ##############################################
 	// CONNEXION À LA BASE DE DONNÉES AVEC GESTION D'ERREURS
 	// ##############################################
@@ -169,16 +169,25 @@
 								<?= $viewData['password2'] ?>
 							</td>
 						</tr>
+						<tr>
+							<td>
+								<label for="role">Rôle :</label>
+								<select  name="role" id="role">
+									<option value="usager" <?= !$isAdmin ? "selected" : ""?> >Usager</option>
+									<option value="admin" <?= $isAdmin ? "selected" : ""?> >Administrateur</option>
+								</select>
+							</td>
+						</tr>
 					</tbody>
 				</table>
 				<div class="form-actions">
 					<?php if ($viewData['isEditMode']): ?>
-					<a href="utilisateur_effacer.php?id=<?= $viewData['id'] ?>&retour=<?= $retour ?>&csrf_token=<?=$csrf_token?>"
+					<a href="utilisateur_effacer.php?id=<?= $viewData['id'] ?>&retour=<?= $retour ?>&csrf_token=<?=$csrf_token?>&edit=1"
 						onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')">
 						<input type="button"  class="btn btn-danger" value="Supprimer l'utilisateur" name="supprimer">
 					</a>
 					<?php endif; ?>
-					<a href="<?= $viewData['isEditMode'] ? $retour : 'utilisateur_effacer.php' ?>?csrf_token=<?=$csrf_token?>&edit=<?=$viewData['isEditMode'] ? 0 : 1 ?>&id=<?=$donnees['id']?>">
+					<a href="<?= $viewData['isEditMode'] ? $retour : 'utilisateur_effacer.php' ?>?csrf_token=<?=$csrf_token?>&edit=<?=$viewData['isEditMode'] ? 0 : 1 ?>&id=<?=$donnees['id']?><?= $viewData['isEditMode'] ? "&edit=1" : '' ?>">
 						<input type="button" value=<?= $viewData['isEditMode'] ? "Retour " : "Annuler" ;?> class="btn btn-secondary">
 					</a>
 					
