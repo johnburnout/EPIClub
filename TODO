@@ -1,0 +1,28 @@
+# REPOSITORY ET STRUCTURE
+[X] Installer git sur sa propre machine
+[ ] Creer un fichier gitignore pour ignorer les fichiers utilisateur (ex: factures, enregistrements)
+[ ] Creer un fichier gitkeep dans les dossiers nécessaires mais vides
+[ ] Les dossiers pour les utilisateurs devaient etre dans un seul dossier storage
+[ ] Les fichiers images, css, js, fonts devraient être dans un dossier assets
+[ ] Reconstruire le dépot github en utilisant git, plus d'upload qui casse l'application
+
+# CODE
+[ ] Changer les liens vers les images et les pages qui sont des URL, doivent donc commencer par / (pb execution code)
+[ ] Mettre la fonctionalité de la connexion de la database dans un fichier dédié (pb duplication de code)
+[ ] Les parametres de connexion à la BDD ne doivent pas apparetre dans le projet, utiliser un fichier .env (pb sécurité code)
+[X] Les parametres root et autres vers des dossiers sont inutiles, doivent etre supprimés. (pb clean code)
+[X] Enlever tous les commentaires de dump (pb clean code)
+[X] L'utilisation des cookies n'est pas necessaire, les enlever. (pb clean code)
+[ ] Le fichier common.php est a supprimer, mettre dans chaque endpoint le(s) fichier(s) necessaire(s).(pb execution code)
+[ ] Faire un layout pour remplacer les fichiers head, en_tête, bandeau, bandeau_bas (pb clean code)
+[ ] Utiliser les fonction ob_ pour la construction des vues (pb clean code)
+[ ] Remplacer le fichier style par bootswatch cosmo + bootstrap bunddle.min.js (pour les actions sur les elements) (pb clean code)
+[ ] Renommer tous les endpoints par des noms descriptifs du contenu, les noms actuels ne veulent rien dire (pb clean code)
+[ ] Le fichier débug est à supprimé, en local on utilise toujours une machine de dev paramétré pour le dev et on utilise les variables d'environement, pas de session.
+[ ] Ne pas utiliser de tag form pour les boutons vers des url, utiliser le tag a, ex: liens vers l'accueil (mais pas que)
+
+# PROBLEMES
+[ ] Pas de fichier d'installation donc pas d'administrateur
+[X] Les mots de passe ne sont pas encodés dans la database
+[X] Dans controle_creation.php La constante $_SERVER['HTTP_HOST'] est mal utilisée et surtout ne devrait jamais l'être de cette façon.
+

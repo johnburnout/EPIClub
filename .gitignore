@@ -1,0 +1,11 @@
+config.php
+enregistrements/*
+images/*
+!images/null.jpeg
+!images/EPIClub.png
+!images/favicon.ico
+qrcodes/*
+.DS_Store
+*.swp
+
+.DS_Store
