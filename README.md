@@ -19,7 +19,7 @@ composer require endroid/qr-code
 ### Parametrage du logiciel
 * Modifier le fichier config_template.php avec les données de votre site
 * Renommer le fichier config__template.php en config.php
-* Accédez à votre site page : "https://votre.site/init_admin.php et crééz votre compte administrateur
+* Accédez à votre site : "https://votre.site/init_admin.php" et crééz votre compte administrateur
 * Renommez ou détruisez le dossier init_admin.php
 ## Licence
 Logiciel sous licence libre (GPL) incluant la diffusion, la modification et l'utilisation à des fins non commerciales du logiciel et de ses dérivés.
