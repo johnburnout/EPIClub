@@ -22,7 +22,7 @@
 	$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 	$id_0 = $id;
 	//$bouton = '';
-	$retour = isset($_GET['retour']) ? $_GET['retour'] : (isset($_POST['retour']) ? $_POST['retour'] : 'liste_lieus.php');
+	$retour = isset($_GET['retour']) ? $_GET['retour'] : (isset($_POST['retour']) ? $_POST['retour'] : 'liste_lieux.php');
 	$avis = '';
 	
 	// #############################

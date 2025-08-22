@@ -107,7 +107,7 @@
 				<input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
 				<input type="hidden" name="action" value="maj">
 				<input type="hidden" name="id" value="<?= $viewData['id'] ?>">
-				<input type="hidden" name="retour" value="liste_lieus.php">
+				<input type="hidden" name="retour" value="liste_lieux.php">
 				<table>
 					<tbody>
 						<tr>

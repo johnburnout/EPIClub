@@ -17,7 +17,7 @@
 	}
 	
 	if (isset($_POST['id'])) {
-		header('Location: fiche_lieu.php?id='.$_POST['id'].'&action='.$_POST['action'].'&retour=liste_lieus.php&csrf_token='.$csrf_token);
+		header('Location: fiche_lieu.php?id='.$_POST['id'].'&action='.$_POST['action'].'&retour=liste_lieux.php&csrf_token='.$csrf_token);
 		exit();
 	};
 	
