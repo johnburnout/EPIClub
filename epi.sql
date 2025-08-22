@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jul 26, 2025 at 08:39 AM
+-- Generation Time: Aug 22, 2025 at 12:14 PM
 -- Server version: 10.11.11-MariaDB-0+deb12u1
--- PHP Version: 8.2.28
+-- PHP Version: 8.2.29
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `epi`
+-- Database: `epi_PE`
 --
 
 -- --------------------------------------------------------
@@ -101,6 +101,14 @@ CREATE TABLE `lieu` (
   `id` int(11) NOT NULL,
   `libelle` varchar(15) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
+
+--
+-- Dumping data for table `lieu`
+--
+
+INSERT INTO `lieu` (`id`, `libelle`) VALUES
+(1, 'En attente'),
+(0, 'Hors-Service');
 
 -- --------------------------------------------------------
 
@@ -229,8 +237,8 @@ ALTER TABLE `facture`
 --
 ALTER TABLE `lieu`
   ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `NOM_LIEU_UNIQUE` (`libelle`),
-  ADD UNIQUE KEY `id_UNIQUE` (`id`);
+  ADD UNIQUE KEY `id_UNIQUE` (`id`),
+  ADD UNIQUE KEY `NOM_LIEU_UNIQUE` (`libelle`);
 
 --
 -- Indexes for table `matos`
@@ -287,7 +295,7 @@ ALTER TABLE `facture`
 -- AUTO_INCREMENT for table `lieu`
 --
 ALTER TABLE `lieu`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `matos`
