@@ -29,7 +29,7 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `categorie` (
   `id` int(11) NOT NULL,
-  `libelle` varchar(20) DEFAULT NULL,
+  `libelle` varchar(20) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 -- --------------------------------------------------------
@@ -40,7 +40,7 @@ CREATE TABLE `categorie` (
 
 CREATE TABLE `fabricant` (
   `id` int(11) NOT NULL,
-  `libelle` varchar(50) DEFAULT NULL,
+  `libelle` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 -- --------------------------------------------------------
@@ -207,7 +207,7 @@ CREATE TABLE `verification` (
 ALTER TABLE `categorie`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `id_UNIQUE` (`id`),
-  ADD UNIQUE KEY `NOM_CATEGORIE_UNIQUE` (`libelle`) ;
+  ADD UNIQUE KEY `NOM_CATEGORIE_UNIQUE` (`libelle`);
 
 --
 -- Indexes for table `fabricant`
@@ -215,7 +215,7 @@ ALTER TABLE `categorie`
 ALTER TABLE `fabricant`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `id_UNIQUE` (`id`),
-  ADD UNIQUE KEY `NOM_FABRICANT_UNIQUE` (`libelle`) ;
+  ADD UNIQUE KEY `NOM_FABRICANT_UNIQUE` (`libelle`);
 
 --
 -- Indexes for table `facture`
@@ -251,7 +251,7 @@ ALTER TABLE `matos`
 ALTER TABLE `utilisateur`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `id_UNIQUE` (`id`),
-  ADD UNIQUE KEY `username_UNIQUE` (`username`) ;
+  ADD UNIQUE KEY `username_UNIQUE` (`username`);
 
 --
 -- Indexes for table `verification`
