@@ -13,11 +13,11 @@
 [X] Les parametres root et autres vers des dossiers sont inutiles, doivent etre supprimés. (pb clean code)
 [X] Enlever tous les commentaires de dump (pb clean code)
 [X] L'utilisation des cookies n'est pas necessaire, les enlever. (pb clean code)
-[ ] Le fichier common.php est a supprimer, mettre dans chaque endpoint le(s) fichier(s) necessaire(s).(pb execution code)
+[X] Le fichier common.php est a supprimer, mettre dans chaque endpoint le(s) fichier(s) necessaire(s).(pb execution code)
 [ ] Faire un layout pour remplacer les fichiers head, en_tête, bandeau, bandeau_bas (pb clean code)
 [ ] Utiliser les fonction ob_ pour la construction des vues (pb clean code)
 [ ] Remplacer le fichier style par bootswatch cosmo + bootstrap bunddle.min.js (pour les actions sur les elements) (pb clean code)
-[ ] Renommer tous les endpoints par des noms descriptifs du contenu, les noms actuels ne veulent rien dire (pb clean code)
+[X] Renommer tous les endpoints par des noms descriptifs du contenu, les noms actuels ne veulent rien dire (pb clean code)
 [ ] Le fichier débug est à supprimé, en local on utilise toujours une machine de dev paramétré pour le dev et on utilise les variables d'environement, pas de session.
 [ ] Ne pas utiliser de tag form pour les boutons vers des url, utiliser le tag a, ex: liens vers l'accueil (mais pas que)
 

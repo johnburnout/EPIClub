@@ -1,9 +1,12 @@
 <?php
 	
 	// Inclusion des fichiers de configuration
-	require __DIR__ . '/config.php';
-	require __DIR__.'/includes/communs.php';
-	require __DIR__.'/includes/fonctions_bdd_controle.php';
+	require __DIR__.'/config.php';
+	require __DIR__."/includes/debug.php";
+	require __DIR__."/includes/session.php";
+	require __DIR__."/includes/bdd/liste_options.php";
+	require __DIR__."/includes/bdd/lecture_controle.php";
+	require __DIR__."/includes/fonctions_edition.php";
 	
 	// Vérification des permissions
 	// Validation CSRF
@@ -17,7 +20,7 @@
 	}
 	
 	if (isset($_POST['id'])) {
-		header('Location: fiche_controle.php?id='.$_POST['id'].'&action=controler&csrf_token='.$csrf_token);
+		header('Location: controle_epi.php?id='.$_POST['id'].'&action=controler&csrf_token='.$csrf_token);
 		exit();
 	};
 	

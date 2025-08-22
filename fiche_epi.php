@@ -1,9 +1,13 @@
 <?php
 	
 	// Inclusion des fichiers de configuration
-	require __DIR__ . '/config.php';
-	require __DIR__.'/includes/communs.php';
-	require __DIR__.'/includes/fonctions_bdd_fiche.php';
+	require __DIR__.'/config.php';
+	require __DIR__."/includes/debug.php";
+	require __DIR__."/includes/session.php";
+	require __DIR__."/includes/fonctions_fichiers.php";	
+	require __DIR__."/includes/bdd/liste_options.php";
+	require __DIR__."/includes/bdd/lecture_fiche.php";
+	require __DIR__."/includes/bdd/maj_fiche.php";
 	
 	
 	// Vérification des permissions
@@ -247,7 +251,7 @@
 			<?php if (isset($errorMessage)): ?>
 			<div class="alert alert-error"><?= htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8') ?></div>
 		<?php endif; ?>
-			<form enctype="multipart/form-data" method="post" action="fiche_verif.php" id='form-controle'>
+			<form enctype="multipart/form-data" method="post" action="fiche_epi.php" id='form-controle'>
 				<input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
 				<input type="hidden" name="id" value="<?= $viewData['id'] ?>">
 				<input type="hidden" name="lieu" value="<?= $viewData['lieu'] ?>">
@@ -351,10 +355,10 @@
 									<input type="button" name="qrcode" value="QR-Code" class="btn btn-primary"/>
 								</a></td>
 							<td>
-								<a href="facture_verif.php?csrf_token=<?= htmlspecialchars($csrf_token) ?>&retour=fiche_verif.php&id=<?= htmlspecialchars($viewData['id']) ?>&facture_id=<?= $donnees["facture_id"] ?>&edit=non" >
+								<a href="facture_verif.php?csrf_token=<?= htmlspecialchars($csrf_token) ?>&retour=fiche_epi.php&id=<?= htmlspecialchars($viewData['id']) ?>&facture_id=<?= $donnees["facture_id"] ?>&edit=non" >
 									<input type="button" name="facture" value="Facture" class="btn btn-primary" />
 								</a>
-								<a href="affichage_texte.php?csrf_token=<?= htmlspecialchars($csrf_token) ?>&url=<?= urlencode($journalmat) ?>&retour=fiche_verif.php&id=<?= htmlspecialchars($viewData['id']) ?>" >
+								<a href="affichage_texte.php?csrf_token=<?= htmlspecialchars($csrf_token) ?>&url=<?= urlencode($journalmat) ?>&retour=fiche_epi.php&id=<?= htmlspecialchars($viewData['id']) ?>" >
 		   							<input type="button" name="journal" value="Journal" class="btn btn-primary" />
 								</a>
 							</td>
@@ -370,7 +374,7 @@
 						<input type="button"  class="btn btn-danger" value="Supprimer la fiche" name="supprimer">
 					</a>
 					<?php endif; ?>
-					<a href="liste_selection.php?csrf_token=<?=$csrf_token?>">
+					<a href="liste_epis.php?csrf_token=<?=$csrf_token?>">
 						<input type="button" value=<?= $viewData['isEditMode'] ? "Retour " : "Annuler" ;?> class="btn return-btn">
 					</a>
 					

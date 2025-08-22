@@ -1,9 +1,12 @@
 <?php
 	
 	// Inclusion des fichiers de configuration
-	require __DIR__ . '/config.php';
-	require __DIR__.'/includes/communs.php';
-	require __DIR__.'/includes/fonctions_bdd_facture.php';
+	require __DIR__.'/config.php';
+	require __DIR__."/includes/debug.php";
+	require __DIR__."/includes/session.php";
+	require __DIR__."/includes/bdd/liste_options.php";
+	require __DIR__."/includes/bdd/lecture_facture.php";
+	require __DIR__."/includes/fonctions_edition.php";
 	
 	// Vérification des permissions
 	// Validation CSRF
@@ -275,7 +278,7 @@
 			<div style="border-top: 1px solid var(--border-color);">
 				<form method="post" action="fiche_creation.php">
 					<p>
-						<a href="<?= $id ? 'fiche_verif.php'.$get :'index.php' ?>" >
+						<a href="<?= $id ? 'fiche_epi.php'.$get :'index.php' ?>" >
 							<input type="button" value="Retour" class="btn btn-primary">
 						</a>
 						<?php if (!$id) :?>

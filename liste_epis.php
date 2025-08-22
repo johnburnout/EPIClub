@@ -1,7 +1,10 @@
 <?php
 	
-	require __DIR__ . '/config.php';		  // Fichier de configuration principal
-	require __DIR__.'/includes/communs.php';  // Fonctions communes
+	require __DIR__.'/config.php';
+	require __DIR__."/includes/debug.php";
+	require __DIR__."/includes/session.php";
+	require __DIR__."/includes/bdd/liste_options.php"; 
+	require __DIR__."/includes/fonctions_edition.php";
 	
 	// Vérification des permissions
 	// Validation CSRF
@@ -15,7 +18,7 @@
 	}
 	
 	if (isset($_POST['id'])) {
-		header('Location: fiche_verif.php?id='.$_POST['id'].'&action=affichage&retour=liste_selection.php&csrf_token='.$csrf_token);
+		header('Location: fiche_epi.php?id='.$_POST['id'].'&action=affichage&retour=liste_epis.php&csrf_token='.$csrf_token);
 		exit();
 	};
 	

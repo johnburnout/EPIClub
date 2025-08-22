@@ -1,8 +1,11 @@
 <?php
 
-	require __DIR__ . '/config.php';
-	require __DIR__.'/includes/communs.php';
-	require __DIR__.'/includes/fonctions_bdd_utilisateur.php';
+	require __DIR__.'/config.php';
+	require __DIR__."/includes/debug.php";
+	require __DIR__."/includes/session.php";
+	require __DIR__."/includes/bdd/creation_utilisateur.php";
+	require __DIR__."/includes/bdd/lecture_utilisateur.php";
+	require __DIR__."/includes/bdd/maj_utilisateur.php";
 	
 	// Vérification des permissions
 	// Validation CSRF
@@ -29,7 +32,7 @@
 		'est_actif' => 1,  // Filtre "actif" par défaut (1 = oui)
 		'id' => $id
 	];
-	 $isAdmin = $_POST['role'] == 'admin';
+	 $isAdmin = $_SESSION['role'] == 'admin';
 	// ##############################################
 	// CONNEXION À LA BASE DE DONNÉES AVEC GESTION D'ERREURS
 	// ##############################################

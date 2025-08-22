@@ -1,15 +1,16 @@
 <?php
 	
 	// Inclusion des fichiers de configuration
-	require __DIR__ . '/config.php';
-	require __DIR__.'/includes/communs.php';
+	require __DIR__.'/config.php';
+	require __DIR__."/includes/debug.php";
+	require __DIR__."/includes/session.php";
 	
 	// Vérification des permissions
 	// Validation CSRF
 	if (!$csrf_token || $csrf_token !== $_SESSION['csrf_token']) {
 		throw new Exception('Erreur de sécurité: Token CSRF invalide');
 	}
-
+	
 	if (!$isAdmin) {
 		header('Location: index.php?');
 		exit();

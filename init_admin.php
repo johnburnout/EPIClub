@@ -1,8 +1,11 @@
 <?php
 
-	require __DIR__ . '/config.php';
-	require __DIR__.'/includes/communs.php';
-	require __DIR__.'/includes/fonctions_bdd_utilisateur.php';
+	require __DIR__.'/config.php';
+	require __DIR__."/includes/debug.php";
+	require __DIR__."/includes/session.php";
+	require __DIR__."/includes/bdd/creation_utilisateur.php";
+	require __DIR__."/includes/bdd/lecture_utilisateur.php";
+	require __DIR__."/includes/bdd/maj_utilisateur.php";
 	
 	$id = isset($_GET['id']) ? (int)$_GET['id'] : (isset($_POST['id']) ? (int)$_POST['id'] : 0);
 	

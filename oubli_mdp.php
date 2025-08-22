@@ -1,7 +1,8 @@
-	<?php
+<?php
 	require __DIR__.'/config.php';
-	require __DIR__.'/includes/communs.php';
-	//session_start();
+	require __DIR__."/includes/debug.php";
+	require __DIR__."/includes/session.php";
+	
 	// Configuration
 	$password_reset_expiry = 1800; // 30 minutes en secondes
 	
@@ -18,14 +19,14 @@
 			if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
 				throw new Exception("Veuillez entrer une adresse email valide");
 			}
-	
+			
 			// 2. VÉRIFICATION DE L'EXISTENCE DE L'EMAIL
 			try {
 				global $host, $username, $password, $dbname;
 				$connection = new mysqli($host, $username, $password, $dbname);
 				$connection->set_charset("utf8mb4");
 				$shouldCloseConnection = true;
-	
+				
 				// Vérifie si l'email existe dans la base
 				$checkStmt = $connection->prepare("SELECT id FROM utilisateur WHERE email = ?");
 				if (!$checkStmt) {
@@ -37,7 +38,7 @@
 				$result = $checkStmt->get_result();
 				$donnees = $result->fetch_assoc();
 				$userExists = ($result->num_rows > 0);
-	
+				
 				if (!$userExists) {
 					throw new Exception("Aucun compte trouvé avec cette adresse email");
 				}
@@ -45,11 +46,11 @@
 				error_log("Erreur DB: " . $e->getMessage());
 				throw new Exception("Erreur lors de la vérification de l'email");
 			}
-	
+			
 			// 3. Génération d'un token sécurisé
 			$token = bin2hex(random_bytes(32));
 			$expires = time() + $password_reset_expiry;
-	
+			
 			// 4. Stockage temporaire du token (idéalement en base de données)
 			$_SESSION['password_reset'] = [
 				'email' => $email,
@@ -57,10 +58,10 @@
 				'expires' => $expires,
 				'id' => $donnees['id']
 			];
-	
+			
 			// 5. Création du lien de réinitialisation
 			$reset_link = $site_url."/reset_password.php?token=$token&email=".urlencode($email)."&id=".$donnees['id'];
-	
+			
 			// 6. Préparation de l'email
 			$subject = "Réinitialisation de votre mot de passe - $site_name";
 			$message = "
@@ -81,7 +82,7 @@
 			</body>
 			</html>
 			";
-	
+			
 			// 7. Envoi de l'email
 			$headers = [
 				'From' => $admin_email,
@@ -90,18 +91,18 @@
 				'Content-type' => 'text/html; charset=utf-8',
 				'X-Mailer' => 'PHP/'.phpversion()
 			];
-	
+			
 			$headersString = '';
 			foreach ($headers as $key => $value) {
 				$headersString .= "$key: $value\r\n";
 			}
-	
+			
 			if (!mail($email, $subject, $message, $headersString)) {
 				throw new Exception("Une erreur est survenue lors de l'envoi de l'email");
 			}
-	
+			
 			$success = true;
-	
+			
 		} catch (Exception $e) {
 			$error = $e->getMessage();
 		} finally {
@@ -128,33 +129,33 @@
 				<h1>Mot de passe oublié</h1>
 				
 				<?php if ($success): ?>
-					<div class="message success">
-						<p>Un email de réinitialisation a été envoyé à l'adresse fournie.</p>
-						<p>Veuillez vérifier votre boîte de réception (et vos spams).</p>
-					</div>
+				<div class="message success">
+					<p>Un email de réinitialisation a été envoyé à l'adresse fournie.</p>
+					<p>Veuillez vérifier votre boîte de réception (et vos spams).</p>
+				</div>
 				<?php else: ?>
-					<?php if (!empty($error)): ?>
-						<div class="message error"><?= htmlspecialchars($error); ?></div>
-					<?php endif; ?>
-					
-					<form method="post" action="">
-						<div class="form-group">
-							<label for="email">Adresse email</label>
-							<input type="email" id="email" name="email" required 
-								   value="<?= isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
-						</div>
-						
-						<button type="submit">Envoyer le lien de réinitialisation</button>
-					</form>
-					
-					<div class="login-link">
-						<a href="login.php">Retour à la connexion</a>
+				<?php if (!empty($error)): ?>
+				<div class="message error"><?= htmlspecialchars($error); ?></div>
+				<?php endif; ?>
+				
+				<form method="post" action="">
+					<div class="form-group">
+						<label for="email">Adresse email</label>
+						<input type="email" id="email" name="email" required 
+							value="<?= isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
 					</div>
+					
+					<button type="submit">Envoyer le lien de réinitialisation</button>
+				</form>
+				
+				<div class="login-link">
+					<a href="login.php">Retour à la connexion</a>
+				</div>
 				<?php endif; ?>
 			</div>
 		</main>
 		<footer>
 			<?php include __DIR__.'/includes/bandeau_bas.php'; ?>
 		</footer>
-</body>
+	</body>
 </html>

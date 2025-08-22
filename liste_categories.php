@@ -1,14 +1,16 @@
 <?php
-
-	require __DIR__ . '/config.php';		  // Fichier de configuration principal
-	require __DIR__.'/includes/communs.php';  // Fonctions communes
+	
+	require __DIR__.'/config.php';		
+	require __DIR__."/includes/debug.php";
+	require __DIR__."/includes/session.php";
+	require __DIR__."/includes/fonctions_edition.php";
 	
 	// Vérification des permissions
 	// Validation CSRF
 	if (!$csrf_token || $csrf_token !== $_SESSION['csrf_token']) {
 		throw new Exception('Erreur de sécurité: Token CSRF invalide');
 	}
-
+	
 	if (!$isAdmin) {
 		header('Location: index.php?');
 		exit();
@@ -36,7 +38,7 @@
 		// En production, vous pourriez logger cette erreur et afficher un message générique
 		die("Erreur de connexion à la base de données: " . $e->getMessage());
 	}
-		
+	
 	// ##############################################
 	// GESTION DE LA PAGINATION ET DES FILTRES
 	// ##############################################
@@ -53,46 +55,46 @@
 		if (isset($_POST[$key])) {
 			// Nettoie l'entrée selon son type (int ou string)
 			$params[$key] = sanitizeInput($_POST[$key], is_numeric($default) ? 'int' : 'string');
-		} else {
+			} else {
 				// Utilise la valeur par défaut si le paramètre n'est pas fourni
 				$params[$key] = $default;
-		}
-	}
-	
-	// ##############################################
-	// CONSTRUCTION DE LA REQUÊTE SQL SÉCURISÉE
-	// ##############################################
-	
-	$whereClauses = [];  // Conditions WHERE
-	$queryParams = [];   // Paramètres pour la requête préparée
-	$types = '';		 // Types des paramètres (i = integer, s = string)
-	
-	// Combinaison des conditions WHERE
-	$where = empty($whereClauses) ? '' : 'WHERE ' . implode(' AND ', $whereClauses);
-	
-	// Validation du champ de tri (whitelist)
-	$allowedSort = ['id', 'libelle'];
-	$sort = in_array($params['tri'], $allowedSort) ? $params['tri'] : 'libelle';
-	
-	// Exécution de la requête principale
-	try {
-		$sql = "SELECT id, libelle
-		FROM categorie $where ORDER BY $sort";
-		
-		$stmt = $connection->prepare($sql);
-		
-		// Liaison des paramètres si nécessaire
-		if (!empty($queryParams)) {
-			$stmt->bind_param($types, ...$queryParams);
-		}
-		
-		// Exécution et récupération des résultats
-		$stmt->execute();
-		$result = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-	} catch (mysqli_sql_exception $e) {
-		die("Erreur lors de l'exécution de la requête: " . $e->getMessage());
-	}
-	$connection->close();
+			}
+				}
+				
+				// ##############################################
+				// CONSTRUCTION DE LA REQUÊTE SQL SÉCURISÉE
+				// ##############################################
+				
+				$whereClauses = [];  // Conditions WHERE
+				$queryParams = [];   // Paramètres pour la requête préparée
+				$types = '';		 // Types des paramètres (i = integer, s = string)
+				
+				// Combinaison des conditions WHERE
+				$where = empty($whereClauses) ? '' : 'WHERE ' . implode(' AND ', $whereClauses);
+				
+				// Validation du champ de tri (whitelist)
+				$allowedSort = ['id', 'libelle'];
+				$sort = in_array($params['tri'], $allowedSort) ? $params['tri'] : 'libelle';
+				
+				// Exécution de la requête principale
+				try {
+					$sql = "SELECT id, libelle
+					FROM categorie $where ORDER BY $sort";
+					
+					$stmt = $connection->prepare($sql);
+					
+					// Liaison des paramètres si nécessaire
+					if (!empty($queryParams)) {
+						$stmt->bind_param($types, ...$queryParams);
+					}
+					
+					// Exécution et récupération des résultats
+					$stmt->execute();
+					$result = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+				} catch (mysqli_sql_exception $e) {
+					die("Erreur lors de l'exécution de la requête: " . $e->getMessage());
+				}
+				$connection->close();
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -180,7 +182,7 @@
 			</form>
 			<?php else: ?>
 			<p>Aucune catégorie trouvée !</p>
-		<?php endif; ?>
+			<?php endif; ?>
 		</main>
 		<footer>
 			<?php include __DIR__.'/includes/bandeau_bas.php'; ?>

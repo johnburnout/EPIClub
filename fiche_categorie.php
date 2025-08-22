@@ -1,8 +1,12 @@
 <?php
 
-	require __DIR__ . '/config.php';		  // Fichier de configuration principal
-	require __DIR__.'/includes/communs.php';  // Fonctions communes
-	require __DIR__.'/includes/fonctions_bdd_categorie.php';
+	require __DIR__.'/config.php';		  // Fichier de configuration principal
+	require __DIR__."/includes/debug.php";
+	require __DIR__."/includes/session.php";
+	require __DIR__."/includes/bdd/creation_categorie.php";
+	require __DIR__."/includes/bdd/lecture_categorie.php";
+	require __DIR__."/includes/bdd/maj_categorie.php";
+	require __DIR__."/includes/bdd/liste_options.php";
 	
 	// Vérification des permissions
 	// Validation CSRF

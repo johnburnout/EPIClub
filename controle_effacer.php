@@ -1,8 +1,9 @@
 <?php
 
 	// Inclusion des fichiers de configuration
-	require __DIR__ . '/config.php';
-	require __DIR__.'/includes/communs.php';
+	require __DIR__.'/config.php';
+	require __DIR__."/includes/debug.php";
+	require __DIR__."/includes/session.php";
 	
 	// Vérification des permissions
 	// Validation CSRF

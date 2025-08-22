@@ -1,9 +1,12 @@
 <?php
 
 	// Inclusion des fichiers de configuration
-	require __DIR__ . '/config.php';
-	require __DIR__.'/includes/communs.php';
-	require __DIR__.'/includes/fonctions_bdd_facture.php';
+	require __DIR__.'/config.php';
+	require __DIR__."/includes/debug.php";
+	require __DIR__."/includes/session.php";
+	require __DIR__."/includes/bdd/creation_facture.php";
+	require __DIR__."/includes/bdd/lecture_facture.php";
+	require __DIR__."/includes/bdd/maj_facture.php";
 	
 	// Vérification des permissions
 	// Validation CSRF

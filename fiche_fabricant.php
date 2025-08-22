@@ -1,8 +1,11 @@
 <?php
 
-	require __DIR__ . '/config.php';		  // Fichier de configuration principal
-	require __DIR__.'/includes/communs.php';  // Fonctions communes
-	require __DIR__.'/includes/fonctions_bdd_fabricant.php';
+	require __DIR__.'/config.php';
+	require __DIR__."/includes/debug.php";
+	require __DIR__."/includes/session.php";
+	require __DIR__."/includes/bdd/creation_fabricant.php";	
+	require __DIR__."/includes/bdd/lecture_fabricant.php";	
+	require __DIR__."/includes/bdd/maj_fabricant.php";
 	
 	// Vérification des permissions
 	// Validation CSRF

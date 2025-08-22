@@ -1,9 +1,13 @@
 <?php
 	// Inclusion des fichiers de configuration
-	require __DIR__ . '/config.php';
-	require __DIR__.'/includes/communs.php';
-	require __DIR__.'/includes/fonctions_bdd_fiche.php';
-	require __DIR__.'/includes/fonctions_bdd_controle.php';
+	require __DIR__.'/config.php';
+	require __DIR__."/includes/debug.php";
+	require __DIR__."/includes/session.php";
+	require __DIR__."/includes/fonctions_fichiers.php";
+	require __DIR__."/includes/bdd/liste_options.php";
+	require __DIR__."/includes/bdd/lecture_fiche.php";
+	require __DIR__."/includes/bdd/lecture_controle.php";
+	require __DIR__."/includes/bdd/maj_fiche.php";
 	
 	
 	$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -173,7 +177,7 @@
 		<main>
 			<?php include __DIR__.'/includes/en_tete.php';?>
 			<?= $avis ?>
-			<form method="post" action="fiche_controle.php" enctype="multipart/form-data" id='form-controle'>
+			<form method="post" action="controle_epi.php" enctype="multipart/form-data" id='form-controle'>
 				<input type="hidden" name="csrf_token" value="<?= $_SESSION['csrf_token'] ?>">
 				<input type="hidden" name="id" value="<?= $id ?>">
 				<input type="hidden" name="appel_liste" value="0">

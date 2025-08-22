@@ -27,6 +27,8 @@
             if ($type === 'string' && !is_scalar($donnees[$field])) {
                 return ['id' => 0, 'success' => false, 'error' => "Type invalide pour $field (chaîne attendue)"];
             }
+        } // CORRECTION: Cette accolade fermante manquait
+        
         // 2. GESTION DE LA CONNEXION
         $shouldCloseConnection = false;
         
@@ -40,6 +42,7 @@
                 $connection->set_charset("utf8mb4");
                 $shouldCloseConnection = true;
             }
+            
             // Première requête: insertion
             $sql1 = "INSERT INTO fabricant (libelle) VALUES (?)";
             $stmt1 = $connection->prepare($sql1);

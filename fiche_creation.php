@@ -1,10 +1,15 @@
 <?php	
 	
 	// Inclusion des fichiers de configuration
-	require __DIR__ . '/config.php';
-	require __DIR__.'/includes/communs.php';
+	require __DIR__.'/config.php';
+	require __DIR__."/includes/debug.php";
+	require __DIR__."/includes/session.php";
+	require __DIR__."/includes/fonctions_fichiers.php";
+	require __DIR__."/includes/bdd/liste_options.php";
+	require __DIR__."/includes/bdd/lecture_fiche.php";
+	require __DIR__."/includes/bdd/creation_fiche.php";
+	require __DIR__."/includes/bdd/maj_fiche.php";
 	require __DIR__.'/includes/init_donnees.php';
-	require __DIR__.'/includes/fonctions_bdd_fiche.php';
 	
 	
 	// Vérification des permissions
