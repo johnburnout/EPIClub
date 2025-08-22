@@ -200,7 +200,7 @@
 						<tr>
 								<td>Photo:</td>
 								<td>
-									 <img src="images/<?= htmlspecialchars($donnees['photo'], ENT_QUOTES, 'UTF-8') ?>" 
+									 <img src="utilisateur/images/<?= htmlspecialchars($donnees['photo'], ENT_QUOTES, 'UTF-8') ?>" 
 										class="epi-photo" 
 										alt="Photo du matériel" width="300">
 								</td>

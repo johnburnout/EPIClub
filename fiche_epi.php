@@ -273,7 +273,7 @@
 								<input type="text" name="reference" required value="<?= $viewData['reference'] ?>">
 							</td>
 							<td rowspan="10">
-								<img src="images/<?= $viewData['photo'] ?>" class="epi-photo" alt="Photo du matériel" width="400">
+								<img src="utilisateur/images/<?= $viewData['photo'] ?>" class="epi-photo" alt="Photo du matériel" width="400">
 								<?php if ($isLoggedIn): ?>
 								<br>
 								<input type="file" name="monfichier" accept="image/jpeg,image/png,image/gif">
