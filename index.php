@@ -119,6 +119,13 @@
 							Gestion des catégories
 						</button>
 					</form>
+					<p></p>
+					<form action="liste_lieux.php" method="post">
+						<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+						<button type="submit" class="btn btn-secondary btn-block">
+							Gestion des lieux
+						</button>
+					</form>
 				</div>
 				<?php endif; ?>
 			</section>
