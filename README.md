@@ -11,11 +11,11 @@ L'identification des équipements peut se faire par le scan d'un qrcode affecté
 La gestion et le contrôle des EPI peut se faire de manière fluide et régulière simplifiant cette tâche qui constitue une obligation légale pour les utilisateurs auxquels se destine EPIClub.
 ## Installation
 ### Prérequis
-### Site web operationnel
+#### Site web operationnel
 * Un serveur web
 * php (>7)
 * mySQL
-### Générateur de qrcodes
+#### Générateur de qrcodes
 * Installer [composer](https://getcomposer.org/) sur votre serveur.
 * A l'aide du terminal, positionnez vous à la racine de votre siteet installez endroid/qr-codes :
 ```
