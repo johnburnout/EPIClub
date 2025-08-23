@@ -11,6 +11,7 @@ L'identification des équipements peut se faire par le scan d'un qrcode affecté
 La gestion et le contrôle des EPI peut se faire de manière fluide et régulière simplifiant cette tâche qui constitue une obligation légale pour les utilisateurs auxquels se destine EPIClub.
 ## Installation
 ### Prérequis
+### Site web operationnel
 * Un serveur web
 * php (>7)
 * mySQL
