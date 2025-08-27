@@ -202,6 +202,7 @@ CREATE TABLE `controle` (
   `date_controle` date GENERATED ALWAYS AS (cast(`date_heure_controle` as date)) VIRTUAL,
   `utilisateur` varchar(30) NOT NULL,
   `utilisateur_id` int(11) DEFAULT NULL,
+  `epi_controles` text DEFAULT NULL,
   `remarques` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
