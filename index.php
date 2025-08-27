@@ -31,18 +31,10 @@
 				<h3>Version de test</h3>
 				<div class="alert alert-info">
 					<p>
-						<strong>Pour vous connecter comme contrôleur EPI :</strong><br>
-						login : usager | mdp : usager
-					</p>
-					<p>
-						<strong>Pour vous connecter comme admin EPI :</strong><br>
-						login : admin | mdp : admin
-					</p>
-					<p>
 						Version 0.9.3 (beta) en cours de test (22/08/2025).
 					</p>
 					<p>
-						Pour rapporter des bugs ou obtenir une version d'essai, contactez <a href="mailto:jean@grimpe.fr">Jean Roussie</a>.
+						Pour rapporter des bugs ou obtenir un code d'accès, contactez <a href="mailto:jean@grimpe.fr">Jean Roussie</a>.
 					</p>
 				</div>
 			</section>
