@@ -130,7 +130,7 @@
 					</a>
 					
 					<button type="submit" name="envoyer" class="btn btn-primary">
-						<?= $viewData['isEditMode'] ? 'Mettre à jour' : 'Créer'; ?> le affectation
+						<?= $viewData['isEditMode'] ? 'Mettre à jour' : 'Créer'; ?> l'affectation
 					</button>
 				</div>
 			</form>
