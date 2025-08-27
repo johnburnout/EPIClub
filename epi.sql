@@ -74,16 +74,16 @@ CREATE TABLE `fiche` (
 ,`categorie_id` int(11)
 ,`fabricant` varchar(50)
 ,`fabricant_id` int(11)
-,`lieu` varchar(15)
-,`lieu_id` int(11)
+,`affectation` varchar(15)
+,`affectation_id` int(11)
 ,`facture` varchar(30)
 ,`facture_id` int(11)
 ,`date_facture` date
 ,`nb_elements` int(11)
 ,`date_max` date
 ,`date_debut` date
-,`verification_id` int(11)
-,`date_verification` date
+,`controle_id` int(11)
+,`date_controle` date
 ,`remarques` text
 ,`photo` varchar(50)
 ,`nb_elements_initial` int(11)
@@ -94,19 +94,19 @@ CREATE TABLE `fiche` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `lieu`
+-- Table structure for table `affectation`
 --
 
-CREATE TABLE `lieu` (
+CREATE TABLE `affectation` (
   `id` int(11) NOT NULL,
   `libelle` varchar(15) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 --
--- Dumping data for table `lieu`
+-- Dumping data for table `affectation`
 --
 
-INSERT INTO `lieu` (`id`, `libelle`) VALUES
+INSERT INTO `affectation` (`id`, `libelle`) VALUES
 (1, 'En attente'),
 (0, 'Hors-Service');
 
@@ -123,13 +123,13 @@ CREATE TABLE `liste` (
 ,`fabricant` varchar(50)
 ,`categorie` varchar(20)
 ,`categorie_id` int(11)
-,`lieu` varchar(15)
-,`lieu_id` int(11)
+,`affectation` varchar(15)
+,`affectation_id` int(11)
 ,`nb_elements` int(11)
-,`date_verification` date
+,`date_controle` date
 ,`date_max` date
 ,`en_service` tinyint(4)
-,`verification_id` int(11)
+,`controle_id` int(11)
 ,`date_facture` date
 ,`facture_id` int(11)
 );
@@ -149,13 +149,13 @@ CREATE TABLE `matos` (
   `fabricant_id` int(11) DEFAULT NULL,
   `facture_id` int(11) NOT NULL,
   `photo` varchar(50) DEFAULT 'null.jpeg',
-  `lieu_id` int(11) DEFAULT NULL,
+  `affectation_id` int(11) DEFAULT NULL,
   `date_debut` date DEFAULT NULL,
   `date_max` date DEFAULT NULL,
   `date_modification` date NOT NULL DEFAULT current_timestamp(),
   `nb_elements_initial` int(11) DEFAULT NULL,
   `nb_elements` int(11) DEFAULT NULL,
-  `verification_id` int(11) DEFAULT 1,
+  `controle_id` int(11) DEFAULT 1,
   `utilisateur` varchar(30) DEFAULT '""',
   `remarques` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
@@ -192,14 +192,14 @@ CREATE TABLE `utilisateur` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `verification`
+-- Table structure for table `controle`
 --
 
-CREATE TABLE `verification` (
+CREATE TABLE `controle` (
   `id` int(11) NOT NULL,
   `en_cours` tinyint(1) NOT NULL DEFAULT 1,
-  `date_heure_verification` timestamp NULL DEFAULT current_timestamp(),
-  `date_verification` date GENERATED ALWAYS AS (cast(`date_heure_verification` as date)) VIRTUAL,
+  `date_heure_controle` timestamp NULL DEFAULT current_timestamp(),
+  `date_controle` date GENERATED ALWAYS AS (cast(`date_heure_controle` as date)) VIRTUAL,
   `utilisateur` varchar(30) NOT NULL,
   `utilisateur_id` int(11) DEFAULT NULL,
   `remarques` text DEFAULT NULL
@@ -233,12 +233,12 @@ ALTER TABLE `facture`
   ADD UNIQUE KEY `id_UNIQUE` (`id`);
 
 --
--- Indexes for table `lieu`
+-- Indexes for table `affectation`
 --
-ALTER TABLE `lieu`
+ALTER TABLE `affectation`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `id_UNIQUE` (`id`),
-  ADD UNIQUE KEY `NOM_LIEU_UNIQUE` (`libelle`);
+  ADD UNIQUE KEY `NOM_affectation_UNIQUE` (`libelle`);
 
 --
 -- Indexes for table `matos`
@@ -247,8 +247,8 @@ ALTER TABLE `matos`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `ID_Materiel_UNIQUE` (`id`),
   ADD UNIQUE KEY `reference` (`reference`),
-  ADD KEY `fk_matos_lieu` (`lieu_id`),
-  ADD KEY `fk_matos_verification` (`verification_id`),
+  ADD KEY `fk_matos_affectation` (`affectation_id`),
+  ADD KEY `fk_matos_controle` (`controle_id`),
   ADD KEY `fk_matos_categorie` (`categorie_id`),
   ADD KEY `fk_matos_facture` (`facture_id`),
   ADD KEY `fk_matos_fabricant` (`fabricant_id`);
@@ -262,12 +262,12 @@ ALTER TABLE `utilisateur`
   ADD UNIQUE KEY `username_UNIQUE` (`username`);
 
 --
--- Indexes for table `verification`
+-- Indexes for table `controle`
 --
-ALTER TABLE `verification`
+ALTER TABLE `controle`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `id_UNIQUE` (`id`),
-  ADD KEY `fk_verification_utilisateur_idx` (`utilisateur_id`);
+  ADD KEY `fk_controle_utilisateur_idx` (`utilisateur_id`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -292,9 +292,9 @@ ALTER TABLE `facture`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `lieu`
+-- AUTO_INCREMENT for table `affectation`
 --
-ALTER TABLE `lieu`
+ALTER TABLE `affectation`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
@@ -310,9 +310,9 @@ ALTER TABLE `utilisateur`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `verification`
+-- AUTO_INCREMENT for table `controle`
 --
-ALTER TABLE `verification`
+ALTER TABLE `controle`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 -- --------------------------------------------------------
@@ -322,7 +322,7 @@ ALTER TABLE `verification`
 --
 DROP TABLE IF EXISTS `fiche`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `fiche`  AS SELECT `m`.`id` AS `id`, `m`.`reference` AS `ref`, `m`.`libelle` AS `libelle`, `m`.`en_service` AS `en_service`, `c`.`libelle` AS `categorie`, `c`.`id` AS `categorie_id`, `f`.`libelle` AS `fabricant`, `f`.`id` AS `fabricant_id`, `l`.`libelle` AS `lieu`, `l`.`id` AS `lieu_id`, `fac`.`libelle` AS `facture`, `fac`.`id` AS `facture_id`, `fac`.`date_facture` AS `date_facture`, `m`.`nb_elements` AS `nb_elements`, `m`.`date_max` AS `date_max`, `m`.`date_debut` AS `date_debut`, `v`.`id` AS `verification_id`, `v`.`date_verification` AS `date_verification`, `m`.`remarques` AS `remarques`, `m`.`photo` AS `photo`, `m`.`nb_elements_initial` AS `nb_elements_initial`, `v`.`en_cours` AS `en_controle`, `fac`.`en_saisie` AS `facture_en_saisie` FROM (((((`matos` `m` join `categorie` `c` on(`m`.`categorie_id` = `c`.`id`)) join `fabricant` `f` on(`m`.`fabricant_id` = `f`.`id`)) join `lieu` `l` on(`m`.`lieu_id` = `l`.`id`)) join `facture` `fac` on(`m`.`facture_id` = `fac`.`id`)) join `verification` `v` on(`m`.`verification_id` = `v`.`id`)) WHERE `m`.`en_service` <> 0 ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `fiche`  AS SELECT `m`.`id` AS `id`, `m`.`reference` AS `ref`, `m`.`libelle` AS `libelle`, `m`.`en_service` AS `en_service`, `c`.`libelle` AS `categorie`, `c`.`id` AS `categorie_id`, `f`.`libelle` AS `fabricant`, `f`.`id` AS `fabricant_id`, `l`.`libelle` AS `affectation`, `l`.`id` AS `affectation_id`, `fac`.`libelle` AS `facture`, `fac`.`id` AS `facture_id`, `fac`.`date_facture` AS `date_facture`, `m`.`nb_elements` AS `nb_elements`, `m`.`date_max` AS `date_max`, `m`.`date_debut` AS `date_debut`, `v`.`id` AS `controle_id`, `v`.`date_controle` AS `date_controle`, `m`.`remarques` AS `remarques`, `m`.`photo` AS `photo`, `m`.`nb_elements_initial` AS `nb_elements_initial`, `v`.`en_cours` AS `en_controle`, `fac`.`en_saisie` AS `facture_en_saisie` FROM (((((`matos` `m` join `categorie` `c` on(`m`.`categorie_id` = `c`.`id`)) join `fabricant` `f` on(`m`.`fabricant_id` = `f`.`id`)) join `affectation` `l` on(`m`.`affectation_id` = `l`.`id`)) join `facture` `fac` on(`m`.`facture_id` = `fac`.`id`)) join `controle` `v` on(`m`.`controle_id` = `v`.`id`)) WHERE `m`.`en_service` <> 0 ;
 
 -- --------------------------------------------------------
 
@@ -331,7 +331,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `liste`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `liste`  AS SELECT `matos`.`id` AS `id`, `matos`.`reference` AS `ref`, `matos`.`libelle` AS `libelle`, `fabricant`.`libelle` AS `fabricant`, `categorie`.`libelle` AS `categorie`, `matos`.`categorie_id` AS `categorie_id`, `lieu`.`libelle` AS `lieu`, `matos`.`lieu_id` AS `lieu_id`, `matos`.`nb_elements` AS `nb_elements`, `verification`.`date_verification` AS `date_verification`, `matos`.`date_max` AS `date_max`, `matos`.`en_service` AS `en_service`, `matos`.`verification_id` AS `verification_id`, `facture`.`date_facture` AS `date_facture`, `facture`.`id` AS `facture_id` FROM (((((`matos` join `facture`) join `fabricant`) join `categorie`) join `lieu`) join `verification`) WHERE 0 <> `matos`.`en_service` AND `matos`.`categorie_id` = `categorie`.`id` AND `matos`.`fabricant_id` = `fabricant`.`id` AND `matos`.`verification_id` = `verification`.`id` AND `matos`.`lieu_id` = `lieu`.`id` AND `matos`.`facture_id` = `facture`.`id` ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `liste`  AS SELECT `matos`.`id` AS `id`, `matos`.`reference` AS `ref`, `matos`.`libelle` AS `libelle`, `fabricant`.`libelle` AS `fabricant`, `categorie`.`libelle` AS `categorie`, `matos`.`categorie_id` AS `categorie_id`, `affectation`.`libelle` AS `affectation`, `matos`.`affectation_id` AS `affectation_id`, `matos`.`nb_elements` AS `nb_elements`, `controle`.`date_controle` AS `date_controle`, `matos`.`date_max` AS `date_max`, `matos`.`en_service` AS `en_service`, `matos`.`controle_id` AS `controle_id`, `facture`.`date_facture` AS `date_facture`, `facture`.`id` AS `facture_id` FROM (((((`matos` join `facture`) join `fabricant`) join `categorie`) join `affectation`) join `controle`) WHERE 0 <> `matos`.`en_service` AND `matos`.`categorie_id` = `categorie`.`id` AND `matos`.`fabricant_id` = `fabricant`.`id` AND `matos`.`controle_id` = `controle`.`id` AND `matos`.`affectation_id` = `affectation`.`id` AND `matos`.`facture_id` = `facture`.`id` ;
 
 --
 -- Constraints for dumped tables
@@ -344,8 +344,8 @@ ALTER TABLE `matos`
   ADD CONSTRAINT `fk_matos_categorie` FOREIGN KEY (`categorie_id`) REFERENCES `categorie` (`id`),
   ADD CONSTRAINT `fk_matos_fabricant` FOREIGN KEY (`fabricant_id`) REFERENCES `fabricant` (`id`),
   ADD CONSTRAINT `fk_matos_facture` FOREIGN KEY (`facture_id`) REFERENCES `facture` (`id`),
-  ADD CONSTRAINT `fk_matos_lieu` FOREIGN KEY (`lieu_id`) REFERENCES `lieu` (`id`),
-  ADD CONSTRAINT `fk_matos_verification` FOREIGN KEY (`verification_id`) REFERENCES `verification` (`id`);
+  ADD CONSTRAINT `fk_matos_affectation` FOREIGN KEY (`affectation_id`) REFERENCES `affectation` (`id`),
+  ADD CONSTRAINT `fk_matos_controle` FOREIGN KEY (`controle_id`) REFERENCES `controle` (`id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
