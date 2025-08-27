@@ -109,7 +109,6 @@
 			<?php include __DIR__.'/includes/en_tete.php';?>
 			<!-- Formulaire de filtrage -->
 			<h3>Filtrer les données</h3>
-			
 			<form method="post">
 				<table>
 					<thead>
@@ -121,7 +120,7 @@
 						<tr>
 							<td rowspan="1">
 								<select name="tri">
-									<option value="id" <?= $sort === 'id' ? 'selected' : '' ?>>Identifiant</option>
+									<option value="id" <?= $sort === 'id' ? 'selected' : '' ?>>Id de la catégorie</option>
 									<option value="libelle" <?= $sort === 'libelle' ? 'selected' : '' ?>>Nom de la catégorie</option>
 								</select>
 							</td>:

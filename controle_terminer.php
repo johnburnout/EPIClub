@@ -44,7 +44,7 @@
 			$shouldCloseConnection = true;
 			
 			// Fermeture du contrôle
-			$stmt = $connection->prepare("UPDATE verification SET en_cours = 0 WHERE id = ?");
+			$stmt = $connection->prepare("UPDATE controle SET en_cours = 0 WHERE id = ?");
 			$stmt->bind_param("i", $id);
 			$stmt->execute();
 			

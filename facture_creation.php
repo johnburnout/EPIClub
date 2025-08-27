@@ -263,9 +263,9 @@
 								<?php if ($viewData['hasFichier']): ?>
 								<?php if (!empty($donnees['fichier']) && file_exists('factures/' . $donnees['fichier'])): ?>
 								<?php if (strtolower(pathinfo($donnees['fichier'], PATHINFO_EXTENSION)) === 'pdf'): ?>
-								<a href="factures/<?= htmlspecialchars($donnees['fichier']) ?>" target="_blank">Voir le PDF</a>
+								<a href="utilisateur/factures/<?= htmlspecialchars($donnees['fichier']) ?>" target="_blank">Voir le PDF</a>
 								<?php else: ?>
-								<img src="factures/<?= htmlspecialchars($donnees['fichier']) ?>" 
+								<img src="utilisateur/factures/<?= htmlspecialchars($donnees['fichier']) ?>" 
 									class="epi-photo" 
 									alt="Photo du matériel" 
 									width="400">

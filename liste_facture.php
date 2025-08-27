@@ -57,13 +57,13 @@
 		'long' => 20,
 		'nblignes' => 20,
 		'id' => 1,
-		'lieu_id' => 0,
+		'affectation_id' => 0,
 		'cat_id' => 0,
 		'tri' => 'id'
 	];
 	
 	// Traitement des paramètres avec validation renforcée
-	$params = ['lieu_id' => 0, 'cat_id'=> 0];
+	$params = ['affectation_id' => 0, 'cat_id'=> 0];
 	foreach ($defaults as $key => $default) {
 		$input = $_POST[$key] ?? $_SESSION[$key] ?? $default;
 		$params[$key] = sanitizeInput($input, is_numeric($default) ? 'int' : 'string');
@@ -79,11 +79,11 @@
 	// #############################
 	// Création des listes d'options sécurisées
 	// #############################
-	$current_lieu_id = $params['lieu_id'];
+	$current_affectation_id = $params['affectation_id'];
 	$current_categorie_id = $params['cat_id'];
 	
-	$listeLieux = liste_options(['libelles' => 'lieu', 'id' => $current_lieu_id]);
-	$listeLieux[0] = "<option value='*'>Tous</option>".$listeLieux[0];
+	$listeaffectations = liste_options(['libelles' => 'affectation', 'id' => $current_affectation_id]);
+	$listeaffectations[0] = "<option value='*'>Tous</option>".$listeaffectations[0];
 	$listeCategories = liste_options(['libelles' => 'categorie', 'id' => $current_categorie_id]);
 	$listeCategories[0] = "<option value='*'>Toutes</option>".$listeCategories[0];
 	
@@ -94,9 +94,9 @@
 	$queryParams = [];
 	$types = '';
 	
-	if ($params['lieu_id'] > 0) {
-		$whereClauses[] = "lieu_id = ?";
-		$queryParams[] = $params['lieu_id'];
+	if ($params['affectation_id'] > 0) {
+		$whereClauses[] = "affectation_id = ?";
+		$queryParams[] = $params['affectation_id'];
 		$types .= 'i';
 	}
 	
@@ -114,7 +114,7 @@
 	
 	$where = implode(' AND ', $whereClauses);
 	// Validation du champ de tri
-	$allowedSort = ['id', 'ref', 'lieu_id', 'date_facture', 'fabricant'];
+	$allowedSort = ['id', 'ref', 'affectation_id', 'date_facture', 'fabricant'];
 	$sort = in_array($params['tri'], $allowedSort) ? $params['tri'] : 'id';
 	
 	// ###########################
@@ -136,7 +136,7 @@
 		
 		// Requête pour les données paginées
 		$sql = "SELECT id, ref, libelle, fabricant, categorie, categorie_id, 
-		lieu, lieu_id, nb_elements, date_verification, date_max
+		affectation, affectation_id, nb_elements, date_controle, date_max
 		FROM liste 
 		WHERE $where 
 		ORDER BY $sort 
@@ -186,13 +186,13 @@
 							<th>Page :</th>
 						</tr>
 						<tr>
-							<td>Lieu</td>
+							<td>affectation</td>
 							<td>Catégorie</td>
 							<td rowspan="2">
 								<select name="tri">
 									<option value="id" <?= $sort === 'id' ? 'selected' : '' ?>>Identifiant</option>
 									<option value="ref" <?= $sort === 'ref' ? 'selected' : '' ?>>Référence</option>
-									<option value="lieu_id" <?= $sort === 'lieu_id' ? 'selected' : '' ?>>Lieu</option>
+									<option value="affectation_id" <?= $sort === 'affectation_id' ? 'selected' : '' ?>>affectation</option>
 									<option value="date_facture" <?= $sort === 'date_facture' ? 'selected' : '' ?>>Date de vérification</option>
 									<option value="fabricant" <?= $sort === 'fabricant' ? 'selected' : '' ?>>Fabricant</option>
 								</select>
@@ -206,8 +206,8 @@
 						</tr>
 						<tr>
 							<td>
-								<select name="lieu_id">
-									<?= $listeLieux[0] ?? '' ?>
+								<select name="affectation_id">
+									<?= $listeaffectations[0] ?? '' ?>
 								</select>
 							</td>
 							<td>
@@ -235,7 +235,7 @@
 							<th>Libellé</th>
 							<th>Fabricant</th>
 							<th>Catégorie</th>
-							<th>Lieu</th>
+							<th>affectation</th>
 							<th>Quantité</th>
 							<th>Controlé le</th>
 							<th>Date max</th>
@@ -248,9 +248,9 @@
 							<td><?= htmlspecialchars($row['libelle'], ENT_QUOTES, 'UTF-8') ?></td>
 							<td><?= htmlspecialchars($row['fabricant'], ENT_QUOTES, 'UTF-8') ?></td>
 							<td><?= htmlspecialchars($row['categorie'], ENT_QUOTES, 'UTF-8') ?></td>
-							<td><?= htmlspecialchars($row['lieu'], ENT_QUOTES, 'UTF-8') ?></td>
+							<td><?= htmlspecialchars($row['affectation'], ENT_QUOTES, 'UTF-8') ?></td>
 							<td><?= (int)$row['nb_elements'] ?></td>
-							<td><?= htmlspecialchars($row['date_verification'], ENT_QUOTES, 'UTF-8') ?></td>
+							<td><?= htmlspecialchars($row['date_controle'], ENT_QUOTES, 'UTF-8') ?></td>
 							<td><?= htmlspecialchars($row['date_max'], ENT_QUOTES, 'UTF-8') ?></td>
 						</tr>
 						<?php endforeach; ?>

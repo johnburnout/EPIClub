@@ -41,12 +41,12 @@
 			// Récupération des listes d'options 
 			// #############################
 			
-			$current_lieu_id = $donnees['lieu_id'] ?? 0;
+			$current_affectation_id = $donnees['affectation_id'] ?? 0;
 			$current_categorie_id = $donnees['categorie_id'] ?? 0;
 			$current_fabricant_id = $donnees['fabricant_id'] ?? 0;
-			$listeLieux = liste_options(['libelles' => 'lieu', 'id' => $current_lieu_id]);
-			foreach ($listeLieux[1] as $key => $value) {
-				$lieux[$value['id']] = $value['libelle'];
+			$listeaffectations = liste_options(['libelles' => 'affectation', 'id' => $current_affectation_id]);
+			foreach ($listeaffectations[1] as $key => $value) {
+				$affectations[$value['id']] = $value['libelle'];
 			}
 			$listeCategories = liste_options(['libelles' => 'categorie', 'id' => $current_categorie_id]);
 			foreach ($listeCategories[1] as $key => $value) {
@@ -89,7 +89,7 @@
 				}
 			}
 			$donnees['categorie'] = $categories[$donnees['categorie_id']];
-			$donnees['lieu'] = $lieux[$donnees['lieu_id']];
+			$donnees['affectation'] = $affectations[$donnees['affectation_id']];
 			$donnees['fabricant'] = $fabricants[$donnees['fabricant_id']];
 		}
 		if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'validation') {
@@ -190,14 +190,14 @@
 	// Récupération des listes d'options
 	// #############################
 	$current_facture_id = $donnees['facture_id'] ?? 0;
-	$current_lieu_id = $donnees['lieu_id'] ?? 0;
+	$current_affectation_id = $donnees['affectation_id'] ?? 0;
 	$current_categorie_id = $donnees['categorie_id'] ?? 0;
 	$current_fabricant_id = $donnees['fabricant_id'] ?? 0;
 	
 	$listeFactures = liste_options(['libelles' => 'facture', 'id' => $current_facture_id]);
-	$listeLieux = liste_options(['libelles' => 'lieu', 'id' => $current_lieu_id]);
-	foreach ($listeLieux[1] as $key => $value) {
-		$lieux[$value['id']] = $value['libelle'];
+	$listeaffectations = liste_options(['libelles' => 'affectation', 'id' => $current_affectation_id]);
+	foreach ($listeaffectations[1] as $key => $value) {
+		$affectations[$value['id']] = $value['libelle'];
 	}
 	$listeCategories = liste_options(['libelles' => 'categorie', 'id' => $current_categorie_id]);
 	foreach ($listeCategories[1] as $key => $value) {
@@ -212,8 +212,8 @@
 	// #############################
 	$qrData = $site_url."/afficher_fiche.php?id=".$id;
 	$viewData = [
-		'lieu_id' => $isLoggedIn ? sprintf('<select name="lieu_id" required>%s</select>', $listeLieux[0] ?? '') : htmlspecialchars($donnees['lieu'] ?? '', ENT_QUOTES, 'UTF-8'),
-		'lieu' => htmlspecialchars($donnees['lieu'] ?? '', ENT_QUOTES, 'UTF-8'),
+		'affectation_id' => $isLoggedIn ? sprintf('<select name="affectation_id" required>%s</select>', $listeaffectations[0] ?? '') : htmlspecialchars($donnees['affectation'] ?? '', ENT_QUOTES, 'UTF-8'),
+		'affectation' => htmlspecialchars($donnees['affectation'] ?? '', ENT_QUOTES, 'UTF-8'),
 		'categorie_id' => $isAdmin ? sprintf('<select name="categorie_id" required>%s</select>', $listeCategories[0] ?? '') : htmlspecialchars($donnees['categorie'] ?? '', ENT_QUOTES, 'UTF-8'),
 		'categorie' => htmlspecialchars($donnees['categorie'] ?? '', ENT_QUOTES, 'UTF-8'),
 		'fabricant_id' => $isAdmin ? sprintf('<select name="fabricant_id" required>%s</select>', $listeFabricants[0] ?? '') : htmlspecialchars($donnees['fabricant'] ?? '', ENT_QUOTES, 'UTF-8'),
@@ -226,7 +226,7 @@
 			htmlspecialchars(date('Y-m-d',strtotime($donnees['date_debut'])) ?? '', ENT_QUOTES, 'UTF-8')): htmlspecialchars(date('Y-m-d',strtotime($donnees['date_debut'])) ?? '', ENT_QUOTES, 'UTF-8'),
 		'date_max' => $isAdmin ? sprintf('<input name="date_max" type="date" required value="%s">', 
 			htmlspecialchars(date('Y-m-d',strtotime($donnees['date_max'])) ?? '', ENT_QUOTES, 'UTF-8')) : htmlspecialchars(date('Y-m-d',strtotime($donnees['date_max'])) ?? '', ENT_QUOTES, 'UTF-8'),
-		'date_verification' => htmlspecialchars($donnees['date_verification']),
+		'date_controle' => htmlspecialchars($donnees['date_controle']),
 		'reference' => htmlspecialchars($donnees['reference'] ?? '', ENT_QUOTES, 'UTF-8'),
 		'photo' => htmlspecialchars($donnees['photo'] ?? 'null.jpeg', ENT_QUOTES, 'UTF-8'),
 		'remarques' => $donnees['remarques'] ?? '',
@@ -254,7 +254,7 @@
 			<form enctype="multipart/form-data" method="post" action="fiche_epi.php" id='form-controle'>
 				<input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
 				<input type="hidden" name="id" value="<?= $viewData['id'] ?>">
-				<input type="hidden" name="lieu" value="<?= $viewData['lieu'] ?>">
+				<input type="hidden" name="affectation" value="<?= $viewData['affectation'] ?>">
 				<input type="hidden" name="categorie" value="<?= $viewData['categorie'] ?>">
 				<input type="hidden" name="fabricant" value="<?= $viewData['fabricant'] ?>">
 				<input type="hidden" name="facture" value="<?= $viewData['facture'] ?>">
@@ -288,14 +288,20 @@
 						</tr>
 						<tr>
 							<td>
-								<label for="lieu_id">Lieu :</label>
-								<?= $viewData['lieu_id'] ?>
+								<label for="affectation_id">Affectation :</label>
+								<?= $viewData['affectation_id'] ?>
 							</td>
 						</tr>
 						<tr>
 							<td>
 								<label for="categorie_id">Catégorie :</label>
 								<?= $viewData['categorie_id'] ?>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<label for="fabricant_id">Fabricant :</label>
+								<?= $viewData['fabricant_id'] ?>
 							</td>
 						</tr>
 						<tr>
@@ -312,14 +318,8 @@
 						</tr>
 						<tr>
 							<td>
-								<label for="date_verification">Date vérification :</label>
-								<?= $viewData['date_verification'] ?>
-							</td>
-						</tr>
-						<tr>
-							<td>
-								<label for="fabricant_id">Fabricant :</label>
-								<?= $viewData['fabricant_id'] ?>
+								<label for="date_controle">Date vérification :</label>
+								<?= $viewData['date_controle'] ?>
 							</td>
 						</tr>
 						<tr>

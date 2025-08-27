@@ -80,7 +80,7 @@
                 // Recherche de l'ID max avec controle_en_cours = 1 pour cet utilisateur
                 $max_controle_stmt = $mysqli->prepare("
     SELECT MAX(id) as max_id 
-    FROM verification 
+    FROM controle 
     WHERE en_cours = 1 
     AND utilisateur = ?
     ");
@@ -95,7 +95,7 @@
                     if ($max_controle_id !== null) {
                         // Mettre à jour les contrôles avec un ID inférieur
                         $update_controle_stmt = $mysqli->prepare("
-    UPDATE verification 
+    UPDATE controle 
     SET en_cours = 0 
     WHERE utilisateur = ?
     AND id < ?

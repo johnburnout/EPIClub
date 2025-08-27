@@ -35,11 +35,11 @@
 			$sql = "SELECT 
 			id,
 			utilisateur, 
-			date_verification,
+			date_controle,
 			remarques,
 			en_cours,
 			epi_controles
-			FROM verification 
+			FROM controle 
 			WHERE id = ? AND utilisateur = ? AND en_cours = 1
 			LIMIT 1";  // Changement de ORDER BY à LIMIT 1 car on cherche un enregistrement spécifique
 			
@@ -66,8 +66,8 @@
 			}
 			
 			// Formatage de la date si elle existe
-			if (!empty($donnees['date_verification'])) {
-				$donnees['date_verification'] = date('Y-m-d', strtotime($donnees['date_verification']));
+			if (!empty($donnees['date_controle'])) {
+				$donnees['date_controle'] = date('Y-m-d', strtotime($donnees['date_controle']));
 			}
 			
 			return [
@@ -99,14 +99,14 @@
 		$sql = "SELECT 
 			id,
 			utilisateur, 
-			date_verification,
+			date_controle,
 			remarques,
 			en_cours,
 			epi_controles
-		FROM verification 
+		FROM controle 
 		WHERE id = ? 
 		AND utilisateur = ? 
-		AND (date_verification IS NULL OR date_verification >= DATE_SUB(CURRENT_DATE(), INTERVAL 1 YEAR))
+		AND (date_controle IS NULL OR date_controle >= DATE_SUB(CURRENT_DATE(), INTERVAL 1 YEAR))
 		LIMIT 1";
 		
 		$stmt = $connection->prepare($sql);

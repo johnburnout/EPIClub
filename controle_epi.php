@@ -26,7 +26,7 @@
 		'reference' => '',
 		'libelle' => '',
 		'photo' => 'null.jpeg',
-		'lieu_id' => 0,
+		'affectation_id' => 0,
 		'categorie' => '',
 		'date_debut' => date('Y-m-d'),
 		'fabricant' => '',
@@ -36,7 +36,7 @@
 		'en_service' => 1,
 		'remarques' => '',
 		'remarque' => '',
-		'verification_id' => $_SESSION['controle_en_cours'] ?? 0,
+		'controle_id' => $_SESSION['controle_en_cours'] ?? 0,
 		'utilisateur' => $utilisateur
 	];
 	
@@ -51,21 +51,21 @@
 			$remarques = $donnees['remarques'];
 		}
 	}
-	if ($donnees['verification_id'] == $_SESSION['controle_en_cours']) {
+	if ($donnees['controle_id'] == $_SESSION['controle_en_cours']) {
 			header('Location: liste_controle.php?csrf_token='.$csrf_token);
 			exit();
 	}
-	$donnees['verification_id'] = $_SESSION['controle_en_cours'] ?? $donnees['verification_id'];
+	$donnees['controle_id'] = $_SESSION['controle_en_cours'] ?? $donnees['controle_id'];
 	
 	// Journalisation
 	$journalmat = __DIR__.'/utilisateur/enregistrements/journalmat'.$donnees['reference'].'.txt';
 	$journal = __DIR__.'/utilisateur/enregistrements/journal'.date('Y').'.txt';
-	$journalcontrole = __DIR__.'/utilisateur/enregistrements/journalcontrole'.$donnees['verification_id'].'.txt';
+	$journalcontrole = __DIR__.'/utilisateur/enregistrements/journalcontrole'.$donnees['controle_id'].'.txt';
 	
 	$donneesInitiales = $donnees;
 	
 	if (empty($_SESSION['epi_controles'])) {
-		$controle = lecture_controle_recent($donnees['verification_id'], $utilisateur);
+		$controle = lecture_controle_recent($donnees['controle_id'], $utilisateur);
 		$_SESSION['epi_controles'] = $controle['donnees']['epi_controles'] ?? '';
 	}
 	
@@ -108,13 +108,13 @@
 				$connection = new mysqli($host, $username, $password, $dbname);
 				$connection->set_charset("utf8mb4");
 				
-				$sql = "UPDATE verification SET
+				$sql = "UPDATE controle SET
 						epi_controles = ?,
 							utilisateur = ?
 							WHERE id = ?";
 				
 				$stmt = $connection->prepare($sql);
-				$stmt->bind_param("ssi", $donnees['epi_controles'], $donnees['utilisateur'] ,$donnees['verification_id']);
+				$stmt->bind_param("ssi", $donnees['epi_controles'], $donnees['utilisateur'] ,$donnees['controle_id']);
 				$stmt->execute();
 				
 				if ($stmt->affected_rows > 0) {
@@ -151,9 +151,9 @@
 	}
 	
 	// Préparation des données pour l'affichage
-	$current_lieu_id = $donnees['lieu_id'] ?? 0;
-	$listeLieux = liste_options(['libelles' => 'lieu', 'id' => $current_lieu_id]);
-	$selectLieux = $listeLieux[0] ?? '';
+	$current_affectation_id = $donnees['affectation_id'] ?? 0;
+	$listeaffectations = liste_options(['libelles' => 'affectation', 'id' => $current_affectation_id]);
+	$selectaffectations = $listeaffectations[0] ?? '';
 	
 	$enservice = [
 		'1' => $donnees['en_service'] ? 'checked' : '',
@@ -206,10 +206,10 @@
 								</td>
 						</tr>
 						<tr>
-								<td>Lieu:</td>
+								<td>affectation:</td>
 								<td>
-									 <select name="lieu_id">
-										<?= $selectLieux ?>
+									 <select name="affectation_id">
+										<?= $selectaffectations ?>
 									 </select>
 								</td>
 						</tr>

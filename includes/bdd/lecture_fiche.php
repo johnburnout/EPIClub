@@ -43,8 +43,8 @@
 			categorie_id, 
 			fabricant, 
 			fabricant_id, 
-			lieu, 
-			lieu_id, 
+			affectation, 
+			affectation_id, 
 			facture, 
 			facture_id, 
 			DATE_FORMAT(date_facture, '%Y-%m-%d') AS date_facture,
@@ -52,8 +52,8 @@
 			nb_elements_initial, 
 			DATE_FORMAT(date_max, '%Y-%m-%d') AS date_max,
 			DATE_FORMAT(date_debut, '%Y-%m-%d') AS date_debut,
-			verification_id, 
-			DATE_FORMAT(date_verification, '%Y-%m-%d') AS date_verification,
+			controle_id, 
+			DATE_FORMAT(date_controle, '%Y-%m-%d') AS date_controle,
 			remarques, 
 			photo
 			FROM fiche 
@@ -68,7 +68,7 @@
 			$donnees = $result->fetch_assoc();
 			$donnees['facture_id'] = (!$donnees['facture_id'] && $_SESSION['facture_en_saisie']) ? $_SESSION['facture_en_saisie'] : $donnees['facture_id'];
 			return [
-				'donnees' => $donnees, // Correction: utilisation de $donnees au lieu de $data
+				'donnees' => $donnees, // Correction: utilisation de $donnees au affectation de $data
 				'success' => $donnees !== null,
 				'error' => $donnees ? '' : 'Aucune fiche trouvée avec cet ID'
 			];

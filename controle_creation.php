@@ -36,7 +36,7 @@
 		'controle_id' => 0,
 		'utilisateur' => $utilisateur,
 		'remarques' => '',
-		'date_verification' => date('Y-m-d'),
+		'date_controle' => date('Y-m-d'),
 		'error' => '',
 		'success' => '',
 		'epi_controles' => ''
@@ -64,7 +64,7 @@
 			if ($action === 'creation') {
 				$creation = creation_controle([
 					'utilisateur' => $utilisateur,
-					'date_verification' => $donnees['date_verification']
+					'date_controle' => $donnees['date_controle']
 				]);
 				if (!$creation['success']) {
 					throw new Exception('Erreur lors de la création: ' . ($creation['error'] ?? ''));
@@ -141,7 +141,7 @@
 	}
 
 	$viewData = [
-		'date_verification' => $donnees['date_verification'],
+		'date_controle' => $donnees['date_controle'],
 		'remarques' => htmlspecialchars($donnees['remarques'] ?? '', ENT_QUOTES, 'UTF-8'),
 		'action' => htmlspecialchars($action, ENT_QUOTES, 'UTF-8'),
 		'controle_id' => (int)$donnees['controle_id'],
@@ -178,7 +178,7 @@
 							<th width="20%">Utilisateur</th>
 							<td width="30%"><?= $utilisateur ?></td>
 							<th width="20%">Date</th>
-							<td width="30%"><?= $viewData['date_verification'] ?></td>
+							<td width="30%"><?= $viewData['date_controle'] ?></td>
 						</tr>
 						<tr>
 							<th colspan="4">Remarques et Observations</th>

@@ -44,7 +44,7 @@
 			}
 			
 			// Première requête: insertion
-			$sql1 = "INSERT INTO verification (utilisateur) VALUES (?)";
+			$sql1 = "INSERT INTO controle (utilisateur) VALUES (?)";
 			$stmt1 = $connection->prepare($sql1);
 			if (!$stmt1) {
 				throw new Exception("Erreur de préparation de la première requête");

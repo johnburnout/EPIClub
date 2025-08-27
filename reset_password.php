@@ -72,7 +72,7 @@
 			$connection->set_charset("utf8mb4");
 			
 			// Hashage du nouveau mot de passe (décommentez en production)
-			$password_hash = password_hash($mdp, PASSWORD_DEFAULT);
+			$password_hash = password_hash($password, PASSWORD_DEFAULT);
 			// Pour les tests, on utilise le mot de passe en clair (à retirer en production)
 			//$password_hash = $mdp;
 			

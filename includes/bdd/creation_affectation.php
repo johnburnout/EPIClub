@@ -9,7 +9,7 @@
     *     'error' => string   // Message d'erreur le cas échéant
     * ]
     */
-    function creation_lieu(array $donnees, ?mysqli $connection = null): array {
+    function creation_affectation(array $donnees, ?mysqli $connection = null): array {
         $requiredFields = [
             'libelle' => 'string'
         ];
@@ -44,15 +44,15 @@
             }
             
             // Première requête: insertion
-            $sql1 = "INSERT INTO lieu (libelle) VALUES (?)";
+            $sql1 = "INSERT INTO affectation (libelle) VALUES (?)";
             $stmt1 = $connection->prepare($sql1);
             if (!$stmt1) {
                 throw new Exception("Erreur de préparation de la première requête");
             }
             
-            $lieu = $donnees['libelle'];
+            $affectation = $donnees['libelle'];
             
-            $stmt1->bind_param("s", $lieu);
+            $stmt1->bind_param("s", $affectation);
             if (!$stmt1->execute()) {
                 throw new Exception("Erreur MySQL: " . $stmt1->error);
             }

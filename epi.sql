@@ -178,11 +178,11 @@ DELIMITER ;
 
 CREATE TABLE `utilisateur` (
   `id` int(11) NOT NULL,
-  `username` varchar(16) DEFAULT NULL,
+  `username` varchar(32) DEFAULT NULL,
   `role` enum('usager','admin') NOT NULL DEFAULT 'usager',
   `est_actif` tinyint(4) NOT NULL DEFAULT 1,
-  `email` varchar(255) DEFAULT NULL,
-  `password` varchar(32) DEFAULT NULL,
+  `email` varchar(256) DEFAULT NULL,
+  `password` varchar(256) DEFAULT NULL,
   `date_creation` timestamp NULL DEFAULT current_timestamp(),
   `last_login` date NOT NULL DEFAULT current_timestamp(),
   `controle_en_cours` int(11) NOT NULL DEFAULT 0,
@@ -322,7 +322,7 @@ ALTER TABLE `controle`
 --
 DROP TABLE IF EXISTS `fiche`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `fiche`  AS SELECT `m`.`id` AS `id`, `m`.`reference` AS `ref`, `m`.`libelle` AS `libelle`, `m`.`en_service` AS `en_service`, `c`.`libelle` AS `categorie`, `c`.`id` AS `categorie_id`, `f`.`libelle` AS `fabricant`, `f`.`id` AS `fabricant_id`, `l`.`libelle` AS `affectation`, `l`.`id` AS `affectation_id`, `fac`.`libelle` AS `facture`, `fac`.`id` AS `facture_id`, `fac`.`date_facture` AS `date_facture`, `m`.`nb_elements` AS `nb_elements`, `m`.`date_max` AS `date_max`, `m`.`date_debut` AS `date_debut`, `v`.`id` AS `controle_id`, `v`.`date_controle` AS `date_controle`, `m`.`remarques` AS `remarques`, `m`.`photo` AS `photo`, `m`.`nb_elements_initial` AS `nb_elements_initial`, `v`.`en_cours` AS `en_controle`, `fac`.`en_saisie` AS `facture_en_saisie` FROM (((((`matos` `m` join `categorie` `c` on(`m`.`categorie_id` = `c`.`id`)) join `fabricant` `f` on(`m`.`fabricant_id` = `f`.`id`)) join `affectation` `l` on(`m`.`affectation_id` = `l`.`id`)) join `facture` `fac` on(`m`.`facture_id` = `fac`.`id`)) join `controle` `v` on(`m`.`controle_id` = `v`.`id`)) WHERE `m`.`en_service` <> 0 ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `fiche`  AS SELECT `m`.`id` AS `id`, `m`.`reference` AS `ref`, `m`.`libelle` AS `libelle`, `m`.`en_service` AS `en_service`, `cat`.`libelle` AS `categorie`, `cat`.`id` AS `categorie_id`, `f`.`libelle` AS `fabricant`, `f`.`id` AS `fabricant_id`, `a`.`libelle` AS `affectation`, `a`.`id` AS `affectation_id`, `fac`.`libelle` AS `facture`, `fac`.`id` AS `facture_id`, `fac`.`date_facture` AS `date_facture`, `m`.`nb_elements` AS `nb_elements`, `m`.`date_max` AS `date_max`, `m`.`date_debut` AS `date_debut`, `co`.`id` AS `controle_id`, `co`.`date_controle` AS `date_controle`, `m`.`remarques` AS `remarques`, `m`.`photo` AS `photo`, `m`.`nb_elements_initial` AS `nb_elements_initial`, `co`.`en_cours` AS `en_controle`, `fac`.`en_saisie` AS `facture_en_saisie` FROM (((((`matos` `m` join `categorie` `cat` on(`m`.`categorie_id` = `cat`.`id`)) join `fabricant` `f` on(`m`.`fabricant_id` = `f`.`id`)) join `affectation` `a` on(`m`.`affectation_id` = `a`.`id`)) join `facture` `fac` on(`m`.`facture_id` = `fac`.`id`)) join `controle` `co` on(`m`.`controle_id` = `co`.`id`)) WHERE `m`.`en_service` <> 0 ;
 
 -- --------------------------------------------------------
 

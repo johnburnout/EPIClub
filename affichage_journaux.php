@@ -37,12 +37,12 @@
 		$sql = "SELECT 
 		id,
 		utilisateur, 
-		date_verification,
+		date_controle,
 		remarques,
 		en_cours,
 		epi_controles
-		FROM verification 
-		WHERE date_verification >= DATE_SUB(CURRENT_DATE(), INTERVAL 1 YEAR)
+		FROM controle 
+		WHERE date_controle >= DATE_SUB(CURRENT_DATE(), INTERVAL 1 YEAR)
 		AND epi_controles IS NOT NULL 
 		AND epi_controles != ''";
 		
@@ -69,11 +69,11 @@
 		}
 		
 		// Formatage de la date si elle existe
-		if (!empty($donnees['date_verification'])) {
-			$donnees['date_verification'] = date('Y-m-d', strtotime($donnees['date_verification']));
+		if (!empty($donnees['date_controle'])) {
+			$donnees['date_controle'] = date('Y-m-d', strtotime($donnees['date_controle']));
 			
 			// Vérification supplémentaire côté PHP (redondante mais prudente)
-			$dateControle = new DateTime($donnees['date_verification']);
+			$dateControle = new DateTime($donnees['date_controle']);
 			$dateLimite = (new DateTime())->sub(new DateInterval('P1Y'));
 			
 			if ($dateControle < $dateLimite) {
@@ -97,7 +97,7 @@
 	$controles_journaux = [];
 	for ($i = 0; $i < $total_controles; $i++) {
 		$controles_journaux[] = [
-			'controle' => $donnees[$i]['date_verification'],
+			'controle' => $donnees[$i]['date_controle'],
 			'chemin' => "utilisateur/enregistrements/" . 'journalcontrole' . $donnees[$i]['id'] . '.txt',
 			'existe' => file_exists(__DIR__.'/utilisateur/enregistrements/' . 'journalcontrole' . $donnees[$i]['id'] . '.txt')
 		];

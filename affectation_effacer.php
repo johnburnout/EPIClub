@@ -1,5 +1,5 @@
 <?php
-
+	
 	// Inclusion des fichiers de configuration
 	require __DIR__.'/config.php';
 	require __DIR__."/includes/debug.php";
@@ -10,8 +10,8 @@
 	if (!$csrf_token || $csrf_token !== $_SESSION['csrf_token']) {
 		throw new Exception('Erreur de sécurité: Token CSRF invalide');
 	}
-
-	if (!$isLoggedIn) {
+	
+	if (!$isAdmin) {
 		header('Location: index.php?');
 		exit();
 	}
@@ -20,14 +20,10 @@
 	// Initialisation variables
 	// #############################
 	$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+	$id_0 = $id;
 	//$bouton = '';
+	$retour = isset($_GET['retour']) ? $_GET['retour'] : (isset($_POST['retour']) ? $_POST['retour'] : 'liste_affectations.php');
 	$avis = '';
-	$retour = 'index.php';
-	
-	// Vérification des permissions
-	if ($_SERVER['REQUEST_METHOD'] !== 'GET' or !$isLoggedIn or ($id != $_SESSION['controle_en_cours'])) {
-		die('Erreur : Permissions insuffisantes');
-	}
 	
 	// #############################
 	// Opérations base de données
@@ -40,7 +36,7 @@
 		
 		// Si ID non fourni, on récupère le max
 		if ($id === 0) {
-			$stmt = $connection->prepare("SELECT MAX(id) AS max_id FROM controle");
+			$stmt = $connection->prepare("SELECT MAX(id) AS max_id FROM affectation");
 			$stmt->execute();
 			$result = $stmt->get_result();
 			$idmax = $result->fetch_assoc();
@@ -48,44 +44,34 @@
 		}
 		
 		// Suppression
-		$stmt1 = $connection->prepare("DELETE FROM controle WHERE id = ?");
+		if ($id > 1) {
+			$stmt1 = $connection->prepare("DELETE FROM affectation WHERE id = ?");
 		$stmt1->bind_param("i", $id);
 		$stmt1->execute();
+		}
 		
 		if ($connection->affected_rows > 0) {
-			$avis = "Le contrôle a été supprimé avec succès";
-			$_SESSION['controle_en_cours'] = 0;
-			$_SESSION['epi_controles'] = '';
-			$sql = "UPDATE utilisateur SET
-			controle_en_cours = 0
-			WHERE username = ?";
-			
-			$stmt2 = $connection->prepare($sql);
-			if (!$stmt2) {
-				throw new Exception("Erreur de préparation de la requête: " . $connection->error);
-			}
-			
-			// 6. EXECUTION DE LA REQUETE
-			$stmt2->bind_param(
-				"s",
-				$utilisateur
-			);
-			
-			$stmt2->execute();
+			$avis = "Le affectation a été supprimé avec succès";
+			$succes = true;
 			
 			// Réinitialisation auto_increment si table vide
-			if ($id === 0) {
-				$connection->query("ALTER TABLE controle AUTO_INCREMENT = 1");
+			if (isset($_GET['edit'])) {
+				$connection->query("ALTER TABLE affectation AUTO_INCREMENT = 1");
 			}
-		} else {
-			$avis = "Aucun enregistrement trouvé à supprimer";
+		} elseif ($id < 2) {
+			$avis = "HS ou En Attente insupprimables";
+			$succes = false;
+		}
+		else {
+			$avis = "Aucun affectation trouvé à supprimer";
+			$succes = false;
 		}
 		
 		
 		$connection->close();
 	} catch (mysqli_sql_exception $e) {
 		error_log("[" . date('Y-m-d H:i:s') . "] Erreur DB: " . $e->getMessage() . " dans " . __FILE__);
-		$avis = "Une erreur technique est survenue lors de la suppression";
+		$avis = "Une erreur technique est survenue lors de la suppression du affectation";
 	}
 	
 ?>
@@ -102,15 +88,15 @@
 		<main>
 			<?php include __DIR__.'/includes/en_tete.php';?>
 			<?php if ($avis): ?>
-			<div class="alert <?= strpos($avis, 'Attention') !== false ? 'alert-warning' : 'alert-info' ?>">
+			<div class="alert <?= $succes ? 'alert-success' : 'alert-error' ?>">
 				<?= htmlspecialchars($avis) ?>
 			</div>
 			<?php endif; ?>
 			<div>
 				<p>
-					<form action="<?= $retour ?>" >
+					<form action=<?=$retour?> >
 						<input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
-						<input type="submit" class="btn return-btn" name="retour" value="Retour">
+						<input type="submit" class="btn btn-primary" name="retour" value="Retour">
 					</form>
 				</p>
 			</div>

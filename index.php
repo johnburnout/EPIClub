@@ -120,10 +120,10 @@
 						</button>
 					</form>
 					<p></p>
-					<form action="liste_lieux.php" method="post">
+					<form action="liste_affectations.php" method="post">
 						<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
 						<button type="submit" class="btn btn-secondary btn-block">
-							Gestion des lieux
+							Gestion des affectations
 						</button>
 					</form>
 				</div>

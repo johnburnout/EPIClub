@@ -50,7 +50,7 @@
             // Requête préparée
             $sql = "INSERT INTO matos (
                 reference, libelle, categorie_id, fabricant_id, 
-                photo, lieu_id, nb_elements_initial, nb_elements, 
+                photo, affectation_id, nb_elements_initial, nb_elements, 
                 facture_id, date_debut, date_max, remarques
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $connection->prepare($sql);
@@ -64,7 +64,7 @@
             $categorie_id = (int)$donnees['categorie_id'];
             $fabricant_id = (int)$donnees['fabricant_id'];
             $photo = $donnees['photo'] ?? null;
-            $lieu_id = isset($donnees['lieu_id']) ? (int)$donnees['lieu_id'] : 1;
+            $affectation_id = isset($donnees['affectation_id']) ? (int)$donnees['affectation_id'] : 1;
             $nb_elements_initial = isset($donnees['nb_elements_initial']) ? (int)$donnees['nb_elements_initial'] : 1;
             $nb_elements = isset($donnees['nb_elements']) ? (int)$donnees['nb_elements'] : 1;
             $facture_id = isset($_SESSION['facture_en_saisie']) ? intval($_SESSION['facture_en_saisie']) : null;
@@ -79,7 +79,7 @@
                 $categorie_id,
                 $fabricant_id,
                 $photo,
-                $lieu_id,
+                $affectation_id,
                 $nb_elements_initial,
                 $nb_elements,
                 $facture_id,

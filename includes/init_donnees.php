@@ -11,8 +11,8 @@
 			'nb_elements_initial' => 1,
 			'date_max' => null,
 			'date_debut' => date('Ymd'),
-			'verification_id' => 1,
-			'date_verification' => date('Ymd',strtotime(date('Ymd').' +10 years')),
+			'controle_id' => 1,
+			'date_controle' => date('Ymd',strtotime(date('Ymd').' +10 years')),
 			'remarques' => '',
 			'photo' => 'null.jpeg'
 		);

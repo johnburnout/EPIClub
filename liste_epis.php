@@ -50,7 +50,7 @@
 		'long' => 20,			// Nombre de lignes par page
 		'nblignes' => 20,		// Nombre total de lignes
 		'id' => 1,			   // ID par défaut
-		'lieu_id' => 0,		  // Filtre lieu (0 = tous)
+		'affectation_id' => 0,		  // Filtre affectation (0 = tous)
 		'cat_id' => 0,		   // Filtre catégorie (0 = tous)
 		'tri' => 'id',		   // Champ de tri par défaut
 		'est_en_service' => '1'  // Filtre "en service" par défaut (1 = oui)
@@ -64,7 +64,7 @@
 			$params[$key] = sanitizeInput($_POST[$key], is_numeric($default) ? 'int' : 'string');
 			} else {
 				// Utilise la valeur par défaut si le paramètre n'est pas fourni
-				$params[$key] = $default;  // Correction ici: $default au lieu de $default[$key]
+				$params[$key] = $default;  // Correction ici: $default au affectation de $default[$key]
 			}
 				}
 				// Gestion des cookies pour conserver les préférences utilisateur
@@ -83,10 +83,10 @@
 				// PRÉPARATION DES LISTES D'OPTIONS
 				// ##############################################
 				
-				// Génère les listes déroulantes pour les lieux et catégories
+				// Génère les listes déroulantes pour les affectations et catégories
 				// Note: liste_options() est probablement définie dans common.php
-				$listeLieux = liste_options(['libelles' => 'lieu', 'id' => $params['lieu_id']]);
-				$listeLieux[0] = "<option value='*'>Tous</option>".$listeLieux[0];
+				$listeaffectations = liste_options(['libelles' => 'affectation', 'id' => $params['affectation_id']]);
+				$listeaffectations[0] = "<option value='*'>Tous</option>".$listeaffectations[0];
 				$listeCategories = liste_options(['libelles' => 'categorie', 'id' => $params['cat_id']]);
 				$listeCategories[0] = "<option value='*'>Toutes</option>".$listeCategories[0];
 				
@@ -106,9 +106,9 @@
 				$types = '';		 // Types des paramètres (i = integer, s = string)
 				
 				// Construction dynamique de la clause WHERE
-				if ($params['lieu_id'] > 0) {
-					$whereClauses[] = "lieu_id = ?";
-					$queryParams[] = $params['lieu_id'];
+				if ($params['affectation_id'] > 0) {
+					$whereClauses[] = "affectation_id = ?";
+					$queryParams[] = $params['affectation_id'];
 					$types .= 'i';  // Type integer
 				}
 				
@@ -150,13 +150,13 @@
 				$queryParams[] = (int)$params['long'];
 				
 				// Validation du champ de tri (whitelist)
-				$allowedSort = ['id', 'ref', 'lieu_id', 'date_verification', 'fabricant'];
+				$allowedSort = ['id', 'ref', 'affectation_id', 'date_controle', 'fabricant'];
 				$sort = in_array($params['tri'], $allowedSort) ? $params['tri'] : 'id';
 				
 				// Exécution de la requête principale
 				try {
 					$sql = "SELECT id, ref, libelle, fabricant, categorie, categorie_id, 
-					lieu, lieu_id, nb_elements, date_verification, date_max
+					affectation, affectation_id, nb_elements, date_controle, date_max
 					FROM liste $where ORDER BY $sort LIMIT ?, ?";
 					
 					$stmt = $connection->prepare($sql);
@@ -205,15 +205,15 @@
 						</thead>
 						<tbody>
 							<tr>
-								<td>Lieu</td>
+								<td>affectation</td>
 								<td>Catégorie</td>
 								<td>En service</td>
 								<td rowspan="2">
 									<select name="tri">
 										<option value="id" <?= $sort === 'id' ? 'selected' : '' ?>>Identifiant</option>
 										<option value="ref" <?= $sort === 'ref' ? 'selected' : '' ?>>Référence</option>
-										<option value="lieu_id" <?= $sort === 'lieu_id' ? 'selected' : '' ?>>Lieu</option>
-										<option value="date_verification" <?= $sort === 'date_verification' ? 'selected' : '' ?>>Date de vérification</option>
+										<option value="affectation_id" <?= $sort === 'affectation_id' ? 'selected' : '' ?>>affectation</option>
+										<option value="date_controle" <?= $sort === 'date_controle' ? 'selected' : '' ?>>Date de vérification</option>
 										<option value="fabricant" <?= $sort === 'fabricant' ? 'selected' : '' ?>>Fabricant</option>
 									</select>
 								</td>
@@ -223,8 +223,8 @@
 							</tr>
 							<tr>
 								<td>
-									<select name="lieu_id">
-										<?= $listeLieux[0] ?>
+									<select name="affectation_id">
+										<?= $listeaffectations[0] ?>
 									</select>
 								</td>
 								<td>
@@ -264,7 +264,7 @@
 								<th>Libellé</th>
 								<th>Fabricant</th>
 								<th>Cat</th>
-								<th>Lieu</th>
+								<th>affectation</th>
 								<th>Nb éléments</th>
 								<th>Date Vérif</th>
 								<th>Date Max</th>
@@ -278,9 +278,9 @@
 								<td><?= htmlspecialchars($value['libelle']) ?></td>
 								<td><?= htmlspecialchars($value['fabricant']) ?></td>
 								<td><?= htmlspecialchars($value['categorie']) ?></td>
-								<td><?= htmlspecialchars($value['lieu']) ?></td>
+								<td><?= htmlspecialchars($value['affectation']) ?></td>
 								<td><?= htmlspecialchars($value['nb_elements']) ?></td>
-								<td><?= htmlspecialchars($value['date_verification']) ?></td>
+								<td><?= htmlspecialchars($value['date_controle']) ?></td>
 								<td><?= htmlspecialchars($value['date_max']) ?></td>
 							</tr>
 							<?php endforeach; ?>
@@ -321,7 +321,7 @@
 									<input type="submit" name="envoyer" value="Fiche à imprimer" class="btn btn-secondary"/>
 									<input type="hidden" name="tri" value="<?= $params['tri'] ;?>" />  
 									<input type="hidden" name="cat_id" value="<?= $params['cat_id'] ;?>" />  
-									<input type="hidden" name="lieu_id" value="<?= $params['lieu_id'] ;?>" />  
+									<input type="hidden" name="affectation_id" value="<?= $params['affectation_id'] ;?>" />  
 									<input type="hidden" name="debut" value="<?= $params['debut'] ;?>" />  
 									<input type="hidden" name="long" value="<?= $params['long'] ;?>" />  
 									<input type="hidden" name="csrf_token" value="<?= $csrf_token ?>" />

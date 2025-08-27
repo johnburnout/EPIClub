@@ -4,7 +4,7 @@
 * Met à jour une fiche de contrôle EPI dans la base de données
 * 
 * @param array $donnees Tableau associatif des données à mettre à jour contenant :
-*               - 'libelle' : string nom du lieu (requis)
+*               - 'libelle' : string nom du affectation (requis)
 * @param int $id ID de l'utilisateur à modifier
 * @param mysqli|null $connection Connexion MySQLi existante (optionnelle)
 * 
@@ -14,7 +14,7 @@
 *     'error' => string         // Message d'erreur le cas échéant
 * ]
 */
-function mise_a_jour_lieu(array $donnees, int $id, ?mysqli $connection = null): array {
+function mise_a_jour_affectation(array $donnees, int $id, ?mysqli $connection = null): array {
     // 1. VALIDATION DES ENTREES
     if ($id <= 0) {
         return [
@@ -64,7 +64,7 @@ function mise_a_jour_lieu(array $donnees, int $id, ?mysqli $connection = null): 
         }
         
         // 5. VERIFICATION DE L'UNICITE DU LIBELLE
-        $checkSql = "SELECT id FROM lieu WHERE libelle = ? AND id != ?";
+        $checkSql = "SELECT id FROM affectation WHERE libelle = ? AND id != ?";
         $checkStmt = $connection->prepare($checkSql);
         
         if (!$checkStmt) {
@@ -79,12 +79,12 @@ function mise_a_jour_lieu(array $donnees, int $id, ?mysqli $connection = null): 
             return [
                 'success' => false,
                 'affected_rows' => 0,
-                'error' => 'Ce libellé existe déjà pour un autre lieu'
+                'error' => 'Ce libellé existe déjà pour un autre affectation'
             ];
         }
         
         // 6. PREPARATION DE LA REQUETE DE MISE A JOUR
-        $sql = "UPDATE lieu SET
+        $sql = "UPDATE affectation SET
                 libelle = ?
                 WHERE id = ?";
         
@@ -115,14 +115,14 @@ function mise_a_jour_lieu(array $donnees, int $id, ?mysqli $connection = null): 
         ];
         
     } catch (mysqli_sql_exception $e) {
-        error_log("Erreur MySQL lors de la mise à jour lieu $id: " . $e->getMessage());
+        error_log("Erreur MySQL lors de la mise à jour affectation $id: " . $e->getMessage());
         return [
             'success' => false,
             'affected_rows' => 0,
             'error' => 'Erreur de base de données'
         ];
     } catch (Exception $e) {
-        error_log("Erreur lors de la mise à jour lieu $id: " . $e->getMessage());
+        error_log("Erreur lors de la mise à jour affectation $id: " . $e->getMessage());
         return [
             'success' => false,
             'affected_rows' => 0,

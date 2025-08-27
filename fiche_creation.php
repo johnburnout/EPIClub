@@ -35,7 +35,7 @@
 		'reference' => date('y').strval(rand(100000,999999)),
 		'libelle' => '',
 		'photo' => 'null.jpeg',
-		'lieu_id' => 1,
+		'affectation_id' => 1,
 		'categorie_id' => 1,
 		'date_debut' => date('Y-m-d'),
 		'fabricant_id' => 1,
@@ -49,7 +49,7 @@
 	
 	foreach ($defaults as $key => $value) {
 		$donnees[$key] = htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?? $value;
-		if (in_array($key, ['id', 'facture_id', 'lieu_id', 'categorie_id', 'fabricant_id', 'nb_elements_initial', 'appel_liste'])) {
+		if (in_array($key, ['id', 'facture_id', 'affectation_id', 'categorie_id', 'fabricant_id', 'nb_elements_initial', 'appel_liste'])) {
 			$donnees[$key] = (int)$donnees[$key];
 		}
 	}
@@ -81,12 +81,12 @@
 				// Récupération des listes d'options 
 				// #############################
 				
-				$current_lieu_id = $donnees['lieu_id'] ?? 0;
+				$current_affectation_id = $donnees['affectation_id'] ?? 0;
 				$current_categorie_id = $donnees['categorie_id'] ?? 0;
 				$current_fabricant_id = $donnees['fabricant_id'] ?? 0;
-				$listeLieux = liste_options(['libelles' => 'lieu', 'id' => $current_lieu_id]);
-				foreach ($listeLieux[1] as $key => $value) {
-					$lieux[$value['id']] = $value['libelle'];
+				$listeaffectations = liste_options(['libelles' => 'affectation', 'id' => $current_affectation_id]);
+				foreach ($listeaffectations[1] as $key => $value) {
+					$affectations[$value['id']] = $value['libelle'];
 				}
 				$listeCategories = liste_options(['libelles' => 'categorie', 'id' => $current_categorie_id]);
 				foreach ($listeCategories[1] as $key => $value) {
@@ -101,7 +101,7 @@
 						$donnees[$key] = isset($_POST[$key]) ? $_POST[$key] : $donnees[$key];
 					}
 					$donnees['categorie'] = $categories[$donnees['categorie_id']];
-					$donnees['lieu'] = $lieux[$donnees['lieu_id']];
+					$donnees['affectation'] = $affectations[$donnees['affectation_id']];
 					$donnees['fabricant'] = $fabricants[$donnees['fabricant_id']];
 					$valid = mise_a_jour_fiche($donnees);
 					if (!$valid['success']) {
@@ -166,14 +166,14 @@
 		// Récupération des listes d'options 
 		// #############################
 		$current_facture_id = $donnees['facture_id'] ?? 0;
-		$current_lieu_id = $donnees['lieu_id'] ?? 0;
+		$current_affectation_id = $donnees['affectation_id'] ?? 0;
 		$current_categorie_id = $donnees['categorie_id'] ?? 0;
 		$current_fabricant_id = $donnees['fabricant_id'] ?? 0;
 		
 		$listeFactures = liste_options(['libelles' => 'facture', 'id' => $current_facture_id]);
-		$listeLieux = liste_options(['libelles' => 'lieu', 'id' => $current_lieu_id]);
-		foreach ($listeLieux[1] as $key => $value) {
-			$lieux[$value['id']] = $value['libelle'];
+		$listeaffectations = liste_options(['libelles' => 'affectation', 'id' => $current_affectation_id]);
+		foreach ($listeaffectations[1] as $key => $value) {
+			$affectations[$value['id']] = $value['libelle'];
 		}
 		$listeCategories = liste_options(['libelles' => 'categorie', 'id' => $current_categorie_id]);
 		foreach ($listeCategories[1] as $key => $value) {
@@ -221,8 +221,8 @@
 	// #############################
 	
 	$viewData = [
-		'lieu_id' => sprintf('<select name="lieu_id" required>%s</select>', $listeLieux[0] ?? ''),
-		'lieu' => htmlspecialchars($lieux[$current_lieu_id] ?? '', ENT_QUOTES, 'UTF-8'),
+		'affectation_id' => sprintf('<select name="affectation_id" required>%s</select>', $listeaffectations[0] ?? ''),
+		'affectation' => htmlspecialchars($affectations[$current_affectation_id] ?? '', ENT_QUOTES, 'UTF-8'),
 		'categorie_id' => sprintf('<select name="categorie_id" required>%s</select>', $listeCategories[0] ?? ''),
 		'categorie' => htmlspecialchars($categories[$current_categorie_id] ?? '', ENT_QUOTES, 'UTF-8'),
 		'fabricant_id' => sprintf('<select name="fabricant_id" required>%s</select>', $listeFabricants[0] ?? ''),
@@ -265,7 +265,7 @@
 				<input type="hidden" name="id" value="<?= $viewData['id'] ?>">
 				<input type="hidden" name="categorie" value="<?= $viewData['categorie'] ?>">
 				<input type="hidden" name="fabricant" value="<?= $viewData['fabricant'] ?>">
-				<input type="hidden" name="lieu" value="<?= $viewData['lieu'] ?>">
+				<input type="hidden" name="affectation" value="<?= $viewData['affectation'] ?>">
 				<input type="hidden" name="facture" value="<?= $viewData['facture'] ?>">
 				<input type="hidden" name="retour" value="<?= $viewData['retour'] ?>">
 				<input type="hidden" name="appel_liste" value="0">
@@ -282,7 +282,7 @@
 								<input type="text" name="reference" required value="<?= $viewData['reference'] ?>">
 							</td>
 							<td rowspan="7">
-								<img src="images/<?= $viewData['photo'] ?>" class="epi-photo" alt="Photo du matériel" width="400">
+								<img src="utilisateur/images/<?= $viewData['photo'] ?>" class="epi-photo" alt="Photo du matériel" width="400">
 								<br>
 								<input type="file" class="btn btn-secondary" name="monfichier" accept="image/jpeg,image/png,image/gif">
 							</td>
@@ -295,8 +295,8 @@
 						</tr>
 						<tr>
 							<td>
-								<label for="lieu_id">Lieu :</label>
-								<?= $viewData['lieu_id'] ?>
+								<label for="affectation_id">Affectation :</label>
+								<?= $viewData['affectation_id'] ?>
 							</td>
 						</tr>
 						<tr>

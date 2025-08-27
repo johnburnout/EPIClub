@@ -2,14 +2,14 @@
     /**
     * Lit une fiche spécifique depuis la base de données
     * 
-    * @param int $id Identifiant du lieu à récupérer
+    * @param int $id Identifiant du affectation à récupérer
     * @return array [
     *     'donnees' => array|null, // Données de la fiche ou null si non trouvée
     *     'success' => bool,       // Statut de l'opération
     *     'error' => string        // Message d'erreur le cas échéant
     * ]
     */
-    function lecture_lieu(int $id, ?mysqli $connection = null): array {
+    function lecture_affectation(int $id, ?mysqli $connection = null): array {
         // Validation des paramètres
         if ($id <= 0) {  // Changement à <= 0 car un ID doit être positif
             return ['donnees' => null, 'success' => false, 'error' => 'ID invalide'];
@@ -32,7 +32,7 @@
             $sql = "SELECT 
             id,
             libelle
-            FROM lieu 
+            FROM affectation 
             WHERE id = ?
             LIMIT 1";  // Changement de ORDER BY à LIMIT 1 car on cherche un enregistrement spécifique
             
@@ -54,7 +54,7 @@
                 return [
                     'donnees' => null,
                     'success' => false,
-                    'error' => 'Aucun lieu trouvé'
+                    'error' => 'Aucun affectation trouvé'
                 ];
             }
             

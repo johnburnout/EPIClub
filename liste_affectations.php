@@ -1,10 +1,9 @@
 <?php
 	
-	require __DIR__.'/config.php';		 
+	require __DIR__.'/config.php';
 	require __DIR__."/includes/debug.php";
-	require __DIR__."/includes/session.php";
+	require __DIR__."/includes/session.php";  
 	require __DIR__."/includes/fonctions_edition.php";
-	
 	
 	// Vérification des permissions
 	// Validation CSRF
@@ -18,7 +17,7 @@
 	}
 	
 	if (isset($_POST['id'])) {
-		header('Location: fiche_utilisateur.php?id='.$_POST['id'].'&action='.$_POST['action'].'&retour=liste_utilisateurs.php&csrf_token='.$csrf_token);
+		header('Location: fiche_affectation.php?id='.$_POST['id'].'&action='.$_POST['action'].'&retour=liste_affectations.php&csrf_token='.$csrf_token);
 		exit();
 	};
 	
@@ -47,8 +46,7 @@
 	// Valeurs par défaut pour les paramètres
 	$defaults = [
 		'id' => 1,		   // Filtre catégorie (0 = tous)
-		'tri' => 'username',		   // Champ de tri par défaut
-		'est_actif' => '1'  // Filtre "actif" par défaut (1 = oui)
+		'tri' => 'libelle',		   // Champ de tri par défaut
 	];
 	
 	// Traitement des paramètres de requête
@@ -62,6 +60,7 @@
 				$params[$key] = $default;
 			}
 				}
+				
 				// ##############################################
 				// CONSTRUCTION DE LA REQUÊTE SQL SÉCURISÉE
 				// ##############################################
@@ -70,24 +69,17 @@
 				$queryParams = [];   // Paramètres pour la requête préparée
 				$types = '';		 // Types des paramètres (i = integer, s = string)
 				
-				// Construction dynamique de la clause WHERE
-				
-				// Filtre "en service" (toujours présent)
-				$whereClauses[] = "est_actif = ?";
-				$queryParams[] = (int)$params['est_actif'];
-				$types .= 'i';  // Type string
-				
 				// Combinaison des conditions WHERE
 				$where = empty($whereClauses) ? '' : 'WHERE ' . implode(' AND ', $whereClauses);
 				
 				// Validation du champ de tri (whitelist)
-				$allowedSort = ['id', 'username', 'role'];
-				$sort = in_array($params['tri'], $allowedSort) ? $params['tri'] : 'username';
+				$allowedSort = ['id', 'libelle'];
+				$sort = in_array($params['tri'], $allowedSort) ? $params['tri'] : 'libelle';
 				
 				// Exécution de la requête principale
 				try {
-					$sql = "SELECT id, username, role, email, est_actif
-					FROM utilisateur $where ORDER BY $sort";
+					$sql = "SELECT id, libelle
+					FROM affectation $where ORDER BY $sort";
 					
 					$stmt = $connection->prepare($sql);
 					
@@ -129,9 +121,8 @@
 						<tr>
 							<td rowspan="1">
 								<select name="tri">
-									<option value="id" <?= $sort === 'id' ? 'selected' : '' ?>>Id d'utilisateur</option>
-									<option value="username" <?= $sort === 'username' ? 'selected' : '' ?>>Nom d'utilisateur</option>
-									<option value="role" <?= $sort === 'role' ? 'selected' : '' ?>>affectation</option>
+									<option value="id" <?= $sort === 'id' ? 'selected' : '' ?>>Id de l'affectation</option>
+									<option value="libelle" <?= $sort === 'libelle' ? 'selected' : '' ?>>Nom de l'affectation</option>
 								</select>
 							</td>:
 						</tr>
@@ -143,7 +134,7 @@
 			</form>
 			
 			<!-- Affichage des résultats -->
-			<?php if ($result && count($result) > 0): ?>
+			<?php if ($result): ?>
 			<hr>
 			<h3>Liste</h3>
 			
@@ -152,33 +143,27 @@
 					<thead>
 						<tr>
 							<th>#</th>
-							<th>Utilisateur</th>
-							<th>Role</th>
-							<th>Email</th>
-							<th>Actif</th>
+							<th>affectation</th>
 						</tr>
 					</thead>
 					<tbody>
 						<?php foreach ($result as $key => $value): ?>
 						<tr>
 							<td><input type="radio" name="id" value="<?= $value['id'] ?>"></td>
-							<td><?= htmlspecialchars($value['username'] ?? '') ?></td>
-							<td><?= htmlspecialchars($value['role'] ?? '') ?></td>
-							<td><?= htmlspecialchars($value['email'] ?? '') ?></td>
-							<td><?= htmlspecialchars($value['est_actif'] ?? '') ?></td>
+							<td><?= htmlspecialchars($value['libelle'] ?? '') ?></td>
 						</tr>
 						<?php endforeach; ?>
 					</tbody>
 				</table>
 				
 				<p align="right">
-					<input type="hidden" name="action" value="affichage">
+					<input type="hidden" name="action" value="maj">
 					<input type="hidden" name="csrf_token" value="<?= $csrf_token ?>" />
-					<input type="hidden" name="retour" value="fiche_utilisateurs.php">
-					<input type="submit" class="btn btn-primary btn-block" name="submit" value="Afficher l'utilisateur">
+					<input type="hidden" name="retour" value="fiche_affectation.php">
+					<input type="submit" class="btn btn-primary btn-block" name="submit" value="Afficher le affectation">
 				</p>
 			</form>
-			<form method="post" action="fiche_utilisateur.php">
+			<form method="post" action="fiche_affectation.php">
 				<input type="hidden" name="action" value="creation" />
 				<input type="hidden" name="csrf_token" value="<?= $csrf_token ?>" />
 				<input type="hidden" name="id" value="0" />
@@ -190,13 +175,13 @@
 							</a>
 						</td>
 						<td align="left">
-							<input type="submit" name="creation" value="Nouvel utilisateur" class="btn btn-primary"/>
+							<input type="submit" name="creation" value="Nouveau affectation" class="btn btn-primary"/>
 						</td>
 					</tr>
 				</table>
 			</form>
 			<?php else: ?>
-			<p>Aucun utilisateur trouvé !</p>
+			<p>Aucun affectation trouvé !</p>
 			<?php endif; ?>
 		</main>
 		<footer>

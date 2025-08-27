@@ -61,7 +61,7 @@
 		'long' => 20,
 		'nblignes' => 20,
 		'id' => 1,
-		'lieu_id' => 0,
+		'affectation_id' => 0,
 		'cat_id' => 0,
 		'tri' => 'id'
 	];
@@ -72,7 +72,7 @@
 		$input = $_POST[$key] ?? $_SESSION[$key] ?? $default;
 			$params[$key] = sanitizeInput($input, is_numeric($default) ? 'int' : 'string');
 			}
-				$params['verification_id'] = intval($_SESSION['controle_en_cours']);
+				$params['controle_id'] = intval($_SESSION['controle_en_cours']);
 				// Gestion des cookies sécurisés
 				if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					$_SESSION['debut'] = $params['debut'];
@@ -83,10 +83,10 @@
 				// #############################
 				// Création des listes d'options sécurisées
 				// #############################
-				$current_lieu_id = $params['lieu_id'];
+				$current_affectation_id = $params['affectation_id'];
 				$current_categorie_id = $params['cat_id'];
 				
-				$listeLieux = liste_options(['libelles' => 'lieu', 'id' => $current_lieu_id]);
+				$listeaffectations = liste_options(['libelles' => 'affectation', 'id' => $current_affectation_id]);
 				$listeCategories = liste_options(['libelles' => 'categorie', 'id' => $current_categorie_id]);
 				
 				// ###################################
@@ -96,9 +96,9 @@
 				$queryParams = [];
 				$types = '';
 				
-				if ($params['lieu_id'] > 0) {
-					$whereClauses[] = "lieu_id = ?";
-					$queryParams[] = $params['lieu_id'];
+				if ($params['affectation_id'] > 0) {
+					$whereClauses[] = "affectation_id = ?";
+					$queryParams[] = $params['affectation_id'];
 					$types .= 'i';
 				}
 				
@@ -108,9 +108,9 @@
 					$types .= 'i';
 				}
 				
-				if ($params['verification_id'] > 0) {
-					$whereClauses[] = "verification_id != ?";
-					$queryParams[] = $params['verification_id'];
+				if ($params['controle_id'] > 0) {
+					$whereClauses[] = "controle_id != ?";
+					$queryParams[] = $params['controle_id'];
 					$types .= 'i';
 				}
 				
@@ -146,7 +146,7 @@
 				
 				$where = implode(' AND ', $whereClauses);
 				// Validation du champ de tri
-				$allowedSort = ['id', 'ref', 'lieu_id', 'date_verification', 'fabricant'];
+				$allowedSort = ['id', 'ref', 'affectation_id', 'date_controle', 'fabricant'];
 				$sort = in_array($params['tri'], $allowedSort) ? $params['tri'] : 'id';
 				// ###########################
 				// Recherche dans la base avec pagination sécurisée
@@ -154,7 +154,7 @@
 				try {
 					// Requête SQL avec un seul LIMIT
 					$sql = "SELECT id, ref, libelle, fabricant, categorie, categorie_id, 
-					lieu, lieu_id, nb_elements, date_verification, date_max
+					affectation, affectation_id, nb_elements, date_controle, date_max
 					FROM liste 
 					WHERE $where 
 					ORDER BY $sort 
@@ -197,14 +197,14 @@
 						</thead>
 						<tbody>
 							<tr>
-								<td>Lieu</td>
+								<td>affectation</td>
 								<td>Catégorie</td>
 								<td rowspan="2">
 									<select name="tri">
 										<option value="id" <?= $sort === 'id' ? 'selected' : '' ?>>Identifiant</option>
 										<option value="ref" <?= $sort === 'ref' ? 'selected' : '' ?>>Référence</option>
-										<option value="lieu_id" <?= $sort === 'lieu_id' ? 'selected' : '' ?>>Lieu</option>
-										<option value="date_verification" <?= $sort === 'date_verification' ? 'selected' : '' ?>>Date de vérification</option>
+										<option value="affectation_id" <?= $sort === 'affectation_id' ? 'selected' : '' ?>>affectation</option>
+										<option value="date_controle" <?= $sort === 'date_controle' ? 'selected' : '' ?>>Date de vérification</option>
 										<option value="fabricant" <?= $sort === 'fabricant' ? 'selected' : '' ?>>Fabricant</option>
 									</select>
 								</td>
@@ -214,8 +214,8 @@
 							</tr>
 							<tr>
 								<td>
-									<select name="lieu_id">
-										<?= $listeLieux[0] ?? '' ?>
+									<select name="affectation_id">
+										<?= $listeaffectations[0] ?? '' ?>
 									</select>
 								</td>
 								<td>
@@ -246,7 +246,7 @@
 								<th>Libellé</th>
 								<th>Fabricant</th>
 								<th>Catégorie</th>
-								<th>Lieu</th>
+								<th>affectation</th>
 								<th>Quantité</th>
 								<th>Dernière vérif</th>
 								<th>Prochaine vérif</th>
@@ -260,9 +260,9 @@
 								<td><?= htmlspecialchars($row['libelle'], ENT_QUOTES, 'UTF-8') ?></td>
 								<td><?= htmlspecialchars($row['fabricant'], ENT_QUOTES, 'UTF-8') ?></td>
 								<td><?= htmlspecialchars($row['categorie'], ENT_QUOTES, 'UTF-8') ?></td>
-								<td><?= htmlspecialchars($row['lieu'], ENT_QUOTES, 'UTF-8') ?></td>
+								<td><?= htmlspecialchars($row['affectation'], ENT_QUOTES, 'UTF-8') ?></td>
 								<td><?= (int)$row['nb_elements'] ?></td>
-								<td><?= htmlspecialchars($row['date_verification'], ENT_QUOTES, 'UTF-8') ?></td>
+								<td><?= htmlspecialchars($row['date_controle'], ENT_QUOTES, 'UTF-8') ?></td>
 								<td><?= htmlspecialchars($row['date_max'], ENT_QUOTES, 'UTF-8') ?></td>
 							</tr>
 							<?php endforeach; ?>

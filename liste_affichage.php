@@ -41,7 +41,7 @@
 	$defaults = [
 		'debut' => (int)$_POST['debut'] ?? 1,			// Première ligne à afficher
 		'long' => (int)$_POST['long'] ?? 10,			// Nombre de lignes par page
-		'lieu_id' => (int)$_POST['lieu_id'] ?? 0,		  // Filtre lieu (0 = tous)
+		'affectation_id' => (int)$_POST['affectation_id'] ?? 0,		  // Filtre affectation (0 = tous)
 		'cat_id' => (int)$_POST['cat_id'] ?? 0,		   // Filtre catégorie (0 = tous)
 		'tri' => (string)$_POST['tri'] ?? 'id',		   // Champ de tri par défaut
 		'est_en_service' => 1  // Filtre "en service" par défaut (1 = oui)
@@ -73,9 +73,9 @@
 				$types = '';		 // Types des paramètres (i = integer, s = string)
 				
 				// Construction dynamique de la clause WHERE
-				if ($params['lieu_id'] > 0) {
-					$whereClauses[] = "lieu_id = ?";
-					$queryParams[] = $params['lieu_id'];
+				if ($params['affectation_id'] > 0) {
+					$whereClauses[] = "affectation_id = ?";
+					$queryParams[] = $params['affectation_id'];
 					$types .= 'i';  // Type integer
 				}
 				
@@ -96,13 +96,13 @@
 				$where = empty($whereClauses) ? '' : 'WHERE ' . implode(' AND ', $whereClauses);
 				
 				// Validation du champ de tri (whitelist)
-				$allowedSort = ['id', 'ref', 'lieu_id', 'date_verification', 'fabricant'];
+				$allowedSort = ['id', 'ref', 'affectation_id', 'date_controle', 'fabricant'];
 				$sort = in_array($params['tri'], $allowedSort) ? $params['tri'] : 'id';
 				
 				// Exécution de la requête principale
 				try {
 					$sql = "SELECT id, ref, libelle, fabricant, categorie, categorie_id, 
-					lieu, lieu_id, nb_elements, date_verification, date_max
+					affectation, affectation_id, nb_elements, date_controle, date_max
 					FROM liste $where ORDER BY $sort LIMIT ?, ?";
 					
 					$stmt = $connection->prepare($sql);
@@ -140,7 +140,7 @@
 						<td colspan="2">Référence : <?= htmlspecialchars($value['ref']) ?></td>
 						<td rowspan="5" style="width: 150px; padding: 5px; vertical-align: middle; text-align: center;">
 							<?php if (file_exists(__DIR__.'/utilisateur/qrcodes/qrcode'.$value['id'].'_300.png')): ?>
-							<img src="utilisateur/qrcodes/qrcode<?= htmlspecialchars($value['id']) ?>_300.png" 
+							<img src="qrcodes/qrcode<?= htmlspecialchars($value['id']) ?>_300.png" 
 								style="max-width: 100%; max-height: 150px; display: inline-block;"
 								alt="QR Code <?= htmlspecialchars($value['ref']) ?>"
 								title="QR Code pour <?= htmlspecialchars($value['libelle']) ?>">
@@ -153,7 +153,7 @@
 					</tr>
 					<tr>
 						<td style="vertical-align: middle;"><b><?= htmlspecialchars($value['libelle']) ?></b></td>
-						<td style="vertical-align: middle;">Lieu : <?= htmlspecialchars($value['lieu']) ?></td>
+						<td style="vertical-align: middle;">affectation : <?= htmlspecialchars($value['affectation']) ?></td>
 					</tr>
 					<tr>
 						<td style="vertical-align: middle;"><?= htmlspecialchars($value['fabricant']) ?></td>

@@ -32,13 +32,13 @@ function mise_a_jour_fiche(array $donnees, ?mysqli $connection = null): array {
 	
 	$champsOptionnels = [
 		'photo' => ['type' => 'string', 'max' => 255],
-		'lieu_id' => ['type' => 'integer'],
+		'affectation_id' => ['type' => 'integer'],
 		'date_debut' => ['type' => 'date'],
 		'nb_elements_initial' => ['type' => 'integer', 'min' => 1],
 		'nb_elements' => ['type' => 'integer', 'min' => 0],
 		'facture_id' => ['type' => 'integer'],
 		'remarques' => ['type' => 'string', 'max' => 1000],
-		'verification_id' => ['type' => 'integer'],
+		'controle_id' => ['type' => 'integer'],
 		'utilisateur' => ['type' => 'string', 'max' => 50]
 	];
 
@@ -102,7 +102,7 @@ function mise_a_jour_fiche(array $donnees, ?mysqli $connection = null): array {
 		categorie_id = ?,
 		fabricant_id = ?,
 		photo = ?,
-		lieu_id = ?,
+		affectation_id = ?,
 		date_debut = ?,
 		date_max = ?,
 		nb_elements_initial = ?,
@@ -110,7 +110,7 @@ function mise_a_jour_fiche(array $donnees, ?mysqli $connection = null): array {
 		facture_id = ?,
 		remarques = ?,
 		date_modification = NOW(),
-		verification_id = ?,
+		controle_id = ?,
 		utilisateur = ?
 		WHERE id = ?";
 		
@@ -125,14 +125,14 @@ function mise_a_jour_fiche(array $donnees, ?mysqli $connection = null): array {
 		$categorie_id = (int)$donnees['categorie_id'];
 		$fabricant_id = (int)$donnees['fabricant_id'];
 		$photo = $donnees['photo'] ?? null;
-		$lieu_id = isset($donnees['lieu_id']) ? (int)$donnees['lieu_id'] : null;
+		$affectation_id = isset($donnees['affectation_id']) ? (int)$donnees['affectation_id'] : null;
 		$dateDebut = date('Ymd', strtotime($donnees['date_debut']));
 		$dateMax = date('Ymd', strtotime($donnees['date_max']));
 		$nb_elements_initial = isset($donnees['nb_elements_initial']) ? (int)$donnees['nb_elements_initial'] : 1;
 		$nb_elements = isset($donnees['nb_elements']) ? (int)$donnees['nb_elements'] : $nb_elements_initial;
 		$facture_id = isset($donnees['facture_id']) ? (int)$donnees['facture_id'] : null;
 		$remarques = $donnees['remarques'] ?? null;
-		$verification_id = isset($donnees['verification_id']) ? (int)$donnees['verification_id'] : null;
+		$controle_id = isset($donnees['controle_id']) ? (int)$donnees['controle_id'] : null;
 		$utilisateur = $donnees['utilisateur'] ?? null;
 		$id = (int)$donnees['id'];
 		
@@ -144,14 +144,14 @@ function mise_a_jour_fiche(array $donnees, ?mysqli $connection = null): array {
 			$categorie_id,
 			$fabricant_id,
 			$photo,
-			$lieu_id,
+			$affectation_id,
 			$dateDebut,
 			$dateMax,
 			$nb_elements_initial,
 			$nb_elements,
 			$facture_id,
 			$remarques,
-			$verification_id,
+			$controle_id,
 			$utilisateur,
 			$id
 		);

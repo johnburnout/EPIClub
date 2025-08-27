@@ -194,7 +194,6 @@
 		'facture_id' => (int)$donnees['facture_id'],
 		'hasFichier' => !empty($donnees['fichier']) && file_exists(__DIR__.'/utilisateur/factures/' . $donnees['fichier'])
 	];
-	
 ?>
 
 
@@ -252,7 +251,13 @@
 							<td rowspan="<?= $viewData['hasFichier'] ? '1' : '1' ?>">
 								<?php if ($viewData['hasFichier']): ?>
 								<?php if (strtolower(pathinfo($donnees['fichier'], PATHINFO_EXTENSION)) === 'pdf'): ?>
-								<a href="utilisateur/factures/<?= htmlspecialchars($donnees['fichier']) ?>" target="_blank"><img src="assets/images/pdf.png" alt="Icône PDF" width="50px" height="auto"></a>
+								<div class="iframe-container">
+										<!-- Remplacez la valeur de src par l'URL de votre iframe -->
+										<iframe src="utilisateur/factures/<?= htmlspecialchars($donnees['fichier']) ?>" 
+											width="400" height="564" allowfullscreen>
+										</iframe>
+								</div>
+								<a href="utilisateur/factures/<?= htmlspecialchars($donnees['fichier']) ?>" target="_blank" class="btn"><img src="assets/images/pdf.png" alt="Icône PDF" width="25px" height="auto"> Ouvrir le pdf dans une nouvelle fenêtre</a>
 								<?php else: ?>
 								<img src="utilisateur/factures/<?= htmlspecialchars($donnees['fichier']) ?>" 
 									class="epi-photo" 
@@ -260,12 +265,13 @@
 									width="400">
 								<?php endif; ?>
 								<?php endif; ?>
+								<?php if ($isAdmin) : ?>
 								<input type='file' name='monfichier' accept='image/jpeg,image/png,image/gif, application/pdf'>
+								<?php endif; ?>
 							</td>
 						</tr>
 					</tbody>
 				</table>
-				
 				<div class="form-actions">
 					
 					<?php if ($enCours): ?>
@@ -277,10 +283,11 @@
 					<a href="<?= $retour ?>?csrf_token=<?= htmlspecialchars($csrf_token) ?>&id=<?= $id ?>" >
 						<input type="button" name="retour" value="Retour" class="btn return-btn"></a>
 					<?php endif; ?>
-					
+					<?php if ($isAdmin): ?>
 					<button type="submit" name="envoyer" class="btn btn-primary">
 						<?= ($enCours || ($_GET['edit'] == 'non')) ? 'Enregistrer les modifications' : 'Créer la facture' ?>
 					</button>
+					<?php endif; ?>
 					<a href="liste_facture.php?csrf_token=<?=$csrf_token?>&facture_id=<?=$facture_id?>&retour=<?=$retour?>&id=<?=$id?>">
 						<?php if ($enCours): ?>
 						<input type="button"  class="btn btn-primary" value="Saisir la facture" name="saisir_facture">
