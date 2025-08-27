@@ -124,7 +124,7 @@
     SELECT id, username, password, role, controle_en_cours, facture_en_saisie, dev 
     FROM utilisateur 
     WHERE username = ? 
-    AND is_active = 1
+    AND est_actif = 1
     LIMIT 1
     ");
                 $stmt->bind_param("s", $pseudo);

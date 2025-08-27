@@ -39,7 +39,7 @@
 						login : admin | mdp : admin
 					</p>
 					<p>
-						Version 0.9.2 (beta) en cours de test (22/08/2025).
+						Version 0.9.3 (beta) en cours de test (22/08/2025).
 					</p>
 					<p>
 						Pour rapporter des bugs ou obtenir une version d'essai, contactez <a href="mailto:jean@grimpe.fr">Jean Roussie</a>.
