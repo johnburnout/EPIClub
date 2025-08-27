@@ -176,8 +176,8 @@
 							<td>
 								<label for="role">Rôle :</label>
 								<select  name="role" id="role">
-									<option value="usager" <?= !$isAdmin ? "selected" : ""?> >Usager</option>
-									<option value="admin" <?= $isAdmin ? "selected" : ""?> >Administrateur</option>
+									<option value="usager" <?= $donnees['role']=='usager' ? "selected" : ""?> >Usager</option>
+									<option value="admin" <?= $donnees['role']=='admin' ? "selected" : ""?> >Administrateur</option>
 								</select>
 							</td>
 						</tr>

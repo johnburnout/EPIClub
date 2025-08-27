@@ -1,19 +1,16 @@
 <?php
     if ($isLoggedIn) { 
         $select = [];
-        if ($_SESSION['dev']) {
-            
-            $_SESSION['dev'] = (!isset($_SESSION['dev']) || empty($_SESSION['dev'])) ? 1 : 0;
+        if ($_SESSION['dev'] && (__DIR__.$_SERVER['PHP_SELF'] == __DIR__.$dossier_site.'/index.php')) {
             
             $select[] = '<form method="post">';
-            $select[] = '<input type="hidden" name="dev" value="'.($_SESSION['dev'] == "1" ? "0" : "1").'">';
-            $select[] = '<input type="submit" name="but" class="btn btn-secondary" value="'.($_SESSION['dev'] == "1" ? "Utilisation" : "Développement").'">';
+            $select[] = '<input type="hidden" name="dev" value="'.($_SESSION['debug'] == "1" ? "0" : "1").'">';
+            $select[] = '<input type="submit" name="but" class="btn btn-secondary" value="'.($_SESSION['debug'] == "1" ? "Utilisation" : "Développement").'">';
             $select[] = '<input type="hidden" name="csrf_token" value="'.$_SESSION['csrf_token'].'">';
             $select[] = '</form>';
             $choix_select = implode('', $select);
-            
             if (isset($_POST['dev'])) {
-                $_SESSION['dev'] = $_POST['dev'] ?? '1';
+                $_SESSION['debug'] = $_POST['dev'] ?? '1';
                 header("Refresh:0"); // Recharge la page pour prendre en compte le nouveau cookie
                 exit;
             }

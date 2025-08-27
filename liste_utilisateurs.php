@@ -131,7 +131,7 @@
 								<select name="tri">
 									<option value="id" <?= $sort === 'id' ? 'selected' : '' ?>>Id d'utilisateur</option>
 									<option value="username" <?= $sort === 'username' ? 'selected' : '' ?>>Nom d'utilisateur</option>
-									<option value="role" <?= $sort === 'role' ? 'selected' : '' ?>>affectation</option>
+									<option value="role" <?= $sort === 'role' ? 'selected' : '' ?>>Rôle</option>
 								</select>
 							</td>:
 						</tr>

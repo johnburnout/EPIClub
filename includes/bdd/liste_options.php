@@ -53,7 +53,6 @@ function liste_options(array $entree, ?mysqli $connection = null): array {
 				htmlspecialchars($item['libelle'], ENT_QUOTES)
 			);
 		}
-		
 		return [implode('', $options), $tableau, true, ''];
 		
 	} catch (mysqli_sql_exception $e) {

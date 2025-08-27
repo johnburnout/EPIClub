@@ -146,6 +146,7 @@
                         $_SESSION['controle_en_cours'] = $user['controle_en_cours'];
                         $_SESSION['facture_en_saisie'] = $user['facture_en_saisie'];
                         $_SESSION['dev'] = $user['dev'];
+                        $_SESSION['debug'] = 0;
                         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
                         
                         // Mise à jour last_login
