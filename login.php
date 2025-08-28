@@ -43,13 +43,13 @@
                 $mysqli->set_charset("utf8mb4");
                 
                 // Variables pour stocker les IDs max
-                $max_facture_id = 0;
+                $max_acquisition_id = 0;
                 $max_controle_id = 0;
                 
-                // Recherche de l'ID max avec facture_en_saisie = 1 pour cet utilisateur
+                // Recherche de l'ID max avec acquisition_en_saisie = 1 pour cet utilisateur
                 $max_id_stmt = $mysqli->prepare("
     SELECT MAX(id) as max_id 
-    FROM facture 
+    FROM acquisition 
     WHERE en_saisie = 1 
     AND utilisateur = ?
     ");
@@ -59,18 +59,18 @@
                 
                 if ($max_id_result->num_rows === 1) {
                     $max_id_data = $max_id_result->fetch_assoc();
-                    $max_facture_id = $max_id_data['max_id'] ?? 0;
+                    $max_acquisition_id = $max_id_data['max_id'] ?? 0;
                     
-                    if ($max_facture_id !== null) {
-                        // Mettre à jour les factures avec un ID inférieur
+                    if ($max_acquisition_id !== null) {
+                        // Mettre à jour les acquisitions avec un ID inférieur
                         $update_stmt = $mysqli->prepare("
-    UPDATE facture 
+    UPDATE acquisition 
     SET en_saisie = 0 
     WHERE utilisateur = ?
     AND id < ?
     AND en_saisie = 1
     ");
-                        $update_stmt->bind_param("si", $pseudo, $max_facture_id);
+                        $update_stmt->bind_param("si", $pseudo, $max_acquisition_id);
                         $update_stmt->execute();
                         $update_stmt->close();
                     }
@@ -111,17 +111,17 @@
                 // Mettre à jour la table utilisateur avec les IDs max trouvés (ou 0 si aucun)
                 $update_user_stmt = $mysqli->prepare("
     UPDATE utilisateur 
-    SET facture_en_saisie = ?, 
+    SET acquisition_en_saisie = ?, 
     controle_en_cours = ? 
     WHERE username = ?
     ");
-                $update_user_stmt->bind_param("iis", $max_facture_id, $max_controle_id, $pseudo);
+                $update_user_stmt->bind_param("iis", $max_acquisition_id, $max_controle_id, $pseudo);
                 $update_user_stmt->execute();
                 $update_user_stmt->close();
                 
                 // Vérification de l'utilisateur
                 $stmt = $mysqli->prepare("
-    SELECT id, username, password, role, controle_en_cours, facture_en_saisie, dev 
+    SELECT id, username, password, role, controle_en_cours, acquisition_en_saisie, dev 
     FROM utilisateur 
     WHERE username = ? 
     AND est_actif = 1
@@ -144,7 +144,7 @@
                         $_SESSION['ip_address'] = $_SERVER['REMOTE_ADDR'];
                         $_SESSION['user_agent'] = $_SERVER['HTTP_USER_AGENT'];
                         $_SESSION['controle_en_cours'] = $user['controle_en_cours'];
-                        $_SESSION['facture_en_saisie'] = $user['facture_en_saisie'];
+                        $_SESSION['acquisition_en_saisie'] = $user['acquisition_en_saisie'];
                         $_SESSION['dev'] = $user['dev'];
                         $_SESSION['debug'] = 0;
                         $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -168,8 +168,8 @@
                         if ($user['controle_en_cours'] > 0) {
                             $avis[] = "un contrôle en cours";
                         }
-                        if ($user['facture_en_saisie'] > 0) {
-                            $avis[] = "une facture en saisie";
+                        if ($user['acquisition_en_saisie'] > 0) {
+                            $avis[] = "une acquisition en saisie";
                         }
                         if (!empty($avis)) {
                             $message = "<br>Vous avez ".implode(" et ", $avis).".";

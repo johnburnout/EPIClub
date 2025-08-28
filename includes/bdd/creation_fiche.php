@@ -16,7 +16,7 @@
             'libelle' => 'string',
             'categorie_id' => 'integer',
             'fabricant_id' => 'integer',
-            'facture_id' => 'integer'
+            'acquisition_id' => 'integer'
         ];
         
         // 1. VALIDATION DE L'ENTRÉE
@@ -51,7 +51,7 @@
             $sql = "INSERT INTO matos (
                 reference, libelle, categorie_id, fabricant_id, 
                 photo, affectation_id, nb_elements_initial, nb_elements, 
-                facture_id, date_debut, date_max, remarques
+                acquisition_id, date_debut, date_max, remarques
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
             $stmt = $connection->prepare($sql);
             if (!$stmt) {
@@ -67,7 +67,7 @@
             $affectation_id = isset($donnees['affectation_id']) ? (int)$donnees['affectation_id'] : 1;
             $nb_elements_initial = isset($donnees['nb_elements_initial']) ? (int)$donnees['nb_elements_initial'] : 1;
             $nb_elements = isset($donnees['nb_elements']) ? (int)$donnees['nb_elements'] : 1;
-            $facture_id = isset($_SESSION['facture_en_saisie']) ? intval($_SESSION['facture_en_saisie']) : null;
+            $acquisition_id = isset($_SESSION['acquisition_en_saisie']) ? intval($_SESSION['acquisition_en_saisie']) : null;
             $dateDebut = !empty($donnees['date_debut']) ? date('Y-m-d', strtotime($donnees['date_debut'])) : null;
             $dateMax = !empty($donnees['date_max']) ? date('Y-m-d', strtotime($donnees['date_max'])) : null;
             $remarques = $donnees['remarques'] ?? null;
@@ -82,7 +82,7 @@
                 $affectation_id,
                 $nb_elements_initial,
                 $nb_elements,
-                $facture_id,
+                $acquisition_id,
                 $dateDebut,
                 $dateMax,
                 $remarques
@@ -95,19 +95,19 @@
             $id = $connection->insert_id;    
             $stmt->close();
             
-            $sql2 = "UPDATE matos SET facture_id = ? WHERE id = ?";
+            $sql2 = "UPDATE matos SET acquisition_id = ? WHERE id = ?";
             $stmt2 = $connection->prepare($sql);
             if (!$stmt2) {
                 throw new Exception("Erreur de préparation de la requête: " . $connection->error);
             }        
             $stmt2 = $connection->prepare($sql2);
-            $stmt2->bind_param('ii', $facture_id, $id);
+            $stmt2->bind_param('ii', $acquisition_id, $id);
             $stmt2->execute();
             $affectedRows = $stmt2->affected_rows;    
             $stmt2->close();
             // 7. VÉRIFICATION DU RÉSULTAT
             if ($affectedRows === -1) {
-                throw new Exception("Erreur lors de la mise à jour de facture_id");
+                throw new Exception("Erreur lors de la mise à jour de acquisition_id");
             }
             return ['id' => $id, 'success' => true, 'error' => ''];
             

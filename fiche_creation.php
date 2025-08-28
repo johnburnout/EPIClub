@@ -31,7 +31,7 @@
 	
 	$defaults = [
 		'id' => isset($_POST['id']) ? $_POST['id'] : 0,
-		'facture_id' => $_SESSION['facture_en_saisie'] ? intval($_SESSION['facture_en_saisie']) : 1,
+		'acquisition_id' => $_SESSION['acquisition_en_saisie'] ? intval($_SESSION['acquisition_en_saisie']) : 1,
 		'reference' => date('y').strval(rand(100000,999999)),
 		'libelle' => '',
 		'photo' => 'null.jpeg',
@@ -49,7 +49,7 @@
 	
 	foreach ($defaults as $key => $value) {
 		$donnees[$key] = htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?? $value;
-		if (in_array($key, ['id', 'facture_id', 'affectation_id', 'categorie_id', 'fabricant_id', 'nb_elements_initial', 'appel_liste'])) {
+		if (in_array($key, ['id', 'acquisition_id', 'affectation_id', 'categorie_id', 'fabricant_id', 'nb_elements_initial', 'appel_liste'])) {
 			$donnees[$key] = (int)$donnees[$key];
 		}
 	}
@@ -165,12 +165,12 @@
 		// #############################
 		// Récupération des listes d'options 
 		// #############################
-		$current_facture_id = $donnees['facture_id'] ?? 0;
+		$current_acquisition_id = $donnees['acquisition_id'] ?? 0;
 		$current_affectation_id = $donnees['affectation_id'] ?? 0;
 		$current_categorie_id = $donnees['categorie_id'] ?? 0;
 		$current_fabricant_id = $donnees['fabricant_id'] ?? 0;
 		
-		$listeFactures = liste_options(['libelles' => 'facture', 'id' => $current_facture_id]);
+		$listeacquisitions = liste_options(['libelles' => 'acquisition', 'id' => $current_acquisition_id]);
 		$listeaffectations = liste_options(['libelles' => 'affectation', 'id' => $current_affectation_id]);
 		foreach ($listeaffectations[1] as $key => $value) {
 			$affectations[$value['id']] = $value['libelle'];
@@ -227,8 +227,8 @@
 		'categorie' => htmlspecialchars($categories[$current_categorie_id] ?? '', ENT_QUOTES, 'UTF-8'),
 		'fabricant_id' => sprintf('<select name="fabricant_id" required>%s</select>', $listeFabricants[0] ?? ''),
 		'fabricant' => htmlspecialchars($fabricants[$current_fabricant_id] ?? '', ENT_QUOTES, 'UTF-8'),
-		'facture_id' => sprintf('<select name="facture_id">%s</select>', $listeFactures[0] ?? ''),
-		'facture' => htmlspecialchars($donnees['facture'] ?? '', ENT_QUOTES, 'UTF-8'),
+		'acquisition_id' => sprintf('<select name="acquisition_id">%s</select>', $listeacquisitions[0] ?? ''),
+		'acquisition' => htmlspecialchars($donnees['acquisition'] ?? '', ENT_QUOTES, 'UTF-8'),
 		'libelle' => sprintf('<input name="libelle" type="text" required value="%s">', 
 			htmlspecialchars($donnees['libelle'] ?? '', ENT_QUOTES, 'UTF-8')),
 		'date_debut' => sprintf('<input name="date_debut" type="date" required value="%s">', 
@@ -266,7 +266,7 @@
 				<input type="hidden" name="categorie" value="<?= $viewData['categorie'] ?>">
 				<input type="hidden" name="fabricant" value="<?= $viewData['fabricant'] ?>">
 				<input type="hidden" name="affectation" value="<?= $viewData['affectation'] ?>">
-				<input type="hidden" name="facture" value="<?= $viewData['facture'] ?>">
+				<input type="hidden" name="acquisition" value="<?= $viewData['acquisition'] ?>">
 				<input type="hidden" name="retour" value="<?= $viewData['retour'] ?>">
 				<input type="hidden" name="appel_liste" value="0">
 				<input type="hidden" name="MAX_FILE_SIZE" value="2000000">
@@ -326,10 +326,10 @@
 						</tr>
 						<tr>
 							<td colspan="1">
-								Facture :
+								acquisition :
 							</td>
 							<td>
-								<?= $viewData['facture'] ?>
+								<?= $viewData['acquisition'] ?>
 							</td>
 						</tr>
 						<tr>

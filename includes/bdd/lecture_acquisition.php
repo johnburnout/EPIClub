@@ -10,7 +10,7 @@
     *     'error' => string        // Message d'erreur le cas échéant
     * ]
     */
-    function lecture_facture(int $id, string $utilisateur, ?mysqli $connection = null): array {
+    function lecture_acquisition(int $id, string $utilisateur, ?mysqli $connection = null): array {
         // Validation des paramètres
         if ($id <= 0) {  // Changement à <= 0 car un ID doit être positif
             return ['donnees' => null, 'success' => false, 'error' => 'ID invalide'];
@@ -31,13 +31,13 @@
             $sql = "SELECT 
             id,
             utilisateur, 
-            date_facture, 
+            date_acquisition, 
             vendeur, 
             libelle,
             en_saisie,
             reference,
             fichier
-            FROM facture 
+            FROM acquisition 
             WHERE id = ?
             LIMIT 1";  // Changement de ORDER BY à LIMIT 1 car on cherche un enregistrement spécifique
             
@@ -59,13 +59,13 @@
                 return [
                     'donnees' => null,
                     'success' => false,
-                    'error' => 'Aucune facture en saisie trouvée'
+                    'error' => 'Aucune acquisition en saisie trouvée'
                 ];
             }
             
             // Formatage de la date si elle existe
-            if (!empty($donnees['date_facture'])) {
-                $donnees['date_facture'] = date('Y-m-d', strtotime($donnees['date_facture']));
+            if (!empty($donnees['date_acquisition'])) {
+                $donnees['date_acquisition'] = date('Y-m-d', strtotime($donnees['date_acquisition']));
             }
             
             return [

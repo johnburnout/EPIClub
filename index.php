@@ -8,9 +8,9 @@
 		$_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 		$csrf_token = $_SESSION['csrf_token'] ?? '';
 		$controle_id = isset($_SESSION['controle_en_cours']) ? (int)$_SESSION['controle_en_cours'] : 0;
-		$facture_id = isset($_SESSION['facture_en_saisie']) ? (int)$_SESSION['facture_en_saisie'] : 0;
+		$acquisition_id = isset($_SESSION['acquisition_en_saisie']) ? (int)$_SESSION['acquisition_en_saisie'] : 0;
 		$controle = $controle_id ? "liste_controle.php" : "controle_creation.php" ;
-		$facture = $facture_id ? "liste_facture.php" : "facture_creation.php" ;
+		$acquisition = $acquisition_id ? "liste_acquisition.php" : "acquisition_creation.php" ;
 	}
 ?>
 
@@ -41,9 +41,9 @@
 			<?php endif; ?>
 			<?php if ($isLoggedIn): ?>
 			<section class="dashboard">
-				<?php if($controle_id || $facture_id): ?>
+				<?php if($controle_id || $acquisition_id): ?>
 				<div class="alert alert-error">
-					Vous avez commencé à <?= $controle_id ? "controler des EPI" : "" ?><?= $controle_id && $facture_id ? " et " : "" ?><?= $facture_id ? "saisir une facture" : "" ?>.
+					Vous avez commencé à <?= $controle_id ? "controler des EPI" : "" ?><?= $controle_id && $acquisition_id ? " et " : "" ?><?= $acquisition_id ? "saisir une acquisition" : "" ?>.
 				</div>
 				<?php endif; ?>
 				<h3>Accueil</h3>
@@ -76,11 +76,11 @@
 					</form>
 					<?php if ($isAdmin): ?>
 					<p></p>
-					<form action="<?= htmlspecialchars($facture) ?>" method="post">
+					<form action="<?= htmlspecialchars($acquisition) ?>" method="post">
 						<input type="hidden" name="action" value="creation">
 						<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
 						<button type="submit" class="btn btn-secondary btn-block">
-							Saisir une facture
+							Saisir une acquisition
 						</button>
 					</form>
 					<?php endif; ?>

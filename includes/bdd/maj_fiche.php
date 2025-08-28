@@ -36,7 +36,7 @@ function mise_a_jour_fiche(array $donnees, ?mysqli $connection = null): array {
 		'date_debut' => ['type' => 'date'],
 		'nb_elements_initial' => ['type' => 'integer', 'min' => 1],
 		'nb_elements' => ['type' => 'integer', 'min' => 0],
-		'facture_id' => ['type' => 'integer'],
+		'acquisition_id' => ['type' => 'integer'],
 		'remarques' => ['type' => 'string', 'max' => 1000],
 		'controle_id' => ['type' => 'integer'],
 		'utilisateur' => ['type' => 'string', 'max' => 50]
@@ -107,7 +107,7 @@ function mise_a_jour_fiche(array $donnees, ?mysqli $connection = null): array {
 		date_max = ?,
 		nb_elements_initial = ?,
 		nb_elements = ?,
-		facture_id = ?,
+		acquisition_id = ?,
 		remarques = ?,
 		date_modification = NOW(),
 		controle_id = ?,
@@ -130,7 +130,7 @@ function mise_a_jour_fiche(array $donnees, ?mysqli $connection = null): array {
 		$dateMax = date('Ymd', strtotime($donnees['date_max']));
 		$nb_elements_initial = isset($donnees['nb_elements_initial']) ? (int)$donnees['nb_elements_initial'] : 1;
 		$nb_elements = isset($donnees['nb_elements']) ? (int)$donnees['nb_elements'] : $nb_elements_initial;
-		$facture_id = isset($donnees['facture_id']) ? (int)$donnees['facture_id'] : null;
+		$acquisition_id = isset($donnees['acquisition_id']) ? (int)$donnees['acquisition_id'] : null;
 		$remarques = $donnees['remarques'] ?? null;
 		$controle_id = isset($donnees['controle_id']) ? (int)$donnees['controle_id'] : null;
 		$utilisateur = $donnees['utilisateur'] ?? null;
@@ -149,7 +149,7 @@ function mise_a_jour_fiche(array $donnees, ?mysqli $connection = null): array {
 			$dateMax,
 			$nb_elements_initial,
 			$nb_elements,
-			$facture_id,
+			$acquisition_id,
 			$remarques,
 			$controle_id,
 			$utilisateur,

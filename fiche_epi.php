@@ -189,12 +189,12 @@
 	// #############################
 	// Récupération des listes d'options
 	// #############################
-	$current_facture_id = $donnees['facture_id'] ?? 0;
+	$current_acquisition_id = $donnees['acquisition_id'] ?? 0;
 	$current_affectation_id = $donnees['affectation_id'] ?? 0;
 	$current_categorie_id = $donnees['categorie_id'] ?? 0;
 	$current_fabricant_id = $donnees['fabricant_id'] ?? 0;
 	
-	$listeFactures = liste_options(['libelles' => 'facture', 'id' => $current_facture_id]);
+	$listeacquisitions = liste_options(['libelles' => 'acquisition', 'id' => $current_acquisition_id]);
 	$listeaffectations = liste_options(['libelles' => 'affectation', 'id' => $current_affectation_id]);
 	foreach ($listeaffectations[1] as $key => $value) {
 		$affectations[$value['id']] = $value['libelle'];
@@ -218,8 +218,8 @@
 		'categorie' => htmlspecialchars($donnees['categorie'] ?? '', ENT_QUOTES, 'UTF-8'),
 		'fabricant_id' => $isAdmin ? sprintf('<select name="fabricant_id" required>%s</select>', $listeFabricants[0] ?? '') : htmlspecialchars($donnees['fabricant'] ?? '', ENT_QUOTES, 'UTF-8'),
 		'fabricant' => htmlspecialchars($donnees['fabricant'] ?? '', ENT_QUOTES, 'UTF-8'),
-		'facture_id' => $isAdmin ? sprintf('<select name="facture_id">%s</select>', $listeFactures[0] ?? '') : htmlspecialchars($donnees['facture'] ?? '', ENT_QUOTES, 'UTF-8'),
-		'facture' => htmlspecialchars($donnees['facture'] ?? '', ENT_QUOTES, 'UTF-8'),
+		'acquisition_id' => $isAdmin ? sprintf('<select name="acquisition_id">%s</select>', $listeacquisitions[0] ?? '') : htmlspecialchars($donnees['acquisition'] ?? '', ENT_QUOTES, 'UTF-8'),
+		'acquisition' => htmlspecialchars($donnees['acquisition'] ?? '', ENT_QUOTES, 'UTF-8'),
 		'libelle' => $isLoggedIn ? sprintf('<input name="libelle" type="text" required value="%s">', 
 			htmlspecialchars($donnees['libelle'] ?? '', ENT_QUOTES, 'UTF-8')) : htmlspecialchars($donnees['libelle'] ?? '', ENT_QUOTES, 'UTF-8'),
 		'date_debut' => $isAdmin ? sprintf('<input name="date_debut" type="date" required value="%s">', 
@@ -257,7 +257,7 @@
 				<input type="hidden" name="affectation" value="<?= $viewData['affectation'] ?>">
 				<input type="hidden" name="categorie" value="<?= $viewData['categorie'] ?>">
 				<input type="hidden" name="fabricant" value="<?= $viewData['fabricant'] ?>">
-				<input type="hidden" name="facture" value="<?= $viewData['facture'] ?>">
+				<input type="hidden" name="acquisition" value="<?= $viewData['acquisition'] ?>">
 				<input type="hidden" name="appel_liste" value="0">
 				<input type="hidden" name="action" value="validation">
 				<input type="hidden" name="MAX_FILE_SIZE" value="2000000">
@@ -331,8 +331,8 @@
 						</tr>
 						<tr>
 							<td colspan="1">
-								<label for="facture_id">Facture :</label>
-								<?= $viewData['facture_id'] ?>
+								<label for="acquisition_id">acquisition :</label>
+								<?= $viewData['acquisition_id'] ?>
 							</td>
 						</tr>
 						<tr>
@@ -355,8 +355,8 @@
 									<input type="button" name="qrcode" value="QR-Code" class="btn btn-primary"/>
 								</a></td>
 							<td>
-								<a href="facture_verif.php?csrf_token=<?= htmlspecialchars($csrf_token) ?>&retour=fiche_epi.php&id=<?= htmlspecialchars($viewData['id']) ?>&facture_id=<?= $donnees["facture_id"] ?>&edit=non" >
-									<input type="button" name="facture" value="Facture" class="btn btn-primary" />
+								<a href="acquisition_verif.php?csrf_token=<?= htmlspecialchars($csrf_token) ?>&retour=fiche_epi.php&id=<?= htmlspecialchars($viewData['id']) ?>&acquisition_id=<?= $donnees["acquisition_id"] ?>&edit=non" >
+									<input type="button" name="acquisition" value="acquisition" class="btn btn-primary" />
 								</a>
 								<a href="affichage_texte.php?csrf_token=<?= htmlspecialchars($csrf_token) ?>&url=<?= urlencode($journalmat) ?>&retour=fiche_epi.php&id=<?= htmlspecialchars($viewData['id']) ?>" >
 		   							<input type="button" name="journal" value="Journal" class="btn btn-primary" />

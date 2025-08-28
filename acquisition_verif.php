@@ -4,8 +4,8 @@
 	require __DIR__.'/config.php';
 	require __DIR__."/includes/debug.php";
 	require __DIR__."/includes/session.php";
-	require __DIR__."/includes/bdd/lecture_facture.php";
-	require __DIR__."/includes/bdd/maj_facture.php";
+	require __DIR__."/includes/bdd/lecture_acquisition.php";
+	require __DIR__."/includes/bdd/maj_acquisition.php";
 	
 	// Vérification des permissions
 	// Validation CSRF
@@ -22,16 +22,16 @@
 	// Initialisation des variables
 	// #############################
 	
-	$facture_id = isset($_GET['facture_id']) ? (int)$_GET['facture_id'] : (isset($_POST['facture_id']) ? (int)$_POST['facture_id'] : 0);
+	$acquisition_id = isset($_GET['acquisition_id']) ? (int)$_GET['acquisition_id'] : (isset($_POST['acquisition_id']) ? (int)$_POST['acquisition_id'] : 0);
 	
 	$id = isset($_GET['id']) ? (int)$_GET['id'] : (isset($_POST['id']) ? (int)$_POST['id'] : 0);
 	
 	$retour = isset($_GET['retour']) ? $_GET['retour'] : (isset($_POST['retour']) ? $_POST['retour'] : '');
 	
 	$defaults = [
-		'facture_id' => $facture_id,
+		'acquisition_id' => $acquisition_id,
 		'utilisateur' => $utilisateur,
-		'date_facture' => date('Y-m-d'),
+		'date_acquisition' => date('Y-m-d'),
 		'vendeur' => "Boutique?",
 		'error' => '',
 		'success' => '',
@@ -42,15 +42,15 @@
 	
 	foreach ($defaults as $key => $value) {
 		$donnees[$key] = htmlspecialchars($value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8') ?? $value;
-		if (in_array($key, ['facture_id'])) {
+		if (in_array($key, ['acquisition_id'])) {
 			$donnees[$key] = (int)$donnees[$key];
 		}
 	}
-	// La facture est-elle en saisie ?
-	$enCours = (($donnees['facture_id'] != 0) && ($donnees['facture_id'] == intval($_SESSION['facture_en_saisie'])));
+	// La acquisition est-elle en saisie ?
+	$enCours = (($donnees['acquisition_id'] != 0) && ($donnees['acquisition_id'] == intval($_SESSION['acquisition_en_saisie'])));
 	
 	//adresses journaux
-	$journalfacture = __DIR__.'/utilisateur/enregistrements/journalfacture_'.$facture_id.'.txt';
+	$journalacquisition = __DIR__.'/utilisateur/enregistrements/journalacquisition_'.$acquisition_id.'.txt';
 	$journal = __DIR__.'/utilisateur/enregistrements/journal'.date('Y').'.txt';
 	
 	// #############################
@@ -61,8 +61,8 @@
 		try{
 			$donneesInitiales = $donnees;
 			// Lecture des données après mise à jour
-			if ($donnees['facture_id'] > 0) {
-				$result = lecture_facture($donnees['facture_id'], $utilisateur);
+			if ($donnees['acquisition_id'] > 0) {
+				$result = lecture_acquisition($donnees['acquisition_id'], $utilisateur);
 				if (!$result['success']) {
 					throw new Exception('Erreur lors de la lecture: ' . ($result['error'] ?? ''));
 				}
@@ -73,12 +73,12 @@
 				}
 				// Traitement des champs du formulaire
 				if ($_GET['edit'] != 'non') {
-					$maj = mise_a_jour_facture([
+					$maj = mise_a_jour_acquisition([
 						'reference' => $donnees['reference'],
-						'date_facture' => $donnees['date_facture'],
+						'date_acquisition' => $donnees['date_acquisition'],
 						'vendeur' => $donnees['vendeur'],
 						'utilisateur' => $utilisateur
-					], $donnees['facture_id']);
+					], $donnees['acquisition_id']);
 					if (!$maj['success']) {
 						throw new Exception('Erreur lors de la mise à jour: ' . ($valid['error'] ?? 'Pas de lignes modifiées'));
 					}
@@ -88,7 +88,7 @@
 			error_log("[" . date('Y-m-d H:i:s') . "] Erreur: " . $e->getMessage());
 			$errorMessage = $e->getMessage();
 		}
-		if (!empty($_FILES['monfichier']['name']) && $donnees['facture_id'] > 0) {
+		if (!empty($_FILES['monfichier']['name']) && $donnees['acquisition_id'] > 0) {
 			$allowedExtensions = ['jpeg', 'jpg', 'gif', 'png', 'pdf'];
 			//$allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
 			$allowedMimeTypes = [
@@ -129,7 +129,7 @@
 				throw new Exception('Erreur de téléchargement');
 			}
 			
-			$uploadDir = __DIR__.'/utilisateur/factures/';
+			$uploadDir = __DIR__.'/utilisateur/acquisitions/';
 			if (!is_dir($uploadDir)) {
 				if (!mkdir($uploadDir, 0755, true)) {
 					throw new Exception('Impossible de créer le dossier de destination');
@@ -147,9 +147,9 @@
 			$connection = new mysqli($host, $username, $password, $dbname);
 			$connection->set_charset("utf8mb4");
 			
-			$sql = "UPDATE facture SET fichier = ? WHERE id = ?";
+			$sql = "UPDATE acquisition SET fichier = ? WHERE id = ?";
 			$stmt = $connection->prepare($sql);
-			$stmt->bind_param('si', $newFilename, $donnees['facture_id']);
+			$stmt->bind_param('si', $newFilename, $donnees['acquisition_id']);
 			$stmt->execute();
 			$donnees['fichier'] = $newFilename;
 			$connection->close();
@@ -161,7 +161,7 @@
 			
 			// Vérification des chemins avant écriture
 			$allowedPath = __DIR__.'/utilisateur/enregistrements/';
-			if (strpos($journalfacture, $allowedPath) === 0 && strpos($journal, $allowedPath) === 0) {
+			if (strpos($journalacquisition, $allowedPath) === 0 && strpos($journal, $allowedPath) === 0) {
 				$modifications = [];
 				
 				foreach ($donneesInitiales as $key => $value) {
@@ -176,7 +176,7 @@
 				}
 				
 				try {
-					file_put_contents($journalfacture, $ajoutjournal, FILE_APPEND | LOCK_EX);
+					file_put_contents($journalacquisition, $ajoutjournal, FILE_APPEND | LOCK_EX);
 					file_put_contents($journal, $ajoutjournal, FILE_APPEND | LOCK_EX);
 				} catch (Exception $e) {
 					error_log("Erreur journalisation: ".$e->getMessage());
@@ -185,14 +185,14 @@
 		}
 	}
 	$viewData = [
-		'date_facture' => $enCours ? sprintf('<input name="date_facture" type="date" required value="%s">', 
-			htmlspecialchars(date('Y-m-d',strtotime($donnees['date_facture'])) ?? '', ENT_QUOTES, 'UTF-8')) : date('d/m/Y', strtotime($donnees['date_facture'])),
+		'date_acquisition' => $enCours ? sprintf('<input name="date_acquisition" type="date" required value="%s">', 
+			htmlspecialchars(date('Y-m-d',strtotime($donnees['date_acquisition'])) ?? '', ENT_QUOTES, 'UTF-8')) : date('d/m/Y', strtotime($donnees['date_acquisition'])),
 		'libelle' => htmlspecialchars($donnees['libelle']),
 		'vendeur' => $enCours ? sprintf('<input name="vendeur" type="text" required value="%s">', 
 			htmlspecialchars($donnees['vendeur'] ?? '', ENT_QUOTES, 'UTF-8')) : htmlspecialchars($donnees['vendeur'] ?? '', ENT_QUOTES, 'UTF-8'),
 		'reference' => $enCours ? sprintf('<input type="text" name="reference" required value="s">', htmlspecialchars($donnees['reference'] ?? '', ENT_QUOTES, 'UTF-8')) : htmlspecialchars($donnees['reference'] ?? '', ENT_QUOTES, 'UTF-8'),
-		'facture_id' => (int)$donnees['facture_id'],
-		'hasFichier' => !empty($donnees['fichier']) && file_exists(__DIR__.'/utilisateur/factures/' . $donnees['fichier'])
+		'acquisition_id' => (int)$donnees['acquisition_id'],
+		'hasFichier' => !empty($donnees['fichier']) && file_exists(__DIR__.'/utilisateur/acquisitions/' . $donnees['fichier'])
 	];
 ?>
 
@@ -218,7 +218,7 @@
 			<form method="post" enctype="multipart/form-data" id='form-controle'>
 				<input type="hidden" name="retour" value=$retour >
 				<input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
-				<input type="hidden" name="facture_id" value="<?= $donnees['facture_id'] ?>">
+				<input type="hidden" name="acquisition_id" value="<?= $donnees['acquisition_id'] ?>">
 				<input type="hidden" name="id" value="<?= $id ?>">
 				
 				<table>
@@ -228,7 +228,7 @@
 						</tr>
 						<tr>
 							<td >Date :</td>
-							<td><?= $viewData['date_facture'] ?></td>
+							<td><?= $viewData['date_acquisition'] ?></td>
 						</tr>
 						<tr>
 							<td width="30%">
@@ -253,15 +253,15 @@
 								<?php if (strtolower(pathinfo($donnees['fichier'], PATHINFO_EXTENSION)) === 'pdf'): ?>
 								<div class="iframe-container">
 										<!-- Remplacez la valeur de src par l'URL de votre iframe -->
-										<iframe src="utilisateur/factures/<?= htmlspecialchars($donnees['fichier']) ?>" 
+										<iframe src="utilisateur/acquisitions/<?= htmlspecialchars($donnees['fichier']) ?>" 
 											width="400" height="564" allowfullscreen>
 										</iframe>
 								</div>
-								<a href="utilisateur/factures/<?= htmlspecialchars($donnees['fichier']) ?>" target="_blank" class="btn"><img src="assets/images/pdf.png" alt="Icône PDF" width="25px" height="auto"> Ouvrir le pdf dans une nouvelle fenêtre</a>
+								<a href="utilisateur/acquisitions/<?= htmlspecialchars($donnees['fichier']) ?>" target="_blank" class="btn"><img src="assets/images/pdf.png" alt="Icône PDF" width="25px" height="auto"> Ouvrir le pdf dans une nouvelle fenêtre</a>
 								<?php else: ?>
-								<img src="utilisateur/factures/<?= htmlspecialchars($donnees['fichier']) ?>" 
+								<img src="utilisateur/acquisitions/<?= htmlspecialchars($donnees['fichier']) ?>" 
 									class="epi-photo" 
-									alt="Photo de la facture" 
+									alt="Photo de la acquisition" 
 									width="400">
 								<?php endif; ?>
 								<?php endif; ?>
@@ -275,9 +275,9 @@
 				<div class="form-actions">
 					
 					<?php if ($enCours): ?>
-					<a href="facture_effacer.php?id=<?= $donnees['facture_id'] ?>&retour=<?= $retour ?>"
-						onclick="return confirm('Êtes-vous sûr de vouloir supprimer supprimer définitivement cette facture, cela supprimera tous les EPI liés ?')">
-						<input type="button"  class="btn btn-danger" value="Annuler la facture" name="supprimer">
+					<a href="acquisition_effacer.php?id=<?= $donnees['acquisition_id'] ?>&retour=<?= $retour ?>"
+						onclick="return confirm('Êtes-vous sûr de vouloir supprimer supprimer définitivement cette acquisition, cela supprimera tous les EPI liés ?')">
+						<input type="button"  class="btn btn-danger" value="Annuler la acquisition" name="supprimer">
 					</a>
 					<?php else: ?>
 					<a href="<?= $retour ?>?csrf_token=<?= htmlspecialchars($csrf_token) ?>&id=<?= $id ?>" >
@@ -285,12 +285,12 @@
 					<?php endif; ?>
 					<?php if ($isAdmin): ?>
 					<button type="submit" name="envoyer" class="btn btn-primary">
-						<?= ($enCours || ($_GET['edit'] == 'non')) ? 'Enregistrer les modifications' : 'Créer la facture' ?>
+						<?= ($enCours || ($_GET['edit'] == 'non')) ? 'Enregistrer les modifications' : 'Créer la acquisition' ?>
 					</button>
 					<?php endif; ?>
-					<a href="liste_facture.php?csrf_token=<?=$csrf_token?>&facture_id=<?=$facture_id?>&retour=<?=$retour?>&id=<?=$id?>">
+					<a href="liste_acquisition.php?csrf_token=<?=$csrf_token?>&acquisition_id=<?=$acquisition_id?>&retour=<?=$retour?>&id=<?=$id?>">
 						<?php if ($enCours): ?>
-						<input type="button"  class="btn btn-primary" value="Saisir la facture" name="saisir_facture">
+						<input type="button"  class="btn btn-primary" value="Saisir la acquisition" name="saisir_acquisition">
 						<?php else: ?>
 						<input type="button"  class="btn btn-primary" value="Afficher les EPI" name="afficher_epi">
 						<?php endif; ?>

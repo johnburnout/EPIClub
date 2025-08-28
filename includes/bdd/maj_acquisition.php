@@ -5,10 +5,10 @@
     * 
     * @param array $donnees Tableau associatif des données à mettre à jour contenant :
     *               - 'vendeur' : string nom de la boutique (requis)
-    *               - 'reference' : string reference de la facture (requis)
+    *               - 'reference' : string reference de la acquisition (requis)
     *               - 'utilisateur' : string Identifiant de l'utilisateur	(requis)
-	*               - 'date_facture' : string date d'achat	(requis)
-    * @param int $id ID de la facture à modifier
+	*               - 'date_acquisition' : string date d'achat	(requis)
+    * @param int $id ID de la acquisition à modifier
     * @param mysqli|null $connection Connexion MySQLi existante (optionnelle)
     * 
     * @return array [
@@ -17,7 +17,7 @@
     *     'error' => string         // Message d'erreur le cas échéant
     * ]
     */
-    function mise_a_jour_facture(array $donnees, int $id, ?mysqli $connection = null): array {
+    function mise_a_jour_acquisition(array $donnees, int $id, ?mysqli $connection = null): array {
         // 1. VALIDATION DES ENTREES
         if ($id <= 0) {
             return [
@@ -31,7 +31,7 @@
             'utilisateur' => 'string',
             'vendeur' => 'string',
             'reference' => 'string',
-            'date_facture' => 'string'
+            'date_acquisition' => 'string'
         ];
         foreach ($champsObligatoires as $champ => $type) {
             if (!isset($donnees[$champ])) {
@@ -67,10 +67,10 @@
                 $shouldCloseConnection = true;
             }
             // 5. PREPARATION DE LA REQUETE
-            $sql = "UPDATE facture SET
+            $sql = "UPDATE acquisition SET
             vendeur = ?,
             utilisateur = ?,
-            date_facture = ?,
+            date_acquisition = ?,
             reference = ?
             WHERE id = ?";
             $stmt = $connection->prepare($sql);
@@ -79,7 +79,7 @@
             }
             $vendeur = $donnees['vendeur'];
             $utilisateur = $donnees['utilisateur'];
-            $date = date('Ymd',strtotime($donnees['date_facture']));
+            $date = date('Ymd',strtotime($donnees['date_acquisition']));
             $reference = $donnees["reference"];
             // 6. EXECUTION DE LA REQUETE
             $stmt->bind_param(
@@ -106,14 +106,14 @@
             ];
             
         } catch (mysqli_sql_exception $e) {
-            error_log("Erreur MySQL lors de la mise à jour facture $id: " . $e->getMessage());
+            error_log("Erreur MySQL lors de la mise à jour acquisition $id: " . $e->getMessage());
             return [
                 'success' => false,
                 'affected_rows' => 0,
                 'error' => 'Erreur de base de données'
             ];
         } catch (Exception $e) {
-            error_log("Erreur lors de la mise à jour facture $id: " . $e->getMessage());
+            error_log("Erreur lors de la mise à jour acquisition $id: " . $e->getMessage());
             return [
                 'success' => false,
                 'affected_rows' => 0,

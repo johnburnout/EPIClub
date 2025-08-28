@@ -36,7 +36,7 @@
 		
 		// Si ID non fourni, on récupère le max
 		if ($id === 0) {
-			$stmt = $connection->prepare("SELECT MAX(id) AS max_id FROM facture");
+			$stmt = $connection->prepare("SELECT MAX(id) AS max_id FROM acquisition");
 			$stmt->execute();
 			$result = $stmt->get_result();
 			$idmax = $result->fetch_assoc();
@@ -44,20 +44,20 @@
 		}
 		
 		// Suppression
-		$stmt1 = $connection->prepare("DELETE FROM facture WHERE id = ?");
+		$stmt1 = $connection->prepare("DELETE FROM acquisition WHERE id = ?");
 		$stmt1->bind_param("i", $id);
 		$stmt1->execute();
 		
 		// Suppression des EPI liés
-		$stmt1 = $connection->prepare("DELETE FROM matos WHERE facture_id = ?");
+		$stmt1 = $connection->prepare("DELETE FROM matos WHERE acquisition_id = ?");
 		$stmt1->bind_param("i", $id);
 		$stmt1->execute();
 		
 		if ($connection->affected_rows > 0) {
-			$avis = "La facture a été supprimée avec succès";
-			$_SESSION['facture_en_saisie'] = 0;
+			$avis = "La acquisition a été supprimée avec succès";
+			$_SESSION['acquisition_en_saisie'] = 0;
 			$sql = "UPDATE utilisateur SET
-			facture_en_saisie = 0
+			acquisition_en_saisie = 0
 			WHERE username = ?";
 			
 			$stmt2 = $connection->prepare($sql);
@@ -75,7 +75,7 @@
 			
 			// Réinitialisation auto_increment si table vide
 			if ($id_0 === 0) {
-				$connection->query("ALTER TABLE facture AUTO_INCREMENT = 1");
+				$connection->query("ALTER TABLE acquisition AUTO_INCREMENT = 1");
 			}
 		} else {
 			$avis = "Aucun enregistrement trouvé à supprimer";

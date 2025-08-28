@@ -9,12 +9,12 @@
     *     'error' => string   // Message d'erreur le cas échéant
     * ]
     */
-    function creation_facture(array $donnees, ?mysqli $connection = null): array {
+    function creation_acquisition(array $donnees, ?mysqli $connection = null): array {
         $requiredFields = [
             'utilisateur' => 'string',
             'reference' => 'string',
             'vendeur' => 'string',
-            'date_facture' => 'string'
+            'date_acquisition' => 'string'
         ];
         
         // 1. VALIDATION DE L'ENTRÉE
@@ -45,7 +45,7 @@
                 $shouldCloseConnection = true;
             }
             // Première requête: insertion
-            $sql1 = "INSERT INTO facture (utilisateur, vendeur, reference, date_facture) VALUES (?, ?, ?, ?)";
+            $sql1 = "INSERT INTO acquisition (utilisateur, vendeur, reference, date_acquisition) VALUES (?, ?, ?, ?)";
             $stmt1 = $connection->prepare($sql1);
             if (!$stmt1) {
                 throw new Exception("Erreur de préparation de la première requête");
@@ -54,7 +54,7 @@
             $utilisateur = $donnees['utilisateur'];
             $vendeur = $donnees['vendeur'];
             $ref = $donnees['reference'];
-            $date = date('Ymd', strtotime($donnees['date_facture']));
+            $date = date('Ymd', strtotime($donnees['date_acquisition']));
             
             $stmt1->bind_param("ssss", $utilisateur, $vendeur, $ref, $date);
             if (!$stmt1->execute()) {
@@ -65,7 +65,7 @@
             $stmt1->close();
             
             // Deuxième requête: mise à jour
-            $sql2 = "UPDATE utilisateur SET facture_en_saisie = ? WHERE username = ?";
+            $sql2 = "UPDATE utilisateur SET acquisition_en_saisie = ? WHERE username = ?";
             $stmt2 = $connection->prepare($sql2);
             if (!$stmt2) {
                 throw new Exception("Erreur de préparation de la deuxième requête");

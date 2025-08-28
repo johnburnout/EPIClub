@@ -4,7 +4,7 @@
 			'id' => 0,
 			'libelle' => '', 
 			'reference' => date('y').strval(rand(100000,999999)),
-			'date_facture' => null,
+			'date_acquisition' => null,
 			'username' => '',
 			'utilisateur_id' => 1,
 			'nb_elements' => 1,

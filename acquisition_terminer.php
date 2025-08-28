@@ -20,7 +20,7 @@
 	// #############################
 	// Initialisation des variables
 	// #############################
-	$id = isset($_POST['facture_id']) ? (int)$_POST['facture_id'] : 0;
+	$id = isset($_POST['acquisition_id']) ? (int)$_POST['acquisition_id'] : 0;
 	$retour = "index.php";
 	$abandon = filter_var($_POST['abandon'] ?? '', FILTER_SANITIZE_URL);
 	$bouton = '';
@@ -29,7 +29,7 @@
 	$remarque = isset($_POST['remarque']) ? htmlspecialchars($_POST['remarque'], ENT_QUOTES, 'UTF-8') : '';
 	
 	//adresses journaux
-	$journalfacture = __DIR__.'/utilisateur/enregistrements/journalfacture_'.$id.'.txt';
+	$journalacquisition = __DIR__.'/utilisateur/enregistrements/journalacquisition_'.$id.'.txt';
 	$journal = __DIR__.'/utilisateur/enregistrements/journal'.date('Y').'.txt';
 	
 	// #############################
@@ -45,16 +45,16 @@
 			$shouldCloseConnection = true;
 			
 			// Fermeture du contrôle
-			$stmt = $connection->prepare("UPDATE facture SET en_saisie = 0 WHERE id = ?");
+			$stmt = $connection->prepare("UPDATE acquisition SET en_saisie = 0 WHERE id = ?");
 			$stmt->bind_param("i", $id);
 			$stmt->execute();
 			
 			// Suppression des cookies
-			$_SESSION['facture_en_saisie'] = 0;
+			$_SESSION['acquisition_en_saisie'] = 0;
 			
 			// 5. PREPARATION DE LA REQUETE
 			$sql = "UPDATE utilisateur SET
-			facture_en_saisie = 0
+			acquisition_en_saisie = 0
 			WHERE username = ?";
 			
 			$stmt = $connection->prepare($sql);
@@ -70,11 +70,11 @@
 			
 			$stmt->execute();
 			
-			$avis = "La facture a été clôturée.";
+			$avis = "La acquisition a été clôturée.";
 			
 			// Journalisation
 			if (!empty($reference)) {
-				$ajoutjournal = date('Y/m/d').' '.$utilisateur.' - '.'Clôture de la facture'.$reference."(".$id.")".PHP_EOL.'Motif : '.$remarque;
+				$ajoutjournal = date('Y/m/d').' '.$utilisateur.' - '.'Clôture de la acquisition'.$reference."(".$id.")".PHP_EOL.'Motif : '.$remarque;
 				
 				// Écriture dans les journaux avec vérification des chemins
 				$allowedPaths = [__DIR__.'/utilisateur/enregistrements/'];
@@ -88,7 +88,7 @@
 				}
 				
 				if ($isValidPath) {
-					file_put_contents($journalfacture, '-------'.PHP_EOL.$ajoutjournal.PHP_EOL, FILE_APPEND | LOCK_EX);
+					file_put_contents($journalacquisition, '-------'.PHP_EOL.$ajoutjournal.PHP_EOL, FILE_APPEND | LOCK_EX);
 					file_put_contents($journal, "---------".PHP_EOL.$ajoutjournal.PHP_EOL, FILE_APPEND | LOCK_EX);
 				}
 			}
@@ -122,7 +122,7 @@
 			<p>
 				<form method="post" action="<?= $retour ?>" id='form-controle'>
 					<input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
-					<input type="hidden" name="facture_id" value="<?= $id ?>">
+					<input type="hidden" name="acquisition_id" value="<?= $id ?>">
 					<input type="hidden" name="reference" value="<?= $reference ?>">
 					<input type="hidden" name="remarque" value="<?= $remarque ?>">				
 					<div class="actions">

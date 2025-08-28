@@ -5,7 +5,7 @@
 	require __DIR__."/includes/debug.php";
 	require __DIR__."/includes/session.php";
 	require __DIR__."/includes/bdd/liste_options.php";
-	require __DIR__."/includes/bdd/lecture_facture.php";
+	require __DIR__."/includes/bdd/lecture_acquisition.php";
 	require __DIR__."/includes/fonctions_edition.php";
 	
 	// Vérification des permissions
@@ -24,9 +24,9 @@
 	// #############################
 	
 	$id = $_GET['id'] ?? 0;
-	$facture_id = $_GET['facture_id'] ?? intval($_SESSION['facture_en_saisie']) ?? 0;	
+	$acquisition_id = $_GET['acquisition_id'] ?? intval($_SESSION['acquisition_en_saisie']) ?? 0;	
 	$retour = isset($_GET['retour']) ? $_GET['retour'] : (isset($_POST['retour']) ? $_POST['retour'] : 'index.php');
-	$get = $id ? "?csrf_token=".$csrf_token."&id=".$id."&facture_id=".$facture_id."&retour=".$retour : '';
+	$get = $id ? "?csrf_token=".$csrf_token."&id=".$id."&acquisition_id=".$acquisition_id."&retour=".$retour : '';
 	// #############################
 	// Connexion sécurisée à la base de données
 	// #############################
@@ -40,13 +40,13 @@
 	}
 	
 	// #############################
-	// Gestion des factures en saisie
+	// Gestion des acquisitions en saisie
 	// #############################
-	$factureOuvert = ($facture_id > 0);
-	if (!$factureOuvert && $isLoggedIn) {
-		$facture = lecture_facture($_SESSION['facture_en_saisie'], $utilisateur);
-		$factureOuvert = $facture['success'] ?? false;
-		$facture_id = $factureOuvert ? (int)($facture['id'] ?? 0) : null;
+	$acquisitionOuvert = ($acquisition_id > 0);
+	if (!$acquisitionOuvert && $isLoggedIn) {
+		$acquisition = lecture_acquisition($_SESSION['acquisition_en_saisie'], $utilisateur);
+		$acquisitionOuvert = $acquisition['success'] ?? false;
+		$acquisition_id = $acquisitionOuvert ? (int)($acquisition['id'] ?? 0) : null;
 	}
 	
 	// #############################
@@ -68,7 +68,7 @@
 		$input = $_POST[$key] ?? $_SESSION[$key] ?? $default;
 		$params[$key] = sanitizeInput($input, is_numeric($default) ? 'int' : 'string');
 	}
-	$params['facture_id'] = $facture_id;
+	$params['acquisition_id'] = $acquisition_id;
 	// Gestion des cookies sécurisés
 	if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		$_SESSION['debut'] = $params['debut'];
@@ -106,15 +106,15 @@
 		$types .= 'i';
 	}
 	
-	if ($params['facture_id'] > 0) {
-		$whereClauses[] = "facture_id = ?";
-		$queryParams[] = $params['facture_id'];
+	if ($params['acquisition_id'] > 0) {
+		$whereClauses[] = "acquisition_id = ?";
+		$queryParams[] = $params['acquisition_id'];
 		$types .= 'i';
 	}
 	
 	$where = implode(' AND ', $whereClauses);
 	// Validation du champ de tri
-	$allowedSort = ['id', 'ref', 'affectation_id', 'date_facture', 'fabricant'];
+	$allowedSort = ['id', 'ref', 'affectation_id', 'date_acquisition', 'fabricant'];
 	$sort = in_array($params['tri'], $allowedSort) ? $params['tri'] : 'id';
 	
 	// ###########################
@@ -193,7 +193,7 @@
 									<option value="id" <?= $sort === 'id' ? 'selected' : '' ?>>Identifiant</option>
 									<option value="ref" <?= $sort === 'ref' ? 'selected' : '' ?>>Référence</option>
 									<option value="affectation_id" <?= $sort === 'affectation_id' ? 'selected' : '' ?>>affectation</option>
-									<option value="date_facture" <?= $sort === 'date_facture' ? 'selected' : '' ?>>Date de vérification</option>
+									<option value="date_acquisition" <?= $sort === 'date_acquisition' ? 'selected' : '' ?>>Date de vérification</option>
 									<option value="fabricant" <?= $sort === 'fabricant' ? 'selected' : '' ?>>Fabricant</option>
 								</select>
 							</td>
@@ -227,7 +227,7 @@
 			<hr>
 			<h3>Liste des EPI (<?= $nblignes ?> résultats)</h3>
 			
-			<form method="get" action="fiche_facture.php">
+			<form method="get" action="fiche_acquisition.php">
 				<table>
 					<thead>
 						<tr>
@@ -274,7 +274,7 @@
 			</div>
 			<?php endif; ?>
 			
-			<!--		<?php //if ($factureOuvert): ?> -->
+			<!--		<?php //if ($acquisitionOuvert): ?> -->
 			<div style="border-top: 1px solid var(--border-color);">
 				<form method="post" action="fiche_creation.php">
 					<p>
@@ -285,22 +285,22 @@
 						<input type="submit" value="Créer une fiche EPI" class="btn btn-primary">
 						<?php endif; ?>
 						<input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
-						<input type="hidden" name="facture_id" value="<?= (int)$facture_id ?>">			  
-						<input type="hidden" name="retour" value="liste_facture.php">
+						<input type="hidden" name="acquisition_id" value="<?= (int)$acquisition_id ?>">			  
+						<input type="hidden" name="retour" value="liste_acquisition.php">
 						<input type="hidden" name="action" value="creation">
 					</p>
 				</form>
-				<form method="post" action="facture_terminer.php" onsubmit="return confirmTerminerFacture()">
+				<form method="post" action="acquisition_terminer.php" onsubmit="return confirmTermineracquisition()">
 				    <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
-				    <input type="hidden" name="facture_id" value="<?= htmlspecialchars($facture_id ?? '', ENT_QUOTES, 'UTF-8') ?>">
+				    <input type="hidden" name="acquisition_id" value="<?= htmlspecialchars($acquisition_id ?? '', ENT_QUOTES, 'UTF-8') ?>">
 				    <input type="hidden" name="reference" value="<?= htmlspecialchars($result['ref'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
 				    
-				    <input type="submit" name="terminer" value="Terminer la saisie de la facture" class="btn btn-primary">
+				    <input type="submit" name="terminer" value="Terminer la saisie de la acquisition" class="btn btn-primary">
 				</form>
 
 <script>
-function confirmTerminerFacture() {
-    return confirm('Êtes-vous sûr de vouloir clôturer cette facture ?\n\nRéférence: <?= addslashes($result['ref'] ?? '') ?>');
+function confirmTermineracquisition() {
+    return confirm('Êtes-vous sûr de vouloir clôturer cette acquisition ?\n\nRéférence: <?= addslashes($result['ref'] ?? '') ?>');
 }
 </script>
 			</div>

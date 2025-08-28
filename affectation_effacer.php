@@ -44,7 +44,7 @@
 		}
 		
 		// Suppression
-		if ($id > 1) {
+		if ($id > 2) {
 			$stmt1 = $connection->prepare("DELETE FROM affectation WHERE id = ?");
 		$stmt1->bind_param("i", $id);
 		$stmt1->execute();

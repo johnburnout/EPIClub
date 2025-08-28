@@ -46,16 +46,16 @@ CREATE TABLE `fabricant` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `facture`
+-- Table structure for table `acquisition`
 --
 
-CREATE TABLE `facture` (
+CREATE TABLE `acquisition` (
   `id` int(11) NOT NULL,
   `vendeur` varchar(30) NOT NULL DEFAULT 'Boutique ?',
-  `date_facture` date DEFAULT NULL,
+  `date_acquisition` date DEFAULT NULL,
   `en_saisie` tinyint(1) NOT NULL DEFAULT 1,
   `reference` varchar(15) DEFAULT NULL,
-  `libelle` varchar(30) GENERATED ALWAYS AS (concat_ws(' ',`vendeur`,`date_facture`)) VIRTUAL,
+  `libelle` varchar(30) GENERATED ALWAYS AS (concat_ws(' ',`vendeur`,`date_acquisition`)) VIRTUAL,
   `utilisateur` varchar(30) NOT NULL DEFAULT '""'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
@@ -76,9 +76,9 @@ CREATE TABLE `fiche` (
 ,`fabricant_id` int(11)
 ,`affectation` varchar(15)
 ,`affectation_id` int(11)
-,`facture` varchar(30)
-,`facture_id` int(11)
-,`date_facture` date
+,`acquisition` varchar(30)
+,`acquisition_id` int(11)
+,`date_acquisition` date
 ,`nb_elements` int(11)
 ,`date_max` date
 ,`date_debut` date
@@ -88,7 +88,7 @@ CREATE TABLE `fiche` (
 ,`photo` varchar(50)
 ,`nb_elements_initial` int(11)
 ,`en_controle` tinyint(1)
-,`facture_en_saisie` tinyint(1)
+,`acquisition_en_saisie` tinyint(1)
 );
 
 -- --------------------------------------------------------
@@ -130,8 +130,8 @@ CREATE TABLE `liste` (
 ,`date_max` date
 ,`en_service` tinyint(4)
 ,`controle_id` int(11)
-,`date_facture` date
-,`facture_id` int(11)
+,`date_acquisition` date
+,`acquisition_id` int(11)
 );
 
 -- --------------------------------------------------------
@@ -147,7 +147,7 @@ CREATE TABLE `matos` (
   `libelle` varchar(60) DEFAULT NULL,
   `categorie_id` int(11) DEFAULT NULL,
   `fabricant_id` int(11) DEFAULT NULL,
-  `facture_id` int(11) NOT NULL,
+  `acquisition_id` int(11) NOT NULL,
   `photo` varchar(50) DEFAULT 'null.jpeg',
   `affectation_id` int(11) DEFAULT NULL,
   `date_debut` date DEFAULT NULL,
@@ -186,7 +186,7 @@ CREATE TABLE `utilisateur` (
   `date_creation` timestamp NULL DEFAULT current_timestamp(),
   `last_login` date NOT NULL DEFAULT current_timestamp(),
   `controle_en_cours` int(11) NOT NULL DEFAULT 0,
-  `facture_en_saisie` int(11) NOT NULL DEFAULT 0
+  `acquisition_en_saisie` int(11) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COLLATE=utf8mb3_general_ci;
 
 -- --------------------------------------------------------
@@ -227,9 +227,9 @@ ALTER TABLE `fabricant`
   ADD UNIQUE KEY `NOM_FABRICANT_UNIQUE` (`libelle`);
 
 --
--- Indexes for table `facture`
+-- Indexes for table `acquisition`
 --
-ALTER TABLE `facture`
+ALTER TABLE `acquisition`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `id_UNIQUE` (`id`);
 
@@ -251,7 +251,7 @@ ALTER TABLE `matos`
   ADD KEY `fk_matos_affectation` (`affectation_id`),
   ADD KEY `fk_matos_controle` (`controle_id`),
   ADD KEY `fk_matos_categorie` (`categorie_id`),
-  ADD KEY `fk_matos_facture` (`facture_id`),
+  ADD KEY `fk_matos_acquisition` (`acquisition_id`),
   ADD KEY `fk_matos_fabricant` (`fabricant_id`);
 
 --
@@ -287,9 +287,9 @@ ALTER TABLE `fabricant`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `facture`
+-- AUTO_INCREMENT for table `acquisition`
 --
-ALTER TABLE `facture`
+ALTER TABLE `acquisition`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
@@ -323,7 +323,7 @@ ALTER TABLE `controle`
 --
 DROP TABLE IF EXISTS `fiche`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `fiche`  AS SELECT `m`.`id` AS `id`, `m`.`reference` AS `ref`, `m`.`libelle` AS `libelle`, `m`.`en_service` AS `en_service`, `cat`.`libelle` AS `categorie`, `cat`.`id` AS `categorie_id`, `f`.`libelle` AS `fabricant`, `f`.`id` AS `fabricant_id`, `a`.`libelle` AS `affectation`, `a`.`id` AS `affectation_id`, `fac`.`libelle` AS `facture`, `fac`.`id` AS `facture_id`, `fac`.`date_facture` AS `date_facture`, `m`.`nb_elements` AS `nb_elements`, `m`.`date_max` AS `date_max`, `m`.`date_debut` AS `date_debut`, `co`.`id` AS `controle_id`, `co`.`date_controle` AS `date_controle`, `m`.`remarques` AS `remarques`, `m`.`photo` AS `photo`, `m`.`nb_elements_initial` AS `nb_elements_initial`, `co`.`en_cours` AS `en_controle`, `fac`.`en_saisie` AS `facture_en_saisie` FROM (((((`matos` `m` join `categorie` `cat` on(`m`.`categorie_id` = `cat`.`id`)) join `fabricant` `f` on(`m`.`fabricant_id` = `f`.`id`)) join `affectation` `a` on(`m`.`affectation_id` = `a`.`id`)) join `facture` `fac` on(`m`.`facture_id` = `fac`.`id`)) join `controle` `co` on(`m`.`controle_id` = `co`.`id`)) WHERE `m`.`en_service` <> 0 ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `fiche`  AS SELECT `m`.`id` AS `id`, `m`.`reference` AS `ref`, `m`.`libelle` AS `libelle`, `m`.`en_service` AS `en_service`, `cat`.`libelle` AS `categorie`, `cat`.`id` AS `categorie_id`, `f`.`libelle` AS `fabricant`, `f`.`id` AS `fabricant_id`, `a`.`libelle` AS `affectation`, `a`.`id` AS `affectation_id`, `fac`.`libelle` AS `acquisition`, `fac`.`id` AS `acquisition_id`, `fac`.`date_acquisition` AS `date_acquisition`, `m`.`nb_elements` AS `nb_elements`, `m`.`date_max` AS `date_max`, `m`.`date_debut` AS `date_debut`, `co`.`id` AS `controle_id`, `co`.`date_controle` AS `date_controle`, `m`.`remarques` AS `remarques`, `m`.`photo` AS `photo`, `m`.`nb_elements_initial` AS `nb_elements_initial`, `co`.`en_cours` AS `en_controle`, `fac`.`en_saisie` AS `acquisition_en_saisie` FROM (((((`matos` `m` join `categorie` `cat` on(`m`.`categorie_id` = `cat`.`id`)) join `fabricant` `f` on(`m`.`fabricant_id` = `f`.`id`)) join `affectation` `a` on(`m`.`affectation_id` = `a`.`id`)) join `acquisition` `fac` on(`m`.`acquisition_id` = `fac`.`id`)) join `controle` `co` on(`m`.`controle_id` = `co`.`id`)) WHERE `m`.`en_service` <> 0 ;
 
 -- --------------------------------------------------------
 
@@ -332,7 +332,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 --
 DROP TABLE IF EXISTS `liste`;
 
-CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `liste`  AS SELECT `matos`.`id` AS `id`, `matos`.`reference` AS `ref`, `matos`.`libelle` AS `libelle`, `fabricant`.`libelle` AS `fabricant`, `categorie`.`libelle` AS `categorie`, `matos`.`categorie_id` AS `categorie_id`, `affectation`.`libelle` AS `affectation`, `matos`.`affectation_id` AS `affectation_id`, `matos`.`nb_elements` AS `nb_elements`, `controle`.`date_controle` AS `date_controle`, `matos`.`date_max` AS `date_max`, `matos`.`en_service` AS `en_service`, `matos`.`controle_id` AS `controle_id`, `facture`.`date_facture` AS `date_facture`, `facture`.`id` AS `facture_id` FROM (((((`matos` join `facture`) join `fabricant`) join `categorie`) join `affectation`) join `controle`) WHERE 0 <> `matos`.`en_service` AND `matos`.`categorie_id` = `categorie`.`id` AND `matos`.`fabricant_id` = `fabricant`.`id` AND `matos`.`controle_id` = `controle`.`id` AND `matos`.`affectation_id` = `affectation`.`id` AND `matos`.`facture_id` = `facture`.`id` ;
+CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW `liste`  AS SELECT `matos`.`id` AS `id`, `matos`.`reference` AS `ref`, `matos`.`libelle` AS `libelle`, `fabricant`.`libelle` AS `fabricant`, `categorie`.`libelle` AS `categorie`, `matos`.`categorie_id` AS `categorie_id`, `affectation`.`libelle` AS `affectation`, `matos`.`affectation_id` AS `affectation_id`, `matos`.`nb_elements` AS `nb_elements`, `controle`.`date_controle` AS `date_controle`, `matos`.`date_max` AS `date_max`, `matos`.`en_service` AS `en_service`, `matos`.`controle_id` AS `controle_id`, `acquisition`.`date_acquisition` AS `date_acquisition`, `acquisition`.`id` AS `acquisition_id` FROM (((((`matos` join `acquisition`) join `fabricant`) join `categorie`) join `affectation`) join `controle`) WHERE 0 <> `matos`.`en_service` AND `matos`.`categorie_id` = `categorie`.`id` AND `matos`.`fabricant_id` = `fabricant`.`id` AND `matos`.`controle_id` = `controle`.`id` AND `matos`.`affectation_id` = `affectation`.`id` AND `matos`.`acquisition_id` = `acquisition`.`id` ;
 
 --
 -- Constraints for dumped tables
@@ -344,7 +344,7 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`root`@`localhost` SQL SECURITY DEFINER VIEW 
 ALTER TABLE `matos`
   ADD CONSTRAINT `fk_matos_categorie` FOREIGN KEY (`categorie_id`) REFERENCES `categorie` (`id`),
   ADD CONSTRAINT `fk_matos_fabricant` FOREIGN KEY (`fabricant_id`) REFERENCES `fabricant` (`id`),
-  ADD CONSTRAINT `fk_matos_facture` FOREIGN KEY (`facture_id`) REFERENCES `facture` (`id`),
+  ADD CONSTRAINT `fk_matos_acquisition` FOREIGN KEY (`acquisition_id`) REFERENCES `acquisition` (`id`),
   ADD CONSTRAINT `fk_matos_affectation` FOREIGN KEY (`affectation_id`) REFERENCES `affectation` (`id`),
   ADD CONSTRAINT `fk_matos_controle` FOREIGN KEY (`controle_id`) REFERENCES `controle` (`id`);
 COMMIT;

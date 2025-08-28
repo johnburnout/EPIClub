@@ -7,9 +7,10 @@
 	$site_name = "Nom du site";
 	$admin_email = "email@administrateur";
 	$site_url = "https://adresse.du.site";
+	$dossier = "/dossier_a°la_racine_du_site";
 		
 	/**
-	* Configuration pour database connection
+	* Configuration pour connection à la base de données mysql ou mariadb
 	*
 	*/
 	

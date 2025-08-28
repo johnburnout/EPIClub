@@ -45,9 +45,9 @@
 			fabricant_id, 
 			affectation, 
 			affectation_id, 
-			facture, 
-			facture_id, 
-			DATE_FORMAT(date_facture, '%Y-%m-%d') AS date_facture,
+			acquisition, 
+			acquisition_id, 
+			DATE_FORMAT(date_acquisition, '%Y-%m-%d') AS date_acquisition,
 			nb_elements, 
 			nb_elements_initial, 
 			DATE_FORMAT(date_max, '%Y-%m-%d') AS date_max,
@@ -66,7 +66,7 @@
 			// 4. RÉCUPÉRATION DES RÉSULTATS
 			$result = $stmt->get_result();
 			$donnees = $result->fetch_assoc();
-			$donnees['facture_id'] = (!$donnees['facture_id'] && $_SESSION['facture_en_saisie']) ? $_SESSION['facture_en_saisie'] : $donnees['facture_id'];
+			$donnees['acquisition_id'] = (!$donnees['acquisition_id'] && $_SESSION['acquisition_en_saisie']) ? $_SESSION['acquisition_en_saisie'] : $donnees['acquisition_id'];
 			return [
 				'donnees' => $donnees, // Correction: utilisation de $donnees au affectation de $data
 				'success' => $donnees !== null,

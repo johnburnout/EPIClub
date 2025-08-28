@@ -1,6 +1,6 @@
 # REPOSITORY ET STRUCTURE
 [X] Installer git sur sa propre machine
-[X] Creer un fichier gitignore pour ignorer les fichiers utilisateur (ex: factures, enregistrements)
+[X] Creer un fichier gitignore pour ignorer les fichiers utilisateur (ex: acquisitions, enregistrements)
 [X] Creer un fichier gitkeep dans les dossiers nécessaires mais vides
 [X] Les dossiers pour les utilisateurs devaient etre dans un seul dossier storage
 [X] Les fichiers images, css, js, fonts devraient être dans un dossier assets
