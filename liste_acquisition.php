@@ -295,7 +295,7 @@
 				    <input type="hidden" name="acquisition_id" value="<?= htmlspecialchars($acquisition_id ?? '', ENT_QUOTES, 'UTF-8') ?>">
 				    <input type="hidden" name="reference" value="<?= htmlspecialchars($result['ref'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
 				    
-				    <input type="submit" name="terminer" value="Terminer la saisie de la acquisition" class="btn btn-primary">
+				    <input type="submit" name="terminer" value="Terminer la saisie de l'acquisition" class="btn btn-primary">
 				</form>
 
 <script>

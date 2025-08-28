@@ -73,7 +73,7 @@
 				]);
 				
 				if (!$creation['success']) {
-					throw new Exception('Erreur lors de la création de la acquisition: ' . ($creation['error'] ?? ''));
+					throw new Exception('Erreur lors de la création de l'acquisition: ' . ($creation['error'] ?? ''));
 				}
 				$donnees['id'] = $creation['id'];
 				$_SESSION['acquisition_en_saisie'] = $donnees['id'];
@@ -284,19 +284,19 @@
 					<?php if ($isStarted): ?>
 					<a href="acquisition_effacer.php?id=<?= $donnees['id'] ?>&csrf_token=<?=$csrf_token?>"
 						onclick="return confirm('Êtes-vous sûr de vouloir supprimer supprimer définitivement cette acquisition ?')">
-						<input type="button"  class="btn btn-danger" value="Annuler la acquisition" name="supprimer">
+						<input type="button"  class="btn btn-danger" value="Annuler l'acquisition" name="supprimer">
 					</a>
 					<?php else: ?>
 					<a href="index.php" class="btn btn-secondary">Retour</a>
 					<?php endif; ?>
 					
 					<button type="submit" name="envoyer" class="btn btn-primary">
-						<?= $isStarted ? 'Enregistrer les modifications' : 'Créer la acquisition' ?>
+						<?= $isStarted ? 'Enregistrer les modifications' : 'Créer l'acquisition' ?>
 					</button>`
 					<?php if ($isStarted): ?>
 					<a href="liste_acquisition.php?csrf_token=<?=$csrf_token?>"
-						onclick="return confirm('Êtes-vous prêt à saisir la acquisition ?')">
-						<input type="button"  class="btn btn-primary" value="Saisir la acquisition" name="saisir_acquisition">
+						onclick="return confirm('Êtes-vous prêt à saisir l'acquisition ?')">
+						<input type="button"  class="btn btn-primary" value="Saisir l'acquisition" name="saisir_acquisition">
 					</a>
 					<?php endif; ?>
 				</div>

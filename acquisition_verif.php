@@ -46,7 +46,7 @@
 			$donnees[$key] = (int)$donnees[$key];
 		}
 	}
-	// La acquisition est-elle en saisie ?
+	// l'acquisition est-elle en saisie ?
 	$enCours = (($donnees['acquisition_id'] != 0) && ($donnees['acquisition_id'] == intval($_SESSION['acquisition_en_saisie'])));
 	
 	//adresses journaux
@@ -261,7 +261,7 @@
 								<?php else: ?>
 								<img src="utilisateur/acquisitions/<?= htmlspecialchars($donnees['fichier']) ?>" 
 									class="epi-photo" 
-									alt="Photo de la acquisition" 
+									alt="Photo de l'acquisition" 
 									width="400">
 								<?php endif; ?>
 								<?php endif; ?>
@@ -277,7 +277,7 @@
 					<?php if ($enCours): ?>
 					<a href="acquisition_effacer.php?id=<?= $donnees['acquisition_id'] ?>&retour=<?= $retour ?>"
 						onclick="return confirm('Êtes-vous sûr de vouloir supprimer supprimer définitivement cette acquisition, cela supprimera tous les EPI liés ?')">
-						<input type="button"  class="btn btn-danger" value="Annuler la acquisition" name="supprimer">
+						<input type="button"  class="btn btn-danger" value="Annuler l'acquisition" name="supprimer">
 					</a>
 					<?php else: ?>
 					<a href="<?= $retour ?>?csrf_token=<?= htmlspecialchars($csrf_token) ?>&id=<?= $id ?>" >
@@ -285,12 +285,12 @@
 					<?php endif; ?>
 					<?php if ($isAdmin): ?>
 					<button type="submit" name="envoyer" class="btn btn-primary">
-						<?= ($enCours || ($_GET['edit'] == 'non')) ? 'Enregistrer les modifications' : 'Créer la acquisition' ?>
+						<?= ($enCours || ($_GET['edit'] == 'non')) ? 'Enregistrer les modifications' : 'Créer l'acquisition' ?>
 					</button>
 					<?php endif; ?>
 					<a href="liste_acquisition.php?csrf_token=<?=$csrf_token?>&acquisition_id=<?=$acquisition_id?>&retour=<?=$retour?>&id=<?=$id?>">
 						<?php if ($enCours): ?>
-						<input type="button"  class="btn btn-primary" value="Saisir la acquisition" name="saisir_acquisition">
+						<input type="button"  class="btn btn-primary" value="Saisir l'acquisition" name="saisir_acquisition">
 						<?php else: ?>
 						<input type="button"  class="btn btn-primary" value="Afficher les EPI" name="afficher_epi">
 						<?php endif; ?>

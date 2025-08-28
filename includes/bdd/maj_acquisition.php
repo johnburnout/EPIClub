@@ -5,10 +5,10 @@
     * 
     * @param array $donnees Tableau associatif des données à mettre à jour contenant :
     *               - 'vendeur' : string nom de la boutique (requis)
-    *               - 'reference' : string reference de la acquisition (requis)
+    *               - 'reference' : string reference de l'acquisition (requis)
     *               - 'utilisateur' : string Identifiant de l'utilisateur	(requis)
 	*               - 'date_acquisition' : string date d'achat	(requis)
-    * @param int $id ID de la acquisition à modifier
+    * @param int $id ID de l'acquisition à modifier
     * @param mysqli|null $connection Connexion MySQLi existante (optionnelle)
     * 
     * @return array [

@@ -70,11 +70,11 @@
 			
 			$stmt->execute();
 			
-			$avis = "La acquisition a été clôturée.";
+			$avis = "l'acquisition a été clôturée.";
 			
 			// Journalisation
 			if (!empty($reference)) {
-				$ajoutjournal = date('Y/m/d').' '.$utilisateur.' - '.'Clôture de la acquisition'.$reference."(".$id.")".PHP_EOL.'Motif : '.$remarque;
+				$ajoutjournal = date('Y/m/d').' '.$utilisateur.' - '.'Clôture de l'acquisition'.$reference."(".$id.")".PHP_EOL.'Motif : '.$remarque;
 				
 				// Écriture dans les journaux avec vérification des chemins
 				$allowedPaths = [__DIR__.'/utilisateur/enregistrements/'];

@@ -54,7 +54,7 @@
 		$stmt1->execute();
 		
 		if ($connection->affected_rows > 0) {
-			$avis = "La acquisition a été supprimée avec succès";
+			$avis = "l'acquisition a été supprimée avec succès";
 			$_SESSION['acquisition_en_saisie'] = 0;
 			$sql = "UPDATE utilisateur SET
 			acquisition_en_saisie = 0
