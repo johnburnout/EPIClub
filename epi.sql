@@ -107,8 +107,8 @@ CREATE TABLE `affectation` (
 --
 
 INSERT INTO `affectation` (`id`, `libelle`) VALUES
-(1, 'En attente'),
-(0, 'Hors-Service');
+(2, 'En attente'),
+(1, 'Hors-Service');
 
 -- --------------------------------------------------------
 
@@ -181,8 +181,8 @@ CREATE TABLE `utilisateur` (
   `username` varchar(32) DEFAULT NULL,
   `role` enum('usager','admin') NOT NULL DEFAULT 'usager',
   `est_actif` tinyint(4) NOT NULL DEFAULT 1,
-  `email` varchar(256) DEFAULT NULL,
-  `password` varchar(256) DEFAULT NULL,
+  `email` varchar(64) DEFAULT NULL,
+  `password` varchar(255) DEFAULT NULL,
   `date_creation` timestamp NULL DEFAULT current_timestamp(),
   `last_login` date NOT NULL DEFAULT current_timestamp(),
   `controle_en_cours` int(11) NOT NULL DEFAULT 0,
