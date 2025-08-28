@@ -64,7 +64,7 @@
             $categorie_id = (int)$donnees['categorie_id'];
             $fabricant_id = (int)$donnees['fabricant_id'];
             $photo = $donnees['photo'] ?? null;
-            $affectation_id = isset($donnees['affectation_id']) ? (int)$donnees['affectation_id'] : 1;
+            $affectation_id = isset($donnees['affectation_id']) ? (int)$donnees['affectation_id'] : 2;
             $nb_elements_initial = isset($donnees['nb_elements_initial']) ? (int)$donnees['nb_elements_initial'] : 1;
             $nb_elements = isset($donnees['nb_elements']) ? (int)$donnees['nb_elements'] : 1;
             $acquisition_id = isset($_SESSION['acquisition_en_saisie']) ? intval($_SESSION['acquisition_en_saisie']) : null;
