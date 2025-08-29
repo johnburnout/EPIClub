@@ -29,7 +29,7 @@
     }
     
     // Normalisation des chemins
-    $baseDir = realpath(__DIR__.'/utilisateur/enregistrements/');
+    $baseDir = realpath(__DIR__.'/_storage/enregistrements/');
     $cheminComplet = realpath($cheminDemande);
     
     // Vérifier que le fichier est bien dans le répertoire autorisé

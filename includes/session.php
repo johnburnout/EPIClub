@@ -61,4 +61,3 @@
 	if (!empty($csrf_token) && !preg_match('/^[a-f0-9]{64}$/', $csrf_token)) {
 		$csrf_token = ''; // Invalide si ne correspond pas au format attendu
 	}
-?>

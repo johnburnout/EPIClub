@@ -90,55 +90,54 @@
 	}
 	
 	function lecture_controle_recent($id, $utilisateur) {
-	global $host, $username, $password, $dbname;
-	
-	try {
-		$connection = new mysqli($host, $username, $password, $dbname);
-		$connection->set_charset("utf8mb4");
+		global $host, $username, $password, $dbname;
 		
-		$sql = "SELECT 
+		try {
+			$connection = new mysqli($host, $username, $password, $dbname);
+			$connection->set_charset("utf8mb4");
+			
+			$sql = "SELECT 
 			id,
 			utilisateur, 
 			date_controle,
 			remarques,
 			en_cours,
 			epi_controles
-		FROM controle 
-		WHERE id = ? 
-		AND utilisateur = ? 
-		AND (date_controle IS NULL OR date_controle >= DATE_SUB(CURRENT_DATE(), INTERVAL 1 YEAR))
-		LIMIT 1";
-		
-		$stmt = $connection->prepare($sql);
-		if (!$stmt) {
-			throw new Exception("Erreur de préparation de la requête: " . $connection->error);
-		}
-		
-		$stmt->bind_param('is', $id, $utilisateur);
-		$stmt->execute();
-		$result = $stmt->get_result();
-		$donnees = $result->fetch_assoc();
-		
-		if (!$donnees) {
+			FROM controle 
+			WHERE id = ? 
+			AND utilisateur = ? 
+			AND (date_controle IS NULL OR date_controle >= DATE_SUB(CURRENT_DATE(), INTERVAL 1 YEAR))
+			LIMIT 1";
+			
+			$stmt = $connection->prepare($sql);
+			if (!$stmt) {
+				throw new Exception("Erreur de préparation de la requête: " . $connection->error);
+			}
+			
+			$stmt->bind_param('is', $id, $utilisateur);
+			$stmt->execute();
+			$result = $stmt->get_result();
+			$donnees = $result->fetch_assoc();
+			
+			if (!$donnees) {
+				return [
+					'donnees' => null,
+					'success' => false,
+					'error' => 'Aucun contrôle récent (moins d\'un an) trouvé'
+				];
+			}
+			
 			return [
-				'donnees' => null,
-				'success' => false,
-				'error' => 'Aucun contrôle récent (moins d\'un an) trouvé'
+				'donnees' => $donnees,
+				'success' => true,
+				'error' => ''
 			];
-		}
-		
-		return [
-			'donnees' => $donnees,
-			'success' => true,
-			'error' => ''
-		];
-		
-	} catch (Exception $e) {
-		return ['donnees' => null, 'success' => false, 'error' => $e->getMessage()];
-	} finally {
-		if (isset($connection)) {
-			$connection->close();
+			
+		} catch (Exception $e) {
+			return ['donnees' => null, 'success' => false, 'error' => $e->getMessage()];
+		} finally {
+			if (isset($connection)) {
+				$connection->close();
+			}
 		}
 	}
-}
-?>

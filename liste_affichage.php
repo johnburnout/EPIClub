@@ -139,8 +139,8 @@
 					<tr style="border-top: 1px solid #000000;">
 						<td colspan="2">Référence : <?= htmlspecialchars($value['ref']) ?></td>
 						<td rowspan="5" style="width: 150px; padding: 5px; vertical-align: middle; text-align: center;">
-							<?php if (file_exists(__DIR__.'/utilisateur/qrcodes/qrcode'.$value['id'].'_300.png')): ?>
-							<img src="utilisateur/qrcodes/qrcode<?= htmlspecialchars($value['id']) ?>_300.png" 
+							<?php if (file_exists(__DIR__.'/_storage/qrcodes/qrcode'.$value['id'].'_300.png')): ?>
+							<img src="_storage/qrcodes/qrcode<?= htmlspecialchars($value['id']) ?>_300.png" 
 								style="max-width: 100%; max-height: 150px; display: inline-block;"
 								alt="QR Code <?= htmlspecialchars($value['ref']) ?>"
 								title="QR Code pour <?= htmlspecialchars($value['libelle']) ?>">

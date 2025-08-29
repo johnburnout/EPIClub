@@ -20,8 +20,8 @@
 		$annee = date('Y', strtotime("-$i year"));
 		$annees_journaux[] = [
 			'annee' => $annee,
-			'chemin' => "utilisateur/enregistrements/". 'journal' . $annee . '.txt',
-			'existe' => file_exists(__DIR__.'/utilisateur/enregistrements/' . 'journal' . $annee . '.txt')
+			'chemin' => "_storage/enregistrements/". 'journal' . $annee . '.txt',
+			'existe' => file_exists(__DIR__.'/_storage/enregistrements/' . 'journal' . $annee . '.txt')
 		];
 		$total_journaux += $annees_journaux[$i]['existe'];
 	}
@@ -98,8 +98,8 @@
 	for ($i = 0; $i < $total_controles; $i++) {
 		$controles_journaux[] = [
 			'controle' => $donnees[$i]['date_controle'],
-			'chemin' => "utilisateur/enregistrements/" . 'journalcontrole' . $donnees[$i]['id'] . '.txt',
-			'existe' => file_exists(__DIR__.'/utilisateur/enregistrements/' . 'journalcontrole' . $donnees[$i]['id'] . '.txt')
+			'chemin' => "_storage/enregistrements/" . 'journalcontrole' . $donnees[$i]['id'] . '.txt',
+			'existe' => file_exists(__DIR__.'/_storage/enregistrements/' . 'journalcontrole' . $donnees[$i]['id'] . '.txt')
 		];
 	}
 	$lignes = max($total_journaux,$total_controles);
@@ -136,7 +136,7 @@
 									<!-- Colonne Année -->
 									<td>
 										<?php if (!empty($annees_journaux[$i]['existe'])): ?>
-										<a href="affichage_texte.php?csrf_token=<?= htmlspecialchars($csrf_token) ?>&url=<?= urlencode($annees_journaux[$i]['chemin']) ?>&retour=affichage_journaux.php&id=0">
+										<a href="affichage_texte.php?csrf_token=<?= $csrf_token ?>&url=<?= urlencode($annees_journaux[$i]['chemin']) ?>&retour=affichage_journaux.php&id=0">
 											<input type="button"
 												name="<?= htmlspecialchars($annees_journaux[$i]['annee'] ?? 'N/A') ?>" 
 												value="<?= htmlspecialchars($annees_journaux[$i]['annee'] ?? 'N/A') ?>" 	
@@ -149,7 +149,7 @@
 									<!-- Colonne Contrôle -->
 									<td>
 										<?php if (!empty($controles_journaux[$i]['existe'])): ?>
-										<a href="affichage_texte.php?csrf_token=<?= htmlspecialchars($csrf_token) ?>&url=<?= urlencode($controles_journaux[$i]['chemin']) ?>&retour=affichage_journaux.php&id=0">
+										<a href="affichage_texte.php?csrf_token=<?= $csrf_token ?>&url=<?= urlencode($controles_journaux[$i]['chemin']) ?>&retour=affichage_journaux.php&id=0">
 											<input type="button"
 												name="<?= htmlspecialchars($controles_journaux[$i]['controle'] ?? 'N/A') ?>" 
 												value="<?= htmlspecialchars($controles_journaux[$i]['controle'] ?? 'N/A') ?>" 	

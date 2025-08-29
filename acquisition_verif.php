@@ -50,8 +50,8 @@
 	$enCours = (($donnees['acquisition_id'] != 0) && ($donnees['acquisition_id'] == intval($_SESSION['acquisition_en_saisie'])));
 	
 	//adresses journaux
-	$journalacquisition = __DIR__.'/utilisateur/enregistrements/journalacquisition_'.$acquisition_id.'.txt';
-	$journal = __DIR__.'/utilisateur/enregistrements/journal'.date('Y').'.txt';
+	$journalacquisition = __DIR__.'/_storage/enregistrements/journalacquisition_'.$acquisition_id.'.txt';
+	$journal = __DIR__.'/_storage/enregistrements/journal'.date('Y').'.txt';
 	
 	// #############################
 	// Gestion des opérations CRUD
@@ -129,7 +129,7 @@
 				throw new Exception('Erreur de téléchargement');
 			}
 			
-			$uploadDir = __DIR__.'/utilisateur/acquisitions/';
+			$uploadDir = __DIR__.'/_storage/acquisitions/';
 			if (!is_dir($uploadDir)) {
 				if (!mkdir($uploadDir, 0755, true)) {
 					throw new Exception('Impossible de créer le dossier de destination');
@@ -160,7 +160,7 @@
 			$ref = $donnees['reference'];
 			
 			// Vérification des chemins avant écriture
-			$allowedPath = __DIR__.'/utilisateur/enregistrements/';
+			$allowedPath = __DIR__.'/_storage/enregistrements/';
 			if (strpos($journalacquisition, $allowedPath) === 0 && strpos($journal, $allowedPath) === 0) {
 				$modifications = [];
 				
@@ -192,7 +192,7 @@
 			htmlspecialchars($donnees['vendeur'] ?? '', ENT_QUOTES, 'UTF-8')) : htmlspecialchars($donnees['vendeur'] ?? '', ENT_QUOTES, 'UTF-8'),
 		'reference' => $enCours ? sprintf('<input type="text" name="reference" required value="s">', htmlspecialchars($donnees['reference'] ?? '', ENT_QUOTES, 'UTF-8')) : htmlspecialchars($donnees['reference'] ?? '', ENT_QUOTES, 'UTF-8'),
 		'acquisition_id' => (int)$donnees['acquisition_id'],
-		'hasFichier' => !empty($donnees['fichier']) && file_exists(__DIR__.'/utilisateur/acquisitions/' . $donnees['fichier'])
+		'hasFichier' => !empty($donnees['fichier']) && file_exists(__DIR__.'/_storage/acquisitions/' . $donnees['fichier'])
 	];
 ?>
 
@@ -253,13 +253,13 @@
 								<?php if (strtolower(pathinfo($donnees['fichier'], PATHINFO_EXTENSION)) === 'pdf'): ?>
 								<div class="iframe-container">
 										<!-- Remplacez la valeur de src par l'URL de votre iframe -->
-										<iframe src="utilisateur/acquisitions/<?= htmlspecialchars($donnees['fichier']) ?>" 
+										<iframe src="_storage/acquisitions/<?= htmlspecialchars($donnees['fichier']) ?>" 
 											width="400" height="564" allowfullscreen>
 										</iframe>
 								</div>
-								<a href="utilisateur/acquisitions/<?= htmlspecialchars($donnees['fichier']) ?>" target="_blank" class="btn"><img src="assets/images/pdf.png" alt="Icône PDF" width="25px" height="auto"> Ouvrir le pdf dans une nouvelle fenêtre</a>
+								<a href="_storage/acquisitions/<?= htmlspecialchars($donnees['fichier']) ?>" target="_blank" class="btn"><img src="assets/images/pdf.png" alt="Icône PDF" width="25px" height="auto"> Ouvrir le pdf dans une nouvelle fenêtre</a>
 								<?php else: ?>
-								<img src="utilisateur/acquisitions/<?= htmlspecialchars($donnees['fichier']) ?>" 
+								<img src="_storage/acquisitions/<?= htmlspecialchars($donnees['fichier']) ?>" 
 									class="epi-photo" 
 									alt="Photo de l'acquisition" 
 									width="400">
@@ -280,7 +280,7 @@
 						<input type="button"  class="btn btn-danger" value="Annuler l'acquisition" name="supprimer">
 					</a>
 					<?php else: ?>
-					<a href="<?= $retour ?>?csrf_token=<?= htmlspecialchars($csrf_token) ?>&id=<?= $id ?>" >
+					<a href="<?= $retour ?>?csrf_token=<?= $csrf_token ?>&id=<?= $id ?>" >
 						<input type="button" name="retour" value="Retour" class="btn return-btn"></a>
 					<?php endif; ?>
 					<?php if ($isAdmin): ?>

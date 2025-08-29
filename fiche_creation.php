@@ -133,7 +133,7 @@
 					throw new Exception('Erreur de téléchargement');
 				}
 				
-				$uploadDir = __DIR__."/utilisateur/images/";
+				$uploadDir = __DIR__."/_storage/images/";
 				if (!is_dir($uploadDir)) {
 					if (!mkdir($uploadDir, 0755, true)) {
 						throw new Exception('Impossible de créer le dossier de destination');
@@ -188,11 +188,11 @@
 			$reference = $donnees['reference'];
 			
 			//adresses journaux
-			$journalcontrole = __DIR__.'/utilisateur/enregistrements/journal'.$donnees['reference'].'.txt';
-			$journal = __DIR__.'/utilisateur/enregistrements/journal'.date('Y').'.txt';
+			$journalcontrole = __DIR__.'/_storage/enregistrements/journal'.$donnees['reference'].'.txt';
+			$journal = __DIR__.'/_storage/enregistrements/journal'.date('Y').'.txt';
 	
 			// Vérification des chemins avant écriture
-			$allowedPath = __DIR__.'/utilisateur/enregistrements/';
+			$allowedPath = __DIR__.'/_storage/enregistrements/';
 			if (strpos($journalcontrole, $allowedPath) === 0 && strpos($journal, $allowedPath) === 0) {
 				$modifications = [];
 				
@@ -282,7 +282,7 @@
 								<input type="text" name="reference" required value="<?= $viewData['reference'] ?>">
 							</td>
 							<td rowspan="7">
-								<img src="utilisateur/images/<?= $viewData['photo'] ?>" class="epi-photo" alt="Photo du matériel" width="400">
+								<img src="_storage/images/<?= $viewData['photo'] ?>" class="epi-photo" alt="Photo du matériel" width="400">
 								<br>
 								<input type="file" class="btn btn-secondary" name="monfichier" accept="image/jpeg,image/png,image/gif">
 							</td>

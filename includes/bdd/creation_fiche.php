@@ -122,4 +122,3 @@
             if (isset($connection)) $connection->close();
         }
     }
-?>

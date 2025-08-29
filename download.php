@@ -19,7 +19,7 @@
 		die('Paramètre fichier manquant');
 	}
 	
-	$baseDir = realpath(__DIR__.'/utilisateur/enregistrements/');
+	$baseDir = realpath(__DIR__.'/_storage/enregistrements/');
 	$cheminComplet = filter_var($_GET['file'], FILTER_SANITIZE_URL);
 	
 	// Vérification de sécurité

@@ -58,9 +58,9 @@
 	$donnees['controle_id'] = $_SESSION['controle_en_cours'] ?? $donnees['controle_id'];
 	
 	// Journalisation
-	$journalmat = __DIR__.'/utilisateur/enregistrements/journalmat'.$donnees['reference'].'.txt';
-	$journal = __DIR__.'/utilisateur/enregistrements/journal'.date('Y').'.txt';
-	$journalcontrole = __DIR__.'/utilisateur/enregistrements/journalcontrole'.$donnees['controle_id'].'.txt';
+	$journalmat = __DIR__.'/_storage/enregistrements/journalmat'.$donnees['reference'].'.txt';
+	$journal = __DIR__.'/_storage/enregistrements/journal'.date('Y').'.txt';
+	$journalcontrole = __DIR__.'/_storage/enregistrements/journalcontrole'.$donnees['controle_id'].'.txt';
 	
 	$donneesInitiales = $donnees;
 	
@@ -200,7 +200,7 @@
 						<tr>
 								<td>Photo:</td>
 								<td>
-									 <img src="utilisateur/images/<?= htmlspecialchars($donnees['photo'], ENT_QUOTES, 'UTF-8') ?>" 
+									 <img src="_storage/images/<?= htmlspecialchars($donnees['photo'], ENT_QUOTES, 'UTF-8') ?>" 
 										class="epi-photo" 
 										alt="Photo du matériel" width="300">
 								</td>

@@ -51,5 +51,3 @@
 			return ['date' => date('Ymd'), 'success' => false];
 		}
 	}
-  
-?>

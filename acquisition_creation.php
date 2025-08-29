@@ -73,7 +73,7 @@
 				]);
 				
 				if (!$creation['success']) {
-					throw new Exception('Erreur lors de la création de l'acquisition: ' . ($creation['error'] ?? ''));
+					throw new Exception("Erreur lors de la création de l'acquisition: " . ($creation['error'] ?? ''));
 				}
 				$donnees['id'] = $creation['id'];
 				$_SESSION['acquisition_en_saisie'] = $donnees['id'];
@@ -135,7 +135,7 @@
 				throw new Exception('Erreur de téléchargement');
 			}
 			
-			$uploadDir = __DIR__.'/utilisateur/acquisitions/';
+			$uploadDir = __DIR__.'/_storage/acquisitions/';
 			if (!is_dir($uploadDir)) {
 				if (!mkdir($uploadDir, 0755, true)) {
 					throw new Exception('Impossible de créer le dossier de destination');
@@ -165,10 +165,10 @@
 		if (isset($maj['success']) or isset($creation['success'])) {
 			$ref = $donnees['reference'];
 			$id = $donnees['id'];
-			$journalacquisition = __DIR__.'/utilisateur/enregistrements/journalacquisition_'.$id.'.txt';
-			$journal = __DIR__.'/utilisateur/enregistrements/journal'.date('Y').'.txt';
+			$journalacquisition = __DIR__.'/_storage/enregistrements/journalacquisition_'.$id.'.txt';
+			$journal = __DIR__.'/_storage/enregistrements/journal'.date('Y').'.txt';
 			// Vérification des chemins avant écriture
-			$allowedPath = __DIR__.'/utilisateur/enregistrements/';
+			$allowedPath = __DIR__.'/_storage/enregistrements/';
 			if (strpos($journalacquisition, $allowedPath) === 0 && strpos($journal, $allowedPath) === 0) {
 				$modifications = [];
 				
@@ -263,9 +263,9 @@
 								<?php if ($viewData['hasFichier']): ?>
 								<?php if (!empty($donnees['fichier']) && file_exists('acquisitions/' . $donnees['fichier'])): ?>
 								<?php if (strtolower(pathinfo($donnees['fichier'], PATHINFO_EXTENSION)) === 'pdf'): ?>
-								<a href="utilisateur/acquisitions/<?= htmlspecialchars($donnees['fichier']) ?>" target="_blank">Voir le PDF</a>
+								<a href="_storage/acquisitions/<?= htmlspecialchars($donnees['fichier']) ?>" target="_blank">Voir le PDF</a>
 								<?php else: ?>
-								<img src="utilisateur/acquisitions/<?= htmlspecialchars($donnees['fichier']) ?>" 
+								<img src="_storage/acquisitions/<?= htmlspecialchars($donnees['fichier']) ?>" 
 									class="epi-photo" 
 									alt="Photo du matériel" 
 									width="400">
@@ -291,7 +291,7 @@
 					<?php endif; ?>
 					
 					<button type="submit" name="envoyer" class="btn btn-primary">
-						<?= $isStarted ? 'Enregistrer les modifications' : 'Créer l'acquisition' ?>
+						<?= $isStarted ? 'Enregistrer les modifications' : "Créer l'acquisition" ?>
 					</button>`
 					<?php if ($isStarted): ?>
 					<a href="liste_acquisition.php?csrf_token=<?=$csrf_token?>"

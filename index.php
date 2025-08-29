@@ -50,7 +50,7 @@
 				<div class="card">
 					<h5 class="card-title">Consultation</h5>
 					<form action="liste_epis.php" method="post">
-						<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+						<input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
 						<button type="submit" class="btn btn-primary btn-block">
 							Consulter la liste des EPI
 						</button>
@@ -62,14 +62,14 @@
 					<form action="<?= htmlspecialchars($controle) ?>" method="post" class="mb-3">
 						<input type="hidden" name="action" value="creation">
 						<input type="hidden" name="controle_id" value="<?= htmlspecialchars($_SESSION['controle_en_cours'] ?? '') ?>">
-						<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+						<input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
 						<button type="submit" class="btn btn-primary btn-block">
 							Contrôler les EPI
 						</button>
 					</form>
 					<p></p>
 					<form action="affichage_journaux.php" method="post" class="mb-3">
-						<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+						<input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
 						<button type="submit" class="btn btn-primary btn-block">
 							Journaux
 						</button>
@@ -78,7 +78,7 @@
 					<p></p>
 					<form action="<?= htmlspecialchars($acquisition) ?>" method="post">
 						<input type="hidden" name="action" value="creation">
-						<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+						<input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
 						<button type="submit" class="btn btn-secondary btn-block">
 							Saisir une acquisition
 						</button>
@@ -92,28 +92,28 @@
 					<h5 class="card-title">Administration</h5>
 					
 					<form action="liste_utilisateurs.php" method="post" class="mb-3">
-						<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+						<input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
 						<button type="submit" class="btn btn-secondary btn-block">
 							Gestion des utilisateurs
 						</button>
 					</form>
 					<p></p>
 					<form action="liste_fabricants.php" method="post" class="mb-3">
-						<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+						<input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
 						<button type="submit" class="btn btn-secondary btn-block">
 							Gestion des fabricants
 						</button>
 					</form>
 					<p></p>
 					<form action="liste_categories.php" method="post">
-						<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+						<input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
 						<button type="submit" class="btn btn-secondary btn-block">
 							Gestion des catégories
 						</button>
 					</form>
 					<p></p>
 					<form action="liste_affectations.php" method="post">
-						<input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrf_token) ?>">
+						<input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
 						<button type="submit" class="btn btn-secondary btn-block">
 							Gestion des affectations
 						</button>

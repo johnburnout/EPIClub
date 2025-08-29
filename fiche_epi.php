@@ -67,8 +67,8 @@
 			}
 			
 			//adresses journaux
-			$journalmat = __DIR__.'/utilisateur/enregistrements/journalmat'.$donnees['reference'].'.txt';
-			$journal = __DIR__.'/utilisateur/enregistrements/journal'.date('Y').'.txt';
+			$journalmat = __DIR__.'/_storage/enregistrements/journalmat'.$donnees['reference'].'.txt';
+			$journal = __DIR__.'/_storage/enregistrements/journal'.date('Y').'.txt';
 			
 			// Fusion des remarques
 			$remarques_temp = [];
@@ -155,7 +155,7 @@
 				throw new Exception('Erreur de téléchargement');
 			}
 			
-			$uploadDir = __DIR__."/utilisateur/images/";
+			$uploadDir = __DIR__."/_storage/images/";
 			if (!is_dir($uploadDir)) {
 				if (!mkdir($uploadDir, 0755, true)) {
 					throw new Exception('Impossible de créer le dossier de destination');
@@ -273,7 +273,7 @@
 								<input type="text" name="reference" required value="<?= $viewData['reference'] ?>">
 							</td>
 							<td rowspan="10">
-								<img src="utilisateur/images/<?= $viewData['photo'] ?>" class="epi-photo" alt="Photo du matériel" width="400">
+								<img src="_storage/images/<?= $viewData['photo'] ?>" class="epi-photo" alt="Photo du matériel" width="400">
 								<?php if ($isLoggedIn): ?>
 								<br>
 								<input type="file" name="monfichier" accept="image/jpeg,image/png,image/gif">
@@ -355,10 +355,10 @@
 									<input type="button" name="qrcode" value="QR-Code" class="btn btn-primary"/>
 								</a></td>
 							<td>
-								<a href="acquisition_verif.php?csrf_token=<?= htmlspecialchars($csrf_token) ?>&retour=fiche_epi.php&id=<?= htmlspecialchars($viewData['id']) ?>&acquisition_id=<?= $donnees["acquisition_id"] ?>&edit=non" >
+								<a href="acquisition_verif.php?csrf_token=<?= $csrf_token ?>&retour=fiche_epi.php&id=<?= htmlspecialchars($viewData['id']) ?>&acquisition_id=<?= $donnees["acquisition_id"] ?>&edit=non" >
 									<input type="button" name="acquisition" value="acquisition" class="btn btn-primary" />
 								</a>
-								<a href="affichage_texte.php?csrf_token=<?= htmlspecialchars($csrf_token) ?>&url=<?= urlencode($journalmat) ?>&retour=fiche_epi.php&id=<?= htmlspecialchars($viewData['id']) ?>" >
+								<a href="affichage_texte.php?csrf_token=<?= $csrf_token ?>&url=<?= urlencode($journalmat) ?>&retour=fiche_epi.php&id=<?= htmlspecialchars($viewData['id']) ?>" >
 		   							<input type="button" name="journal" value="Journal" class="btn btn-primary" />
 								</a>
 							</td>

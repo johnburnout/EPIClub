@@ -65,4 +65,3 @@ function liste_options(array $entree, ?mysqli $connection = null): array {
 		}
 	}
 }
-?>

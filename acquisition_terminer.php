@@ -29,8 +29,8 @@
 	$remarque = isset($_POST['remarque']) ? htmlspecialchars($_POST['remarque'], ENT_QUOTES, 'UTF-8') : '';
 	
 	//adresses journaux
-	$journalacquisition = __DIR__.'/utilisateur/enregistrements/journalacquisition_'.$id.'.txt';
-	$journal = __DIR__.'/utilisateur/enregistrements/journal'.date('Y').'.txt';
+	$journalacquisition = __DIR__.'/_storage/enregistrements/journalacquisition_'.$id.'.txt';
+	$journal = __DIR__.'/_storage/enregistrements/journal'.date('Y').'.txt';
 	
 	// #############################
 	// Gestion des opérations
@@ -77,7 +77,7 @@
 				$ajoutjournal = date('Y/m/d').' '.$utilisateur.' - '.'Clôture de l'acquisition'.$reference."(".$id.")".PHP_EOL.'Motif : '.$remarque;
 				
 				// Écriture dans les journaux avec vérification des chemins
-				$allowedPaths = [__DIR__.'/utilisateur/enregistrements/'];
+				$allowedPaths = [__DIR__.'/_storage/enregistrements/'];
 				$isValidPath = false;
 				
 				foreach ($allowedPaths as $path) {
