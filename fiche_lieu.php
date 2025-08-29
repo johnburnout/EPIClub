@@ -1,9 +1,9 @@
 <?php
 
 require __DIR__ . '/app/bootstrap.php';
-require __DIR__ . "/includes/bdd/creation_fabricant.php";
-require __DIR__ . "/includes/bdd/lecture_fabricant.php";
-require __DIR__ . "/includes/bdd/maj_fabricant.php";
+require __DIR__ . "/includes/bdd/creation_affectation.php";
+require __DIR__ . "/includes/bdd/lecture_lieu.php";
+require __DIR__ . "/includes/bdd/maj_lieu.php";
 
 if (!$isAdmin) {
 	header('Location: /');
@@ -11,7 +11,7 @@ if (!$isAdmin) {
 }
 
 $id = isset($_GET['id']) ? (int)$_GET['id'] : (isset($_POST['id']) ? (int)$_POST['id'] : 0);
-$retour = isset($_GET['retour']) ? $_GET['retour'] : (isset($_POST['retour']) ? $_POST['retour'] : '');
+$retour = isset($_GET['retour']) ? $_GET['retour'] : (isset($_POST['retour']) ? $_POST['retour'] : '/');
 $action = $_GET['action'] ?? $_POST['action'] ?? 'maj';
 $donnees = [
 	'libelle' => 'fab' . strval(rand(100000, 999999)),
@@ -29,29 +29,29 @@ if (!empty($_POST)) {
 			$donnees[$key] = $value;
 		}
 		if ($action === 'creation') {
-			$creation = creation_fabricant($donnees);
+			$creation = creation_affectation($donnees);
 			if (!$creation['success']) {
-				throw new \Exception('Erreur lors de la création du fabricant: ' . ($creation['error'] ?? ''));
+				throw new \Exception('Erreur lors de la création du lieu: ' . ($creation['error'] ?? ''));
 			}
 			$donnees['id'] = $creation['id'];
-			$donnees['success'] = "Nouveau fabricant créé avec succès.";
+			$donnees['success'] = "Nouveau lieu créé avec succès.";
 		}
 
 		if ($action === 'maj') {
-			$maj = mise_a_jour_fabricant($donnees, $donnees['id']);
+			$maj = mise_a_jour_affectation($donnees, $donnees['id']);
 			if (!$maj['success']) {
-				throw new \Exception("Erreur lors de la mise à jour du fabricant: " . ($maj['error'] ?? ''));
+				throw new \Exception("Erreur lors de la mise à jour du lieu: " . ($maj['error'] ?? ''));
 			}
-			$donnees['success'] = "Fabricant mis à jour avec succès.";
+			$donnees['success'] = "lieu mis à jour avec succès.";
 		}
 	} catch (\Exception $e) {
 		error_log("[" . date('Y-m-d H:i:s') . "] Erreur: " . $e->getMessage());
 	}
 }
-//lecture données utilisateur
-$lecture = lecture_fabricant($donnees['id']);
+
+$lecture = lecture_affectation($donnees['id']);
 if (!$lecture['success']) {
-	throw new \Exception("Erreur lors de la lecture du fabricant : " . ($lecture['error'] ?? ''));
+	throw new \Exception("Erreur lors de la lecture du lieu : " . ($lecture['error'] ?? ''));
 }
 $donnees = array_merge($donnees, $lecture['donnees']);
 
@@ -59,7 +59,7 @@ $viewData = [
 	'libelle' =>
 	sprintf(
 		'<input name="libelle" type="text" required value="%s">',
-		htmlspecialchars(($action == 'maj') ? $donnees['libelle'] : 'fabricant ?', ENT_QUOTES, 'UTF-8')
+		htmlspecialchars(($action == 'maj') ? $donnees['libelle'] : 'lieu ?', ENT_QUOTES, 'UTF-8')
 	),
 	'id' => (int)$donnees['id'],
 	'isEditMode' => $action == 'maj' ? true : false
@@ -92,17 +92,16 @@ $viewData = [
 		<?php if (!empty($creation['success'])): ?>
 			<div class="alert alert-succes">Création de fiche réussie</div>
 		<?php endif; ?>
-		<form enctype="multipart/form-data" method="post" action="fiche_fabricant.php" id='form-controle'>
-
+		<form enctype="multipart/form-data" method="post" action="fiche_lieu.php" id='form-controle'>
 			<input type="hidden" name="csrf_token" value="<?= $csrf_token ?>">
 			<input type="hidden" name="action" value="maj">
 			<input type="hidden" name="id" value="<?= $viewData['id'] ?>">
-			<input type="hidden" name="retour" value="liste_fabricants.php">
+			<input type="hidden" name="retour" value="liste_lieux.php">
 			<table>
 				<tbody>
 					<tr>
 						<td>
-							<label for="libelle">Nom du fabricant :</label>
+							<label for="libelle">Nom du lieu :</label>
 							<?= $viewData['libelle'] ?>
 						</td>
 					</tr>
@@ -110,17 +109,16 @@ $viewData = [
 			</table>
 			<div class="form-actions">
 				<?php if ($viewData['isEditMode']): ?>
-					<a href="fabricant_effacer.php?id=<?= $viewData['id'] ?>&retour=<?= $retour ?>&csrf_token=<?= $csrf_token ?>"
-						onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce fabricant ?')">
-						<input type="button" class="btn btn-danger" value="Supprimer le fabricant" name="supprimer">
+					<a href="lieu_effacer.php?id=<?= $viewData['id'] ?>&retour=<?= $retour ?>&csrf_token=<?= $csrf_token ?>"
+						onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce lieu ?')">
+						<input type="button" class="btn btn-danger" value="Supprimer le lieu" name="supprimer">
 					</a>
 				<?php endif; ?>
-				<a href="<?= $viewData['isEditMode'] ? $retour : 'fabricant_effacer.php' ?>?csrf_token=<?= $csrf_token ?>&edit=<?= $viewData['isEditMode'] ? 0 : 1 ?>&id=<?= $donnees['id'] ?>">
+				<a href="<?= $viewData['isEditMode'] ? $retour : 'lieu_effacer.php' ?>?csrf_token=<?= $csrf_token ?>&edit=<?= $viewData['isEditMode'] ? 0 : 1 ?>&id=<?= $donnees['id'] ?>">
 					<input type="button" value=<?= $viewData['isEditMode'] ? "Retour " : "Annuler"; ?> class="btn return-btn">
 				</a>
-
 				<button type="submit" name="envoyer" class="btn btn-primary">
-					<?= $viewData['isEditMode'] ? 'Mettre à jour' : 'Créer'; ?> le fabricant
+					<?= $viewData['isEditMode'] ? 'Mettre à jour' : 'Créer'; ?> le lieu
 				</button>
 			</div>
 		</form>

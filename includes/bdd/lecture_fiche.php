@@ -1,41 +1,29 @@
 <?php
-	
-	/**
-	* Lit une fiche spécifique depuis la base de données
-	* 
-	* @param int $id Identifiant de la fiche à récupérer
-	* @param mysqli $connection (Optionnel) Connexion MySQLi existante
-	* @return array [
-	*	 'donnees' => array|null, // Données de la fiche ou null si non trouvée
-	*	 'success' => bool,	   // Statut de l'opération
-	*	 'error' => string		// Message d'erreur le cas échéant
-	* ]
-	*/
-	function lecture_fiche(int $id, ?mysqli $connection = null): array {
-		// 1. VALIDATION DE L'ENTRÉE
-		if ($id <= 0) {
-			return [
-				'donnees' => null,
-				'success' => false,
-				'error' => 'ID invalide: doit être un entier positif'
-			];
-		}
-		// 2. GESTION DE LA CONNEXION
-		$shouldCloseConnection = false;
-		
-		try {
-			if ($connection === null) {
-				global $host, $username, $password, $dbname;
-				
-				// Configuration sécurisée de MySQLi
-				mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
-				$connection = new mysqli($host, $username, $password, $dbname);
-				$connection->set_charset("utf8mb4");
-				$shouldCloseConnection = true;
-			}
-			
-			// 3. REQUÊTE PRÉPARÉE
-			$sql = "SELECT 
+
+/**
+ * Lit une fiche spécifique depuis la base de données
+ * 
+ * @param int $id Identifiant de la fiche à récupérer
+ * @param mysqli $connection (Optionnel) Connexion MySQLi existante
+ * @return array [
+ *	 'donnees' => array|null, // Données de la fiche ou null si non trouvée
+ *	 'success' => bool,	   // Statut de l'opération
+ *	 'error' => string		// Message d'erreur le cas échéant
+ * ]
+ */
+function lecture_fiche(int $id, ?mysqli $connection = null): array
+{
+	global $db;
+
+	if ($id <= 0) {
+		return [
+			'donnees' => null,
+			'success' => false,
+			'error' => 'ID invalide: doit être un entier positif'
+		];
+	}
+
+	$sql = "SELECT 
 			ref AS reference, 
 			en_service,
 			libelle, 
@@ -58,33 +46,18 @@
 			photo
 			FROM fiche 
 			WHERE id = ?";
-			
-			$stmt = $connection->prepare($sql);
-			$stmt->bind_param('i', $id);
-			$stmt->execute();
-			
-			// 4. RÉCUPÉRATION DES RÉSULTATS
-			$result = $stmt->get_result();
-			$donnees = $result->fetch_assoc();
-			$donnees['acquisition_id'] = (!$donnees['acquisition_id'] && $_SESSION['acquisition_en_saisie']) ? $_SESSION['acquisition_en_saisie'] : $donnees['acquisition_id'];
-			return [
-				'donnees' => $donnees, // Correction: utilisation de $donnees au affectation de $data
-				'success' => $donnees !== null,
-				'error' => $donnees ? '' : 'Aucune fiche trouvée avec cet ID'
-			];
-			
-		} catch (mysqli_sql_exception $e) {
-			// Journalisation et retour d'erreur
-			error_log("Erreur DB lors de la lecture de la fiche ID $id: " . $e->getMessage());
-			return [
-				'donnees' => null,
-				'success' => false,
-				'error' => 'Erreur lors de la récupération des données'.$e->getMessage()
-			];
-		} finally {
-			// 5. FERMETURE PROPRE DE LA CONNEXION SI NOUS L'AVONS CRÉÉE
-			if ($shouldCloseConnection && $connection instanceof mysqli) {
-				$connection->close();
-			}
-		}
-	}
+
+	$stmt = $db->prepare($sql);
+	$stmt->bind_param('i', $id);
+	$stmt->execute();
+
+	$result = $stmt->get_result();
+	$donnees = $result->fetch_assoc();
+	$donnees['acquisition_id'] = (!$donnees['acquisition_id'] && $_SESSION['acquisition_en_saisie']) ? $_SESSION['acquisition_en_saisie'] : $donnees['acquisition_id'];
+
+	return [
+		'donnees' => $donnees, // Correction: utilisation de $donnees au affectation de $data
+		'success' => $donnees !== null,
+		'error' => $donnees ? '' : 'Aucune fiche trouvée avec cet ID'
+	];
+}

@@ -1,5 +1,6 @@
 <?php
-    declare(strict_types=1);
+
+declare(strict_types=1);
 
 /**
  * Écrit dans un fichier en le créant automatiquement si nécessaire
@@ -12,7 +13,6 @@
  * @return string Message de succès
  * @throws InvalidArgumentException|RuntimeException En cas d'erreur
  */
-
 function fichier_ecrire(array $fichier, bool $ajouterRetourLigne = true): string
 {
     // Validation des paramètres
@@ -78,7 +78,6 @@ function fichier_ecrire(array $fichier, bool $ajouterRetourLigne = true): string
         }
 
         return "Écriture réussie ($bytesWritten octets)";
-
     } catch (Throwable $e) {
         throw new RuntimeException("Erreur d'écriture: " . $e->getMessage(), 0, $e);
     } finally {
@@ -91,7 +90,7 @@ function fichier_ecrire(array $fichier, bool $ajouterRetourLigne = true): string
         }
     }
 }
-    
+
 /**
  * Lit le contenu d'un fichier de manière sécurisée et remplace les <br> par des retours à la ligne
  * 
@@ -109,38 +108,37 @@ function fichier_lire(array $fichier, int $tailleMax = 1048576, bool $remplacerB
     if (!isset($fichier['chemin'])) {
         throw new InvalidArgumentException('Le tableau doit contenir la clé "chemin"');
     }
-    
+
     $chemin = trim($fichier['chemin']);
-    
+
     // Vérification du fichier
     if (!file_exists($chemin)) {
         throw new RuntimeException("Le fichier $chemin n'existe pas");
     }
-    
+
     if (!is_readable($chemin)) {
         throw new RuntimeException("Le fichier $chemin n'est pas accessible en lecture");
     }
-    
+
     // Vérification de la taille
     $taille = filesize($chemin);
     if ($taille > $tailleMax) {
         throw new RuntimeException("Le fichier $chemin dépasse la taille maximale autorisée ($tailleMax octets)");
     }
-    
+
     // Lecture du contenu
     try {
         $contenu = file_get_contents($chemin, false, null, 0, $tailleMax);
         if ($contenu === false) {
             throw new RuntimeException("Échec de la lecture du fichier $chemin");
         }
-        
+
         // Remplacement des <br> et <br /> par des retours à la ligne si demandé
         if ($remplacerBr) {
             $contenu = preg_replace('/<br\s*\/?>/i', "\n", $contenu);
         }
-        
+
         return $contenu;
-        
     } catch (Throwable $e) {
         throw new RuntimeException("Erreur lors de la lecture: " . $e->getMessage(), 0, $e);
     }

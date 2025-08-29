@@ -1,5 +1,6 @@
 <?php
-require __DIR__.'/vendor/autoload.php';
+
+require __DIR__ . '/vendor/autoload.php';
 
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
@@ -14,8 +15,8 @@ $id = $_GET['id'] ?? 0;
 $display = isset($_GET['display']); // Si ?display=1 est présent, on affiche
 
 // Dossier de sauvegarde
-$saveDir = __DIR__.'/_storage/qrcodes/';
-$filename = $saveDir.'qrcode'.$id.'_'.$size.'.png';
+$saveDir = __DIR__ . '/utilisateur/qrcodes/';
+$filename = $saveDir . 'qrcode' . $id . '_' . $size . '.png';
 
 // Vérifier l'existence du fichier
 if (file_exists($filename) && $display) {
@@ -43,10 +44,9 @@ if ($id > 0) {
 
 // Affichage conditionnel
 if ($display) {
-    header('Content-Type: '.$result->getMimeType());
+    header('Content-Type: ' . $result->getMimeType());
     echo $result->getString();
 } else {
     // Retourner un code HTTP 204 (No Content) si on ne veut pas afficher
     http_response_code(204);
 }
-?>
