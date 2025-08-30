@@ -3,5 +3,5 @@
 require __DIR__ . '/app/bootstrap.php';
 
 session_destroy();
-header('Location: /');
+header('Location: index.php');
 exit();

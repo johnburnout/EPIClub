@@ -42,7 +42,7 @@ foreach ($defaults as $key => $value) {
 		$donnees[$key] = (int)$donnees[$key];
 	}
 }
-
+var_dump($donnees);
 $donnees['controle_id'] = isset($_SESSION['controle_en_cours']) ? intval($_SESSION['controle_en_cours']) : 0;
 $isStarted = ($donnees['controle_id'] != 0);
 
