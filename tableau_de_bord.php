@@ -6,7 +6,8 @@ if (!$isLoggedIn) {
 	header('Location: /');
 	exit();
 }
-
+//var_dump($_SESSION);
+//var_dump($_SESSION['user']['controle_en_cours'])
 /** @deprecated Don't use it anymore! */
 /*
 if ($isLoggedIn) {
@@ -43,21 +44,21 @@ if ($isLoggedIn) {
 				<h3>Accueil</h3>
 				<div class="card">
 					<h5 class="card-title">Consultation</h5>
-					<a href="/liste_epis.php" class="btn btn-primary btn-block">Consulter la liste des EPI</a>
+					<a href="liste_epis.php" class="btn btn-primary btn-block">Consulter la liste des EPI</a>
 				</div>
 				<div class="card ">
 					<h5 class="card-title">Contrôles</h5>
-					<a href="/liste_controles.php" class="btn btn-primary btn-block">Contrôler les EPI</a>
-					<a href="/affichage_journaux.php" class="btn btn-primary btn-block">Journaux</a>
+					<a href="controle_creation.php" class="btn btn-primary btn-block">Contrôler les EPI</a>
+					<a href="affichage_journaux.php" class="btn btn-primary btn-block">Journaux</a>
 				</div>
 				<div class="card">
 					<?php if ($isAdmin): ?>
 						<h5 class="card-title">Administration</h5>
-						<a href="/liste_acquisitions.php" class="btn btn-secondary btn-block">Gestion des acquisitions</a>
-						<a href="/liste_utilisateurs.php" class="btn btn-secondary btn-block">Gestion des utilisateurs</a>
-						<a href="/liste_fabricants.php" class="btn btn-secondary btn-block">Gestion des fabricants</a>
-						<a href="/liste_categories.php" class="btn btn-secondary btn-block">Gestion des catégories</a>
-						<a href="/liste_affectations.php" class="btn btn-secondary btn-block">Gestion des affectations</a>
+						<a href="liste_acquisitions.php" class="btn btn-secondary btn-block">Gestion des acquisitions</a>
+						<a href="liste_utilisateurs.php" class="btn btn-secondary btn-block">Gestion des utilisateurs</a>
+						<a href="liste_fabricants.php" class="btn btn-secondary btn-block">Gestion des fabricants</a>
+						<a href="liste_categories.php" class="btn btn-secondary btn-block">Gestion des catégories</a>
+						<a href="liste_affectations.php" class="btn btn-secondary btn-block">Gestion des affectations</a>
 					<?php endif; ?>
 				</div>
 			</section>

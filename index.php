@@ -3,7 +3,7 @@
 require __DIR__ . '/app/bootstrap.php';
 
 if ($isLoggedIn) {
-	header('Location: /tableau_de_bord.php');
+	header('Location: tableau_de_bord.php');
 	exit();
 }
 

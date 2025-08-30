@@ -11,9 +11,9 @@
  *	 'error' => string		// Message d'erreur le cas échéant
  * ]
  */
-function lecture_fiche(int $id, ?mysqli $connection = null): array
+function lecture_fiche(int $id, mysqli $db): array
 {
-	global $db;
+	//global $db;
 
 	if ($id <= 0) {
 		return [

@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 		$donneesInitiales = $donnees;
 
 		if ($donnees['acquisition_id'] > 0) {
-			$result = lecture_acquisition($donnees['acquisition_id'], $utilisateur);
+			$result = lecture_acquisition($donnees['acquisition_id'], $utilisateur, $db);
 			if (!$result['success']) {
 				throw new \Exception('Erreur lors de la lecture: ' . ($result['error'] ?? ''));
 			}
@@ -61,7 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					'date_acquisition' => $donnees['date_acquisition'],
 					'vendeur' => $donnees['vendeur'],
 					'utilisateur' => $utilisateur
-				], $donnees['acquisition_id']);
+				], $donnees['acquisition_id'], $db);
 				if (!$maj['success']) {
 					throw new \Exception('Erreur lors de la mise à jour: ' . ($valid['error'] ?? 'Pas de lignes modifiées'));
 				}

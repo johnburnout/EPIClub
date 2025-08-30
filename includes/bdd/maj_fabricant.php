@@ -12,9 +12,9 @@
  *     'error' => string         // Message d'erreur le cas échéant
  * ]
  */
-function mise_a_jour_fabricant(array $donnees, int $id): array
+function mise_a_jour_fabricant(array $donnees, int $id, mysqli $db): array
 {
-    global $db;
+    //global $db;
 
     if ($id <= 0) {
         return [

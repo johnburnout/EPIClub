@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 	try {
 		if ($action === 'creation') {
-			$creation = creation_fiche($donnees);
+			$creation = creation_fiche($donnees, $db);
 			if (!$creation['success']) {
 				throw new \Exception('Erreur lors de la création: ' . ($creation['error'] ?? ''));
 			}
@@ -56,7 +56,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 		// Lecture des données après création/mise à jour
 		if ($donnees['id'] > 0) {
-			$result = lecture_fiche($donnees['id']);
+			$result = lecture_fiche($donnees['id'], $db);
 			if (!$result['success']) {
 				throw new \Exception('Erreur lors de la lecture: ' . ($result['error'] ?? ''));
 			}
@@ -66,18 +66,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			$current_affectation_id = $donnees['affectation_id'] ?? 0;
 			$current_categorie_id = $donnees['categorie_id'] ?? 0;
 			$current_fabricant_id = $donnees['fabricant_id'] ?? 0;
-			$listeaffectations = liste_options(['libelles' => 'affectation', 'id' => $current_affectation_id]);
+			$listeaffectations = liste_options(['libelles' => 'affectation', 'id' => $current_affectation_id], $db);
 
 			foreach ($listeaffectations[1] as $key => $value) {
 				$affectations[$value['id']] = $value['libelle'];
 			}
 
-			$listeCategories = liste_options(['libelles' => 'categorie', 'id' => $current_categorie_id]);
+			$listeCategories = liste_options(['libelles' => 'categorie', 'id' => $current_categorie_id], $db);
 
 			foreach ($listeCategories[1] as $key => $value) {
 				$categories[$value['id']] = $value['libelle'];
 			}
-			$listeFabricants = liste_options(['libelles' => 'fabricant', 'id' => $current_fabricant_id]);
+			$listeFabricants = liste_options(['libelles' => 'fabricant', 'id' => $current_fabricant_id], $db);
 
 			foreach ($listeFabricants[1] as $key => $value) {
 				$fabricants[$value['id']] = $value['libelle'];
@@ -90,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				$donnees['categorie'] = $categories[$donnees['categorie_id']];
 				$donnees['affectation'] = $affectations[$donnees['affectation_id']];
 				$donnees['fabricant'] = $fabricants[$donnees['fabricant_id']];
-				$valid = mise_a_jour_fiche($donnees);
+				$valid = mise_a_jour_fiche($donnees, $db);
 				if (!$valid['success']) {
 					throw new \Exception('Erreur lors de la mise à jour: ' . ($valid['error'] ?? ''));
 				}
@@ -152,18 +152,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	$current_categorie_id = $donnees['categorie_id'] ?? 0;
 	$current_fabricant_id = $donnees['fabricant_id'] ?? 0;
 
-	$listeacquisitions = liste_options(['libelles' => 'acquisition', 'id' => $current_acquisition_id]);
-	$listeaffectations = liste_options(['libelles' => 'affectation', 'id' => $current_affectation_id]);
+	$listeacquisitions = liste_options(['libelles' => 'acquisition', 'id' => $current_acquisition_id], $db);
+	$listeaffectations = liste_options(['libelles' => 'affectation', 'id' => $current_affectation_id], $db);
 	foreach ($listeaffectations[1] as $key => $value) {
 		$affectations[$value['id']] = $value['libelle'];
 	}
 
-	$listeCategories = liste_options(['libelles' => 'categorie', 'id' => $current_categorie_id]);
+	$listeCategories = liste_options(['libelles' => 'categorie', 'id' => $current_categorie_id], $db);
 	foreach ($listeCategories[1] as $key => $value) {
 		$categories[$value['id']] = $value['libelle'];
 	}
 
-	$listeFabricants = liste_options(['libelles' => 'fabricant', 'id' => $current_fabricant_id]);
+	$listeFabricants = liste_options(['libelles' => 'fabricant', 'id' => $current_fabricant_id], $db);
 	foreach ($listeFabricants[1] as $key => $value) {
 		$fabricants[$value['id']] = $value['libelle'];
 	}

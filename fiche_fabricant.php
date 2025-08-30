@@ -29,7 +29,7 @@ if (!empty($_POST)) {
 			$donnees[$key] = $value;
 		}
 		if ($action === 'creation') {
-			$creation = creation_fabricant($donnees);
+			$creation = creation_fabricant($donnees, $db);
 			if (!$creation['success']) {
 				throw new \Exception('Erreur lors de la création du fabricant: ' . ($creation['error'] ?? ''));
 			}
@@ -38,7 +38,7 @@ if (!empty($_POST)) {
 		}
 
 		if ($action === 'maj') {
-			$maj = mise_a_jour_fabricant($donnees, $donnees['id']);
+			$maj = mise_a_jour_fabricant($donnees, $donnees['id'], $db);
 			if (!$maj['success']) {
 				throw new \Exception("Erreur lors de la mise à jour du fabricant: " . ($maj['error'] ?? ''));
 			}
@@ -49,11 +49,11 @@ if (!empty($_POST)) {
 	}
 }
 //lecture données utilisateur
-$lecture = lecture_fabricant($donnees['id']);
+$lecture = lecture_fabricant($donnees['id'], $db);
 if (!$lecture['success']) {
 	throw new \Exception("Erreur lors de la lecture du fabricant : " . ($lecture['error'] ?? ''));
 }
-$donnees = array_merge($donnees, $lecture['donnees']);
+$donnees = array_merge($donnees, $lecture['donnees'], $db);
 
 $viewData = [
 	'libelle' =>

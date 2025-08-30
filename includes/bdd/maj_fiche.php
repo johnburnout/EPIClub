@@ -13,9 +13,9 @@ declare(strict_types=1);
  *	 'error' => string		 // Message d'erreur le cas échéant
  * ]
  */
-function mise_a_jour_fiche(array $donnees, ?mysqli $connection = null): array
+function mise_a_jour_fiche(array $donnees, mysqli $db): array
 {
-	global $db;
+	//global $db;
 
 	if ($donnees['id'] <= 0) {
 		return [

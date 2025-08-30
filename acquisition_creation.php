@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				'date_acquisition' => $donnees['date_acquisition'],
 				'reference' => $donnees['reference'],
 				'vendeur' => $donnees['vendeur']
-			]);
+			], $db);
 
 			if (!$creation['success']) {
 				throw new \Exception('Erreur lors de la création de l\'acquisition: ' . ($creation['error'] ?? ''));
@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 		if ($donnees['id'] > 0) {
 			$_SESSION['acquisition_en_saisie'] = $donnees['id'];
-			$result = lecture_acquisition($donnees['id'], $utilisateur);
+			$result = lecture_acquisition($donnees['id'], $utilisateur, $db);
 			if (!$result['success']) {
 				throw new \Exception('Erreur lors de la lecture: ' . ($result['error'] ?? ''));
 			}
@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					'date_acquisition' => $donnees['date_acquisition'],
 					'vendeur' => $donnees['vendeur'],
 					'utilisateur' => $utilisateur
-				], $donnees['id']);
+				], $donnees['id'], $db);
 
 				if (!$maj['success']) {
 					throw new \Exception('Erreur lors de la mise à jour: ' . ($valid['error'] ?? 'Pas de lignes modifiées'));

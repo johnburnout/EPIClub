@@ -52,9 +52,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Génère les listes déroulantes pour les affectations et catégories
 // Note: liste_options() est probablement définie dans common.php
-$listeaffectations = liste_options(['libelles' => 'affectation', 'id' => $params['affectation_id']]);
+$listeaffectations = liste_options(['libelles' => 'affectation', 'id' => $params['affectation_id']], $db);
 $listeaffectations[0] = "<option value='*'>Tous</option>" . $listeaffectations[0];
-$listeCategories = liste_options(['libelles' => 'categorie', 'id' => $params['cat_id']]);
+$listeCategories = liste_options(['libelles' => 'categorie', 'id' => $params['cat_id']], $db);
 $listeCategories[0] = "<option value='*'>Toutes</option>" . $listeCategories[0];
 
 // Options pour le filtre "en service"

@@ -30,7 +30,7 @@ if (!empty($_POST)) {
 			$donnees[$key] = $value;
 		}
 		if ($action === 'creation') {
-			$creation = creation_categorie($donnees);
+			$creation = creation_categorie($donnees, $db);
 			if (!$creation['success']) {
 				throw new \Exception('Erreur lors de la création de la catégorie : ' . ($creation['error'] ?? ''));
 			}
@@ -39,7 +39,7 @@ if (!empty($_POST)) {
 		}
 
 		if ($action === 'maj') {
-			$maj = mise_a_jour_categorie($donnees, $donnees['id']);
+			$maj = mise_a_jour_categorie($donnees, $donnees['id'], $db);
 			if (!$maj['success']) {
 				throw new \Exception("Erreur lors de la mise à jour du fabricant: " . ($maj['error'] ?? ''));
 			}
@@ -51,7 +51,7 @@ if (!empty($_POST)) {
 	}
 }
 
-$lecture = lecture_categorie($donnees['id']);
+$lecture = lecture_categorie($donnees['id'], $db);
 if (!$lecture['success']) {
 	throw new Exception("Erreur lors de la lecture de la catégorie : " . ($lecture['error'] ?? ''));
 }

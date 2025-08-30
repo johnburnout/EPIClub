@@ -11,11 +11,16 @@ if (!$isLoggedIn) {
 	exit();
 }
 
+if ($_SESSION['user']['controle_en_cours']) {
+	header('Location: liste_controles.php');
+	exit();
+}
 
+/*
 if (!isset($_POST) or count($_POST) == 0) {
 	header("Location: /");
 	exit();
-}
+}*/
 
 $action =  isset($_POST['action']) ? $_POST['action'] : 'creation';
 $validation = $action;
@@ -23,7 +28,7 @@ $validation = $action;
 $defaults = [
 	'action' => 'creation',
 	'controle_id' => 0,
-	'utilisateur' => $utilisateur,
+	'utilisateur' => $_SESSION['user']['controle_en_cours'],
 	'remarques' => '',
 	'date_controle' => date('Y-m-d'),
 	'error' => '',
@@ -48,12 +53,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 	}
 	
 	try {
-
 		if ($action === 'creation') {
 			$creation = creation_controle([
-				'utilisateur' => $utilisateur,
+				'utilisateur' => $donnees['utilisateur'],
 				'date_controle' => $donnees['date_controle']
-			]);
+			], $db);
 			if (!$creation['success']) {
 				throw new \Exception('Erreur lors de la création: ' . ($creation['error'] ?? ''));
 			}
@@ -66,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 		// Lecture des données après création/mise à jour
 		if ($donnees['controle_id'] > 0) {
-			$result = lecture_controle($donnees['controle_id'], $utilisateur);
+			$result = lecture_controle($donnees['controle_id'], $donnees['utilisateur'], $db);
 			if (!$result['success']) {
 				throw new \Exception('Erreur lors de la lecture: ' . ($result['error'] ?? ''));
 			}
@@ -82,9 +86,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 					: '';
 				$maj = mise_a_jour_controle([
 					'remarques' => $donnees['remarques'],
-					'utilisateur' => $utilisateur,
+					'utilisateur' => $donnees['utilisateur'],
 					'epi_controles' => $_SESSION['epi_controles']
-				], $donnees['controle_id']);
+				], $donnees['controle_id'], $db);
 				if (!$maj['success']) {
 					throw new \Exception('Erreur lors de la mise à jour: ' . ($valid['error'] ?? ''));
 				}
@@ -112,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 				}
 			}
 
-			$ajoutjournal = '-----' . PHP_EOL . "controle_" . $donnees['controle_id'] . "_" . date('Y/m/d') . " $utilisateur" . PHP_EOL;
+			$ajoutjournal = '-----' . PHP_EOL . "controle_" . $donnees['controle_id'] . "_" . date('Y/m/d') . " " . $donnees['utilisateur'] . PHP_EOL;
 			if (!empty($modifications)) {
 				$ajoutjournal .= implode(PHP_EOL, $modifications) . PHP_EOL;
 			}
@@ -166,7 +170,7 @@ $viewData = [
 				<tbody>
 					<tr>
 						<th width="20%">Utilisateur</th>
-						<td width="30%"><?= $utilisateur ?></td>
+						<td width="30%"><?= $donnees['utilisateur'] ?></td>
 						<th width="20%">Date</th>
 						<td width="30%"><?= $viewData['date_controle'] ?></td>
 					</tr>
@@ -203,7 +207,7 @@ $viewData = [
 				<?php endif; ?>
 			</div>
 			<div class="actions">
-				<a href="/" class="btn return-btn">Retour à l'accueil</a>
+				<a href="tableau_de_bord.php" class="btn return-btn">Retour à l'accueil</a>
 			</div>
 		</form>
 	</main>

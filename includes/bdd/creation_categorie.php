@@ -10,9 +10,9 @@
  *     'error' => string   // Message d'erreur le cas échéant
  * ]
  */
-function creation_categorie(array $donnees): array
+function creation_categorie(array $donnees, mysqli $db): array
 {
-    global $db;
+    //global $db;
 
     $requiredFields = [
         'libelle' => 'string'

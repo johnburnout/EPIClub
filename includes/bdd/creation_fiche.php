@@ -10,9 +10,9 @@
  *     'error' => string   // Message d'erreur le cas échéant
  * ]
  */
-function creation_fiche(array $donnees, ?mysqli $connection = null): array
+function creation_fiche(array $donnees, mysqli $db): array
 {
-    global $db;
+    //global $db;
 
     $requiredFields = [
         'reference' => 'string',

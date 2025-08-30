@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div style="text-align: left; margin-top: 20px;">
                     <input type="hidden" name="csrf_token" value="<?= $csrf_token ?>" />
                     <button type="submit" class="btn btn-primary" name="connexion">Me connecter</button>
-                    <a href="/oubli_mdp.php">Mot de passe oublié ?</a>
+                    <a href="oubli_mdp.php">Mot de passe oublié ?</a>
                 </div>
             </form>
         </div>

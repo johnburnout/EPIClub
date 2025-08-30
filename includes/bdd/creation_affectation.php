@@ -10,9 +10,9 @@
  *     'error' => string   // Message d'erreur le cas échéant
  * ]
  */
-function creation_affectation(array $donnees): array
+function creation_affectation(array $donnees, mysqli $db): array
 {
-    global $db;
+    //global $db;
 
     $requiredFields = [
         'libelle' => 'string'

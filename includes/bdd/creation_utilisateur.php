@@ -10,9 +10,9 @@
  *     'error' => string   // Message d'erreur le cas échéant
  * ]
  */
-function creation_utilisateur(array $donnees): array
+function creation_utilisateur(array $donnees, mysqli $db): array
 {
-    global $db;
+    //global $db;
 
     $requiredFields = [
         'username' => 'string',

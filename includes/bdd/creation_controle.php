@@ -10,9 +10,9 @@
  *	 'error' => string   // Message d'erreur le cas échéant
  * ]
  */
-function creation_controle(array $donnees): array
+function creation_controle(array $donnees, mysqli $db): array
 {
-	global $db;
+	//global $db;
 
 	$requiredFields = [
 		'utilisateur' => 'string'

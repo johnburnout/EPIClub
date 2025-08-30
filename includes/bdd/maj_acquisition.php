@@ -17,9 +17,9 @@
  *     'error' => string         // Message d'erreur le cas échéant
  * ]
  */
-function mise_a_jour_acquisition(array $donnees, int $id, ?mysqli $connection = null): array
+function mise_a_jour_acquisition(array $donnees, int $id, mysqli $db): array
 {
-    global $db;
+    //global $db;
 
     if ($id <= 0) {
         return [

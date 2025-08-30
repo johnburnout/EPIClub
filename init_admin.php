@@ -29,7 +29,7 @@ if (isset($_POST)) {
 			foreach ($_POST as $key => $value) {
 				$donnees[$key] = $value;
 			}
-			$creation = creation_utilisateur($donnees);
+			$creation = creation_utilisateur($donnees, $db);
 			if (!$creation['success']) {
 				throw new \Exception("Erreur lors de la création de l'utilisateur : " . ($creation['error'] ?? ''));
 			}
@@ -37,7 +37,7 @@ if (isset($_POST)) {
 			$donnees['success'] = "Administrateur créé avec succès.";
 		}
 		if ($action === 'maj') {
-			$maj = mise_a_jour_utilisateur($donnees, $donnees['id']);
+			$maj = mise_a_jour_utilisateur($donnees, $donnees['id'], $db);
 			if (!$maj['success']) {
 				throw new \Exception("Erreur lors de la mise à jour de l'utilisateur: " . ($maj['error'] ?? ''));
 			}
@@ -49,7 +49,7 @@ if (isset($_POST)) {
 	}
 }
 
-$lecture = lecture_utilisateur($donnees['id']);
+$lecture = lecture_utilisateur($donnees['id'], $db);
 if (!$lecture['success']) {
 	throw new \Exception("Erreur lors de la lecture de l'utilisateur: " . ($lecture['error'] ?? ''));
 }

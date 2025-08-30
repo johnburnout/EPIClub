@@ -16,9 +16,9 @@
  *     'error' => string         // Message d'erreur le cas échéant
  * ]
  */
-function mise_a_jour_utilisateur(array $donnees, int $id, ?mysqli $connection = null)
+function mise_a_jour_utilisateur(array $donnees, int $id, mysqli $db)
 {
-	global $db;
+	//global $db;
 
 	if ($id <= 0) {
 		return [

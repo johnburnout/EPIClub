@@ -1,7 +1,7 @@
 <?php 
 
 if (!file_exists(__DIR__ . '/../.env.local.php')) {
-    throw new \Exception("Le fichier environement est introuvable.", 1);
+    throw new \Exception("Le fichier environnement est introuvable.", 1);
 }
 
 $_ENV = require __DIR__ . '/../.env.local.php';

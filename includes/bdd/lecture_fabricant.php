@@ -10,9 +10,9 @@
  *     'error' => string        // Message d'erreur le cas échéant
  * ]
  */
-function lecture_fabricant(int $id): array
+function lecture_fabricant(int $id, mysqli $db): array
 {
-    global $db;
+    //global $db;
 
     if ($id <= 0) {  // Changement à <= 0 car un ID doit être positif
         return ['donnees' => null, 'success' => false, 'error' => 'ID invalide'];

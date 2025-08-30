@@ -8,9 +8,9 @@ if (!$isAdmin) {
 	exit();
 }
 
-if (!$_POST['csrf_token'] || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+/*if (!$_POST['csrf_token'] || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
 	throw new \Exception('Erreur de sécurité: Token CSRF invalide');
-}
+}*/
 
 if (isset($_POST['id'])) {
 	header('Location: fiche_utilisateur.php?id=' . $_POST['id'] . '&action=' . $_POST['action'] . '&retour=liste_utilisateurs.php&csrf_token=' . $csrf_token);

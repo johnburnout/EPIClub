@@ -1,10 +1,14 @@
+*.swp
+/_storage
+_storage
+/config.php
 config.php
+/.env.local.php
+.env.local.php
+!_storage/images/null.jpeg
 utilisateur/enregistrements/*
 utilisateur/images/*
 utilisateur/factures/*
 !utilisateur/images/null.jpeg
 utilisateur/qrcodes/*
-.DS_Store
-*.swp
-
 .DS_Store

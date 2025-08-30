@@ -44,7 +44,7 @@
 	// #############################
 	$acquisitionOuvert = ($acquisition_id > 0);
 	if (!$acquisitionOuvert && $isLoggedIn) {
-		$acquisition = lecture_acquisition($_SESSION['acquisition_en_saisie'], $utilisateur);
+		$acquisition = lecture_acquisition($_SESSION['acquisition_en_saisie'], $utilisateur, $db);
 		$acquisitionOuvert = $acquisition['success'] ?? false;
 		$acquisition_id = $acquisitionOuvert ? (int)($acquisition['id'] ?? 0) : null;
 	}
@@ -82,9 +82,9 @@
 	$current_affectation_id = $params['affectation_id'];
 	$current_categorie_id = $params['cat_id'];
 	
-	$listeaffectations = liste_options(['libelles' => 'affectation', 'id' => $current_affectation_id]);
+	$listeaffectations = liste_options(['libelles' => 'affectation', 'id' => $current_affectation_id], $db);
 	$listeaffectations[0] = "<option value='*'>Tous</option>".$listeaffectations[0];
-	$listeCategories = liste_options(['libelles' => 'categorie', 'id' => $current_categorie_id]);
+	$listeCategories = liste_options(['libelles' => 'categorie', 'id' => $current_categorie_id], $db);
 	$listeCategories[0] = "<option value='*'>Toutes</option>".$listeCategories[0];
 	
 	// ###################################

@@ -48,7 +48,7 @@
 	$controle_id = htmlspecialchars($_SESSION['controle_en_cours'] ?? '', ENT_QUOTES | ENT_HTML5, 'UTF-8');
 	$controleOuvert = ($controle_id > 0);
 	if (!$controleOuvert && $isLoggedIn) {
-		$controle = lecture_controle(0, $utilisateur);
+		$controle = lecture_controle(0, $utilisateur, $db);
 		$controleOuvert = $controle['success'] ?? false;
 		$controle_id = $controleOuvert ? (int)($controle['controle_id'] ?? 0) : null;
 	}
@@ -86,8 +86,8 @@
 				$current_affectation_id = $params['affectation_id'];
 				$current_categorie_id = $params['cat_id'];
 				
-				$listeaffectations = liste_options(['libelles' => 'affectation', 'id' => $current_affectation_id]);
-				$listeCategories = liste_options(['libelles' => 'categorie', 'id' => $current_categorie_id]);
+				$listeaffectations = liste_options(['libelles' => 'affectation', 'id' => $current_affectation_id], $db);
+				$listeCategories = liste_options(['libelles' => 'categorie', 'id' => $current_categorie_id], $db);
 				
 				// ###################################
 				// Construction de la requête principale avec protection

@@ -21,9 +21,9 @@ $donnees = [
 	'est_actif' => 1,  // Filtre "actif" par défaut (1 = oui)
 	'id' => $id
 ];
-$isAdmin = $_SESSION['role'] == 'admin';
+$isAdmin = $_SESSION['user']['role'] == 'admin';
 
-if (isset($_POST)) {
+if (!empty($_POST)) {
 
 	if (!$_POST['csrf_token'] || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
 		throw new \Exception('Erreur de sécurité: Token CSRF invalide');
@@ -35,7 +35,7 @@ if (isset($_POST)) {
 			$donnees[$key] = $value;
 		}
 		if ($action === 'creation') {
-			$creation = creation_utilisateur($donnees);
+			$creation = creation_utilisateur($donnees, $db);
 			if (!$creation['success']) {
 				throw new \Exception("Erreur lors de la création de l'utilisateur : " . ($creation['error'] ?? ''));
 			}
@@ -43,7 +43,7 @@ if (isset($_POST)) {
 			$donnees['success'] = "Nouvel utilisateur créé avec succès.";
 		}
 		if ($action === 'maj') {
-			$maj = mise_a_jour_utilisateur($donnees, $donnees['id']);
+			$maj = mise_a_jour_utilisateur($donnees, $donnees['id'], $db);
 			if (!$maj['success']) {
 				throw new \Exception("Erreur lors de la mise à jour de l'utilisateur: " . ($maj['error'] ?? ''));
 			}
@@ -55,7 +55,7 @@ if (isset($_POST)) {
 	}
 }
 //lecture données utilisateur
-$lecture = lecture_utilisateur($donnees['id']);
+$lecture = lecture_utilisateur($donnees['id'], $db);
 if (!$lecture['success']) {
 	throw new \Exception("Erreur lors de la lecture de l'utilisateur: " . ($lecture['error'] ?? ''));
 }

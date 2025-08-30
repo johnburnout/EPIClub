@@ -138,7 +138,7 @@ $tableau = [];
 				</div>
 			</div>
 			<div class="actions">
-				<a href="/" class="btn return-btn">Retour à l'accueil</a>
+				<a href="" class="btn return-btn">Retour à l'accueil</a>
 			</div>
 		</form>
 	</main>

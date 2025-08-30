@@ -37,7 +37,7 @@ $remarques = '';
 $bouton = 'Valider le contrôle';
 
 if ($id > 0) {
-	$result = lecture_fiche($id);
+	$result = lecture_fiche($id, $db);
 	if ($result['success']) {
 		$donnees = array_merge($donnees, $result['donnees']);
 		$remarques = $donnees['remarques'];
@@ -59,7 +59,7 @@ $journalcontrole = __DIR__ . '/utilisateur/enregistrements/journalcontrole' . $d
 $donneesInitiales = $donnees;
 
 if (empty($_SESSION['epi_controles'])) {
-	$controle = lecture_controle_recent($donnees['controle_id'], $utilisateur);
+	$controle = lecture_controle_recent($donnees['controle_id'], $utilisateur, $db);
 	$_SESSION['epi_controles'] = $controle['donnees']['epi_controles'] ?? '';
 }
 
@@ -105,7 +105,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 			$stmt->execute();
 
 			if ($stmt->affected_rows > 0) {
-				$valid = mise_a_jour_fiche($donnees);
+				$valid = mise_a_jour_fiche($donnees, $db);
 
 				// Journalisation si succès
 				if ($valid['success'] ?? false) {
@@ -137,7 +137,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Préparation des données pour l'affichage
 $current_affectation_id = $donnees['affectation_id'] ?? 0;
-$listeaffectations = liste_options(['libelles' => 'affectation', 'id' => $current_affectation_id]);
+$listeaffectations = liste_options(['libelles' => 'affectation', 'id' => $current_affectation_id], $db);
 $selectaffectations = $listeaffectations[0] ?? '';
 
 $enservice = [

@@ -8,9 +8,9 @@
  *			   - 'id' : ID à sélectionner (optionnel)
  * @return array [options_html, success, error_message]
  */
-function liste_options(array $entree): array
+function liste_options(array $entree, mysqli $db): array
 {
-	global $db;
+	//global $db;
 
 	if (!isset($entree['libelles'])) {
 		return ['', false, 'Le paramètre "libelles" est obligatoire'];

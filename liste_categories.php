@@ -126,7 +126,7 @@ $result = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 				<input type="hidden" name="id" value="0" />
 				<table>
 					<tr>
-						<td><a href="/" class="btn return-btn btn-block">Revenir à l'accueil</a></td>
+						<td><a href="" class="btn return-btn btn-block">Revenir à l'accueil</a></td>
 						<td>
 							<input type="submit" name="creation" value="Nouvelle catégorie" class="btn btn-primary" />
 						</td>

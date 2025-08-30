@@ -11,9 +11,9 @@
  *	 'error' => string		// Message d'erreur le cas échéant
  * ]
  */
-function lecture_controle(int $id, string $utilisateur): array
+function lecture_controle(int $id, string $utilisateur, mysqli $db): array
 {
-	global $db;
+	//global $db;
 
 	if ($id <= 0) {  // Changement à <= 0 car un ID doit être positif
 		return ['donnees' => null, 'success' => false, 'error' => 'ID invalide'];
