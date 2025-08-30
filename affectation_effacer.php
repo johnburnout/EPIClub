@@ -32,7 +32,7 @@ if ($id > 2) {
 }
 
 if ($db->affected_rows > 0) {
-	$avis = "Le affectation a été supprimé avec succès";
+	$avis = "l'affectation a été supprimé avec succès";
 	$succes = true;
 } elseif ($id < 2) {
 	$avis = "HS ou En Attente insupprimables";

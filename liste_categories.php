@@ -8,9 +8,9 @@ if (!$isAdmin) {
 	exit();
 }
 
-if (!$_POST['csrf_token'] || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+/*if (!$_POST['csrf_token'] || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
 	throw new \Exception('Erreur de sécurité: Token CSRF invalide');
-}
+}*/
 
 if (isset($_POST['id'])) {
 	header('Location: fiche_categorie.php?id=' . $_POST['id'] . '&action=' . $_POST['action'] . '&retour=liste_categories.php&csrf_token=' . $csrf_token);
@@ -126,7 +126,7 @@ $result = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 				<input type="hidden" name="id" value="0" />
 				<table>
 					<tr>
-						<td><a href="" class="btn return-btn btn-block">Revenir à l'accueil</a></td>
+						<td><a href="index.php" class="btn return-btn btn-block">Revenir à l'accueil</a></td>
 						<td>
 							<input type="submit" name="creation" value="Nouvelle catégorie" class="btn btn-primary" />
 						</td>

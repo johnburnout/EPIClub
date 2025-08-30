@@ -207,7 +207,7 @@ $viewData = [
 				<?php endif; ?>
 			</div>
 			<div class="actions">
-				<a href="tableau_de_bord.php" class="btn return-btn">Retour à l'accueil</a>
+				<a href="index.php" class="btn return-btn">Retour à l'accueil</a>
 			</div>
 		</form>
 	</main>

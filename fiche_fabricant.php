@@ -53,7 +53,7 @@ $lecture = lecture_fabricant($donnees['id'], $db);
 if (!$lecture['success']) {
 	throw new \Exception("Erreur lors de la lecture du fabricant : " . ($lecture['error'] ?? ''));
 }
-$donnees = array_merge($donnees, $lecture['donnees'], $db);
+$donnees = array_merge($donnees, $lecture['donnees']);
 
 $viewData = [
 	'libelle' =>

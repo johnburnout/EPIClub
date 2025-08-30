@@ -7,7 +7,7 @@ if (!$isAdmin) {
 	exit();
 }
 
-if (!$_POST['csrf_token'] || $_POST['csrf_token'] !== $_SESSION['csrf_token']) {
+if (!$_GET['csrf_token'] || $_GET['csrf_token'] !== $_SESSION['csrf_token']) {
 	throw new \Exception('Erreur de sécurité: Token CSRF invalide');
 }
 

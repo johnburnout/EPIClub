@@ -112,7 +112,7 @@ $viewData = [
 				<?php if ($viewData['isEditMode']): ?>
 					<a href="affectation_effacer.php?id=<?= $viewData['id'] ?>&retour=<?= $retour ?>&csrf_token=<?= $csrf_token ?>"
 						onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce affectation ?')">
-						<input type="button" class="btn btn-danger" value="Supprimer le affectation" name="supprimer">
+						<input type="button" class="btn btn-danger" value="Supprimer l'affectation" name="supprimer">
 					</a>
 				<?php endif; ?>
 				<a href="<?= $viewData['isEditMode'] ? $retour : 'affectation_effacer.php' ?>?csrf_token=<?= $csrf_token ?>&edit=<?= $viewData['isEditMode'] ? 0 : 1 ?>&id=<?= $donnees['id'] ?>">
