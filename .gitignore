@@ -8,3 +8,4 @@ utilisateur/qrcodes/*
 *.swp
 
 .DS_Store
+.env.local.php
