@@ -1,13 +1,6 @@
 config.php
-utilisateur/enregistrements/*
-utilisateur/images/*
-utilisateur/factures/*
-!utilisateur/images/null.jpeg
-utilisateur/qrcodes/*
 /_storage
-.DS_Store
 *.swp
-
 .DS_Store
 .env.local.php
 /vendor
