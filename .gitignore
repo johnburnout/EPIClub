@@ -3,4 +3,7 @@ config.php
 *.swp
 .DS_Store
 .env.local.php
+<<<<<<< Updated upstream
 /vendor
+=======
+>>>>>>> Stashed changes
