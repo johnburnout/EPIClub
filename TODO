@@ -8,8 +8,8 @@
 
 # CODE
 [X] Changer les liens vers les images et les pages qui sont des URL, doivent donc commencer par / (pb execution code)
-[ ] Mettre la fonctionalité de la connexion de la database dans un fichier dédié (pb duplication de code)
-[-] Les parametres de connexion à la BDD ne doivent pas apparetre dans le projet, utiliser un fichier .env (pb sécurité code)
+[X] Mettre la fonctionalité de la connexion de la database dans un fichier dédié (pb duplication de code)
+[X] Les parametres de connexion à la BDD ne doivent pas apparetre dans le projet, utiliser un fichier .env (pb sécurité code)
 [X] Les parametres root et autres vers des dossiers sont inutiles, doivent etre supprimés. (pb clean code)
 [X] Enlever tous les commentaires de dump (pb clean code)
 [X] L'utilisation des cookies n'est pas necessaire, les enlever. (pb clean code)
@@ -18,7 +18,7 @@
 [ ] Utiliser les fonction ob_ pour la construction des vues (pb clean code)
 [ ] Remplacer le fichier style par bootswatch cosmo + bootstrap bunddle.min.js (pour les actions sur les elements) (pb clean code)
 [X] Renommer tous les endpoints par des noms descriptifs du contenu, les noms actuels ne veulent rien dire (pb clean code)
-[ ] Le fichier débug est à supprimé, en local on utilise toujours une machine de dev paramétré pour le dev et on utilise les variables d'environement, pas de session.
+[X] Le fichier débug est à supprimé, en local on utilise toujours une machine de dev paramétré pour le dev et on utilise les variables d'environement, pas de session.
 [ ] Ne pas utiliser de tag form pour les boutons vers des url, utiliser le tag a, ex: liens vers l'accueil (mais pas que)
 
 # PROBLEMES
