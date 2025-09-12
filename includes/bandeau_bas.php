@@ -1,2 +1,0 @@
-<hr>
-<footer><small>EPIClub 0.9.3 (beta): Logiciel développé par <a href="mailto:jean@grimpe.fr">Jean Roussie</a> (<a href="https://perigord-escalade.fr">Périgord Escalade</a>) à Sarlat (Dordogne).</small></footer>

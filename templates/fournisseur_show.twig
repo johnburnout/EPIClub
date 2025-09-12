@@ -1,0 +1,27 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+
+	<h3>Fiche Fournisseur</h3>
+	<hr>
+
+	<div class="mb-3">
+		<label for="username">Nom :</label>
+		{{ fournisseur.nom }}
+	</div>
+
+	<div class="mb-3">
+		<label for="email">Adresse mail :</label>
+		{{ fournisseur.email }}
+	</div>
+
+	<div class="mb-3">
+		<label for="phone">Téléphone :</label>
+		{{ fournisseur.phone }}
+	</div>
+
+	<div class="form-actions">
+		<a href="/fournisseurs/fournisseur_modification-{{ fournisseur.id }}" class="btn btn-primary">Editer</a>
+	</div>
+
+{% endblock %}

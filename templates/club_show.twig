@@ -1,0 +1,39 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+
+	<h3>Club</h3>
+	<hr>
+
+	<div class="mb-3">
+		<label for="nom">Nom :
+		</label>
+		{{ club.nom }}
+	</div>
+
+	<div class="mb-3">
+		<label for="activite">Activité :
+		</label>
+		{{ club.activite }}
+	</div>
+
+	<div class="mb-3">
+		<label for="description">Description :
+		</label>
+		{{ club.description }}
+	</div>
+
+	<div class="mb-3">
+		<label for="email">Adresse mail :</label>
+		{{ club.email }}
+	</div>
+	<div class="mb-3">
+		<label for="email">Téléphone :</label>
+		{{ club.phone }}
+	</div>
+
+	<div class="mb-3">
+		
+	</div>
+
+{% endblock %}

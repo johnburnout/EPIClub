@@ -1,0 +1,35 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+	<h3>Fournisseurs</h3>
+	<hr>
+<a href="/admin/fournisseurs/nouveau" class="btn btn-primary">Nouveau</a>
+<hr>
+	{% if fournisseurs %}
+		<table class="table">
+			<thead>
+				<tr>
+					<th>Nom</th>
+					<th>Adresse mail</th>
+					<th>Téléphone</th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for fournisseur in fournisseurs %}
+					<tr>
+						<td>{{ fournisseur.nom }}</td>
+						<td>{{ fournisseur.email }}</td>
+						<td>{{ fournisseur.phone }}</td>
+						<td>
+							<a href="/admin/fournisseurs/fournisseur-{{ fournisseur.id }}" class="btn btn-primary btn-block">Voir</a>
+							<a href="/admin/fournisseurs/fournisseur_modification-{{ fournisseur.id }}" class="btn btn-primary btn-block">Editer</a>
+						</td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	{% else %}
+		<p>Aucun fournisseur trouvé!</p>
+	{% endif %}
+{% endblock %}

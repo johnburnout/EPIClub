@@ -1,0 +1,46 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+	<h3>Utilisateurs</h3>
+	<hr>
+	<!-- <a href="/" class="btn btn-primary">Nouvel utilisateur</a> -->
+
+	{% if utilisateurs %}
+		<table class="table">
+			<thead>
+				<tr>
+					<th></th>
+					<th>
+						Identité
+						<a href="/admin/utilisateurs?tri=username ASC" class="text-decoration-none">&#x2191;</a>
+						<a href="/admin/utilisateurs?tri=username DESC" class="text-decoration-none">&#x2193;</a>
+					</th>
+					<th>
+						Rôle
+						<a href="/admin/utilisateurs?tri=role ASC" class="text-decoration-none">&#x2191;</a>
+						<a href="/admin/utilisateurs?tri=role DESC" class="text-decoration-none">&#x2193;</a>
+					</th>
+					<th>Email</th>
+					<th></th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for utilisateur in utilisateurs %}
+					<tr>
+						<td></td>
+						<td>{{ utilisateur.prenom }}
+							{{ utilisateur.nom }}</td>
+						<td>{{ utilisateur.rolelabel }}</td>
+						<td><a href="mailto:{{ utilisateur.email }}">{{ utilisateur.email }}</a></td>
+						<td>
+							<a href="/admin/utilisateurs/utilisateur-{{ utilisateur.id }}" class="btn btn-primary btn-block">Voir</a>
+						</td>
+					</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	{% else %}
+		<p>Aucun utilisateur trouvé !</p>
+	{% endif %}
+
+{% endblock %}

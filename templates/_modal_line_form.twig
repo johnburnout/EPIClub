@@ -1,0 +1,38 @@
+<div class="modal" tabindex="-1">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h5 class="modal-title">Ligne acquisition</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+				<div class="mb-3">
+					<label for="categorie_nom">Catégorie</label>
+					<input type="text" class="form-control" list="categories" name="categorie_nom" id="categorie_nom" value="{{ acquisition_ligne.id.categorie.nom }}"/>
+					<datalist id="categories">
+						{% for categorie in categories %}
+							<option value="{{ categorie.nom }}">{{ categorie.nom }}</option>
+						{% endfor %}
+					</datalist>
+				</div>
+                <div class="mb-3">
+					<label for="epi_libelle">Epi</label>
+					<input type="text" class="form-control" list="epi_libelles" name="epi_libelle" id="epi_libelle" value="{{ acquisition_ligne.id.epi.libelle }}"/>
+					<datalist id="epi_libelles">
+						{% for libelle in epi_libelles %}
+							<option value="{{ libelle.nom }}">{{ libelle.nom }}</option>
+						{% endfor %}
+					</datalist>
+				</div>
+				<div class="mb-3">
+					<label for="nombre">Nombre</label>
+					<input type="number" class="form-control" name="nombre" id="nombre" min="1" value="{{ acquisition.nombre or 1 }}" required {{ is_readonly }}>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+				<button type="button" class="btn btn-primary">Valider</button>
+			</div>
+		</div>
+	</div>
+</div>

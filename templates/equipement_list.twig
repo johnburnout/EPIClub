@@ -1,0 +1,30 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+	<h3>Equipements</h3>
+    <hr>
+	<table class="table">
+		<thead>
+			<tr>
+				<th>Référence</th>
+				<th>Nom</th>
+				<th>Catégorie</th>
+				<th>Etat</th>
+                <th>Statut</th>
+				<th></th>
+			</tr>
+		</thead>
+        <tbody>
+            {% for equipement in equipements %}
+                <tr>
+                    <td>{{ equipement.reference }}</td>
+                    <td>{{ equipement.libelle }}</td>
+                    <td>{{ equipement.categorie.libelle }}</td>
+                    <td>{{ equipement.etat }}</td>
+                    <td>{{ equipement.statut }}</td>
+                    <td></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+	</table>
+{% endblock %}

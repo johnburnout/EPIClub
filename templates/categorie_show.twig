@@ -1,0 +1,40 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+
+	<h3>Fiche Catégorie</h3>
+	<hr>
+
+	<div class="mb-3">
+		<label for="libelle">Libellé :
+		</label>
+		{{ categorie.libelle }}
+	</div>
+
+	<div class="mb-3">
+		{% set est_epi_value = "Oui" %}
+		{% if categorie.est_epi == 0 %}
+			{% set est_epi_value = "Non" %}
+		{% endif %}
+		<label for="est_epi">Classée EPI ? :
+		</label>
+		{{ est_epi_value }}
+	</div>
+
+	<div class="mb-3">
+		<label for="description">Description :
+		</label>
+		{{ categorie.description }}
+	</div>
+
+	<div class="mb-3">
+		<label for="image">Image :</label>
+		{{ categorie.image }}
+	</div>
+
+
+	<div class="mb-3">
+		<a href="/fournisseurs/fournisseur_modification-{{ fournisseur.id }}" class="btn btn-primary">Editer</a>
+	</div>
+
+{% endblock %}

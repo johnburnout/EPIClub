@@ -1,0 +1,34 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+	<h3>Acquisitions</h3>
+    <hr>
+        <a href="/admin/acquisitions/nouvelle" class="btn btn-primary">Nouvelle entrée</a>
+    <hr>
+
+	<table class="table">
+		<thead>
+			<tr>
+				<th>Fournisseur</th>
+				<th>Facture date</th>
+                <th>Facture référence</th>
+                <th>Rédacteur</th>
+				<th></th>
+			</tr>
+		</thead>
+        <tbody>
+            {% for acquisition in acquisitions %}
+                <tr>
+                    <td>{{ acquisition.fournisseur.nom }}</td>
+                    <td>{{ acquisition.facture_date }}</td>
+                    <td>{{ acquisition.facture_reference }}</td>
+                    <td>{{ acquisition.redacteur.nom }} {{ acquisition.redacteur.nom }}</td>
+                    <td>
+                        <a href="/admin/acquisitions/acquisition-{{ acquisition.id }}" class="btn btn-primary">Voir</a>
+                        <a href="/admin/acquisitions/acquisition_modification-{{ acquisition.id }}" class="btn btn-primary">Editer</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+	</table>
+{% endblock %}

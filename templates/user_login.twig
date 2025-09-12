@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Epiclub</title>
+		<link rel="shortcut icon" href="/assets/img/favicon.ico" type="image/x-icon">
+		<link rel="stylesheet" type="text/css" href="/assets/css/cosmo.min.css">
+	</head>
+
+	<body>
+		<header class="container mt-3">
+			<div class="text-center">
+				<hr>
+				<img src="/assets/img/EPIClub.png" class="" width="64" alt="Logo EPIClub">
+				<span class="h1 text-primary align-middle ps-3">
+					<strong>Gestionnaire EPI</strong>
+				</span>
+				<hr>
+			</div>
+		</header>
+		<main class="container mt-2">
+			{% for label, messages in session.getFlashBag.all %}
+				{% for message in messages %}
+					<div class="alert alert-{{ label }} alert-dismissible fade show" role="alert">
+						{{ message }}
+						<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+					</div>
+				{% endfor %}
+			{% endfor %}
+			<h3>Identification</h3>
+			<hr>
+
+			{% if null != error_autentification %}
+				<div class="error">{{ error_autentification }}</div>
+			{% endif %}
+
+			<form method="post">
+				<div class="mb-3">
+					<label for="username">Identifiant :</label>
+					<input type="text" class="form-control {% if form_errors.username %} is-invalid{% endif %}" id="username" name="username" required autofocus>
+					{% if form_errors.username %}
+						<div class="invalid-feedback">{{ form_errors.username }}</div>
+					{% endif %}
+				</div>
+				<div class="mb-3">
+					<label for="password">Mot de passe :</label>
+					<input type="password" class="form-control {% if form_errors.password %} is-invalid{% endif %}" id="password" name="password" required>
+					{% if form_errors.password %}
+						<div class="invalid-feedback">{{ form_errors.password }}</div>
+					{% endif %}
+				</div>
+				<div class="mb-3">
+					<input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+					<button type="submit" class="btn btn-primary">Me connecter</button>
+					<a href="/mot_de_passe_oublie">Mot de passe oublié ?</a>
+				</div>
+			</form>
+		</main>
+		<footer class="container">
+			<hr>
+			<p class="text-center text-body-secondary">
+				<a href="https://epiclub.fr">Epiclub 0.9.3 (beta)</a>
+			</p>
+		</footer>
+	</body>
+</html>
