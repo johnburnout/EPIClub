@@ -1,0 +1,99 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+	<h3>Epi</h3>
+	<hr>
+<a href="/tableau_de_bord" class="btn btn-primary">Tableau_de_bord</a>
+<hr>
+	<form method="post">
+		<div class="mb-3">
+			<label for="categorie_id">Catégorie</label>
+			<div class="input-group">
+				<select class="form-select" name="categorie_id" id="categorie_id">
+					{% for categorie in categories %}
+						<option value="{{ categorie.id }}">{{ categorie.libelle }}</option>
+					{% endfor %}
+				</select>
+				<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#categorieModalForm">
+					...
+				</button>
+			</div>
+		</div>
+
+		<div class="mb-3">
+			<label for="reference">Référence</label>
+			<input type="text" class="form-control" name="reference" id="reference" required>
+		</div>
+
+		<div class="mb-3">
+			<label for="lot">Lot n°</label>
+			<input type="text" class="form-control" name="lot" id="lot" required>
+		</div>
+
+		<div class="mb-3">
+			<label for="date_achat">Date achat</label>
+			<input type="date" class="form-control" name="date_achat" id="date_achat" required>
+		</div>
+
+		<div class="mb-3">
+			<label for="statut_id">Statut</label>
+			<select class="form-select" name="statut_id" id="statut_id">
+				{% for name, value in epi_statuts %}
+					<option value="{{ value }}">{{ name }}</option>
+				{% endfor %}
+			</select>
+		</div>
+
+		<div class="mb-3">
+			<label for="etat_usure_id">Etat usure</label>
+			<select class="form-select" name="etat_usure_id" id="etat_usure_id">
+				{% for name, value in usure_etats %}
+					<option value="{{ value }}">{{ name }}</option>
+				{% endfor %}
+			</select>
+		</div>
+
+		<button type="submit" class="btn btn-primary">Enregistrer</button>
+	</form>
+	<!-- Modal -->
+	<div class="modal fade" id="categorieModalForm" tabindex="-1" aria-labelledby="categorieModalFormLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h1 class="modal-title fs-5" id="categorieModalFormLabel">Nouvelle catégorie</h1>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<form id="add_epi_categorie">
+						<div class="mb-3">
+							<label for="libelle">Nom</label>
+							<input type="text" class="form-control" name="libelle" id="libelle" required>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+					<button type="button" class="btn btn-primary" id="add_category_submit">Save changes</button>
+				</div>
+			</div>
+		</div>
+	</div>
+{% endblock %}
+
+{% block javascripts %}
+	<script>
+		const add_category_submit = document.getElementById('add_category_submit');
+
+        add_category_submit.addEventListener('click', (e) => {
+            console.log(e);
+            const response = fetch("/epi_categories/nouvelle", {
+                method: "POST",
+                headers: {
+                "Content-Type": "application/json"
+                },
+                body: JSON.stringify(document.getElementById('add_epi_categorie').serialize())
+            });
+        });
+	</script>
+
+{% endblock %}

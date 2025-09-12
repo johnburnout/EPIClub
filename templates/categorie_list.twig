@@ -1,0 +1,35 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+	<h3>Catégories</h3>
+	<hr>
+	<a href="/admin/categories/nouvelle" class="btn btn-primary">Saisir une entrée</a>
+	<hr>
+	<table class="table">
+		<thead>
+			<tr>
+				<th>libelle</th>
+				<th>Description</th>
+				<th>Est EPI ?</th>
+				<th></th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for categorie in categories %}
+				{% set est_epi_value = "Oui" %}
+				{% if categorie.est_epi == 0 %}
+					{% set est_epi_value = "Non" %}
+				{% endif %}
+
+				<tr>
+					<td>{{ categorie.libelle }}</td>
+					<td>{{ categorie.description }}</td>
+					<td>{{ est_epi_value }}</td>
+					<td>
+						<a href="/admin/categories/categorie-{{ categorie.id }}" class="btn btn-primary">Voir</a>
+					</td>
+				</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+{% endblock %}

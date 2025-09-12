@@ -1,0 +1,97 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+	<hr>
+	<h3>Acquisition</h3>
+	<hr>
+
+	{% if acquisition.id %}
+		{% set is_readonly = 'readonly disabled' %}
+	{% endif %}
+
+	<form method="post">
+		<div class="mb-3">
+			<label for="fournisseur_nom">Fournisseur</label>
+			<input type="text" class="form-control" list="fournisseurs" name="fournisseur_nom" id="fournisseur_nom" value="{{ acquisition.fournisseur.nom }}" required {{ is_readonly }}/>
+			<datalist id="fournisseurs">
+				{% for fournisseur in fournisseurs %}
+					<option value="{{ fournisseur.nom }}">{{ fournisseur.nom }}</option>
+				{% endfor %}
+			</datalist>
+		</div>
+
+		<div class="mb-3">
+			<label for="facture_reference">Référence facture</label>
+			<input type="text" class="form-control" name="facture_reference" id="facture_reference" value="{{ acquisition.facture_reference }}" required {{ is_readonly }}>
+		</div>
+
+		<div class="mb-3">
+			<label for="facture_date">Date achat</label>
+			<input type="date" class="form-control" name="facture_date" id="facture_date" value="{{ "now"|date("Y-m-d") }}" required {{ is_readonly }}>
+		</div>
+
+		<hr>
+		{% if acquisition.id == true %}
+			<div class="row mb-3">
+				<div class="col-lg-2">
+					<label for="ligne_reference">Référence</label>
+					<input type="text" class="form-control" list="equipement_references" name="ligne[reference]" id="ligne_reference" required/>
+					<datalist id="equipement_references">
+						{% for equipement in equipements %}
+							<option value="{{ equipement.reference }}">{{ equipement.reference }}</option>
+						{% endfor %}
+					</datalist>
+				</div>
+
+				<div class="col-lg-4">
+					<label for="ligne_libelle">Libelle</label>
+					<input type="text" class="form-control" list="equipement_libelles" name="ligne[designation]" id="ligne_libelle" required/>
+					<datalist id="equipement_libelles">
+						{% for equipement in equipements %}
+							<option value="{{ equipement.libelle }}">{{ equipement.libelle }}</option>
+						{% endfor %}
+					</datalist>
+				</div>
+
+				<div class="col-lg-3">
+					<label for="ligne_categorie">Catégorie</label>
+					<input type="text" class="form-control" list="categories" name="ligne[categorie_libelle]" id="ligne_categorie" required/>
+					<datalist id="categories">
+						{% for categorie in categories %}
+							<option value="{{ categorie.libelle }}">{{ categorie.libelle }}</option>
+						{% endfor %}
+					</datalist>
+				</div>
+
+				<div class="col-lg-1">
+					<label for="nombre">Nombre</label>
+					<input type="number" class="form-control" name="ligne[nombre]" id="nombre" min="1" value="{{ acquisition.nombre or 1 }}" required/>
+				</div>
+				<div class="col-lg-2 d-grid">
+					<button type="submit" class="btn btn-primary mt-4" id="ajout_entree_btn">Entrée</button>
+				</div>
+			</div>
+
+			<hr>
+			{% for ligne in acquisition.lignes %}
+				<div class="row mb-3">
+				<div class="col-lg-2">
+					<input type="text" class="form-control" name="ligne_reference" id="ligne_reference" value="{{ ligne.reference }}" readonly disabled />
+				</div>
+				<div class="col-lg-4">
+					<input type="text" class="form-control" name="ligne_designation" id="ligne_designation" value="{{ ligne.designation }}" readonly disabled />
+				</div>
+				<div class="col-lg-3">
+					<input type="text" class="form-control" name="ligne_categorie_libelle" id="ligne_categorie_libelle" value="{{ ligne.categorie.libelle }}" readonly disabled />
+				</div>
+				<div class="col-lg-1">
+					<input type="number" class="form-control" name="ligne_nombre" id="ligne_nombre" min="1" value="{{ ligne.nombre }}" readonly disabled />
+				</div>
+			</div>
+			{% endfor %}
+		{% endif %}
+		{% if acquisition.id == false %}
+			<button type="submit" class="btn btn-primary">Enregistrer et saisir les lignes</button>
+		{% endif %}
+	</form>
+{% endblock %}

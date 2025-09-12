@@ -1,9 +1,8 @@
-config.php
-/_storage
-*.swp
 .DS_Store
-.env.local.php
-<<<<<<< Updated upstream
+°.DS_Store
+*.swp
+!*.gitkeep
+/_storage
+/.env.local.php
 /vendor
-=======
->>>>>>> Stashed changes
+/_dev

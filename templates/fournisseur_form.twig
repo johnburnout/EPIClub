@@ -1,0 +1,35 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+
+	<h3>Fournisseur</h3>
+	<hr>
+
+	<form method="post">
+		<div class="mb-3">
+			<label for="nom">Nom</label>
+			<input type="text" class="form-control {% if form_errors.nom %} is-invalid{% endif %}" name="fournisseur[nom]" id="nom" value="{{ fournisseur.nom }}" required>
+			{% if form_errors.nom %}
+				<div class="invalid-feedback">{{ form_errors.nom }}</div>
+			{% endif %}
+		</div>
+		<div class="mb-3">
+			<label for="email">Adresse mail</label>
+			<input type="text" class="form-control {% if form_errors.email %} is-invalid{% endif %}" name="fournisseur[email]" id="email" value="{{ fournisseur.email }}">
+			{% if form_errors.email %}
+				<div class="invalid-feedback">{{ form_errors.email }}</div>
+			{% endif %}
+		</div>
+		<div class="mb-3">
+			<label for="phone">Téléphone</label>
+			<input type="text" class="form-control {% if form_errors.phone %} is-invalid{% endif %}" name="fournisseur[phone]" id="phone" value="{{ fournisseur.phone }}">
+			{% if form_errors.phone %}
+				<div class="invalid-feedback">{{ form_errors.phone }}</div>
+			{% endif %}
+		</div>
+		<div class="mb-3">
+			<button type="submit" class="btn btn-primary">Enregistrer</button>
+		</div>
+	</form>
+
+{% endblock %}

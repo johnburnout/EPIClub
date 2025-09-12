@@ -1,0 +1,43 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+
+	<h3>Fiche Utilisateur</h3>
+	<hr>
+
+	<form method="post">
+		<div class="mb-3">
+			<label for="identite">Identité :</label>
+			{{ utilisateur.prenom }}
+			{{ utilisateur.nom }}
+		</div>
+
+		<div class="mb-3">
+			<label for="username">Pseudo :</label>
+			{{ utilisateur.username }}
+		</div>
+
+		<div class="mb-3">
+			<label for="email">Adresse mail :</label>
+			<a href="mailto:{{ utilisateur.email }}">{{ utilisateur.email }}</a>
+		</div>
+
+		<div class="mb-3">
+			<label for="role">Rôle :</label>
+			<select name="role" id="role">
+				{% for role, label in roles %}
+					<option value="{{ role }}" {% if utilisateur.role == role %} selected {% endif %}>{{ label }}</option>
+				{% endfor %}
+			</select>
+		</div>
+
+		<div class="form-actions">
+			{# <a href="/admin/utilisateur_effacer.php?id={{ utilisateur.id }}" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')">
+				<input type="button" class="btn btn-danger" value="Supprimer l'utilisateur" name="supprimer">
+			</a> #}
+			<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+			<button type="submit" class="btn btn-primary">Enregistrer</button>
+		</div>
+	</form>
+
+{% endblock %}

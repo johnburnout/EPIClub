@@ -1,0 +1,39 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+
+	<h3>Acquisition</h3>
+	<hr>
+
+	<div class="mb-3">
+		<label>Fournisseur :</label>
+		{{ acquisition.fournisseur.nom }}
+	</div>
+
+	<div class="mb-3">
+		<label>Facture référence</label>
+		{{ acquisition.facture_reference }}
+	</div>
+
+	<div class="mb-3">
+		<label>Facture date :</label>
+		{{ acquisition.facture_date }}
+	</div>
+
+	<div class="mb-3">
+		<label>Saisie par :</label>
+		{{ acquisition.redacteur.prenom }}
+		{{ acquisition.redacteur.nom }}
+	</div>
+
+	<div class="form-actions">
+		<a href="/epi_acquisitions/acquisition_modification-{{ acquisition.id }}" class="btn btn-primary">Modifier</a>
+	</div>
+
+	<div class="col-lg-2 d-grid">
+		{% if ligne.equipements_generes == 0 %}
+			<a href="">Editer</a>
+		{% endif %}
+	</div>
+
+{% endblock %}
