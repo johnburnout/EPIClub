@@ -33,29 +33,27 @@ class FournisseurController extends AbstractController
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
 
-        /* if ($request->isXmlHttpRequest()) {
-            $fournisseur =  json_decode($request->getContent(), true);
-            $fournisseurManager = new FournisseurManager();
-            if ($id = $fournisseurManager->save($fournisseur)) {
-                $fournisseur['id'] = $id;
-                return new JsonResponse($fournisseur);
-            }
-            return new JsonResponse(['error' => true], 422);
-        } */
+        $fournisseurManager = new FournisseurManager();
 
         $fournisseur = [];
+        $form_errors = [];
 
-        if ($request->get('id')) {
-            $fournisseurManager = new FournisseurManager();
-            $fournisseur = $fournisseurManager->findId($request->get('id'));
+        if ($id = $request->get('id')) {
+            $fournisseur = $fournisseurManager->findId($id);
         }
 
         if ($request->getMethod() === 'POST') {
             /** @todo need validation here */
 
-            $fournisseur = array_merge($fournisseur, $request->request->all()['fournisseur']);
-
             if (empty($form_errors)) {
+                $fournisseur = array_merge(
+                    $fournisseur,
+                    [
+                        'nom' => $request->request->get('nom'),
+                        'email' => $request->request->get('email'),
+                        'phone' => $request->request->get('phone'),
+                    ]
+                );
                 $fournisseurManager->save($fournisseur);
                 /** @todo flash success */
                 return $this->redirectTo("/admin/fournisseurs");
@@ -65,7 +63,8 @@ class FournisseurController extends AbstractController
         }
 
         return $this->render('fournisseur_form.twig', [
-            'fournisseur' => $fournisseur
+            'fournisseur' => $fournisseur,
+            'form_errors' => $form_errors
         ]);
     }
 

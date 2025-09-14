@@ -5,36 +5,35 @@
 	<h3>Fiche Catégorie</h3>
 	<hr>
 
-	<div class="mb-3">
-		<label for="libelle">Libellé :
-		</label>
-		{{ categorie.libelle }}
+	<div class="row h-100">
+		<div class="col-md-6">
+			{% if categorie.image %}
+				<img src="/images/{{ categorie.image }}" alt="{{ categorie.libelle }}">
+			{% endif %}
+		</div>
+		<div class="col-md-6">
+			<div class="mb-3">
+				<label for="libelle">Libellé :
+				</label>
+				{{ categorie.libelle }}
+			</div>
+			<div class="mb-3">
+				{% set est_epi_value = "Oui" %}
+				{% if categorie.est_epi == 0 %}
+					{% set est_epi_value = "Non" %}
+				{% endif %}
+				<label for="est_epi">Classée EPI ? :
+				</label>
+				{{ est_epi_value }}
+			</div>
+			<div class="mb-3">
+				<label for="description">Description :
+				</label>
+				{{ categorie.description }}
+			</div>
+			<div class="mb-3">
+				<a href="/admin/categories/categorie_modification-{{ categorie.id }}" class="btn btn-primary">Editer</a>
+			</div>
+		</div>
 	</div>
-
-	<div class="mb-3">
-		{% set est_epi_value = "Oui" %}
-		{% if categorie.est_epi == 0 %}
-			{% set est_epi_value = "Non" %}
-		{% endif %}
-		<label for="est_epi">Classée EPI ? :
-		</label>
-		{{ est_epi_value }}
-	</div>
-
-	<div class="mb-3">
-		<label for="description">Description :
-		</label>
-		{{ categorie.description }}
-	</div>
-
-	<div class="mb-3">
-		<label for="image">Image :</label>
-		{{ categorie.image }}
-	</div>
-
-
-	<div class="mb-3">
-		<a href="/fournisseurs/fournisseur_modification-{{ fournisseur.id }}" class="btn btn-primary">Editer</a>
-	</div>
-
 {% endblock %}

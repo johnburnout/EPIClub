@@ -4,33 +4,40 @@
 	<h3>Catégorie</h3>
 	<hr>
 
-	<form method="post">
-		<div class="mb-3">
-			<label for="libelle">Catégorie</label>
-			<input type="text" class="form-control" name="categorie[libelle]" id="libelle" value="{{ categorie.libelle }}" required>
-		</div>
-
-		<div class="mb-3">
-			<label for="description">Description</label>
-			<input type="text" class="form-control" name="categorie[description]" id="description" required>
-		</div>
-
-		<div class="mb-3">
-			<label for="image" class="form-label">Image</label>
-			<input class="form-control" type="file" name="categorie[image]" id="image">
-		</div>
-
-		<div class="mb-3">
-			<div class="form-check">
-				<input class="form-check-input" type="checkbox" name="categorie[est_epi]" id="est_epi" {% if categorie.est_epi == 1 %} checked {% endif %}>
-				<label class="form-check-label" for="est_epi">
-					Est classé EPI ?
-				</label>
+	<form method="post" enctype="multipart/form-data">
+		<div class="row">
+			<div class="col-md-6">
+				<div class="mb-3">
+					<label for="libelle">Catégorie</label>
+					<input type="text" class="form-control" name="libelle" id="libelle" value="{{ categorie.libelle }}" required>
+				</div>
+				<div class="mb-3">
+					<div class="form-check">
+						<input class="form-check-input" type="checkbox" name="est_epi" id="est_epi" {% if categorie.est_epi == 1 %} checked {% endif %}>
+						<label class="form-check-label" for="est_epi">
+							Est classé EPI ?
+						</label>
+					</div>
+				</div>
+				<div class="mb-3">
+					<label for="description">Description</label>
+					<input type="text" class="form-control" name="description" id="description" required>
+				</div>
+				<div class="mb-3">
+					<button type="submit" class="btn btn-primary">Enregistrer</button>
+				</div>
 			</div>
-		</div>
-
-		<div class="mb-3">
-			<button type="submit" class="btn btn-primary">Enregistrer</button>
+			<div class="col-md-6">
+				<div class="mb-3">
+					<label for="image" class="form-label">Image</label>
+					<input class="form-control" type="file" name="image" id="image">
+				</div>
+				<div class="mb-3">
+					{% if categorie.image %}
+						<img src="/images/{{ categorie.image }}" alt="{{ categorie.libelle }}">
+					{% endif %}
+				</div>
+			</div>
 		</div>
 	</form>
 

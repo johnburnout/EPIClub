@@ -28,7 +28,7 @@ $routes->add('club_show', new Route('/admin/club', ['_controller' => 'Epiclub\\C
 
 $routes->add('categorie_list', new Route('/admin/categories', ['_controller' => 'Epiclub\\Controller\\CategorieController', 'action' => 'list']));
 $routes->add('categorie_create', new Route('/admin/categories/nouvelle', ['_controller' => 'Epiclub\\Controller\\CategorieController', 'action' => 'edit']));
-$routes->add('categorie_update', new Route('/admin/categories/epi_modification-{id}', ['_controller' => 'Epiclub\\Controller\\CategorieController', 'action' => 'edit']));
+$routes->add('categorie_update', new Route('/admin/categories/categorie_modification-{id}', ['_controller' => 'Epiclub\\Controller\\CategorieController', 'action' => 'edit']));
 $routes->add('categorie_show', new Route('/admin/categories/categorie-{id}', ['_controller' => 'Epiclub\\Controller\\CategorieController', 'action' => 'show']));
 $routes->add('categorie_delete', new Route('/admin/categories/categorie_supprimer-{id}', ['_controller' => 'Epiclub\\Controller\\CategorieController', 'action' => 'delete']));
 

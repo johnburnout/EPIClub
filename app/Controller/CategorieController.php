@@ -3,9 +3,8 @@
 namespace Epiclub\Controller;
 
 use Epiclub\Domain\CategorieManager;
-use Epiclub\Enum\EquipementEtats;
-use Epiclub\Enum\EquipementStatuts;
 use Epiclub\Engine\AbstractController;
+use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\Request;
 
 class CategorieController extends AbstractController
@@ -34,15 +33,46 @@ class CategorieController extends AbstractController
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
 
+        $categorieManager = new CategorieManager();
+
         $categorie = [];
+        $form_errors = [];
 
         if ($id = $request->get('id')) {
-            $categorieManager = new CategorieManager();
+
             $categorie = $categorieManager->findId($id);
         }
 
+        if ($request->getMethod() === 'POST') {
+            /** @todo Need validation here */
+            if (empty($form_errors)) {
+                $categorie = array_merge(
+                    $categorie,
+                    [
+                        'libelle' => $request->request->get('libelle'),
+                        'est_epi' => $request->request->has('est_epi') ? 1 : 0,
+                        'description' => $request->request->get('description'),
+                    ]
+                );
+                if ($image = $request->files->get('image')) {
+                    $originalFilename = pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME);
+                    $newFilename = $originalFilename . '-' . uniqid() . '.' . $image->guessExtension();
+                    try {
+                        $image->move(__DIR__ . '/../../public/images', $newFilename);
+                        $categorie['image'] = $newFilename;
+                    } catch (FileException $e) {
+                        // ... handle exception if something happens during file upload
+                    }
+                }
+
+                $categorieManager->save($categorie);
+                return $this->redirectTo("/admin/categories");
+            }
+        }
+
         return $this->render('categorie_form.twig', [
-            'categorie' => $categorie
+            'categorie' => $categorie,
+            'form_errors' => $form_errors
         ]);
     }
 

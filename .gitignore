@@ -1,9 +1,7 @@
 .DS_Store
-°.DS_Store
 *.swp
 !*.gitkeep
 /_storage
 /.env.local.php
 /vendor
-composer.lock
-epi.sql
+/_dev

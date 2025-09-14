@@ -2,6 +2,7 @@
 
 namespace Epiclub\Controller;
 
+use Epiclub\Domain\CategorieManager;
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Enum\EquipementEtats;
 use Epiclub\Enum\EquipementStatuts;
@@ -33,23 +34,52 @@ class EquipementController extends AbstractController
     public function edit(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
-        
-        $categories = [];
-        $equipement_statuts = EquipementStatuts::forSelect();
-        $equipement_etats = EquipementEtats::forSelect();
-        $equipement = [];
 
-        if ($request->get('id')) {
-            $equipement = [];
+        $categorieManager = new CategorieManager();
+        $equipementManager = new EquipementManager();
+        $equipement = [];
+        $form_errors = [];
+
+        if ($id = $request->get('id')) {
+            $equipement = $equipementManager->findId($id);
+        }
+
+        if ($request->getMethod() === 'POST') {
+            /** @todo need validation here */
+
+            if (empty($form_errors)) {
+                $equipement = array_merge(
+                    $equipement,
+                    [
+                        'categorie_id' => $request->request->get('categorie_id'),
+                        'reference' => $request->request->get('reference'),
+                        'date_achat' => $request->request->get('date_achat'),
+                        'statut_id' => $request->request->get('statut_id'),
+                        'etat_usure_id' => $request->request->get('etat_usure_id'),
+                    ]
+                );
+                $equipementManager->save($equipement);
+                /** @todo flash success */
+                return $this->redirectTo("/equipements");
+            }
+
+            /** @todo else error something wrong... */
         }
 
         return $this->render('equipement_form.twig', [
-            'categories' => $categories,
-            'equipement_statuts' => $equipement_statuts,
-            'equipement_etats' => $equipement_etats,
-            'equipement' => $equipement
+            'categories' => $categorieManager->findAll(),
+            'equipement_statuts' => EquipementStatuts::forSelect(),
+            'equipement_etats' => EquipementEtats::forSelect(),
+            'equipement' => $equipement,
+            'form_errors' => $form_errors
         ]);
     }
 
-    public function delete(Request $request) {}
+    /**
+     * @deprecated Why we need this?
+     */
+    public function delete(Request $request)
+    {
+        throw new \Exception("Error Processing Request", 1);
+    }
 }

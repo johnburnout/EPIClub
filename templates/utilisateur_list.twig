@@ -9,7 +9,6 @@
 		<table class="table">
 			<thead>
 				<tr>
-					<th></th>
 					<th>
 						Identité
 						<a href="/admin/utilisateurs?tri=username ASC" class="text-decoration-none">&#x2191;</a>
@@ -27,7 +26,6 @@
 			<tbody>
 				{% for utilisateur in utilisateurs %}
 					<tr>
-						<td></td>
 						<td>{{ utilisateur.prenom }}
 							{{ utilisateur.nom }}</td>
 						<td>{{ utilisateur.rolelabel }}</td>

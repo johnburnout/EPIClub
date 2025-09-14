@@ -15,9 +15,9 @@ class IndexController extends AbstractController
 
     public function dashboard(Request $request): Response
     {
-        if (!$this->isAuthenticated()) {
+        /* if (!$this->isAuthenticated()) {
            return $this->redirectTo('/se_connecter');
-        }
+        } */
 
         return $this->render('tableau_de_bord.twig', []);
     }

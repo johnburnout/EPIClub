@@ -31,14 +31,16 @@
 									<span class="visually-hidden">(current)</span>
 								</a>
 							</li>
+							{% if isGranted('ROLE_USER') %}
 							<li class="nav-item">
 								<a class="nav-link" href="/equipements">Liste équipements</a>
 							</li>
+							{% endif %}
 							{% if isGranted('ROLE_CONTROLLEUR') %}
 								<li class="nav-item dropdown">
 									<a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Contrôles</a>
 									<div class="dropdown-menu">
-										<a class="dropdown-item" href="/controles">Contrôler les EPI</a>
+										<a class="dropdown-item" href="/controles">Contrôler les EPIs</a>
 										<a class="dropdown-item" href="/journaux">Journaux</a>
 									</div>
 								</li>
@@ -66,6 +68,8 @@
 									<input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
 									<button type="submit" class="btn btn-primary">Déconnexion</button>
 								</form>
+								{% else %}
+									<a href="/se_connecter" class="btn btn-primary">Connexion</a>
 							{% endif %}
 						</div>
 					</div>
