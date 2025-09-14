@@ -4,6 +4,7 @@ namespace Epiclub\Engine;
 
 use Twig\TwigFunction;
 use Epiclub\Engine\Session;
+use Symfony\Component\Mime\Email;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
@@ -29,6 +30,19 @@ abstract class AbstractController
     public function render(string $template, array $data = []): Response
     {
         return new Response($this->renderer->render($template, $data));
+    }
+
+    public function createEmail(string $from, string $to, string $subject, string $template, array $data = [])
+    {
+        $html = $this->render($template, $data);
+
+        $email = (new Email())
+            ->from($from)
+            ->to($to)
+            ->subject($subject)
+            // ->text($text)
+            ->html($html);
+        return $email;
     }
 
     public function isAuthenticated(): bool

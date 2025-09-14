@@ -1,22 +1,17 @@
-<?php 
+<?php
+
 namespace Epiclub\Controller;
 
 use Epiclub\Engine\AbstractController;
 
 class AcquisitionLineController extends AbstractController
 {
-    public function addLine()
-    {
+    public function modifyLine() {}
 
-    }
-
-    public function modifyLine()
-    {
-        
-    }
-
-    public function deleteLine()
-    {
-        
+    /**
+     * @deprecated Why we need this?
+     */
+    public function deleteLine() {
+        throw new \Exception("Error Processing Request", 1);
     }
 }

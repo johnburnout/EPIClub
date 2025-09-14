@@ -71,7 +71,7 @@ class UtilisateurController extends AbstractController
     } */
 
     /**
-     * @deprecated
+     * @deprecated A user/utilisateur can be deleted only by himself
      */
     public function delete(Request $request) {}
 }

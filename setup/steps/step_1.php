@@ -20,7 +20,7 @@ foreach ($requirements['php_extentions'] as $extention) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($errors)) {
-        header("Location: ?step=2");
+        header("Location: ?step=dbms");
         exit();
     }
 }
@@ -42,7 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="container">
         <h1>Epiclub | Nouvelle installation</h1>
         <hr>
-        <h2>Vérification de votre environnement</h2>
+        <h2>Vérification de votre environement</h2>
         <form method="post">
             <div class="mb-3">
                 Php version:
