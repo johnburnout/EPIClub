@@ -5,6 +5,5 @@
 /_storage
 /.env.local.php
 /vendor
-/_dev
 composer.lock
 epi.sql
