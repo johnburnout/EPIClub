@@ -13,5 +13,8 @@
         "psr-4": {
             "Epiclub\\": "app/"
         }
+    },
+    "require-dev": {
+        "symfony/profiler-pack": "^1.0"
     }
 }
