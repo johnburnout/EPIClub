@@ -1,4 +1,7 @@
 {
+    "name": "epiclub/epiclub",
+    "description": "Gestionnaire d'Equipements de Protection Individuelle (EPI)",
+    "licence": "LGPL-3.0",
     "require": {
         "php": ">=7.4",
         "ext-gd": "*",
