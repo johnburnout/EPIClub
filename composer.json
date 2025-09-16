@@ -10,8 +10,7 @@
         "symfony/routing": "^7.3",
         "tecnickcom/tc-lib-barcode": "^2.4",
         "symfony/mailer": "^7.3",
-        "symfony/mime": "^7.3",
-        "symfony/console": "^7.3"
+        "symfony/mime": "^7.3"
     },
     "autoload": {
         "psr-4": {
