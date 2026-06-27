@@ -5,4 +5,5 @@
 /.env.local.php
 /vendor
 /_dev
-/composer.lock
+/composer.locksetup/
+***setup/
