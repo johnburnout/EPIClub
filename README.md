@@ -4,7 +4,7 @@
 
 ## Objectif
 
-EpiClub est une application de gestion d'equipement avec contrôle des Equipements de Protection Individuelle.
+EpiClub est une application de gestion et de journalisation des contrôles des Equipements de Protection Individuelle.
 
 ## Prérequis
 
