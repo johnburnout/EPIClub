@@ -46,7 +46,7 @@ try {
     $controller = new $parameters['_controller']($session);
     $response = call_user_func_array([$controller, $parameters['action']], [$request]);
 } catch (ResourceNotFoundException $exception) {
-    $response = new Response('L\url que vous demandez n\'existe pas.', 404);
+    $response = new Response('L\'url que vous demandez n\'existe pas.', 404);
 } catch (\Exception $exception) {
     $response = new Response('An error occurred' . $exception, 500);
 }
