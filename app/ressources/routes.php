@@ -37,6 +37,7 @@ $routes->add('equipement_show', new Route('/equipements/equipement-{id}', ['_con
 	$routes->add('acquisition_list', new Route('/admin/acquisitions', ['_controller' => 'Epiclub\\Controller\\AcquisitionController', 'action' => 'list']));
 	$routes->add('acquisition_create', new Route('/admin/acquisitions/nouvelle', ['_controller' => 'Epiclub\\Controller\\AcquisitionController', 'action' => 'create']));
 	$routes->add('acquisition_edit', new Route('/admin/acquisitions/acquisition_modification-{id}', ['_controller' => 'Epiclub\\Controller\\AcquisitionController', 'action' => 'update']));
+	$routes->add('acquisition_show', new Route('/admin/acquisitions/acquisition-{id}', ['_controller' => 'Epiclub\\Controller\\AcquisitionController', 'action' => 'show']));
 	
 	// FOURNISSEUR - DELETE avant SHOW
 	$routes->add('fournisseur_list', new Route('/admin/fournisseurs', ['_controller' => 'Epiclub\\Controller\\FournisseurController', 'action' => 'list']));

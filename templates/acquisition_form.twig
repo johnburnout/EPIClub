@@ -27,71 +27,127 @@
 
 		<div class="mb-3">
 			<label for="facture_date">Date achat</label>
-			<input type="date" class="form-control" name="facture_date" id="facture_date" value="{{ "now"|date("Y-m-d") }}" required {{ is_readonly }}>
+			<input type="date" class="form-control" name="facture_date" id="facture_date" value="{{ acquisition.facture_date ? acquisition.facture_date : "now"|date("Y-m-d") }}" required {{ is_readonly }}>
 		</div>
 
 		<hr>
 		{% if acquisition.id == true %}
 			<div class="row mb-3">
 				<div class="col-lg-2">
-					<label for="ligne_reference">Référence</label>
-					<input type="text" class="form-control" list="equipement_references" name="ligne[reference]" id="ligne_reference" required/>
+					<label for="ligne_reference">Référence *</label>
+					<input type="text" class="form-control {% if form_errors.ligne_reference %}is-invalid{% endif %}" 
+					       list="equipement_references" name="ligne[reference]" id="ligne_reference" 
+					       value="{{ ligne_data.reference ?? '' }}" required/>
 					<datalist id="equipement_references">
 						{% for equipement in equipements %}
 							<option value="{{ equipement.reference }}">{{ equipement.reference }}</option>
 						{% endfor %}
 					</datalist>
+					{% if form_errors.ligne_reference %}
+						<div class="invalid-feedback">{{ form_errors.ligne_reference }}</div>
+					{% endif %}
 				</div>
 
 				<div class="col-lg-4">
-					<label for="ligne_libelle">Libelle</label>
-					<input type="text" class="form-control" list="equipement_libelles" name="ligne[designation]" id="ligne_libelle" required/>
+					<label for="ligne_libelle">Libellé *</label>
+					<input type="text" class="form-control {% if form_errors.ligne_designation %}is-invalid{% endif %}" 
+					       list="equipement_libelles" name="ligne[designation]" id="ligne_libelle" 
+					       value="{{ ligne_data.designation ?? '' }}" required/>
 					<datalist id="equipement_libelles">
 						{% for equipement in equipements %}
 							<option value="{{ equipement.libelle }}">{{ equipement.libelle }}</option>
 						{% endfor %}
 					</datalist>
+					{% if form_errors.ligne_designation %}
+						<div class="invalid-feedback">{{ form_errors.ligne_designation }}</div>
+					{% endif %}
 				</div>
 
 				<div class="col-lg-3">
-					<label for="ligne_categorie">Catégorie</label>
-					<input type="text" class="form-control" list="categories" name="ligne[categorie_libelle]" id="ligne_categorie" required/>
+					<label for="ligne_categorie">Catégorie *</label>
+					<input type="text" class="form-control {% if form_errors.ligne_categorie %}is-invalid{% endif %}" 
+					       list="categories" name="ligne[categorie_libelle]" id="ligne_categorie" 
+					       value="{{ ligne_data.categorie_libelle ?? '' }}" required/>
 					<datalist id="categories">
 						{% for categorie in categories %}
 							<option value="{{ categorie.libelle }}">{{ categorie.libelle }}</option>
 						{% endfor %}
 					</datalist>
+					{% if form_errors.ligne_categorie %}
+						<div class="invalid-feedback">{{ form_errors.ligne_categorie }}</div>
+					{% endif %}
 				</div>
 
 				<div class="col-lg-1">
-					<label for="nombre">Nombre</label>
-					<input type="number" class="form-control" name="ligne[nombre]" id="nombre" min="1" value="{{ acquisition.nombre or 1 }}" required/>
+					<label for="nombre">Nombre *</label>
+					<input type="number" class="form-control {% if form_errors.ligne_nombre %}is-invalid{% endif %}" 
+					       name="ligne[nombre]" id="nombre" min="1" 
+					       value="{{ ligne_data.nombre ?? 1 }}" required/>
+					{% if form_errors.ligne_nombre %}
+						<div class="invalid-feedback">{{ form_errors.ligne_nombre }}</div>
+					{% endif %}
 				</div>
 				<div class="col-lg-2 d-grid">
-					<button type="submit" class="btn btn-primary mt-4" id="ajout_entree_btn">Entrée</button>
+					<button type="submit" class="btn btn-primary mt-4" id="ajout_entree_btn">Ajouter</button>
 				</div>
 			</div>
 
 			<hr>
-			{% for ligne in acquisition.lignes %}
-				<div class="row mb-3">
-				<div class="col-lg-2">
-					<input type="text" class="form-control" name="ligne_reference" id="ligne_reference" value="{{ ligne.reference }}" readonly disabled />
-				</div>
-				<div class="col-lg-4">
-					<input type="text" class="form-control" name="ligne_designation" id="ligne_designation" value="{{ ligne.designation }}" readonly disabled />
-				</div>
-				<div class="col-lg-3">
-					<input type="text" class="form-control" name="ligne_categorie_libelle" id="ligne_categorie_libelle" value="{{ ligne.categorie.libelle }}" readonly disabled />
-				</div>
-				<div class="col-lg-1">
-					<input type="number" class="form-control" name="ligne_nombre" id="ligne_nombre" min="1" value="{{ ligne.nombre }}" readonly disabled />
-				</div>
-			</div>
-			{% endfor %}
+			<h4>Lignes saisies</h4>
+			{% if acquisition.lignes %}
+				<table class="table table-striped">
+					<thead>
+						<tr>
+							<th>Référence</th>
+							<th>Désignation</th>
+							<th>Catégorie</th>
+							<th>Nombre</th>
+							<th>Équipements générés</th>
+							<th>Actions</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for ligne in acquisition.lignes %}
+							<tr>
+								<td>{{ ligne.reference }}</td>
+								<td>{{ ligne.designation }}</td>
+								<td>{{ ligne.categorie.libelle }}</td>
+								<td>{{ ligne.nombre }}</td>
+								<td>
+									{% if ligne.equipements_generes %}
+										<span class="badge bg-success">Générés</span>
+									{% else %}
+										<span class="badge bg-warning">En attente</span>
+									{% endif %}
+								</td>
+								<td>
+									{% if ligne.equipements_generes == 0 %}
+										<a href="/admin/acquisitions/ligne_modification-{{ ligne.id }}" class="btn btn-sm btn-warning">Modifier</a>
+										<a href="/admin/acquisitions/ligne_supprimer-{{ ligne.id }}" 
+										   onclick="return confirm('Supprimer cette ligne ?')" 
+										   class="btn btn-sm btn-danger">Supprimer</a>
+									{% else %}
+										<span class="text-muted">Verrouillée</span>
+									{% endif %}
+								</td>
+							</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			{% else %}
+				<p class="text-muted">Aucune ligne saisie.</p>
+			{% endif %}
 		{% endif %}
+		
 		{% if acquisition.id == false %}
-			<button type="submit" class="btn btn-primary">Enregistrer et saisir les lignes</button>
+			<div class="mt-3">
+				<button type="submit" class="btn btn-primary">Enregistrer et saisir les lignes</button>
+				<a href="/admin/acquisitions" class="btn btn-secondary">Annuler</a>
+			</div>
+		{% else %}
+			<div class="mt-3">
+				<a href="/admin/acquisitions" class="btn btn-secondary">Retour à la liste</a>
+			</div>
 		{% endif %}
 	</form>
 {% endblock %}

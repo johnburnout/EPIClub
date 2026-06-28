@@ -58,36 +58,53 @@ class AcquisitionController extends AbstractController
         $acquisitionLigneManager = new AcquisitionLigneManager();
         $fournisseurManager = new FournisseurManager();
         $categorieManager = new CategorieManager();
-
+        
         $acquisition = $acquisitionManager->findId($request->get('id'));
         $acquisition['lignes'] = $acquisitionLigneManager->findByAcquisition($acquisition['id']);
         $form_errors = [];
-        /** post une ligne */
+        $ligneData = []; // ✅ Ajouter pour conserver les données saisies
+        
         if ($request->getMethod() === 'POST') {
             $ligne = $request->request->all()['ligne'];
-            /** @todo need ligne form validation here */
-
-            $acquisitionProcess = new AcquisitionProcess();
-            $ligne['categorie_id'] = $acquisitionProcess->categorie_process($ligne);
-            $ligne['acquisition_id'] = $acquisition['id'];
-            $ligne['equipements_generes'] = 0;
-
+            $ligneData = $ligne; // ✅ Conserver les données saisies
+            
+            // VÉRIFICATION DE L'UNICITÉ DE LA RÉFÉRENCE
+            $reference = $ligne['reference'] ?? '';
+            
+            if (empty($reference)) {
+                $form_errors['ligne_reference'] = 'La référence est obligatoire.';
+            } elseif ($acquisitionLigneManager->findByReference($reference)) {
+                $form_errors['ligne_reference'] = 'Cette référence existe déjà. Veuillez en saisir une autre.';
+            }
+            
+            // Autres validations
+            if (empty($ligne['designation'] ?? '')) {
+                $form_errors['ligne_designation'] = 'Le libellé est obligatoire.';
+            }
+            if (empty($ligne['categorie_libelle'] ?? '')) {
+                $form_errors['ligne_categorie'] = 'La catégorie est obligatoire.';
+            }
+            if (empty($ligne['nombre'] ?? 0) || $ligne['nombre'] < 1) {
+                $form_errors['ligne_nombre'] = 'Le nombre doit être supérieur à 0.';
+            }
+            
             if (empty($form_errors)) {
+                $acquisitionProcess = new AcquisitionProcess();
+                $ligne['categorie_id'] = $acquisitionProcess->categorie_process($ligne);
+                $ligne['acquisition_id'] = $acquisition['id'];
+                $ligne['equipements_generes'] = 0;
+                
                 $acquisitionLigneManager->save($ligne);
                 return $this->redirectTo("/admin/acquisitions/acquisition_modification-$acquisition[id]");
             }
-            /** @todo else form_error $line here */
-
-            // NOPE  dd('Creer le(s) equipement(s) ici');
-            # epi.reference = "facture_date(Y)-acquisition.id#epi.id" -> format(<facture_date_year>-<aquisition.id>-<categorie.id>#<epi.id>)
-            // NOPE  dd('Generer le(s) qrcode(s) ici');
-            // if ok flash(success, Vous pouvez imprimer les Qrcodes)
         }
-
+        
         return $this->render('acquisition_form.twig', [
             'acquisition' => $acquisition,
             'fournisseurs' => $fournisseurManager->findAll(),
-            'categories' => $categorieManager->findAll()
+            'categories' => $categorieManager->findAll(),
+            'form_errors' => $form_errors,
+            'ligne_data' => $ligneData // ✅ Passer les données saisies au template
         ]);
     }
 
@@ -95,9 +112,16 @@ class AcquisitionController extends AbstractController
     {
         $acquisitionManager = new AcquisitionManager();
         $fournisseurManager = new FournisseurManager();
-
+        $acquisitionLigneManager = new AcquisitionLigneManager(); // ✅ AJOUTER
+        
         $acquisition = $acquisitionManager->findId($request->get('id'));
-
+        if (!$acquisition) {
+            return $this->redirectTo("/admin/acquisitions");
+        }
+        
+        // Charger les lignes de l'acquisition
+        $acquisition['lignes'] = $acquisitionLigneManager->findByAcquisition($acquisition['id']);
+        
         return $this->render('acquisition_show.twig', [
             'acquisition' => $acquisition,
             'fournisseurs' => $fournisseurManager->findAll()

@@ -39,6 +39,27 @@ class AcquisitionLigneManager extends AbstractManager
         return null;
     }
 
+    /**
+     * Vérifie si une référence existe déjà
+     * @param string $reference La référence à vérifier
+     * @param int|null $excludeId ID à exclure (pour les modifications)
+     * @return mixed Le résultat de la requête ou null
+     */
+    public function findByReference(string $reference, int $excludeId = null)
+    {
+        $sql = "SELECT * FROM acquisition_ligne WHERE reference = :reference";
+        $params = ['reference' => $reference];
+        
+        if ($excludeId) {
+            $sql .= " AND id != :id";
+            $params['id'] = $excludeId;
+        }
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetch();
+    }
+
     public function save(array $ligne)
     {
         if (isset($ligne['id'])) {
@@ -51,7 +72,7 @@ class AcquisitionLigneManager extends AbstractManager
 
     public function delete(int $id)
     {
-        $sql = "DELETE acquisition_ligne WHERE id=:id";
+        $sql = "DELETE FROM acquisition_ligne WHERE id=:id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['id' => $id]);
     }
