@@ -2,38 +2,51 @@
 
 {% block body %}
 
-	<h3>Club</h3>
+	<h3>Gestion du club</h3>
 	<hr>
 
-	<div class="mb-3">
-		<label for="nom">Nom :
-		</label>
-		{{ club.nom }}
-	</div>
+	<form method="post">
+		<div class="mb-3">
+			<label for="nom">Nom du club * :</label>
+			<input type="text" id="nom" name="nom" value="{{ club.nom }}" class="form-control {% if form_errors.nom %}is-invalid{% endif %}">
+			{% if form_errors.nom %}<div class="invalid-feedback">{{ form_errors.nom }}</div>{% endif %}
+		</div>
 
-	<div class="mb-3">
-		<label for="activite">Activité :
-		</label>
-		{{ club.activite }}
-	</div>
+		<div class="mb-3">
+			<label for="activite">Activité :</label>
+			<select id="activite" name="activite" class="form-control {% if form_errors.activite %}is-invalid{% endif %}">
+				<option value="">-- Sélectionnez une activité --</option>
+				{% for activite in activites %}
+					<option value="{{ activite }}" {% if club.activite == activite %}selected{% endif %}>
+						{{ activite }}
+					</option>
+				{% endfor %}
+			</select>
+			{% if form_errors.activite %}<div class="invalid-feedback">{{ form_errors.activite }}</div>{% endif %}
+		</div>
 
-	<div class="mb-3">
-		<label for="description">Description :
-		</label>
-		{{ club.description }}
-	</div>
+		<div class="mb-3">
+			<label for="email">Email :</label>
+			<input type="email" id="email" name="email" value="{{ club.email }}" class="form-control {% if form_errors.email %}is-invalid{% endif %}">
+			{% if form_errors.email %}<div class="invalid-feedback">{{ form_errors.email }}</div>{% endif %}
+		</div>
 
-	<div class="mb-3">
-		<label for="email">Adresse mail :</label>
-		{{ club.email }}
-	</div>
-	<div class="mb-3">
-		<label for="email">Téléphone :</label>
-		{{ club.phone }}
-	</div>
+		<div class="mb-3">
+			<label for="phone">Téléphone :</label>
+			<input type="tel" id="phone" name="phone" value="{{ club.phone }}" class="form-control {% if form_errors.phone %}is-invalid{% endif %}">
+			{% if form_errors.phone %}<div class="invalid-feedback">{{ form_errors.phone }}</div>{% endif %}
+		</div>
 
-	<div class="mb-3">
-		
-	</div>
+		<div class="mb-3">
+			<label for="description">Description :</label>
+			<textarea id="description" name="description" class="form-control" rows="5">{{ club.description }}</textarea>
+		</div>
+
+		<div class="form-actions">
+			<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+			<button type="submit" class="btn btn-primary">Enregistrer</button>
+			<a href="/tableau_de_bord" class="btn btn-secondary">Retour au tableau de bord</a>
+		</div>
+	</form>
 
 {% endblock %}

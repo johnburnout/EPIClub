@@ -1,44 +1,44 @@
 {% extends "_layout.twig" %}
 
 {% block body %}
-	<h3>Utilisateurs</h3>
-	<hr>
-	<!-- <a href="/" class="btn btn-primary">Nouvel utilisateur</a> -->
 
-	{% if utilisateurs %}
-		<table class="table">
-			<thead>
+	<h3>Liste des utilisateurs</h3>
+	<hr>
+
+	<div class="mb-3">
+		<a href="/admin/utilisateurs/nouveau" class="btn btn-primary">➕ Nouvel utilisateur</a>
+	</div>
+
+	<table class="table table-striped">
+		<thead>
+			<tr>
+				<th>ID</th>
+				<th>Nom</th>
+				<th>Prénom</th>
+				<th>Pseudo</th>
+				<th>Email</th>
+				<th>Rôle</th>
+				<th>Actions</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for utilisateur in utilisateurs %}
 				<tr>
-					<th>
-						Identité
-						<a href="/admin/utilisateurs?tri=username ASC" class="text-decoration-none">&#x2191;</a>
-						<a href="/admin/utilisateurs?tri=username DESC" class="text-decoration-none">&#x2193;</a>
-					</th>
-					<th>
-						Rôle
-						<a href="/admin/utilisateurs?tri=role ASC" class="text-decoration-none">&#x2191;</a>
-						<a href="/admin/utilisateurs?tri=role DESC" class="text-decoration-none">&#x2193;</a>
-					</th>
-					<th>Email</th>
-					<th></th>
+					<td>{{ utilisateur.id }}</td>
+					<td>{{ utilisateur.nom }}</td>
+					<td>{{ utilisateur.prenom }}</td>
+					<td>{{ utilisateur.username }}</td>
+					<td>{{ utilisateur.email }}</td>
+					<td>{{ utilisateur.rolelabel }}</td>
+					<td>
+						<a href="/admin/utilisateurs/utilisateur-{{ utilisateur.id }}" class="btn btn-sm btn-primary">Voir</a>
+						<a href="/admin/utilisateurs/utilisateur_supprimer-{{ utilisateur.id }}" 
+						   onclick="return confirm('Supprimer {{ utilisateur.prenom }} {{ utilisateur.nom }} ?')" 
+						   class="btn btn-sm btn-danger">Supprimer</a>
+					</td>
 				</tr>
-			</thead>
-			<tbody>
-				{% for utilisateur in utilisateurs %}
-					<tr>
-						<td>{{ utilisateur.prenom }}
-							{{ utilisateur.nom }}</td>
-						<td>{{ utilisateur.rolelabel }}</td>
-						<td><a href="mailto:{{ utilisateur.email }}">{{ utilisateur.email }}</a></td>
-						<td>
-							<a href="/admin/utilisateurs/utilisateur-{{ utilisateur.id }}" class="btn btn-primary btn-block">Voir</a>
-						</td>
-					</tr>
-				{% endfor %}
-			</tbody>
-		</table>
-	{% else %}
-		<p>Aucun utilisateur trouvé !</p>
-	{% endif %}
+			{% endfor %}
+		</tbody>
+	</table>
 
 {% endblock %}

@@ -7,36 +7,57 @@
 
 	<form method="post">
 		<div class="mb-3">
-			<label for="identite">Identité :</label>
-			{{ utilisateur.prenom }}
-			{{ utilisateur.nom }}
+			<label for="prenom">Prénom :</label>
+			<input type="text" id="prenom" name="prenom" value="{{ utilisateur.prenom }}" class="form-control {% if form_errors.prenom %}is-invalid{% endif %}">
+			{% if form_errors.prenom %}<div class="invalid-feedback">{{ form_errors.prenom }}</div>{% endif %}
+		</div>
+
+		<div class="mb-3">
+			<label for="nom">Nom :</label>
+			<input type="text" id="nom" name="nom" value="{{ utilisateur.nom }}" class="form-control {% if form_errors.nom %}is-invalid{% endif %}">
+			{% if form_errors.nom %}<div class="invalid-feedback">{{ form_errors.nom }}</div>{% endif %}
 		</div>
 
 		<div class="mb-3">
 			<label for="username">Pseudo :</label>
-			{{ utilisateur.username }}
+			<input type="text" id="username" name="username" value="{{ utilisateur.username }}" class="form-control" readonly disabled>
+			<small class="form-text text-muted">Le pseudo ne peut pas être modifié.</small>
+			<input type="hidden" name="username" value="{{ utilisateur.username }}">
 		</div>
 
 		<div class="mb-3">
 			<label for="email">Adresse mail :</label>
-			<a href="mailto:{{ utilisateur.email }}">{{ utilisateur.email }}</a>
+			<input type="email" id="email" name="email" value="{{ utilisateur.email }}" class="form-control {% if form_errors.email %}is-invalid{% endif %}">
+			{% if form_errors.email %}<div class="invalid-feedback">{{ form_errors.email }}</div>{% endif %}
+		</div>
+
+		<div class="mb-3">
+			<label for="password">Nouveau mot de passe :</label>
+			<input type="password" id="password" name="password" class="form-control {% if form_errors.password %}is-invalid{% endif %}">
+			<small class="form-text text-muted">Laisser vide pour ne pas modifier le mot de passe.</small>
+			{% if form_errors.password %}<div class="invalid-feedback">{{ form_errors.password }}</div>{% endif %}
 		</div>
 
 		<div class="mb-3">
 			<label for="role">Rôle :</label>
-			<select name="role" id="role">
+			<select name="role" id="role" class="form-control">
 				{% for role, label in roles %}
 					<option value="{{ role }}" {% if utilisateur.role == role %} selected {% endif %}>{{ label }}</option>
 				{% endfor %}
 			</select>
 		</div>
 
-		<div class="form-actions">
-			{# <a href="/admin/utilisateur_effacer.php?id={{ utilisateur.id }}" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ?')">
-				<input type="button" class="btn btn-danger" value="Supprimer l'utilisateur" name="supprimer">
-			</a> #}
+		<div class="form-actions d-flex gap-2">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 			<button type="submit" class="btn btn-primary">Enregistrer</button>
+			<a href="/admin/utilisateurs" class="btn btn-secondary">Retour à la liste</a>
+			
+			<!-- Bouton de suppression -->
+			<a href="/admin/utilisateurs/utilisateur_supprimer-{{ utilisateur.id }}" 
+			   onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.')" 
+			   class="btn btn-danger ms-auto">
+				🗑️ Supprimer l'utilisateur
+			</a>
 		</div>
 	</form>
 

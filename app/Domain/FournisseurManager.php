@@ -72,9 +72,17 @@ class FournisseurManager extends AbstractManager
 
     public function delete(int $id)
     {
-        $sql = "DELETE fournisseur WHERE id=:id";
+        $sql = "DELETE FROM fournisseur WHERE id=:id";  // ✅ CORRIGÉ
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['id' => $id]);
+    }
+
+    public function hasAcquisitions(int $id): bool  // ✅ NOUVELLE MÉTHODE
+    {
+        $sql = "SELECT COUNT(*) FROM acquisition WHERE fournisseur_id = :id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['id' => $id]);
+        return $stmt->fetchColumn() > 0;
     }
 
     private function _insert(array $fournisseur)

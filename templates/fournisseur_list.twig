@@ -3,8 +3,8 @@
 {% block body %}
 	<h3>Fournisseurs</h3>
 	<hr>
-<a href="/admin/fournisseurs/nouveau" class="btn btn-primary">Nouveau</a>
-<hr>
+	<a href="/admin/fournisseurs/nouveau" class="btn btn-primary">Nouveau</a>
+	<hr>
 	{% if fournisseurs %}
 		<table class="table">
 			<thead>
@@ -24,6 +24,9 @@
 						<td>
 							<a href="/admin/fournisseurs/fournisseur-{{ fournisseur.id }}" class="btn btn-primary btn-block">Voir</a>
 							<a href="/admin/fournisseurs/fournisseur_modification-{{ fournisseur.id }}" class="btn btn-primary btn-block">Editer</a>
+							<a href="/admin/fournisseurs/supprimer?id={{ fournisseur.id }}" 
+								onclick="return confirm('Êtes-vous sûr de vouloir supprimer le fournisseur « {{ fournisseur.nom }} » ?')" 
+								class="btn btn-danger btn-block">Supprimer</a>
 						</td>
 					</tr>
 				{% endfor %}

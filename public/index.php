@@ -19,7 +19,7 @@ if (!$session->has('csrf_token')) {
 	$session->set('csrf_token', bin2hex(random_bytes(32)));
 };
 
-$isLoggedIn = $session->has('user');  // Vérifie si l'utilisateur est connecté
+$isLoggedIn = $session->has('user');
 $isAdmin = $isLoggedIn && $session->get('user')['role'] === 'admin';
 
 if (time() - $session->getMetadataBag()->getLastUsed() > Session::SESSION_LIFETIME) {

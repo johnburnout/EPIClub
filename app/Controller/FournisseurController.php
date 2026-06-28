@@ -6,6 +6,7 @@ use Epiclub\Domain\FournisseurManager;
 use Epiclub\Engine\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RedirectResponse; // ← IMPORTANT
 
 class FournisseurController extends AbstractController
 {
@@ -68,5 +69,32 @@ class FournisseurController extends AbstractController
         ]);
     }
 
-    public function delete(Request $request) {}
+    public function delete(Request $request)
+    {
+        $id = $request->query->get('id');
+        if (!$id) {
+            $this->session->getFlashBag()->add('error', 'ID fournisseur manquant.');
+            return new RedirectResponse("/admin/fournisseurs");
+        }
+        
+        $fournisseurManager = new FournisseurManager();
+        $fournisseur = $fournisseurManager->findId($id);
+        
+        if (!$fournisseur) {
+            $this->session->getFlashBag()->add('error', "Le fournisseur demandé n'existe pas.");
+            return new RedirectResponse("/admin/fournisseurs");
+        }
+        
+        // Vérifier si le fournisseur a des acquisitions associées
+        if ($fournisseurManager->hasAcquisitions($id)) {
+            $this->session->getFlashBag()->add('error', "Impossible de supprimer ce fournisseur car il a des acquisitions associées.");
+            return new RedirectResponse("/admin/fournisseurs");
+        }
+        
+        $fournisseurManager->delete($id);
+        
+        $this->session->getFlashBag()->add('success', "Le fournisseur '{$fournisseur['nom']}' a été supprimé.");
+        
+        return new RedirectResponse("/admin/fournisseurs");
+    }
 }

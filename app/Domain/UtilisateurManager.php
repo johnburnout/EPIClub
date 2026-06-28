@@ -72,7 +72,7 @@ class UtilisateurManager extends AbstractManager
 
     public function delete(int $id)
     {
-        $sql = "DELETE utilisateur WHERE id=:id";
+        $sql = "DELETE FROM utilisateur WHERE id=:id";  // ← CORRECTION ICI
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['id' => $id]);
     }

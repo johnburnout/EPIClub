@@ -8,10 +8,10 @@
 	<table class="table">
 		<thead>
 			<tr>
-				<th>libelle</th>
+				<th>Libellé</th>
 				<th>Description</th>
 				<th>Est EPI ?</th>
-				<th></th>
+				<th>Actions</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -26,7 +26,11 @@
 					<td>{{ categorie.description }}</td>
 					<td>{{ est_epi_value }}</td>
 					<td>
-						<a href="/admin/categories/categorie-{{ categorie.id }}" class="btn btn-primary">Voir</a>
+						<a href="/admin/categories/categorie-{{ categorie.id }}" class="btn btn-primary btn-sm">Voir</a>
+						<a href="/admin/categories/categorie_modification-{{ categorie.id }}" class="btn btn-warning btn-sm">Modifier</a>
+						<a href="/admin/categories/supprimer?id={{ categorie.id }}" 
+						   onclick="return confirm('Êtes-vous sûr de vouloir supprimer la catégorie « {{ categorie.libelle }} » ? Cette action est irréversible.')" 
+						   class="btn btn-danger btn-sm">Supprimer</a>
 					</td>
 				</tr>
 			{% endfor %}
