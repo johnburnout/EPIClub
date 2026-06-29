@@ -74,24 +74,40 @@ class EquipementManager extends AbstractManager
 
     public function delete(int $id)
     {
-        $sql = "DELETE club_equipement WHERE id=:id";
+        $sql = "DELETE FROM club_equipement WHERE id=:id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['id' => $id]);
     }
 
+    public function codeExists(string $code): bool
+    {
+        $sql = "SELECT COUNT(*) FROM club_equipement WHERE code = :code";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['code' => $code]);
+        return $stmt->fetchColumn() > 0;
+    }
+
     private function _insert(array $equipement)
     {
-        $sql = "INSERT INTO club_equipement (acquisition_id, equipement_categorie_id, equipement_libelle_id, code, statut, remarques, date_dernier_controle, controle_en_cours)
-            VALUES (:acquisition_id, :equipement_categorie_id, :equipement_libelle_id, :code, :statut, :remarques, :date_dernier_controle, :controle_en_cours)";
+        $sql = "INSERT INTO club_equipement 
+        (acquisition_id, categorie_id, reference, libelle, code, statut, remarques, date_dernier_controle, controle_en_cours)
+        VALUES 
+        (:acquisition_id, :categorie_id, :reference, :libelle, :code, :statut, :remarques, :date_dernier_controle, :controle_en_cours)";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute($equipement);
+        $result = $stmt->execute($equipement);
+        
+        if (!$result) {
+            var_dump('❌ Erreur SQL :', $stmt->errorInfo());
+        }
+        
+        return $result;
     }
 
     private function _update(array $equipement)
     {
         $sql = "UPDATE club_equipement 
-            SET acquisition_id=:acquisition_id, equipement_categorie_id=:equipement_categorie_id, equipement_libelle_id=:equipement_libelle_id, code=:code, statut=:statut, remarques=:remarques,
-            date_dernier_controle=:date_dernier_controle, controle_en_cours=:controle_en_cours
+            SET acquisition_id=:acquisition_id, categorie_id=:categorie_id, reference=:reference, libelle=:libelle, code=:code, 
+                statut=:statut, remarques=:remarques, date_dernier_controle=:date_dernier_controle, controle_en_cours=:controle_en_cours
             WHERE id=:id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($equipement);

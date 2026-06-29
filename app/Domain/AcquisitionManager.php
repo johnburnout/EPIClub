@@ -28,7 +28,7 @@ class AcquisitionManager extends AbstractManager
 
         foreach ($acquisitions as $i => $acquisition) {
             if (isset($acquisition['fournisseur_id'])) {
-                $acquisitions[$i]['fournisseur']  = $fournisseurManager->findId($acquisition['fournisseur_id']);
+                $acquisitions[$i]['fournisseur'] = $fournisseurManager->findId($acquisition['fournisseur_id']);
             }
 
             if (isset($acquisition['saisie_par'])) {
@@ -45,20 +45,25 @@ class AcquisitionManager extends AbstractManager
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['id' => $id]);
         if ($acquisition = $stmt->fetch()) {
+            // ✅ S'assurer que est_validee existe
+            if (!isset($acquisition['est_validee'])) {
+                $acquisition['est_validee'] = 0;
+            }
+            
             $fournisseurManager = new FournisseurManager();
             $utilisateurManager = new UtilisateurManager();
-
+            
             if (isset($acquisition['fournisseur_id'])) {
-                $acquisition['fournisseur']  = $fournisseurManager->findId($acquisition['fournisseur_id']);
+                $acquisition['fournisseur'] = $fournisseurManager->findId($acquisition['fournisseur_id']);
             }
-
+            
             if (isset($acquisition['saisie_par'])) {
                 $acquisition['redacteur'] = $utilisateurManager->findId($acquisition['saisie_par']);
             }
-
+            
             return $acquisition;
         }
-
+        
         return null;
     }
 
@@ -84,7 +89,7 @@ class AcquisitionManager extends AbstractManager
             $utilisateurManager = new UtilisateurManager();
 
             if (isset($acquisition['fournisseur_id'])) {
-                $acquisition['fournisseur']  = $fournisseurManager->findId($acquisition['fournisseur_id']);
+                $acquisition['fournisseur'] = $fournisseurManager->findId($acquisition['fournisseur_id']);
             }
 
             if (isset($acquisition['saisie_par'])) {
@@ -102,32 +107,47 @@ class AcquisitionManager extends AbstractManager
         if (isset($acquisition['id'])) {
             return $this->_update($acquisition);
         }
-
+        
         $this->_insert($acquisition);
         return $this->db->lastInsertId('acquisition');
     }
-
+    
     public function delete(int $id)
     {
-        $sql = "DELETE acquisition WHERE id=:id";
+        $sql = "DELETE FROM acquisition WHERE id=:id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['id' => $id]);
     }
-
+    
     private function _insert(array $acquisition)
     {
-        $sql = "INSERT INTO acquisition (fournisseur_id, facture_reference, facture_date, facture_document, saisie_par) 
-            VALUES (:fournisseur_id, :facture_reference, :facture_date, :facture_document, :saisie_par)";
+        if (!isset($acquisition['est_validee'])) {
+            $acquisition['est_validee'] = 0;
+        }
+        
+        $sql = "INSERT INTO acquisition (fournisseur_id, facture_reference, facture_date, facture_document, saisie_par, est_validee) 
+        VALUES (:fournisseur_id, :facture_reference, :facture_date, :facture_document, :saisie_par, :est_validee)";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($acquisition);
     }
-
+    
     private function _update(array $acquisition)
     {
+        // ✅ On ne garde que les champs attendus par la requête
+        $allowedFields = ['fournisseur_id', 'facture_reference', 'facture_date', 'facture_document', 'saisie_par', 'est_validee', 'id'];
+        $filteredAcquisition = array_intersect_key($acquisition, array_flip($allowedFields));
+        
+        if (!isset($filteredAcquisition['est_validee'])) {
+            $filteredAcquisition['est_validee'] = 0;
+        }
+        
         $sql = "UPDATE acquisition 
-            SET fournisseur_id=:fournisseur_id, facture_reference=:facture_reference, facture_date=:facture_date, facture_document=:facture_document, saisie_par=:saisie_par 
-            WHERE id=:id";
+        SET fournisseur_id=:fournisseur_id, facture_reference=:facture_reference, facture_date=:facture_date, 
+        facture_document=:facture_document, saisie_par=:saisie_par, est_validee=:est_validee
+        WHERE id=:id";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute($acquisition);
+        $result = $stmt->execute($filteredAcquisition);
+        
+        return $result;
     }
 }

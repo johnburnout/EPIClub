@@ -59,34 +59,83 @@ class AcquisitionProcess
     public function create_equipement_process(int $ligne_id)
     {
         $acquisitionLigneManager = new AcquisitionLigneManager();
-
+        $acquisitionManager = new AcquisitionManager();
+        
         if ($ligne = $acquisitionLigneManager->findId($ligne_id)) {
-
+            
             if ($ligne['equipements_generes'] === 1) {
                 throw new \RuntimeException("Les équipements ont déjà été générés.", 1);
             }
-
+            
+            $acquisition = $acquisitionManager->findId($ligne['acquisition_id']);
+            $annee = date('Y', strtotime($acquisition['facture_date']));
+            
             $equipementManager = new EquipementManager();
-
+            
             for ($i = 1; $i <= $ligne['nombre']; $i++) {
+                $code = $annee . '-' . str_pad($ligne['acquisition_id'], 3, '0', STR_PAD_LEFT) . '-' . 
+                str_pad($ligne['id'], 3, '0', STR_PAD_LEFT) . '-' . str_pad($i, 3, '0', STR_PAD_LEFT);
+                
+                while ($equipementManager->codeExists($code)) {
+                    $code = $code . '-' . rand(10, 99);
+                }
+                
                 $new_equipement = [
                     'acquisition_id' => $ligne['acquisition_id'],
                     'categorie_id' => $ligne['categorie_id'],
                     'reference' => $ligne['reference'],
                     'libelle' => $ligne['designation'],
-                    'code' => null,
+                    'code' => $code,
                     'statut' => 0,
                     'remarques' => null,
                     'date_dernier_controle' => null,
                     'controle_en_cours' => 0
                 ];
-
+                
                 $equipementManager->save($new_equipement);
             }
-
+            
+            $ligne['equipements_generes'] = 1;
+            $acquisitionLigneManager->save($ligne);
+            
             return true;
         }
-
+        
         throw new \RuntimeException("L'acquisition ligne n'existe pas", 1);
     }
+    
+    public function validerAcquisition(int $acquisitionId): bool
+    {
+        $acquisitionLigneManager = new AcquisitionLigneManager();
+        $lignes = $acquisitionLigneManager->findByAcquisition($acquisitionId);
+        
+        $lignesNonGenerees = array_filter($lignes, function($ligne) {
+            return $ligne['equipements_generes'] == 0;
+        });
+        
+        if (empty($lignesNonGenerees)) {
+            return false;  // ✅ Supprime exit;
+        }
+        
+        foreach ($lignesNonGenerees as $ligne) {
+            $this->create_equipement_process($ligne['id']);
+        }
+        
+        // ✅ MISE À JOUR DE TOUTES LES LIGNES
+        foreach ($lignesNonGenerees as $ligne) {
+            $ligne['equipements_generes'] = 1;
+            $acquisitionLigneManager->save($ligne);
+        }
+        
+        // ✅ MISE À JOUR DE est_validee
+        $acquisitionManager = new AcquisitionManager();
+        $acquisition = $acquisitionManager->findId($acquisitionId);
+        if ($acquisition) {
+            $acquisition['est_validee'] = 1;
+            $acquisitionManager->save($acquisition);
+        }
+        
+        return true;
+    }
 }
+    

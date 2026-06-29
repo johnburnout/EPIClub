@@ -9,6 +9,11 @@
 	<div class="card">
 		<div class="card-header">
 			Informations générales
+			{% if acquisition.est_validee %}
+				<span class="badge bg-success float-end">✅ Validée</span>
+			{% else %}
+				<span class="badge bg-warning float-end">⏳ En attente de validation</span>
+			{% endif %}
 		</div>
 		<div class="card-body">
 			<div class="row">
@@ -34,9 +39,17 @@
 					<div class="mb-2">
 						<strong>Document :</strong> 
 						{% if acquisition.facture_document %}
-							<a href="/uploads/{{ acquisition.facture_document }}" target="_blank">Voir la facture</a>
+							<a href="/uploads/{{ acquisition.facture_document }}" target="_blank">📄 Voir la facture</a>
 						{% else %}
 							<span class="text-muted">Aucun document</span>
+						{% endif %}
+					</div>
+					<div class="mb-2">
+						<strong>Statut :</strong>
+						{% if acquisition.est_validee %}
+							<span class="badge bg-success">Validée</span>
+						{% else %}
+							<span class="badge bg-warning">En attente</span>
 						{% endif %}
 					</div>
 				</div>
@@ -50,6 +63,7 @@
 	<div class="card">
 		<div class="card-header">
 			Lignes d'acquisition
+			<span class="badge bg-secondary float-end">{{ acquisition.lignes|length }} ligne(s)</span>
 		</div>
 		<div class="card-body">
 			{% if acquisition.lignes %}
@@ -65,7 +79,9 @@
 						</tr>
 					</thead>
 					<tbody>
+						{% set total_equipements = 0 %}
 						{% for ligne in acquisition.lignes %}
+							{% set total_equipements = total_equipements + ligne.nombre %}
 							<tr>
 								<td>{{ ligne.reference }}</td>
 								<td>{{ ligne.designation }}</td>
@@ -73,7 +89,7 @@
 								<td>{{ ligne.nombre }}</td>
 								<td>
 									{% if ligne.equipements_generes %}
-										<span class="badge bg-success">✅ Oui</span>
+										<span class="badge bg-success">✅ Générés</span>
 									{% else %}
 										<span class="badge bg-warning">⏳ En attente</span>
 									{% endif %}
@@ -91,6 +107,13 @@
 							</tr>
 						{% endfor %}
 					</tbody>
+					<tfoot>
+						<tr class="table-info">
+							<td colspan="3" class="text-end"><strong>Total équipements :</strong></td>
+							<td><strong>{{ total_equipements }}</strong></td>
+							<td colspan="2"></td>
+						</tr>
+					</tfoot>
 				</table>
 			{% else %}
 				<p class="text-muted">Aucune ligne d'acquisition.</p>
@@ -103,7 +126,28 @@
 	<!-- BOUTONS D'ACTION -->
 	<div class="mt-3">
 		<a href="/admin/acquisitions" class="btn btn-secondary">Retour à la liste</a>
-		<a href="/admin/acquisitions/acquisition_modification-{{ acquisition.id }}" class="btn btn-primary">Modifier l'acquisition</a>
+		
+		<!-- ✅ BOUTON VALIDER (UNIQUEMENT ICI) -->
+		{% if not acquisition.est_validee and acquisition.lignes and acquisition.lignes|length > 0 %}
+			<form method="post" action="/admin/acquisitions/acquisition_modification-{{ acquisition.id }}" style="display: inline;">
+				<button type="submit" name="action" value="valider" class="btn btn-success" 
+						onclick="return confirm('⚠️ Valider cette acquisition ? Les équipements seront générés définitivement et vous ne pourrez plus modifier les lignes.')">
+					✅ Valider l'acquisition
+				</button>
+			</form>
+		{% endif %}
+		
+		<!-- BOUTON MODIFIER -->
+		{% if not acquisition.est_validee %}
+			<a href="/admin/acquisitions/acquisition_modification-{{ acquisition.id }}" class="btn btn-primary">✏️ Modifier</a>
+		{% else %}
+			<span class="text-muted">🔒 Modification verrouillée</span>
+		{% endif %}
+		
+		<!-- BOUTON VOIR LES ÉQUIPEMENTS -->
+		{% if acquisition.est_validee %}
+			<a href="/admin/equipements?acquisition={{ acquisition.id }}" class="btn btn-success">📋 Voir les équipements</a>
+		{% endif %}
 	</div>
 
 {% endblock %}

@@ -62,11 +62,41 @@ class AcquisitionController extends AbstractController
         $acquisition = $acquisitionManager->findId($request->get('id'));
         $acquisition['lignes'] = $acquisitionLigneManager->findByAcquisition($acquisition['id']);
         $form_errors = [];
-        $ligneData = []; // ✅ Ajouter pour conserver les données saisies
+        $ligneData = [];
         
         if ($request->getMethod() === 'POST') {
-            $ligne = $request->request->all()['ligne'];
-            $ligneData = $ligne; // ✅ Conserver les données saisies
+            
+            // ✅ VALIDATION
+            $action = $request->request->get('action');
+            
+            if ($action === 'valider') {
+                $acquisitionProcess = new AcquisitionProcess();
+                try {
+                    // 1. Générer les équipements
+                    $acquisitionProcess->validerAcquisition($acquisition['id']);
+                    
+                    // 2. Marquer l'acquisition comme validée
+                    $acquisitionComplete = $acquisitionManager->findId($acquisition['id']);
+                    $acquisitionComplete['est_validee'] = 1;
+                    $acquisitionManager->save($acquisitionComplete);
+                    
+                    // 3. Message de succès
+                    $this->session->getFlashBag()->add('success', '✅ Acquisition validée ! Les équipements ont été générés.');
+                    return $this->redirectTo("/admin/acquisitions/acquisition-{$acquisition['id']}");
+                } catch (\Exception $e) {
+                    $this->session->getFlashBag()->add('error', 'Erreur lors de la validation : ' . $e->getMessage());
+                    return $this->redirectTo("/admin/acquisitions/acquisition_modification-{$acquisition['id']}");
+                }
+            }
+            
+            // ✅ AJOUT D'UNE LIGNE
+            $ligne = $request->request->all()['ligne'] ?? [];
+            $ligneData = $ligne;
+            
+            if (empty($ligne) || empty($ligne['reference'])) {
+                $this->session->getFlashBag()->add('error', 'Veuillez remplir les champs de la ligne.');
+                return $this->redirectTo("/admin/acquisitions/acquisition_modification-{$acquisition['id']}");
+            }
             
             // VÉRIFICATION DE L'UNICITÉ DE LA RÉFÉRENCE
             $reference = $ligne['reference'] ?? '';
@@ -88,14 +118,14 @@ class AcquisitionController extends AbstractController
                 $form_errors['ligne_nombre'] = 'Le nombre doit être supérieur à 0.';
             }
             
-            if (empty($form_errors)) {
+            if (empty($form_errors) && !empty($ligne)) {
                 $acquisitionProcess = new AcquisitionProcess();
                 $ligne['categorie_id'] = $acquisitionProcess->categorie_process($ligne);
                 $ligne['acquisition_id'] = $acquisition['id'];
                 $ligne['equipements_generes'] = 0;
                 
                 $acquisitionLigneManager->save($ligne);
-                return $this->redirectTo("/admin/acquisitions/acquisition_modification-$acquisition[id]");
+                return $this->redirectTo("/admin/acquisitions/acquisition_modification-{$acquisition['id']}");
             }
         }
         
@@ -104,7 +134,7 @@ class AcquisitionController extends AbstractController
             'fournisseurs' => $fournisseurManager->findAll(),
             'categories' => $categorieManager->findAll(),
             'form_errors' => $form_errors,
-            'ligne_data' => $ligneData // ✅ Passer les données saisies au template
+            'ligne_data' => $ligneData ?? []
         ]);
     }
 
@@ -112,16 +142,16 @@ class AcquisitionController extends AbstractController
     {
         $acquisitionManager = new AcquisitionManager();
         $fournisseurManager = new FournisseurManager();
-        $acquisitionLigneManager = new AcquisitionLigneManager(); // ✅ AJOUTER
-        
+        $acquisitionLigneManager = new AcquisitionLigneManager();
+
         $acquisition = $acquisitionManager->findId($request->get('id'));
         if (!$acquisition) {
             return $this->redirectTo("/admin/acquisitions");
         }
-        
+
         // Charger les lignes de l'acquisition
         $acquisition['lignes'] = $acquisitionLigneManager->findByAcquisition($acquisition['id']);
-        
+
         return $this->render('acquisition_show.twig', [
             'acquisition' => $acquisition,
             'fournisseurs' => $fournisseurManager->findAll()
