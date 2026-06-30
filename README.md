@@ -1,6 +1,6 @@
 # EPIClub
 
-![EPIClub](https://epiclub.fr/wp-content/uploads/2025/08/cropped-EPIClub-e1755818346875.png)
+![EPIClub]([https://epiclub.fr/wp-content/uploads/2025/08/cropped-EPIClub-e1755818346875.png](https://epiclub.fr/wp-content/uploads/2026/06/EPIClub.png)
 
 ## Objectif
 
