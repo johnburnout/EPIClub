@@ -1,60 +1,129 @@
 {% extends "_layout.twig" %}
 
 {% block body %}
-	<h3>Epi</h3>
+	<h3>Équipement</h3>
 	<hr>
-<a href="/tableau_de_bord" class="btn btn-primary">Tableau_de_bord</a>
-<hr>
+	<a href="/tableau_de_bord" class="btn btn-primary">Tableau de bord</a>
+	<hr>
 	<form method="post">
+		
+		<!-- Catégorie (lecture seule) -->
 		<div class="mb-3">
-			<label for="categorie_id">Catégorie</label>
-			<div class="input-group">
-				<select class="form-select" name="categorie_id" id="categorie_id">
-					{% for categorie in categories %}
-						<option value="{{ categorie.id }}">{{ categorie.libelle }}</option>
-					{% endfor %}
-				</select>
-				<button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#categorieModalForm">
-					...
-				</button>
-			</div>
+			<label for="categorie">Catégorie</label>
+			<input type="text" class="form-control" id="categorie" value="{{ equipement.categorie.libelle }}" readonly disabled>
+			<small class="text-muted">La catégorie est définie lors de l'acquisition.</small>
+			<input type="hidden" name="categorie_id" value="{{ equipement.categorie_id }}">
 		</div>
 
+		<!-- EPI (lecture seule) -->
+		<div class="mb-3">
+			<label for="est_epi">EPI</label>
+			<input type="text" class="form-control" id="est_epi" 
+			       value="{% if equipement.categorie and equipement.categorie.est_epi %}Oui{% else %}Non{% endif %}" 
+			       readonly disabled>
+			<small class="text-muted">Le statut EPI est défini par la catégorie de l'équipement.</small>
+		</div>
+
+		<!-- Référence (lecture seule) -->
 		<div class="mb-3">
 			<label for="reference">Référence</label>
-			<input type="text" class="form-control" name="reference" id="reference" required>
+			<input type="text" class="form-control" id="reference" value="{{ equipement.reference }}" readonly disabled>
+			<small class="text-muted">La référence est définie lors de l'acquisition.</small>
+			<input type="hidden" name="reference" value="{{ equipement.reference }}">
 		</div>
 
+		<!-- Libellé (lecture seule) -->
 		<div class="mb-3">
-			<label for="lot">Lot n°</label>
-			<input type="text" class="form-control" name="lot" id="lot" required>
+			<label for="libelle">Libellé</label>
+			<input type="text" class="form-control" id="libelle" value="{{ equipement.libelle }}" readonly disabled>
+			<small class="text-muted">Le libellé est défini lors de l'acquisition.</small>
 		</div>
 
+		<!-- Date d'achat (lecture seule) -->
 		<div class="mb-3">
-			<label for="date_achat">Date achat</label>
-			<input type="date" class="form-control" name="date_achat" id="date_achat" required>
+			<label for="date_achat">Date d'achat</label>
+			<input type="text" class="form-control" id="date_achat" value="{{ equipement.date_achat|date('d/m/Y') }}" readonly disabled>
+			<small class="text-muted">La date d'achat est définie lors de l'acquisition.</small>
 		</div>
 
+		<!-- Code (lecture seule) -->
+		<div class="mb-3">
+			<label for="code">Code</label>
+			<input type="text" class="form-control" id="code" value="{{ equipement.code }}" readonly disabled>
+			<small class="text-muted">Le code est généré automatiquement.</small>
+		</div>
+
+		<!-- Date de mise en service (modifiable si vide) -->
+		<div class="mb-3">
+			<label for="date_mise_en_service">Date de mise en service</label>
+			{% if equipement.date_mise_en_service %}
+				<input type="date" class="form-control" id="date_mise_en_service" 
+				       value="{{ equipement.date_mise_en_service }}" readonly disabled>
+				<small class="text-muted">Cette date est déjà renseignée et ne peut plus être modifiée.</small>
+				<input type="hidden" name="date_mise_en_service" value="{{ equipement.date_mise_en_service }}">
+			{% else %}
+				<input type="date" class="form-control" name="date_mise_en_service" id="date_mise_en_service">
+				<small class="text-muted">Laisser vide si non renseignée.</small>
+			{% endif %}
+		</div>
+
+		<!-- Date de fin d'utilisation (modifiable si vide) -->
+		<div class="mb-3">
+			<label for="date_fin_utilisation">Date de fin d'utilisation</label>
+			{% if equipement.date_fin_utilisation %}
+				<input type="date" class="form-control" id="date_fin_utilisation" 
+				       value="{{ equipement.date_fin_utilisation }}" readonly disabled>
+				<small class="text-muted">Cette date est déjà renseignée et ne peut plus être modifiée.</small>
+				<input type="hidden" name="date_fin_utilisation" value="{{ equipement.date_fin_utilisation }}">
+			{% else %}
+				<input type="date" class="form-control" name="date_fin_utilisation" id="date_fin_utilisation">
+				<small class="text-muted">Laisser vide si l'équipement est toujours en service.</small>
+			{% endif %}
+		</div>
+
+		<!-- Emplacement (modifiable) -->
+		<div class="mb-3">
+			<label for="emplacement_id">Emplacement</label>
+			<select id="emplacement_id" name="emplacement_id" class="form-control">
+				<option value="">-- Aucun emplacement --</option>
+				{% for emplacement in emplacements %}
+					<option value="{{ emplacement.id }}" {% if equipement.emplacement_id == emplacement.id %}selected{% endif %}>
+						{{ emplacement.libelle }}
+					</option>
+				{% endfor %}
+			</select>
+		</div>
+
+		<!-- Statut (modifiable) -->
 		<div class="mb-3">
 			<label for="statut_id">Statut</label>
 			<select class="form-select" name="statut_id" id="statut_id">
-				{% for name, value in epi_statuts %}
-					<option value="{{ value }}">{{ name }}</option>
+				{% for name, value in equipement_statuts %}
+					<option value="{{ value }}" {% if equipement.statut_id == value %}selected{% endif %}>{{ name }}</option>
 				{% endfor %}
 			</select>
 		</div>
 
+		<!-- État d'usure (modifiable) -->
 		<div class="mb-3">
-			<label for="etat_usure_id">Etat usure</label>
+			<label for="etat_usure_id">État d'usure</label>
 			<select class="form-select" name="etat_usure_id" id="etat_usure_id">
-				{% for name, value in usure_etats %}
-					<option value="{{ value }}">{{ name }}</option>
+				{% for name, value in equipement_etats %}
+					<option value="{{ value }}" {% if equipement.etat_usure_id == value %}selected{% endif %}>{{ name }}</option>
 				{% endfor %}
 			</select>
+		</div>
+
+		<!-- Remarques (modifiable) -->
+		<div class="mb-3">
+			<label for="remarques">Remarques</label>
+			<textarea class="form-control" name="remarques" id="remarques" rows="3">{{ equipement.remarques }}</textarea>
 		</div>
 
 		<button type="submit" class="btn btn-primary">Enregistrer</button>
+		<a href="/equipements" class="btn btn-secondary">Annuler</a>
 	</form>
+
 	<!-- Modal -->
 	<div class="modal fade" id="categorieModalForm" tabindex="-1" aria-labelledby="categorieModalFormLabel" aria-hidden="true">
 		<div class="modal-dialog">

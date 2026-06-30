@@ -93,6 +93,9 @@ class AcquisitionController extends AbstractController
             $ligne = $request->request->all()['ligne'] ?? [];
             $ligneData = $ligne;
             
+            // ✅ Récupérer la valeur de la case à cocher "Regrouper en lot"
+            $ligne['regrouper_en_lot'] = isset($ligne['regrouper_en_lot']) ? 1 : 0;
+            
             if (empty($ligne) || empty($ligne['reference'])) {
                 $this->session->getFlashBag()->add('error', 'Veuillez remplir les champs de la ligne.');
                 return $this->redirectTo("/admin/acquisitions/acquisition_modification-{$acquisition['id']}");

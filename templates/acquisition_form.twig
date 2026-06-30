@@ -90,6 +90,14 @@
 						<div class="invalid-feedback">{{ form_errors.ligne_nombre }}</div>
 					{% endif %}
 				</div>
+
+				<!-- ✅ Case à cocher "Regrouper en lot" -->
+				<div class="col-lg-1">
+					<label for="regrouper_en_lot">Lot</label>
+					<input type="checkbox" class="form-check-input mt-4" name="ligne[regrouper_en_lot]" id="regrouper_en_lot" value="1" 
+					       {% if ligne_data.regrouper_en_lot %}checked{% endif %}>
+				</div>
+
 				<div class="col-lg-2 d-grid">
 					{% if not acquisition.est_validee %}
 						<button type="submit" class="btn btn-primary mt-4" id="ajout_entree_btn">Ajouter</button>
@@ -109,6 +117,8 @@
 							<th>Désignation</th>
 							<th>Catégorie</th>
 							<th>Nombre</th>
+							<th>Lot</th>
+							<th>EPI</th>   
 							<th>Équipements générés</th>
 							<th>Actions</th>
 						</tr>
@@ -121,10 +131,24 @@
 								<td>{{ ligne.categorie.libelle }}</td>
 								<td>{{ ligne.nombre }}</td>
 								<td>
-									{% if ligne.equipements_generes %}
-										<span class="badge bg-success">Générés</span>
+									{% if ligne.regrouper_en_lot %}
+									<span class="badge bg-info">Lot</span>
 									{% else %}
-										<span class="badge bg-warning">En attente</span>
+									<span class="badge bg-secondary">Individuel</span>
+									{% endif %}
+								</td>
+								<td>
+									{% if ligne.categorie and ligne.categorie.est_epi %}
+									<span class="badge bg-success">EPI</span>
+									{% else %}
+									<span class="badge bg-secondary">Non EPI</span>
+									{% endif %}
+								</td>
+								<td>
+									{% if ligne.equipements_generes %}
+									<span class="badge bg-success">Générés</span>
+									{% else %}
+									<span class="badge bg-warning">En attente</span>
 									{% endif %}
 								</td>
 								<td>

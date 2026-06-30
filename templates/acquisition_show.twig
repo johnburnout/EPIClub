@@ -73,6 +73,7 @@
 							<th>Référence</th>
 							<th>Désignation</th>
 							<th>Catégorie</th>
+							<th>EPI</th>
 							<th>Nombre</th>
 							<th>Générés</th>
 							<th>Actions</th>
@@ -86,12 +87,19 @@
 								<td>{{ ligne.reference }}</td>
 								<td>{{ ligne.designation }}</td>
 								<td>{{ ligne.categorie.libelle }}</td>
+								<td>                                 <!-- ✅ AJOUT -->
+									{% if ligne.categorie and ligne.categorie.est_epi %}
+									<span class="badge bg-success">EPI</span>
+									{% else %}
+									<span class="badge bg-secondary">Non EPI</span>
+									{% endif %}
+								</td>
 								<td>{{ ligne.nombre }}</td>
 								<td>
 									{% if ligne.equipements_generes %}
-										<span class="badge bg-success">✅ Générés</span>
+									<span class="badge bg-success">✅ Générés</span>
 									{% else %}
-										<span class="badge bg-warning">⏳ En attente</span>
+									<span class="badge bg-warning">⏳ En attente</span>
 									{% endif %}
 								</td>
 								<td>

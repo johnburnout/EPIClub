@@ -1,0 +1,32 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+	<h3>Emplacements</h3>
+	<hr>
+	<a href="/admin/emplacements/nouveau" class="btn btn-primary">Saisir un emplacement</a>
+	<hr>
+	<table class="table table-striped">
+		<thead>
+			<tr>
+				<th>Libellé</th>
+				<th>Description</th>
+				<th>Actions</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for emplacement in emplacements %}
+				<tr>
+					<td>{{ emplacement.libelle }}</td>
+					<td>{{ emplacement.description }}</td>
+					<td>
+						<a href="/admin/emplacements/emplacement-{{ emplacement.id }}" class="btn btn-sm btn-primary">Voir</a>
+						<a href="/admin/emplacements/emplacement_modification-{{ emplacement.id }}" class="btn btn-sm btn-warning">Modifier</a>
+						<a href="/admin/emplacements/supprimer?id={{ emplacement.id }}" 
+						   onclick="return confirm('Supprimer cet emplacement ?')" 
+						   class="btn btn-sm btn-danger">Supprimer</a>
+					</td>
+				</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+{% endblock %}

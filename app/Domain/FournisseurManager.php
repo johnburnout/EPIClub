@@ -32,7 +32,6 @@ class FournisseurManager extends AbstractManager
         if ($fournisseur = $stmt->fetch()) {
             return $fournisseur;
         }
-
         return null;
     }
 
@@ -56,7 +55,6 @@ class FournisseurManager extends AbstractManager
         if ($fournisseur = $stmt->fetch()) {
             return $fournisseur;
         }
-
         return null;
     }
 
@@ -72,12 +70,12 @@ class FournisseurManager extends AbstractManager
 
     public function delete(int $id)
     {
-        $sql = "DELETE FROM fournisseur WHERE id=:id";  // ✅ CORRIGÉ
+        $sql = "DELETE FROM fournisseur WHERE id=:id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['id' => $id]);
     }
 
-    public function hasAcquisitions(int $id): bool  // ✅ NOUVELLE MÉTHODE
+    public function hasAcquisitions(int $id): bool
     {
         $sql = "SELECT COUNT(*) FROM acquisition WHERE fournisseur_id = :id";
         $stmt = $this->db->prepare($sql);
@@ -87,6 +85,14 @@ class FournisseurManager extends AbstractManager
 
     private function _insert(array $fournisseur)
     {
+        // ✅ S'assurer que les clés existent
+        if (!isset($fournisseur['email'])) {
+            $fournisseur['email'] = null;
+        }
+        if (!isset($fournisseur['phone'])) {
+            $fournisseur['phone'] = null;
+        }
+        
         $sql = "INSERT INTO fournisseur (nom, email, phone) VALUES (:nom, :email, :phone)";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($fournisseur);
@@ -94,6 +100,14 @@ class FournisseurManager extends AbstractManager
 
     private function _update(array $fournisseur)
     {
+        // ✅ S'assurer que les clés existent
+        if (!isset($fournisseur['email'])) {
+            $fournisseur['email'] = null;
+        }
+        if (!isset($fournisseur['phone'])) {
+            $fournisseur['phone'] = null;
+        }
+        
         $sql = "UPDATE fournisseur SET nom=:nom, email=:email, phone=:phone WHERE id=:id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($fournisseur);

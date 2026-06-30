@@ -89,27 +89,45 @@ class EquipementManager extends AbstractManager
 
     private function _insert(array $equipement)
     {
-        $sql = "INSERT INTO club_equipement 
-        (acquisition_id, categorie_id, reference, libelle, code, statut, remarques, date_dernier_controle, controle_en_cours)
-        VALUES 
-        (:acquisition_id, :categorie_id, :reference, :libelle, :code, :statut, :remarques, :date_dernier_controle, :controle_en_cours)";
-        $stmt = $this->db->prepare($sql);
-        $result = $stmt->execute($equipement);
+        $allowedFields = [
+            'acquisition_id', 'categorie_id', 'reference', 'libelle', 'code', 
+            'statut', 'remarques', 'date_dernier_controle', 'controle_en_cours', 
+            'emplacement_id', 'date_mise_en_service', 'date_fin_utilisation',
+            'nombre'  // ✅ AJOUTER
+        ];
+        $filteredEquipement = array_intersect_key($equipement, array_flip($allowedFields));
         
+        $sql = "INSERT INTO club_equipement 
+        (acquisition_id, categorie_id, reference, libelle, code, statut, remarques, date_dernier_controle, controle_en_cours, emplacement_id, date_mise_en_service, date_fin_utilisation, nombre)
+        VALUES 
+        (:acquisition_id, :categorie_id, :reference, :libelle, :code, :statut, :remarques, :date_dernier_controle, :controle_en_cours, :emplacement_id, :date_mise_en_service, :date_fin_utilisation, :nombre)";
+        $stmt = $this->db->prepare($sql);
+        $result = $stmt->execute($filteredEquipement);
         if (!$result) {
             var_dump('❌ Erreur SQL :', $stmt->errorInfo());
         }
-        
         return $result;
     }
-
+    
     private function _update(array $equipement)
     {
+        $allowedFields = [
+            'acquisition_id', 'categorie_id', 'reference', 'libelle', 'code', 
+            'statut', 'remarques', 'date_dernier_controle', 'controle_en_cours', 
+            'emplacement_id', 'id', 'date_mise_en_service', 'date_fin_utilisation',
+            'nombre'  // ✅ AJOUTER
+        ];
+        $filteredEquipement = array_intersect_key($equipement, array_flip($allowedFields));
+        
         $sql = "UPDATE club_equipement 
-            SET acquisition_id=:acquisition_id, categorie_id=:categorie_id, reference=:reference, libelle=:libelle, code=:code, 
-                statut=:statut, remarques=:remarques, date_dernier_controle=:date_dernier_controle, controle_en_cours=:controle_en_cours
-            WHERE id=:id";
+        SET acquisition_id=:acquisition_id, categorie_id=:categorie_id, reference=:reference, libelle=:libelle, code=:code, 
+        statut=:statut, remarques=:remarques, date_dernier_controle=:date_dernier_controle, controle_en_cours=:controle_en_cours,
+        emplacement_id=:emplacement_id,
+        date_mise_en_service=:date_mise_en_service,
+        date_fin_utilisation=:date_fin_utilisation,
+        nombre=:nombre
+        WHERE id=:id";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute($equipement);
+        return $stmt->execute($filteredEquipement);
     }
 }

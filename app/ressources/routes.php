@@ -19,6 +19,7 @@ $routes->add('reset_password', new Route('/regenerer_mot_de_passe', ['_controlle
 
 $routes->add('equipement_list', new Route('/equipements', ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'list']));
 $routes->add('equipement_show', new Route('/equipements/equipement-{id}', ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'show']));
+$routes->add('equipement_edit', new Route('/equipements/equipement_modification-{id}', ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'edit'])); // ✅ AJOUTER
 
 // MONITEUR
 // todo all controle links
@@ -38,6 +39,8 @@ $routes->add('equipement_show', new Route('/equipements/equipement-{id}', ['_con
 	$routes->add('acquisition_create', new Route('/admin/acquisitions/nouvelle', ['_controller' => 'Epiclub\\Controller\\AcquisitionController', 'action' => 'create']));
 	$routes->add('acquisition_edit', new Route('/admin/acquisitions/acquisition_modification-{id}', ['_controller' => 'Epiclub\\Controller\\AcquisitionController', 'action' => 'update']));
 	$routes->add('acquisition_show', new Route('/admin/acquisitions/acquisition-{id}', ['_controller' => 'Epiclub\\Controller\\AcquisitionController', 'action' => 'show']));
+	$routes->add('acquisition_ligne_edit', new Route('/admin/acquisitions/ligne_modification-{id}', ['_controller' => 'Epiclub\\Controller\\AcquisitionLineController', 'action' => 'modifyLine']));
+	$routes->add('acquisition_ligne_delete', new Route('/admin/acquisitions/ligne_supprimer-{id}', ['_controller' => 'Epiclub\\Controller\\AcquisitionLineController', 'action' => 'deleteLine']));
 	
 	// FOURNISSEUR - DELETE avant SHOW
 	$routes->add('fournisseur_list', new Route('/admin/fournisseurs', ['_controller' => 'Epiclub\\Controller\\FournisseurController', 'action' => 'list']));
@@ -52,3 +55,10 @@ $routes->add('equipement_show', new Route('/equipements/equipement-{id}', ['_con
 	# @deprecated $routes->add('utilisateur_update', new Route('/admin/utilisateurs/utilisateur_modification-{id}', ['_controller' => 'Epiclub\\Controller\\UtilisateurController', 'action' => 'edit']));
 	$routes->add('utilisateur_delete', new Route('/admin/utilisateurs/utilisateur_supprimer-{id}', ['_controller' => 'Epiclub\\Controller\\UtilisateurController', 'action' => 'delete']));
 	$routes->add('utilisateur_show', new Route('/admin/utilisateurs/utilisateur-{id}', ['_controller' => 'Epiclub\\Controller\\UtilisateurController', 'action' => 'show']));
+	
+	// EMPLACEMENT - DELETE avant SHOW
+	$routes->add('emplacement_list', new Route('/admin/emplacements', ['_controller' => 'Epiclub\\Controller\\EmplacementController', 'action' => 'list']));
+	$routes->add('emplacement_create', new Route('/admin/emplacements/nouveau', ['_controller' => 'Epiclub\\Controller\\EmplacementController', 'action' => 'edit']));
+	$routes->add('emplacement_update', new Route('/admin/emplacements/emplacement_modification-{id}', ['_controller' => 'Epiclub\\Controller\\EmplacementController', 'action' => 'edit']));
+	$routes->add('emplacement_delete', new Route('/admin/emplacements/supprimer', ['_controller' => 'Epiclub\\Controller\\EmplacementController', 'action' => 'delete']));
+	$routes->add('emplacement_show', new Route('/admin/emplacements/emplacement-{id}', ['_controller' => 'Epiclub\\Controller\\EmplacementController', 'action' => 'show']));

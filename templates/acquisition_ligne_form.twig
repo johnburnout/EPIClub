@@ -1,0 +1,59 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+	<h3>Modifier la ligne d'acquisition</h3>
+	<hr>
+
+	<form method="post">
+		<div class="mb-3">
+			<label for="reference">Référence *</label>
+			<input type="text" class="form-control {% if form_errors.reference %}is-invalid{% endif %}" 
+			       name="reference" id="reference" value="{{ ligne.reference }}" required>
+			{% if form_errors.reference %}
+				<div class="invalid-feedback">{{ form_errors.reference }}</div>
+			{% endif %}
+		</div>
+
+		<div class="mb-3">
+			<label for="designation">Désignation *</label>
+			<input type="text" class="form-control {% if form_errors.designation %}is-invalid{% endif %}" 
+			       name="designation" id="designation" value="{{ ligne.designation }}" required>
+			{% if form_errors.designation %}
+				<div class="invalid-feedback">{{ form_errors.designation }}</div>
+			{% endif %}
+		</div>
+
+		<div class="mb-3">
+			<label for="categorie_libelle">Catégorie *</label>
+			<input type="text" class="form-control {% if form_errors.categorie_libelle %}is-invalid{% endif %}" 
+			       name="categorie_libelle" id="categorie_libelle" 
+			       value="{{ ligne.categorie.libelle }}" list="categories" required>
+			<datalist id="categories">
+				{% for categorie in categories %}
+					<option value="{{ categorie.libelle }}">{{ categorie.libelle }}</option>
+				{% endfor %}
+			</datalist>
+			{% if form_errors.categorie_libelle %}
+				<div class="invalid-feedback">{{ form_errors.categorie_libelle }}</div>
+			{% endif %}
+		</div>
+
+		<div class="mb-3">
+			<label for="nombre">Nombre *</label>
+			<input type="number" class="form-control {% if form_errors.nombre %}is-invalid{% endif %}" 
+			       name="nombre" id="nombre" min="1" value="{{ ligne.nombre }}" required>
+			{% if form_errors.nombre %}
+				<div class="invalid-feedback">{{ form_errors.nombre }}</div>
+			{% endif %}
+		</div>
+
+		<div class="mb-3 form-check">
+			<input type="checkbox" class="form-check-input" name="regrouper_en_lot" id="regrouper_en_lot" value="1"
+			       {% if ligne.regrouper_en_lot %}checked{% endif %}>
+			<label class="form-check-label" for="regrouper_en_lot">Regrouper en lot</label>
+		</div>
+
+		<button type="submit" class="btn btn-primary">Enregistrer</button>
+		<a href="/admin/acquisitions/acquisition_modification-{{ ligne.acquisition_id }}" class="btn btn-secondary">Annuler</a>
+	</form>
+{% endblock %}

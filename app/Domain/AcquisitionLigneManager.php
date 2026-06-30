@@ -48,13 +48,12 @@ class AcquisitionLigneManager extends AbstractManager
     * 
     * @uses AcquisitionController::update() pour vérifier l'unicité des références
     */
-    
-    public function findByReference(string $reference, int $excludeId = null)
+    public function findByReference(string $reference, ?int $excludeId = null)
     {
         $sql = "SELECT * FROM acquisition_ligne WHERE reference = :reference";
         $params = ['reference' => $reference];
         
-        if ($excludeId) {
+        if ($excludeId !== null) {
             $sql .= " AND id != :id";
             $params['id'] = $excludeId;
         }
@@ -93,8 +92,8 @@ class AcquisitionLigneManager extends AbstractManager
 
     private function _insert(array $ligne)
     {
-        $sql = "INSERT INTO acquisition_ligne (acquisition_id, reference, designation, categorie_id, nombre, equipements_generes) 
-            VALUES (:acquisition_id, :reference, :designation, :categorie_id, :nombre, :equipements_generes)";
+        $sql = "INSERT INTO acquisition_ligne (acquisition_id, reference, designation, categorie_id, nombre, equipements_generes, regrouper_en_lot) 
+                VALUES (:acquisition_id, :reference, :designation, :categorie_id, :nombre, :equipements_generes, :regrouper_en_lot)";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute([
             'acquisition_id' => $ligne['acquisition_id'],
@@ -102,19 +101,21 @@ class AcquisitionLigneManager extends AbstractManager
             'designation' => $ligne['designation'],
             'categorie_id' => $ligne['categorie_id'],
             'nombre' => $ligne['nombre'],
-            'equipements_generes' => 0
+            'equipements_generes' => 0,
+            'regrouper_en_lot' => isset($ligne['regrouper_en_lot']) ? $ligne['regrouper_en_lot'] : 0
         ]);
     }
-
+    
     private function _update(array $ligne)
     {
-        // ✅ Filtrer les champs pour éviter les erreurs
-        $allowedFields = ['acquisition_id', 'reference', 'designation', 'categorie_id', 'nombre', 'equipements_generes', 'id'];
+        // Filtrer les champs pour éviter les erreurs
+        $allowedFields = ['acquisition_id', 'reference', 'designation', 'categorie_id', 'nombre', 'equipements_generes', 'regrouper_en_lot', 'id'];
         $filteredLigne = array_intersect_key($ligne, array_flip($allowedFields));
         
         $sql = "UPDATE acquisition_ligne 
                 SET acquisition_id=:acquisition_id, reference=:reference, designation=:designation, 
-                    categorie_id=:categorie_id, nombre=:nombre, equipements_generes=:equipements_generes
+                    categorie_id=:categorie_id, nombre=:nombre, equipements_generes=:equipements_generes,
+                    regrouper_en_lot=:regrouper_en_lot
                 WHERE id=:id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($filteredLigne);
