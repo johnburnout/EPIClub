@@ -25,10 +25,17 @@ abstract class AbstractController
         $this->renderer->addFunction(new TwigFunction('isGranted', function ($role) {
             return $this->isGranted($role);
         }));
+
+        // ✅ Ajout de la fonction Twig pour récupérer l'utilisateur
+        $this->renderer->addFunction(new TwigFunction('app_user', function () {
+            return $this->session->get('user');
+        }));
     }
 
     public function render(string $template, array $data = []): Response
     {
+        // ✅ Ajout automatique de l'utilisateur à toutes les vues
+        $data['_user'] = $this->session->get('user');
         return new Response($this->renderer->render($template, $data));
     }
 

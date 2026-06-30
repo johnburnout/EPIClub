@@ -15,6 +15,9 @@ class IndexController extends AbstractController
 
     public function dashboard(Request $request): Response
     {
+        // 🔍 DÉBOGAGE : Afficher le contenu de la session
+        // var_dump($_SESSION);
+        // exit;
         /* if (!$this->isAuthenticated()) {
            return $this->redirectTo('/se_connecter');
         } */

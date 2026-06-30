@@ -63,14 +63,26 @@
 								</li>
 							{% endif %}
 						</ul>
-						<div class="d-flex">
+						<div class="d-flex align-items-center">
 							{% if isAuthenticated() %}
-								<form action="/se_deconnecter" method="post" style="display: inline;">
-									<input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
-									<button type="submit" class="btn btn-primary">Déconnexion</button>
-								</form>
-								{% else %}
-									<a href="/se_connecter" class="btn btn-primary">Connexion</a>
+							{% set user = _user %}
+							{% if user %}
+							{% set roleLabels = {
+							'ROLE_ADMIN': 'Administrateur',
+							'ROLE_USER': 'Utilisateur',
+							'ROLE_CONTROLLEUR': 'Contrôleur'
+							} %}
+							<span class="me-3 text-white">
+								{{ user.prenom }} {{ user.nom }}
+								<span class="badge bg-light text-dark">{{ roleLabels[user.role]|default(user.role) }}</span>
+							</span>
+							{% endif %}
+							<form action="/se_deconnecter" method="post" style="display: inline;">
+								<input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
+								<button type="submit" class="btn btn-primary">Déconnexion</button>
+							</form>
+							{% else %}
+							<a href="/se_connecter" class="btn btn-primary">Connexion</a>
 							{% endif %}
 						</div>
 					</div>
