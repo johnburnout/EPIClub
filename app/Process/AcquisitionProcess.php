@@ -55,6 +55,7 @@ class AcquisitionProcess
     {
         $acquisitionLigneManager = new AcquisitionLigneManager();
         $acquisitionManager = new AcquisitionManager();
+        $categorieManager = new CategorieManager(); // utile pour récupérer est_epi si besoin
         
         if ($ligne = $acquisitionLigneManager->findId($ligne_id)) {
             if ($ligne['equipements_generes'] === 1) {
@@ -65,12 +66,15 @@ class AcquisitionProcess
             $annee = date('Y', strtotime($acquisition['facture_date']));
             $equipementManager = new EquipementManager();
             
-            // ✅ Vérifier si la ligne doit être regroupée en lot
+            // Récupération de la catégorie pour éventuellement récupérer est_epi
+            $categorie = $categorieManager->findId($ligne['categorie_id']);
+            $est_epi = $categorie ? $categorie['est_epi'] : 1; // par défaut EPI
+            
             $regrouper_en_lot = isset($ligne['regrouper_en_lot']) && $ligne['regrouper_en_lot'] == 1;
             
             if ($regrouper_en_lot) {
-                // ✅ Création en lot : un seul équipement avec le nombre total
-                $code = $annee . '-' . str_pad($ligne['acquisition_id'], 3, '0', STR_PAD_LEFT) . '-' . 
+                // 1 seul équipement avec le nombre total
+                $code = $annee . '-' . str_pad($ligne['acquisition_id'], 3, '0', STR_PAD_LEFT) . '-' .
                 str_pad($ligne['id'], 3, '0', STR_PAD_LEFT) . '-LOT';
                 while ($equipementManager->codeExists($code)) {
                     $code = $code . '-' . rand(10, 99);
@@ -88,21 +92,27 @@ class AcquisitionProcess
                     'emplacement_id' => null,
                     'date_mise_en_service' => null,
                     'date_fin_utilisation' => null,
-                    'nombre' => $ligne['nombre']  // ⬅️ Nombre d'unités dans le lot
+                    'nombre' => $ligne['nombre'],
+                    'est_epi' => $est_epi
                 ];
                 $equipementManager->save($new_equipement);
             } else {
-                // ✅ Création individuelle : un équipement par unité
+                // Création individuelle : un équipement par unité
                 for ($i = 1; $i <= $ligne['nombre']; $i++) {
-                    $code = $annee . '-' . str_pad($ligne['acquisition_id'], 3, '0', STR_PAD_LEFT) . '-' . 
+                    // Code unique (inchangé)
+                    $code = $annee . '-' . str_pad($ligne['acquisition_id'], 3, '0', STR_PAD_LEFT) . '-' .
                     str_pad($ligne['id'], 3, '0', STR_PAD_LEFT) . '-' . str_pad($i, 3, '0', STR_PAD_LEFT);
                     while ($equipementManager->codeExists($code)) {
                         $code = $code . '-' . rand(10, 99);
                     }
+                    
+                    // ✅ Référence unique : référence de base + "-" + numéro d'ordre
+                    $reference = $ligne['reference'] . '-' . $i;
+                    
                     $new_equipement = [
                         'acquisition_id' => $ligne['acquisition_id'],
                         'categorie_id' => $ligne['categorie_id'],
-                        'reference' => $ligne['reference'],
+                        'reference' => $reference,
                         'libelle' => $ligne['designation'],
                         'code' => $code,
                         'statut' => 0,
@@ -112,12 +122,14 @@ class AcquisitionProcess
                         'emplacement_id' => null,
                         'date_mise_en_service' => null,
                         'date_fin_utilisation' => null,
-                        'nombre' => 1  // ⬅️ Chaque équipement individuel a nombre = 1
+                        'nombre' => 1,
+                        'est_epi' => $est_epi
                     ];
                     $equipementManager->save($new_equipement);
                 }
             }
             
+            // Marquer la ligne comme générée
             $ligne['equipements_generes'] = 1;
             $acquisitionLigneManager->save($ligne);
             return true;

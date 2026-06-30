@@ -3,21 +3,21 @@
 namespace Epiclub\Enum;
 
 /**
- * USER: toute personne pouvant se connecter
- * MONITEUR: niveau USER + lecture et controle epi
- * ADMINSTRATEUR: niveau MONITEUR + edition epi + changement user.role
+ * USER : toute personne pouvant se connecter
+ * CONTROLLEUR : niveau USER + lecture et contrôle des EPI
+ * ADMINISTRATEUR : niveau CONTROLLEUR + édition EPI + changement des rôles
  */
 class UserRole
 {
     const ROLE_USER = 'Utilisateur';
-    const ROLE_MONITEUR = 'Moniteur';
+    const ROLE_CONTROLLEUR = 'Contrôleur';
     const ROLE_ADMIN = 'Administrateur';
 
     static public function list()
     {
         return [
             'ROLE_USER' => self::ROLE_USER,
-            'ROLE_MONITEUR' => self::ROLE_MONITEUR,
+            'ROLE_CONTROLLEUR' => self::ROLE_CONTROLLEUR,
             'ROLE_ADMIN' => self::ROLE_ADMIN
         ];
     }
@@ -26,10 +26,10 @@ class UserRole
     {
         $matches = [
             'ROLE_USER' => self::ROLE_USER,
-            'ROLE_MONITEUR' => self::ROLE_MONITEUR,
+            'ROLE_CONTROLLEUR' => self::ROLE_CONTROLLEUR,
             'ROLE_ADMIN' => self::ROLE_ADMIN
         ];
 
-        return $matches[$role];
+        return $matches[$role] ?? $role;
     }
 }

@@ -35,6 +35,12 @@
 							<li class="nav-item">
 								<a class="nav-link" href="/equipements">Liste équipements</a>
 							</li>
+							{# Lien Journaux visible uniquement pour les utilisateurs simples (ROLE_USER) #}
+							{% if _user.role == 'ROLE_USER' %}
+							<li class="nav-item">
+								<a class="nav-link" href="/journaux">📋 Journaux</a>
+							</li>
+							{% endif %}
 							{% endif %}
 							{% if isGranted('ROLE_CONTROLLEUR') %}
 								<li class="nav-item dropdown">

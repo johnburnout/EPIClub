@@ -22,13 +22,15 @@ class EquipementController extends AbstractController
         $categorie_id = $request->query->get('categorie');
         $filter_epi = $request->query->get('epi');
         $en_service = $request->query->get('en_service');
+        $emplacement_id = $request->query->get('emplacement'); // ✅ AJOUT
         $order_by = $request->query->get('order_by', 'categorie');
         $order_dir = $request->query->get('order_dir', 'asc');
         
-        // ✅ Nettoyer les paramètres : une chaîne vide signifie "pas de filtre"
+        // Nettoyer les paramètres
         if ($categorie_id === '') $categorie_id = null;
         if ($filter_epi === '') $filter_epi = null;
         if ($en_service === '') $en_service = null;
+        if ($emplacement_id === '') $emplacement_id = null; // ✅ AJOUT
         
         // Récupérer les équipements
         $equipements = $equipementManager->findAll();
@@ -50,7 +52,7 @@ class EquipementController extends AbstractController
             });
         }
         
-        // ✅ Filtre EPI / non EPI
+        // ✅ Filtre EPI
         if ($filter_epi !== null) {
             $equipements = array_filter($equipements, function($e) use ($filter_epi) {
                 return isset($e['categorie']['est_epi']) && $e['categorie']['est_epi'] == $filter_epi;
@@ -61,14 +63,26 @@ class EquipementController extends AbstractController
         if ($en_service !== null) {
             $today = date('Y-m-d');
             if ($en_service === 'oui') {
-                // En service : date_fin > aujourd'hui OU non définie
                 $equipements = array_filter($equipements, function($e) use ($today) {
                     return !isset($e['date_fin_utilisation']) || $e['date_fin_utilisation'] > $today;
                 });
             } elseif ($en_service === 'non') {
-                // Hors service : date_fin <= aujourd'hui
                 $equipements = array_filter($equipements, function($e) use ($today) {
                     return isset($e['date_fin_utilisation']) && $e['date_fin_utilisation'] <= $today;
+                });
+            }
+        }
+        
+        // ✅ Filtre par emplacement
+        if ($emplacement_id !== null) {
+            if ($emplacement_id === 'null') {
+                // Filtrer les équipements sans emplacement (emplacement_id IS NULL)
+                $equipements = array_filter($equipements, function($e) {
+                    return !isset($e['emplacement_id']) || $e['emplacement_id'] === null;
+                });
+            } else {
+                $equipements = array_filter($equipements, function($e) use ($emplacement_id) {
+                    return isset($e['emplacement_id']) && $e['emplacement_id'] == $emplacement_id;
                 });
             }
         }
@@ -88,16 +102,19 @@ class EquipementController extends AbstractController
             });
         }
         
-        // Récupérer toutes les catégories pour le filtre
+        // Récupérer toutes les catégories et emplacements pour les filtres
         $categories = $categorieManager->findAll();
+        $emplacements = $emplacementManager->findAll(); // ✅ AJOUT
         
         return $this->render('equipement_list.twig', [
-            'equipements' => array_values($equipements), // réindexer le tableau
+            'equipements' => array_values($equipements),
             'categories' => $categories,
+            'emplacements' => $emplacements, // ✅ AJOUT
             'filtres' => [
                 'categorie_id' => $categorie_id,
                 'epi' => $filter_epi,
                 'en_service' => $en_service,
+                'emplacement_id' => $emplacement_id, // ✅ AJOUT
                 'order_by' => $order_by,
                 'order_dir' => $order_dir,
             ]
