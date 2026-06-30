@@ -3,7 +3,57 @@
 {% block body %}
 	<h3>Equipements</h3>
     <hr>
-    <a href="/equipements/nouveau" class="btn btn-primary mb-3">➕ Nouvel équipement</a>
+
+    <!-- Filtres -->
+    <form method="get" class="row g-3 mb-3">
+        <div class="col-md-3">
+            <label for="categorie" class="form-label">Catégorie</label>
+            <select name="categorie" id="categorie" class="form-select">
+                <option value="">Toutes les catégories</option>
+                {% for categorie in categories %}
+                    <option value="{{ categorie.id }}" {% if filtres.categorie_id == categorie.id %}selected{% endif %}>
+                        {{ categorie.libelle }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label for="epi" class="form-label">EPI</label>
+            <select name="epi" id="epi" class="form-select">
+                <option value="">Tous</option>
+                <option value="1" {% if filtres.epi == '1' %}selected{% endif %}>EPI</option>
+                <option value="0" {% if filtres.epi == '0' %}selected{% endif %}>Non EPI</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label for="en_service" class="form-label">Statut</label>
+            <select name="en_service" id="en_service" class="form-select">
+                <option value="">Tous</option>
+                <option value="oui" {% if filtres.en_service == 'oui' %}selected{% endif %}>En service</option>
+                <option value="non" {% if filtres.en_service == 'non' %}selected{% endif %}>Hors service</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label for="order_by" class="form-label">Trier par</label>
+            <select name="order_by" id="order_by" class="form-select">
+                <option value="categorie" {% if filtres.order_by == 'categorie' %}selected{% endif %}>Catégorie</option>
+                <option value="date_fin" {% if filtres.order_by == 'date_fin' %}selected{% endif %}>Date de fin</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label for="order_dir" class="form-label">Ordre</label>
+            <select name="order_dir" id="order_dir" class="form-select">
+                <option value="asc" {% if filtres.order_dir == 'asc' %}selected{% endif %}>Croissant</option>
+                <option value="desc" {% if filtres.order_dir == 'desc' %}selected{% endif %}>Décroissant</option>
+            </select>
+        </div>
+        <div class="col-md-1 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">Filtrer</button>
+        </div>
+    </form>
+
+    <hr>
+
 	<table class="table table-striped">
 		<thead>
 			<tr>

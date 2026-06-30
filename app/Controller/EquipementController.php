@@ -16,22 +16,91 @@ class EquipementController extends AbstractController
     {
         $equipementManager = new EquipementManager();
         $categorieManager = new CategorieManager();
-        $emplacementManager = new EmplacementManager(); // ✅ AJOUTER
+        $emplacementManager = new EmplacementManager();
         
+        // Récupérer les paramètres GET
+        $categorie_id = $request->query->get('categorie');
+        $filter_epi = $request->query->get('epi');
+        $en_service = $request->query->get('en_service');
+        $order_by = $request->query->get('order_by', 'categorie');
+        $order_dir = $request->query->get('order_dir', 'asc');
+        
+        // ✅ Nettoyer les paramètres : une chaîne vide signifie "pas de filtre"
+        if ($categorie_id === '') $categorie_id = null;
+        if ($filter_epi === '') $filter_epi = null;
+        if ($en_service === '') $en_service = null;
+        
+        // Récupérer les équipements
         $equipements = $equipementManager->findAll();
         
-        // ✅ Charger les catégories et les emplacements
+        // Charger les catégories et emplacements
         foreach ($equipements as $i => $equipement) {
             if (isset($equipement['categorie_id'])) {
                 $equipements[$i]['categorie'] = $categorieManager->findId($equipement['categorie_id']);
             }
-            if (isset($equipement['emplacement_id']) && $equipement['emplacement_id']) {
+            if (isset($equipement['emplacement_id'])) {
                 $equipements[$i]['emplacement'] = $emplacementManager->findId($equipement['emplacement_id']);
             }
         }
         
+        // ✅ Filtre par catégorie
+        if ($categorie_id) {
+            $equipements = array_filter($equipements, function($e) use ($categorie_id) {
+                return isset($e['categorie_id']) && $e['categorie_id'] == $categorie_id;
+            });
+        }
+        
+        // ✅ Filtre EPI / non EPI
+        if ($filter_epi !== null) {
+            $equipements = array_filter($equipements, function($e) use ($filter_epi) {
+                return isset($e['categorie']['est_epi']) && $e['categorie']['est_epi'] == $filter_epi;
+            });
+        }
+        
+        // ✅ Filtre "En service" / "Hors service"
+        if ($en_service !== null) {
+            $today = date('Y-m-d');
+            if ($en_service === 'oui') {
+                // En service : date_fin > aujourd'hui OU non définie
+                $equipements = array_filter($equipements, function($e) use ($today) {
+                    return !isset($e['date_fin_utilisation']) || $e['date_fin_utilisation'] > $today;
+                });
+            } elseif ($en_service === 'non') {
+                // Hors service : date_fin <= aujourd'hui
+                $equipements = array_filter($equipements, function($e) use ($today) {
+                    return isset($e['date_fin_utilisation']) && $e['date_fin_utilisation'] <= $today;
+                });
+            }
+        }
+        
+        // ✅ Tri
+        if ($order_by === 'categorie') {
+            usort($equipements, function($a, $b) use ($order_dir) {
+                $a_cat = $a['categorie']['libelle'] ?? '';
+                $b_cat = $b['categorie']['libelle'] ?? '';
+                return $order_dir === 'asc' ? strcmp($a_cat, $b_cat) : strcmp($b_cat, $a_cat);
+            });
+        } elseif ($order_by === 'date_fin') {
+            usort($equipements, function($a, $b) use ($order_dir) {
+                $a_date = $a['date_fin_utilisation'] ?? '9999-12-31';
+                $b_date = $b['date_fin_utilisation'] ?? '9999-12-31';
+                return $order_dir === 'asc' ? strcmp($a_date, $b_date) : strcmp($b_date, $a_date);
+            });
+        }
+        
+        // Récupérer toutes les catégories pour le filtre
+        $categories = $categorieManager->findAll();
+        
         return $this->render('equipement_list.twig', [
-            'equipements' => $equipements
+            'equipements' => array_values($equipements), // réindexer le tableau
+            'categories' => $categories,
+            'filtres' => [
+                'categorie_id' => $categorie_id,
+                'epi' => $filter_epi,
+                'en_service' => $en_service,
+                'order_by' => $order_by,
+                'order_dir' => $order_dir,
+            ]
         ]);
     }
 
