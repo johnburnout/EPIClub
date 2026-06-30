@@ -1,0 +1,43 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+    <h3>Contrôles</h3>
+    <hr>
+    <a href="/admin/controles/create" class="btn btn-primary">Nouveau contrôle</a>
+    <hr>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Libellé</th>
+                <th>Début</th>
+                <th>Fin</th>
+                <th>Statut</th>
+                <th>Contrôleur</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for controle in controles %}
+                <tr>
+                    <td>{{ controle.libelle }}</td>
+                    <td>{{ controle.date_debut|date('d/m/Y H:i') }}</td>
+                    <td>{{ controle.date_fin ? controle.date_fin|date('d/m/Y H:i') : '-' }}</td>
+                    <td>
+                        {% if controle.statut == 'ouvert' %}
+                            <span class="badge bg-primary">Ouvert</span>
+                        {% elseif controle.statut == 'en_cours' %}
+                            <span class="badge bg-warning">En cours</span>
+                        {% elseif controle.statut == 'cloture' %}
+                            <span class="badge bg-success">Clôturé</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ controle.controleur_id }}</td>
+                    <td>
+                        <a href="/admin/controles/edit/{{ controle.id }}" class="btn btn-sm btn-primary">Modifier</a>
+                        <a href="/admin/controles/cloturer/{{ controle.id }}" class="btn btn-sm btn-success" onclick="return confirm('Clôturer ce contrôle ?')">Clôturer</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
