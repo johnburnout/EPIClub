@@ -1,6 +1,6 @@
 # EPIClub
 
-![EPIClub](https://epiclub.fr/wp-content/uploads/2026/06/EPIClub.png)
+<img src="https://epiclub.fr/wp-content/uploads/2026/07/EPIClub-logo.png" width="300">
 
 ## Objectif
 
