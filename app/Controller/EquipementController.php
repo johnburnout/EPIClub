@@ -22,15 +22,19 @@ class EquipementController extends AbstractController
         $categorie_id = $request->query->get('categorie');
         $filter_epi = $request->query->get('epi');
         $en_service = $request->query->get('en_service');
-        $emplacement_id = $request->query->get('emplacement'); // ✅ AJOUT
+        $emplacement_id = $request->query->get('emplacement');
         $order_by = $request->query->get('order_by', 'categorie');
         $order_dir = $request->query->get('order_dir', 'asc');
+        $page = (int) $request->query->get('page', 1);
+        $limit = (int) $request->query->get('limit', 10);
         
         // Nettoyer les paramètres
         if ($categorie_id === '') $categorie_id = null;
         if ($filter_epi === '') $filter_epi = null;
         if ($en_service === '') $en_service = null;
-        if ($emplacement_id === '') $emplacement_id = null; // ✅ AJOUT
+        if ($emplacement_id === '') $emplacement_id = null;
+        if ($page < 1) $page = 1;
+        if ($limit < 1) $limit = 10;
         
         // Récupérer les équipements
         $equipements = $equipementManager->findAll();
@@ -45,21 +49,17 @@ class EquipementController extends AbstractController
             }
         }
         
-        // ✅ Filtre par catégorie
+        // Filtres (inchangés)
         if ($categorie_id) {
             $equipements = array_filter($equipements, function($e) use ($categorie_id) {
                 return isset($e['categorie_id']) && $e['categorie_id'] == $categorie_id;
             });
         }
-        
-        // ✅ Filtre EPI
         if ($filter_epi !== null) {
             $equipements = array_filter($equipements, function($e) use ($filter_epi) {
                 return isset($e['categorie']['est_epi']) && $e['categorie']['est_epi'] == $filter_epi;
             });
         }
-        
-        // ✅ Filtre "En service" / "Hors service"
         if ($en_service !== null) {
             $today = date('Y-m-d');
             if ($en_service === 'oui') {
@@ -72,11 +72,8 @@ class EquipementController extends AbstractController
                 });
             }
         }
-        
-        // ✅ Filtre par emplacement
         if ($emplacement_id !== null) {
             if ($emplacement_id === 'null') {
-                // Filtrer les équipements sans emplacement (emplacement_id IS NULL)
                 $equipements = array_filter($equipements, function($e) {
                     return !isset($e['emplacement_id']) || $e['emplacement_id'] === null;
                 });
@@ -87,7 +84,7 @@ class EquipementController extends AbstractController
             }
         }
         
-        // ✅ Tri
+        // Tri
         if ($order_by === 'categorie') {
             usort($equipements, function($a, $b) use ($order_dir) {
                 $a_cat = $a['categorie']['libelle'] ?? '';
@@ -102,22 +99,56 @@ class EquipementController extends AbstractController
             });
         }
         
-        // Récupérer toutes les catégories et emplacements pour les filtres
+        // Pagination
+        $total = count($equipements);
+        $offset = ($page - 1) * $limit;
+        $equipements = array_slice($equipements, $offset, $limit);
+        $totalPages = $limit > 0 ? ceil($total / $limit) : 1;
+        
+        // Construire les URLs de pagination
+        $baseParams = [
+            'categorie' => $categorie_id,
+            'epi' => $filter_epi,
+            'en_service' => $en_service,
+            'emplacement' => $emplacement_id,
+            'order_by' => $order_by,
+            'order_dir' => $order_dir,
+            'limit' => $limit,
+        ];
+        $paginationUrls = [
+            'first' => '?' . http_build_query(array_merge($baseParams, ['page' => 1])),
+            'previous' => '?' . http_build_query(array_merge($baseParams, ['page' => max(1, $page - 1)])),
+            'next' => '?' . http_build_query(array_merge($baseParams, ['page' => min($totalPages, $page + 1)])),
+            'last' => '?' . http_build_query(array_merge($baseParams, ['page' => $totalPages])),
+        ];
+        
+        // Récupérer les catégories et emplacements pour les filtres
         $categories = $categorieManager->findAll();
-        $emplacements = $emplacementManager->findAll(); // ✅ AJOUT
+        $emplacements = $emplacementManager->findAll();
         
         return $this->render('equipement_list.twig', [
             'equipements' => array_values($equipements),
             'categories' => $categories,
-            'emplacements' => $emplacements, // ✅ AJOUT
+            'emplacements' => $emplacements,
             'filtres' => [
                 'categorie_id' => $categorie_id,
                 'epi' => $filter_epi,
                 'en_service' => $en_service,
-                'emplacement_id' => $emplacement_id, // ✅ AJOUT
+                'emplacement_id' => $emplacement_id,
                 'order_by' => $order_by,
                 'order_dir' => $order_dir,
-            ]
+                'page' => $page,
+                'limit' => $limit,
+            ],
+            'pagination' => [
+                'total' => $total,
+                'page' => $page,
+                'limit' => $limit,
+                'totalPages' => $totalPages,
+                'hasPrevious' => $page > 1,
+                'hasNext' => $page < $totalPages,
+            ],
+            'paginationUrls' => $paginationUrls,
         ]);
     }
 
@@ -126,9 +157,9 @@ class EquipementController extends AbstractController
         $equipementManager = new EquipementManager();
         $categorieManager = new CategorieManager();
         $emplacementManager = new EmplacementManager();
-        
+
         $equipement = $equipementManager->findId($request->get('id'));
-        
+
         if ($equipement) {
             if (isset($equipement['categorie_id'])) {
                 $equipement['categorie'] = $categorieManager->findId($equipement['categorie_id']);
@@ -137,48 +168,40 @@ class EquipementController extends AbstractController
                 $equipement['emplacement'] = $emplacementManager->findId($equipement['emplacement_id']);
             }
         }
-        
+
         return $this->render('equipement_detail.twig', [
             'equipement' => $equipement
         ]);
     }
-    
+
     public function edit(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
-        
+
         $categorieManager = new CategorieManager();
         $emplacementManager = new EmplacementManager();
         $equipementManager = new EquipementManager();
         $equipement = [];
         $form_errors = [];
-        
+
         if ($id = $request->get('id')) {
             $equipement = $equipementManager->findId($id);
             if ($equipement && isset($equipement['categorie_id'])) {
                 $equipement['categorie'] = $categorieManager->findId($equipement['categorie_id']);
             }
         }
-        
+
         if ($request->getMethod() === 'POST') {
-            /** @todo need validation here */
-            
-            // ✅ Récupérer les valeurs et convertir les champs vides en null
+            // Récupérer les valeurs et convertir les champs vides en null
             $emplacement_id = $request->request->get('emplacement_id');
-            if ($emplacement_id === '') {
-                $emplacement_id = null;
-            }
-            
+            if ($emplacement_id === '') $emplacement_id = null;
+
             $date_mise_en_service = $request->request->get('date_mise_en_service');
-            if ($date_mise_en_service === '') {
-                $date_mise_en_service = null;
-            }
-            
+            if ($date_mise_en_service === '') $date_mise_en_service = null;
+
             $date_fin_utilisation = $request->request->get('date_fin_utilisation');
-            if ($date_fin_utilisation === '') {
-                $date_fin_utilisation = null;
-            }
-            
+            if ($date_fin_utilisation === '') $date_fin_utilisation = null;
+
             if (empty($form_errors)) {
                 $equipement = array_merge(
                     $equipement,
@@ -192,13 +215,10 @@ class EquipementController extends AbstractController
                     ]
                 );
                 $equipementManager->save($equipement);
-                /** @todo flash success */
                 return $this->redirectTo("/equipements");
             }
-            
-            /** @todo else error something wrong... */
         }
-        
+
         return $this->render('equipement_form.twig', [
             'categories' => $categorieManager->findAll(),
             'emplacements' => $emplacementManager->findAll(),

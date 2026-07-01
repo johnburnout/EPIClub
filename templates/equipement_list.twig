@@ -20,7 +20,7 @@
                 </select>
             </div>
             
-            <!-- ✅ Emplacement (avec option "Non défini") -->
+            <!-- Emplacement (avec option "Non défini") -->
             <div class="col-md-2">
                 <label for="emplacement" class="form-label">Emplacement</label>
                 <select name="emplacement" id="emplacement" class="form-select">
@@ -52,13 +52,6 @@
                 </select>
             </div>
             
-            <div class="col-md-2 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary w-100">Filtrer</button>
-            </div>
-        </div>
-        
-        <!-- Deuxième ligne : tris -->
-        <div class="row g-3 mt-2">
             <div class="col-md-2">
                 <label for="order_by" class="form-label">Trier par</label>
                 <select name="order_by" id="order_by" class="form-select">
@@ -73,11 +66,55 @@
                     <option value="desc" {% if filtres.order_dir == 'desc' %}selected{% endif %}>Décroissant</option>
                 </select>
             </div>
+        </div>
+        
+        <!-- Deuxième ligne : limite et boutons -->
+        <div class="row g-3 mt-2">
+            <div class="col-md-2">
+                <label for="limit" class="form-label">Lignes par page</label>
+                <select name="limit" id="limit" class="form-select" onchange="this.form.submit()">
+                    <option value="5" {% if filtres.limit == 5 %}selected{% endif %}>5</option>
+                    <option value="10" {% if filtres.limit == 10 %}selected{% endif %}>10</option>
+                    <option value="25" {% if filtres.limit == 25 %}selected{% endif %}>25</option>
+                    <option value="50" {% if filtres.limit == 50 %}selected{% endif %}>50</option>
+                    <option value="100" {% if filtres.limit == 100 %}selected{% endif %}>100</option>
+                </select>
+            </div>
             <div class="col-md-2 d-flex align-items-end">
-                <button type="submit" class="btn btn-secondary w-100">Appliquer le tri</button>
+                <button type="submit" class="btn btn-secondary w-100">Appliquer</button>
             </div>
         </div>
     </form>
+
+    <hr>
+
+    <!-- Pagination -->
+    <div class="row mt-3">
+        <div class="col-md-12">
+            <nav aria-label="Pagination">
+                <ul class="pagination">
+                    {% if pagination.hasPrevious %}
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.first }}">Premier</a></li>
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.previous }}">Précédent</a></li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">Premier</span></li>
+                    <li class="page-item disabled"><span class="page-link">Précédent</span></li>
+                    {% endif %}
+                    
+                    <li class="page-item disabled"><span class="page-link">Page {{ pagination.page }} sur {{ pagination.totalPages }}</span></li>
+                    
+                    {% if pagination.hasNext %}
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.next }}">Suivant</a></li>
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.last }}">Dernier</a></li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">Suivant</span></li>
+                    <li class="page-item disabled"><span class="page-link">Dernier</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            <p class="text-muted">Affichage de {{ equipements|length }} équipements sur {{ pagination.total }} (page {{ pagination.page }}/{{ pagination.totalPages }})</p>
+        </div>
+    </div>
 
     <hr>
 

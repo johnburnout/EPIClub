@@ -8,10 +8,21 @@ class ControleLigneManager extends AbstractManager
 {
     public function findByControle(int $controle_id)
     {
-        $sql = "SELECT * FROM controle_ligne WHERE controle_id = :controle_id";
+        $sql = "SELECT cl.*, ce.reference, ce.libelle 
+                FROM controle_ligne cl
+                JOIN club_equipement ce ON cl.equipement_id = ce.id
+                WHERE cl.controle_id = :controle_id";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['controle_id' => $controle_id]);
         return $stmt->fetchAll();
+    }
+
+    public function findId(int $id)
+    {
+        $sql = "SELECT * FROM controle_ligne WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['id' => $id]);
+        return $stmt->fetch();
     }
 
     public function save(array $ligne)
@@ -40,9 +51,13 @@ class ControleLigneManager extends AbstractManager
 
     private function _update(array $ligne)
     {
+        // Filtrer les champs pour éviter les erreurs
+        $allowedFields = ['remarque', 'date_controle', 'statut', 'id'];
+        $filteredLigne = array_intersect_key($ligne, array_flip($allowedFields));
+        
         $sql = "UPDATE controle_ligne SET remarque=:remarque, date_controle=:date_controle, statut=:statut
                 WHERE id=:id";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute($ligne);
+        return $stmt->execute($filteredLigne);
     }
 }

@@ -1,0 +1,34 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+    <h3>Modifier la ligne de contrôle</h3>
+    <hr>
+
+    <p><strong>Équipement :</strong> {{ ligne.reference }} - {{ ligne.libelle }}</p>
+
+    <form method="post">
+        <div class="mb-3">
+            <label for="statut" class="form-label">Statut</label>
+            <select name="statut" id="statut" class="form-select">
+                <option value="a_controler" {% if ligne.statut == 'a_controler' %}selected{% endif %}>À contrôler</option>
+                <option value="controle_ok" {% if ligne.statut == 'controle_ok' %}selected{% endif %}>OK</option>
+                <option value="controle_ko" {% if ligne.statut == 'controle_ko' %}selected{% endif %}>KO</option>
+                <option value="hors_service" {% if ligne.statut == 'hors_service' %}selected{% endif %}>Hors service</option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label for="date_controle" class="form-label">Date du contrôle</label>
+            <input type="datetime-local" name="date_controle" id="date_controle" class="form-control"
+                value="{{ ligne.date_controle ? ligne.date_controle|date('Y-m-d\\TH:i') : '' }}">
+        </div>
+
+        <div class="mb-3">
+            <label for="remarque" class="form-label">Remarque</label>
+            <textarea name="remarque" id="remarque" class="form-control" rows="3">{{ ligne.remarque }}</textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Enregistrer</button>
+        <a href="/admin/controles/edit/{{ ligne.controle_id }}" class="btn btn-secondary">Annuler</a>
+    </form>
+{% endblock %}
