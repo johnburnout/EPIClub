@@ -1,13 +1,43 @@
 {% extends "_layout.twig" %}
 
 {% block body %}
-	<h3>Equipements</h3>
-    <hr>
+<h3>Contrôle : {{ controle.libelle }}</h3>
+<hr>
+
+{% if readonly %}
+    <div class="alert alert-info">
+        <strong>🔒 Lecture seule :</strong> Ce contrôle est clôturé, vous ne pouvez pas le modifier.
+    </div>
+{% endif %}
+
+<div class="row mb-3">
+    <div class="col-md-4">
+        <strong>Début :</strong> {{ controle.date_debut|date('d/m/Y H:i') }}
+    </div>
+    <div class="col-md-4">
+        <strong>Statut :</strong>
+        {% if controle.statut == 'ouvert' %}
+        <span class="badge bg-primary">Ouvert</span>
+        {% elseif controle.statut == 'en_cours' %}
+        <span class="badge bg-warning">En cours</span>
+        {% elseif controle.statut == 'cloture' %}
+        <span class="badge bg-success">Clôturé</span>
+        {% endif %}
+    </div>
+    <div class="col-md-4">
+        <strong>Contrôleur :</strong> {{ controle.controleur_nom ?? controle.controleur_id }}
+    </div>
+</div>
+
+<hr>
+
+{% if not readonly %}
+    <h4>Ajouter des équipements</h4>
+    <p>Liste des équipements disponibles (non encore ajoutés à ce contrôle)</p>
 
     <!-- Filtres -->
     <form method="get" class="mb-3">
         <div class="row g-3">
-            <!-- Première ligne : filtres -->
             <div class="col-md-3">
                 <label for="categorie" class="form-label">Catégorie</label>
                 <select name="categorie" id="categorie" class="form-select">
@@ -19,8 +49,6 @@
                     {% endfor %}
                 </select>
             </div>
-            
-            <!-- Emplacement (avec option "Non défini") -->
             <div class="col-md-2">
                 <label for="emplacement" class="form-label">Emplacement</label>
                 <select name="emplacement" id="emplacement" class="form-select">
@@ -33,7 +61,6 @@
                     {% endfor %}
                 </select>
             </div>
-            
             <div class="col-md-2">
                 <label for="epi" class="form-label">EPI</label>
                 <select name="epi" id="epi" class="form-select">
@@ -42,7 +69,6 @@
                     <option value="0" {% if filtres.epi == '0' %}selected{% endif %}>Non EPI</option>
                 </select>
             </div>
-            
             <div class="col-md-2">
                 <label for="en_service" class="form-label">Statut</label>
                 <select name="en_service" id="en_service" class="form-select">
@@ -51,12 +77,12 @@
                     <option value="non" {% if filtres.en_service == 'non' %}selected{% endif %}>Hors service</option>
                 </select>
             </div>
-            
             <div class="col-md-2">
                 <label for="order_by" class="form-label">Trier par</label>
                 <select name="order_by" id="order_by" class="form-select">
+                    <option value="reference" {% if filtres.order_by == 'reference' %}selected{% endif %}>Référence</option>
+                    <option value="libelle" {% if filtres.order_by == 'libelle' %}selected{% endif %}>Nom</option>
                     <option value="categorie" {% if filtres.order_by == 'categorie' %}selected{% endif %}>Catégorie</option>
-                    <option value="date_fin" {% if filtres.order_by == 'date_fin' %}selected{% endif %}>Date de fin</option>
                 </select>
             </div>
             <div class="col-md-2">
@@ -67,7 +93,6 @@
                 </select>
             </div>
         </div>
-        
         <!-- Deuxième ligne : limite et boutons -->
         <div class="row g-3 mt-2">
             <div class="col-md-2">
@@ -86,9 +111,7 @@
         </div>
     </form>
 
-    <hr>
-
-    <!-- Pagination -->
+    <!-- Pagination pour la liste des équipements disponibles -->
     <div class="row mt-3">
         <div class="col-md-12">
             <nav aria-label="Pagination">
@@ -112,69 +135,115 @@
                     {% endif %}
                 </ul>
             </nav>
-            <p class="text-muted">Affichage de {{ equipements|length }} équipements sur {{ pagination.total }} (page {{ pagination.page }}/{{ pagination.totalPages }})</p>
+            <p class="text-muted">Affichage de {{ equipements_disponibles|length }} équipements sur {{ pagination.total }} (page {{ pagination.page }}/{{ pagination.totalPages }})</p>
         </div>
     </div>
 
-    <hr>
-
-	<table class="table table-striped">
-		<thead>
-			<tr>
-				<th>Référence</th>
-				<th>Nom</th>
-				<th>Catégorie</th>
-				<th>EPI</th>
-				<th>Emplacement</th>
-				<th>Mise en service</th>
-				<th>Fin d'utilisation</th>
-				<th>État</th>
-				<th>Statut</th>
-				<th>Actions</th>
-			</tr>
-		</thead>
+    <!-- Liste des équipements disponibles -->
+    {% if equipements_disponibles %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Référence</th>
+                <th>Nom</th>
+                <th>Catégorie</th>
+                <th>EPI</th>
+                <th>Emplacement</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
         <tbody>
-            {% for equipement in equipements %}
-                <tr>
-                    <td>{{ equipement.reference }}</td>
-                    <td>{{ equipement.libelle }}</td>
-                    <td>{{ equipement.categorie.libelle|default('N/A') }}</td>
-                    <td>
-                        {% if equipement.categorie and equipement.categorie.est_epi %}
-                            <span class="badge bg-success">EPI</span>
-                        {% elseif equipement.categorie and not equipement.categorie.est_epi %}
-                            <span class="badge bg-secondary">Non EPI</span>
-                        {% else %}
-                            <span class="badge bg-secondary">Non défini</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ equipement.emplacement.libelle|default('Non défini') }}</td>
-                    <td>
-                        {% if equipement.date_mise_en_service %}
-                            {{ equipement.date_mise_en_service|date("d/m/Y") }}
-                        {% else %}
-                            -
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if not equipement.date_fin_utilisation or equipement.date_fin_utilisation > "now"|date("Y-m-d") %}
-                        <a href="#" 
-                            onclick="alert('Date de fin d\'utilisation : {% if equipement.date_fin_utilisation %}{{ equipement.date_fin_utilisation|date('d/m/Y') }}{% else %}Non définie{% endif %}'); return false;" 
-                            style="text-decoration: none; color: inherit;">
-                            Toujours en service
-                        </a>
-                        {% else %}
-                        {{ equipement.date_fin_utilisation|date("d/m/Y") }}
-                        {% endif %}
-                    </td>
-                    <td>{{ equipement.etat|default('-') }}</td>
-                    <td>{{ equipement.statut|default('-') }}</td>
-                    <td>
-                        <a href="/equipements/equipement-{{ equipement.id }}" class="btn btn-sm btn-primary">Voir</a>
-                        <a href="/equipements/equipement_modification-{{ equipement.id }}" class="btn btn-sm btn-warning">Modifier</a>
-                    </td>
-                </tr>
+            {% for equipement in equipements_disponibles %}
+            <tr>
+                <td>{{ equipement.reference }}</td>
+                <td>{{ equipement.libelle }}</td>
+                <td>{{ equipement.categorie.libelle|default('N/A') }}</td>
+                <td>
+                    {% if equipement.categorie and equipement.categorie.est_epi %}
+                    <span class="badge bg-success">EPI</span>
+                    {% elseif equipement.categorie and not equipement.categorie.est_epi %}
+                    <span class="badge bg-secondary">Non EPI</span>
+                    {% else %}
+                    <span class="badge bg-secondary">Non défini</span>
+                    {% endif %}
+                </td>
+                <td>{{ equipement.emplacement.libelle|default('Non défini') }}</td>
+                <td>
+                    <form method="post" action="/admin/controles/add-equipement/{{ controle.id }}" style="display: inline;">
+                        <input type="hidden" name="equipement_id" value="{{ equipement.id }}">
+                        <button type="submit" class="btn btn-sm btn-success">Contrôler</button>
+                    </form>
+                </td>
+            </tr>
             {% endfor %}
         </tbody>
-	</table>
+    </table>
+    {% else %}
+    <p class="text-muted">Aucun équipement disponible à ajouter.</p>
+    {% endif %}
+    <hr>
+{% endif %} {# fin du bloc "non readonly" #}
+
+<h4>Équipements déjà dans le contrôle</h4>
+{% if lignes %}
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Équipement</th>
+            <th>Statut</th>
+            <th>Remarque</th>
+            <th>Date contrôle</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for ligne in lignes %}
+        <tr>
+            <td>{{ ligne.reference }} - {{ ligne.libelle }}</td>
+            <td>
+                {% if ligne.statut == 'a_controler' %}
+                <span class="badge bg-secondary">À contrôler</span>
+                {% elseif ligne.statut == 'controle_ok' %}
+                <span class="badge bg-success">OK</span>
+                {% elseif ligne.statut == 'controle_ko' %}
+                <span class="badge bg-danger">KO</span>
+                {% elseif ligne.statut == 'hors_service' %}
+                <span class="badge bg-dark">Hors service</span>
+                {% endif %}
+            </td>
+            <td>{{ ligne.remarque|default('-') }}</td>
+            <td>{{ ligne.date_controle ? ligne.date_controle|date('d/m/Y H:i') : '-' }}</td>
+            <td>
+                {% if not readonly %}
+                    <a href="/admin/controles/update-ligne/{{ ligne.id }}" class="btn btn-sm btn-warning">Modifier</a>
+                {% else %}
+                    <span class="text-muted">Lecture seule</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="text-muted">Aucun équipement ajouté à ce contrôle.</p>
+{% endif %}
+
+<div class="mt-3">
+    <a href="/admin/controles" class="btn btn-secondary">Retour à la liste</a>
+    
+    {% if controle.statut != 'cloture' %}
+    {% if hasPending %}
+    <button class="btn btn-success" disabled title="Des équipements sont encore à contrôler">
+        Clôturer le contrôle
+    </button>
+    <span class="text-muted ms-2">(certains équipements sont encore marqués « À contrôler »)</span>
+    {% else %}
+    <a href="/admin/controles/cloturer/{{ controle.id }}" 
+        class="btn btn-success" 
+        onclick="return confirm('Clôturer ce contrôle ? Les remarques seront chiffrées et le contrôle ne sera plus modifiable.')">
+        Clôturer le contrôle
+    </a>
+    {% endif %}
+    {% endif %}
+</div>
 {% endblock %}

@@ -43,13 +43,17 @@
 							{% endif %}
 							{% endif %}
 							{% if isGranted('ROLE_CONTROLLEUR') %}
-								<li class="nav-item dropdown">
-									<a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Contrôles</a>
-									<div class="dropdown-menu">
-										<a class="dropdown-item" href="/controles">Contrôler les EPIs</a>
-										<a class="dropdown-item" href="/journaux">Journaux</a>
-									</div>
-								</li>
+							<li class="nav-item dropdown">
+								<a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Contrôles</a>
+								<div class="dropdown-menu">
+									{% if _user.controle_en_cours_id is empty %}
+									<a class="dropdown-item" href="/admin/controles/creer">➕ Créer un contrôle</a>
+									<div class="dropdown-divider"></div>
+									{% endif %}
+									<a class="dropdown-item" href="/admin/controles">📋 Voir les contrôles</a>
+									<a class="dropdown-item" href="/journaux">📝 Journaux</a>
+								</div>
+							</li>
 							{% endif %}
 							{% if isGranted('ROLE_ADMIN') %}
 								<li class="nav-item dropdown">

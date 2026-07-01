@@ -1,10 +1,9 @@
 {% extends "_layout.twig" %}
 
 {% block body %}
-    <h3>Contrôles</h3>
+    <h3>Liste des contrôles</h3>
     <hr>
-    <a href="/admin/controles/create" class="btn btn-primary">Nouveau contrôle</a>
-    <hr>
+
     <table class="table table-striped">
         <thead>
             <tr>
@@ -31,10 +30,14 @@
                             <span class="badge bg-success">Clôturé</span>
                         {% endif %}
                     </td>
-                    <td>{{ controle.controleur_id }}</td>
+                    <td>{{ controle.prenom }} {{ controle.nom }}</td>
                     <td>
-                        <a href="/admin/controles/edit/{{ controle.id }}" class="btn btn-sm btn-primary">Modifier</a>
-                        <a href="/admin/controles/cloturer/{{ controle.id }}" class="btn btn-sm btn-success" onclick="return confirm('Clôturer ce contrôle ?')">Clôturer</a>
+                        {% if controle.statut == 'cloture' %}
+                            <a href="/admin/controles/edit/{{ controle.id }}" class="btn btn-sm btn-info">Voir</a>
+                        {% else %}
+                            <a href="/admin/controles/edit/{{ controle.id }}" class="btn btn-sm btn-primary">Voir / Modifier</a>
+                            <a href="/admin/controles/cloturer/{{ controle.id }}" class="btn btn-sm btn-success" onclick="return confirm('Clôturer ce contrôle ?')">Clôturer</a>
+                        {% endif %}
                     </td>
                 </tr>
             {% endfor %}

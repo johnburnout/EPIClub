@@ -79,19 +79,20 @@ class UtilisateurManager extends AbstractManager
 
     private function _insert(array $utilisateur)
     {
-        $sql = "INSERT INTO utilisateur (nom, prenom, username, email, password, role, date_creation, derniere_connexion) 
-            VALUES (:nom, :prenom, :username, :email, :password, :role, :date_creation, :derniere_connexion)";
+        $sql = "INSERT INTO utilisateur (nom, prenom, username, email, password, role, date_creation, derniere_connexion, controle_en_cours_id) 
+        VALUES (:nom, :prenom, :username, :email, :password, :role, :date_creation, :derniere_connexion, :controle_en_cours_id)";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute($utilisateur);
+    }
+    
+    private function _update(array $utilisateur)
+    {
+        $sql = "UPDATE utilisateur 
+        SET nom=:nom, prenom=:prenom, username=:username, email=:email, password=:password, role=:role, 
+        date_creation=:date_creation, derniere_connexion=:derniere_connexion, controle_en_cours_id=:controle_en_cours_id
+        WHERE id=:id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($utilisateur);
     }
 
-    private function _update(array $utilisateur)
-    {
-        $sql = "UPDATE utilisateur 
-            SET nom=:nom, prenom=:prenom, username=:username, email=:email, password=:password, role=:role, date_creation=:date_creation, 
-            derniere_connexion=:derniere_connexion
-            WHERE id=:id";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute($utilisateur);
-    }
 }

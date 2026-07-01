@@ -23,11 +23,11 @@ $routes->add('equipement_edit', new Route('/equipements/equipement_modification-
 
 // CONTROLES
 $routes->add('controle_list', new Route('/admin/controles', ['_controller' => 'Epiclub\\Controller\\ControleController', 'action' => 'list']));
-$routes->add('controle_create', new Route('/admin/controles/create', ['_controller' => 'Epiclub\\Controller\\ControleController', 'action' => 'create']));
 $routes->add('controle_edit', new Route('/admin/controles/edit/{id}', ['_controller' => 'Epiclub\\Controller\\ControleController', 'action' => 'edit']));
 $routes->add('controle_add_equipement', new Route('/admin/controles/add-equipement/{controle_id}', ['_controller' => 'Epiclub\\Controller\\ControleController', 'action' => 'addEquipement']));
 $routes->add('controle_update_ligne', new Route('/admin/controles/update-ligne/{id}', ['_controller' => 'Epiclub\\Controller\\ControleController', 'action' => 'updateLigne']));
 $routes->add('controle_cloturer', new Route('/admin/controles/cloturer/{id}', ['_controller' => 'Epiclub\\Controller\\ControleController', 'action' => 'cloturer']));
+$routes->add('controle_creer', new Route('/admin/controles/creer', ['_controller' => 'Epiclub\\Controller\\ControleController', 'action' => 'create']));
 
 // ADMINISTRATEUR
 $routes->add('club_show', new Route('/admin/club', ['_controller' => 'Epiclub\\Controller\\ClubController', 'action' => 'show']));
