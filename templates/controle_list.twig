@@ -32,8 +32,10 @@
                     </td>
                     <td>{{ controle.prenom }} {{ controle.nom }}</td>
                     <td>
-                        <a href="/admin/controles/edit/{{ controle.id }}" class="btn btn-sm btn-primary">Voir / Modifier</a>
-                        {% if controle.statut != 'cloture' %}
+                        {% if controle.statut == 'cloture' %}
+                            <a href="/admin/controles/edit/{{ controle.id }}" class="btn btn-sm btn-info">Voir</a>
+                        {% else %}
+                            <a href="/admin/controles/edit/{{ controle.id }}" class="btn btn-sm btn-primary">Voir / Modifier</a>
                             <a href="/admin/controles/cloturer/{{ controle.id }}" class="btn btn-sm btn-success" onclick="return confirm('Clôturer ce contrôle ?')">Clôturer</a>
                         {% endif %}
                     </td>

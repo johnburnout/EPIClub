@@ -70,13 +70,49 @@ class ControleController extends AbstractController
             return $this->redirectTo('/admin/controles');
         }
         
-        if ($controle['statut'] === 'cloture') {
-            $this->session->getFlashBag()->add('error', 'Ce contrôle est clôturé et ne peut plus être modifié.');
-            return $this->redirectTo('/admin/controles');
-        }
+        $readonly = ($controle['statut'] === 'cloture');
         
         $ligneManager = new ControleLigneManager();
         $lignes = $ligneManager->findByControle($id);
+        
+        // Chargement de la configuration
+        $config = include __DIR__ . '/../../.env.local.php';
+        $secretKey = isset($config['SECRET_KEY']) ? hex2bin($config['SECRET_KEY']) : null;
+        $cipherMethod = $config['CIPHER_METHOD'] ?? 'AES-256-CBC';
+        
+        // Déchiffrement des remarques si le contrôle est clôturé (avec détection automatique)
+        if ($readonly) {
+            foreach ($lignes as &$ligne) {
+                if (!empty($ligne['remarque'])) {
+                    $data = base64_decode($ligne['remarque'], true);
+                    if ($data === false) {
+                        continue; // pas du base64 valide => en clair
+                    }
+                    $ivLength = openssl_cipher_iv_length($cipherMethod);
+                    if (strlen($data) < $ivLength) {
+                        continue; // trop court => en clair
+                    }
+                    $iv = substr($data, 0, $ivLength);
+                    $chiffre = substr($data, $ivLength);
+                    $decrypted = openssl_decrypt($chiffre, $cipherMethod, $secretKey, 0, $iv);
+                    if ($decrypted !== false) {
+                        $ligne['remarque'] = $decrypted;
+                    }
+                    // sinon on garde la valeur originale
+                }
+            }
+            unset($ligne);
+        }
+        
+        // Vérifier s'il reste des équipements "à contrôler"
+        $hasPending = false;
+        foreach ($lignes as $ligne) {
+            if ($ligne['statut'] === 'a_controler') {
+                $hasPending = true;
+                break;
+            }
+        }
+        
         $idsDejaAjoutes = array_column($lignes, 'equipement_id');
         
         // Paramètres GET
@@ -117,7 +153,7 @@ class ControleController extends AbstractController
             return !in_array($e['id'], $idsDejaAjoutes);
         });
         
-        // Appliquer les filtres (identique à EquipementController)
+        // Appliquer les filtres
         if ($categorie_id) {
             $equipementsDisponibles = array_filter($equipementsDisponibles, function($e) use ($categorie_id) {
                 return isset($e['categorie_id']) && $e['categorie_id'] == $categorie_id;
@@ -221,6 +257,8 @@ class ControleController extends AbstractController
                 'hasNext' => $page < $totalPages,
             ],
             'paginationUrls' => $paginationUrls,
+            'readonly' => $readonly,
+            'hasPending' => $hasPending,
         ]);
     }
 
@@ -263,7 +301,10 @@ class ControleController extends AbstractController
         
         $controleManager = new ControleManager();
         $controle = $controleManager->findId($ligne['controle_id']);
+        
+        // 🔒 Interdire la modification si le contrôle est clôturé
         if ($controle['statut'] === 'cloture') {
+            $this->session->getFlashBag()->add('error', 'Ce contrôle est clôturé, vous ne pouvez pas modifier les lignes.');
             return $this->redirectTo("/admin/controles/edit/{$controle['id']}");
         }
         
@@ -275,7 +316,6 @@ class ControleController extends AbstractController
             return $this->redirectTo("/admin/controles/edit/{$controle['id']}");
         }
         
-        // ✅ Si la date de contrôle n'est pas définie, on la pré-remplit avec la date courante
         if (is_null($ligne['date_controle'])) {
             $ligne['date_controle'] = date('Y-m-d H:i:s');
         }
@@ -297,27 +337,46 @@ class ControleController extends AbstractController
             return $this->redirectTo('/admin/controles');
         }
         
-        // Récupérer toutes les remarques pour les hasher
         $ligneManager = new ControleLigneManager();
         $lignes = $ligneManager->findByControle($id);
-        $remarques = '';
-        foreach ($lignes as $ligne) {
-            $remarques .= $ligne['remarque'] . '|';
-        }
-        $hash = hash('sha256', $remarques);
         
+        // Chargement de la configuration (comme dans edit)
+        $config = include __DIR__ . '/../../.env.local.php';
+        $secretKey = isset($config['SECRET_KEY']) ? hex2bin($config['SECRET_KEY']) : null;
+        $cipherMethod = $config['CIPHER_METHOD'] ?? 'AES-256-CBC';
+        
+        // 1. Hash global sur les remarques en clair
+        $remarquesConcatenes = '';
+        foreach ($lignes as $ligne) {
+            $remarquesConcatenes .= ($ligne['remarque'] ?? '') . '|';
+        }
+        $hashGlobal = hash('sha256', $remarquesConcatenes);
+        
+        // 2. Chiffrement individuel de chaque remarque
+        foreach ($lignes as $ligne) {
+            if (!is_null($ligne['remarque']) && $ligne['remarque'] !== '') {
+                $ivLength = openssl_cipher_iv_length($cipherMethod);
+                $iv = openssl_random_pseudo_bytes($ivLength);
+                $chiffre = openssl_encrypt($ligne['remarque'], $cipherMethod, $secretKey, 0, $iv);
+                $ligne['remarque'] = base64_encode($iv . $chiffre);
+                $ligneManager->save($ligne);
+            }
+        }
+        
+        // 3. Mise à jour du contrôle
         $controle['statut'] = 'cloture';
         $controle['date_fin'] = date('Y-m-d H:i:s');
-        $controle['hash_remarques'] = $hash;
+        $controle['hash_remarques'] = $hashGlobal;
         $controleManager->save($controle);
         
+        // 4. Nettoyage de la session
         $user = $this->session->get('user');
         $user['controle_en_cours_id'] = null;
         $utilisateurManager = new UtilisateurManager();
         $utilisateurManager->save($user);
         $this->session->set('user', $user);
         
-        $this->session->getFlashBag()->add('success', 'Contrôle clôturé avec succès.');
+        $this->session->getFlashBag()->add('success', 'Contrôle clôturé avec succès (remarques chiffrées).');
         return $this->redirectTo('/admin/controles');
     }
 }
