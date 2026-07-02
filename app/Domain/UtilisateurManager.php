@@ -9,15 +9,12 @@ class UtilisateurManager extends AbstractManager
     public function findAll($order = '', $limit = -1, $offset = 0)
     {
         $params = '';
-
         if ($order) {
             $params .= " ORDER BY $order";
         }
-
-        if ($limit > 1) {
-            $params .= " LIMIT $limit, $offset";
+        if ($limit > 0) {
+            $params .= " LIMIT $offset, $limit"; // note : l'ordre des paramètres peut varier
         }
-
         $sql = "SELECT * FROM utilisateur $params";
         $stmt = $this->db->prepare($sql);
         $stmt->execute();
@@ -29,11 +26,7 @@ class UtilisateurManager extends AbstractManager
         $sql = "SELECT * FROM utilisateur WHERE id=:id";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['id' => $id]);
-        if ($utilisateur = $stmt->fetch()) {
-            return $utilisateur;
-        }
-
-        return null;
+        return $stmt->fetch() ?: null;
     }
 
     public function findOneByCriteria(array $criteria = [])
@@ -48,16 +41,10 @@ class UtilisateurManager extends AbstractManager
             }
             $i++;
         }
-
         $sql = "SELECT * FROM utilisateur $params";
         $stmt = $this->db->prepare($sql);
         $stmt->execute($criteria);
-
-        if ($utilisateur = $stmt->fetch()) {
-            return $utilisateur;
-        }
-
-        return null;
+        return $stmt->fetch() ?: null;
     }
 
     public function save(array $utilisateur)
@@ -65,34 +52,41 @@ class UtilisateurManager extends AbstractManager
         if (isset($utilisateur['id'])) {
             return $this->_update($utilisateur);
         }
-
         $this->_insert($utilisateur);
         return $this->db->lastInsertId('utilisateur');
     }
 
     public function delete(int $id)
     {
-        $sql = "DELETE FROM utilisateur WHERE id=:id";  // ← CORRECTION ICI
+        $sql = "DELETE FROM utilisateur WHERE id=:id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['id' => $id]);
     }
 
     private function _insert(array $utilisateur)
     {
-        $sql = "INSERT INTO utilisateur (nom, prenom, username, email, password, role, date_creation, derniere_connexion, controle_en_cours_id) 
-        VALUES (:nom, :prenom, :username, :email, :password, :role, :date_creation, :derniere_connexion, :controle_en_cours_id)";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute($utilisateur);
-    }
-    
-    private function _update(array $utilisateur)
-    {
-        $sql = "UPDATE utilisateur 
-        SET nom=:nom, prenom=:prenom, username=:username, email=:email, password=:password, role=:role, 
-        date_creation=:date_creation, derniere_connexion=:derniere_connexion, controle_en_cours_id=:controle_en_cours_id
-        WHERE id=:id";
+        // S'assurer que last_activity existe
+        if (!isset($utilisateur['last_activity'])) {
+            $utilisateur['last_activity'] = null;
+        }
+        $sql = "INSERT INTO utilisateur (nom, prenom, username, email, password, role, date_creation, derniere_connexion, controle_en_cours_id, last_activity) 
+                VALUES (:nom, :prenom, :username, :email, :password, :role, :date_creation, :derniere_connexion, :controle_en_cours_id, :last_activity)";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($utilisateur);
     }
 
+    private function _update(array $utilisateur)
+    {
+        // Filtrer les champs pour ne garder que ceux existants dans la table
+        $allowedFields = ['nom', 'prenom', 'username', 'email', 'password', 'role', 'date_creation', 'derniere_connexion', 'controle_en_cours_id', 'last_activity', 'id'];
+        $filtered = array_intersect_key($utilisateur, array_flip($allowedFields));
+        
+        $sql = "UPDATE utilisateur 
+                SET nom=:nom, prenom=:prenom, username=:username, email=:email, password=:password, role=:role, 
+                    date_creation=:date_creation, derniere_connexion=:derniere_connexion, 
+                    controle_en_cours_id=:controle_en_cours_id, last_activity=:last_activity
+                WHERE id=:id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute($filtered);
+    }
 }

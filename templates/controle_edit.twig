@@ -5,8 +5,20 @@
 <hr>
 
 {% if readonly %}
-    <div class="alert alert-info">
-        <strong>🔒 Lecture seule :</strong> Ce contrôle est clôturé, vous ne pouvez pas le modifier.
+<div class="alert alert-info">
+    {% if controle.statut == 'cloture' %}
+    <strong>🔒 Lecture seule :</strong> Ce contrôle est clôturé, vous ne pouvez pas le modifier.
+    {% else %}
+    <strong>ℹ️ Lecture seule :</strong> Ce contrôle est ouvert mais vous ne disposez pas des droits pour le modifier.
+    {% endif %}
+</div>
+{% endif %}
+
+{% if isAdminEdit and not readonly %}
+    <div class="alert alert-warning">
+        <strong>⚠️ Attention :</strong> Vous modifiez un contrôle qui ne vous appartient pas 
+        (contrôleur : {{ controle.controleur_nom ?? controle.controleur_id }}). 
+        Vous pouvez le modifier car il date d'au moins la veille.
     </div>
 {% endif %}
 
@@ -26,6 +38,9 @@
     </div>
     <div class="col-md-4">
         <strong>Contrôleur :</strong> {{ controle.controleur_nom ?? controle.controleur_id }}
+        {% if isAdminEdit %}
+            <span class="badge bg-warning text-dark">Modifié par admin</span>
+        {% endif %}
     </div>
 </div>
 
@@ -232,18 +247,18 @@
     <a href="/admin/controles" class="btn btn-secondary">Retour à la liste</a>
     
     {% if controle.statut != 'cloture' %}
-    {% if hasPending %}
-    <button class="btn btn-success" disabled title="Des équipements sont encore à contrôler">
-        Clôturer le contrôle
-    </button>
-    <span class="text-muted ms-2">(certains équipements sont encore marqués « À contrôler »)</span>
-    {% else %}
-    <a href="/admin/controles/cloturer/{{ controle.id }}" 
-        class="btn btn-success" 
-        onclick="return confirm('Clôturer ce contrôle ? Les remarques seront chiffrées et le contrôle ne sera plus modifiable.')">
-        Clôturer le contrôle
-    </a>
-    {% endif %}
+        {% if hasPending %}
+            <button class="btn btn-success" disabled title="Des équipements sont encore à contrôler">
+                Clôturer le contrôle
+            </button>
+            <span class="text-muted ms-2">(certains équipements sont encore marqués « À contrôler »)</span>
+        {% else %}
+            <a href="/admin/controles/cloturer/{{ controle.id }}" 
+                class="btn btn-success" 
+                onclick="return confirm('Clôturer ce contrôle ? Les remarques seront chiffrées et le contrôle ne sera plus modifiable.')">
+                Clôturer le contrôle
+            </a>
+        {% endif %}
     {% endif %}
 </div>
 {% endblock %}

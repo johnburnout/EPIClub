@@ -14,15 +14,75 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class ControleController extends AbstractController
 {
+    /**
+     * Vérifie si l'utilisateur courant peut modifier le contrôle.
+     *
+     * @param array $controle
+     * @param array $user
+     * @return bool
+     */
+    
+    private function canEdit($controle, $user)
+    {
+        // Si clôturé => jamais modifiable
+        if ($controle['statut'] === 'cloture') {
+            return false;
+        }
+        
+        // L'utilisateur est-il le propriétaire ?
+        if ($controle['controleur_id'] == $user['id']) {
+            return true;
+        }
+        
+        // Sinon, est-il admin ?
+        if (in_array('ROLE_ADMIN', $user['roles'] ?? [])) {
+            // Vérifier que le contrôle est d'un jour antérieur
+            $today = date('Y-m-d');
+            $dateDebut = substr($controle['date_debut'], 0, 10);
+            if ($dateDebut >= $today) {
+                return false;
+            }
+            
+            // 🔒 Vérifier si le propriétaire est en ligne
+            if ($this->isUserOnline($controle['controleur_id'])) {
+                return false;
+            }
+            
+            return true;
+        }
+        
+        return false;
+    }
+
     public function list(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_CONTROLLEUR');
-
+        
+        $user = $this->session->get('user');
         $controleManager = new ControleManager();
         $controles = $controleManager->findAll();
-
+        
+        $filteredControles = [];
+        $today = date('Y-m-d');
+        
+        foreach ($controles as $controle) {
+            $isOwner = ($controle['controleur_id'] == $user['id']);
+            $isAdminEligible = in_array('ROLE_ADMIN', $user['roles'] ?? []) 
+            && $controle['statut'] !== 'cloture'
+            && substr($controle['date_debut'], 0, 10) < $today
+            && !$this->isUserOnline($controle['controleur_id']); // ⬅️ NOUVEAU
+            
+            $controle['canEdit'] = $isOwner || $isAdminEligible;
+            $controle['isAdminEditable'] = !$isOwner && $isAdminEligible;
+            $controle['isOwner'] = $isOwner;
+            $controle['isOwnerOnline'] = $this->isUserOnline($controle['controleur_id']); // ⬅️ NOUVEAU
+            
+            $filteredControles[] = $controle;
+        }
+        
         return $this->render('controle_list.twig', [
-            'controles' => $controles
+            'controles' => $filteredControles,
+            'user' => $user,
         ]);
     }
 
@@ -58,6 +118,18 @@ class ControleController extends AbstractController
         return $this->redirectTo("/admin/controles/edit/$id");
     }
 
+    private function isUserOnline($user_id)
+    {
+        $utilisateurManager = new UtilisateurManager();
+        $user = $utilisateurManager->findId($user_id);
+        if (!$user || empty($user['last_activity'])) {
+            return false;
+        }
+        $lastActivity = strtotime($user['last_activity']);
+        $now = time();
+        return ($now - $lastActivity) < 300; // 5 minutes
+    }
+
     public function edit(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_CONTROLLEUR');
@@ -70,7 +142,16 @@ class ControleController extends AbstractController
             return $this->redirectTo('/admin/controles');
         }
         
-        $readonly = ($controle['statut'] === 'cloture');
+        $user = $this->session->get('user');
+        
+        // 🔓 On autorise toujours l'affichage (lecture seule ou modifiable)
+        $canEdit = $this->canEdit($controle, $user);
+        
+        // Mode lecture seule si clôturé OU si l'utilisateur n'a pas les droits de modification
+        $readonly = ($controle['statut'] === 'cloture' || !$canEdit);
+        
+        // Indicateur pour l'interface (modification par un admin)
+        $isAdminEdit = ($controle['controleur_id'] != $user['id'] && $canEdit);
         
         $ligneManager = new ControleLigneManager();
         $lignes = $ligneManager->findByControle($id);
@@ -81,16 +162,16 @@ class ControleController extends AbstractController
         $cipherMethod = $config['CIPHER_METHOD'] ?? 'AES-256-CBC';
         
         // Déchiffrement des remarques si le contrôle est clôturé (avec détection automatique)
-        if ($readonly) {
+        if ($readonly && $controle['statut'] === 'cloture') {
             foreach ($lignes as &$ligne) {
                 if (!empty($ligne['remarque'])) {
                     $data = base64_decode($ligne['remarque'], true);
                     if ($data === false) {
-                        continue; // pas du base64 valide => en clair
+                        continue;
                     }
                     $ivLength = openssl_cipher_iv_length($cipherMethod);
                     if (strlen($data) < $ivLength) {
-                        continue; // trop court => en clair
+                        continue;
                     }
                     $iv = substr($data, 0, $ivLength);
                     $chiffre = substr($data, $ivLength);
@@ -98,7 +179,6 @@ class ControleController extends AbstractController
                     if ($decrypted !== false) {
                         $ligne['remarque'] = $decrypted;
                     }
-                    // sinon on garde la valeur originale
                 }
             }
             unset($ligne);
@@ -232,6 +312,7 @@ class ControleController extends AbstractController
         $categories = $categorieManager->findAll();
         $emplacements = $emplacementManager->findAll();
         
+        // ⬇️ RENDER COMPLET avec TOUTES les variables
         return $this->render('controle_edit.twig', [
             'controle' => $controle,
             'lignes' => $lignes,
@@ -259,6 +340,8 @@ class ControleController extends AbstractController
             'paginationUrls' => $paginationUrls,
             'readonly' => $readonly,
             'hasPending' => $hasPending,
+            'isAdminEdit' => $isAdminEdit,
+            'user' => $user,
         ]);
     }
 
@@ -273,6 +356,13 @@ class ControleController extends AbstractController
         $controle = $controleManager->findId($controle_id);
         if (!$controle || $controle['statut'] === 'cloture') {
             return $this->redirectTo("/admin/controles/edit/$controle_id");
+        }
+
+        // Vérification des droits
+        $user = $this->session->get('user');
+        if (!$this->canEdit($controle, $user)) {
+            $this->session->getFlashBag()->add('error', 'Vous n\'avez pas les droits pour modifier ce contrôle.');
+            return $this->redirectTo('/admin/controles');
         }
 
         $ligneManager = new ControleLigneManager();
@@ -302,7 +392,14 @@ class ControleController extends AbstractController
         $controleManager = new ControleManager();
         $controle = $controleManager->findId($ligne['controle_id']);
         
-        // 🔒 Interdire la modification si le contrôle est clôturé
+        // Vérification des droits
+        $user = $this->session->get('user');
+        if (!$this->canEdit($controle, $user)) {
+            $this->session->getFlashBag()->add('error', 'Vous n\'avez pas les droits pour modifier ce contrôle.');
+            return $this->redirectTo('/admin/controles');
+        }
+        
+        // Interdire la modification si le contrôle est clôturé
         if ($controle['statut'] === 'cloture') {
             $this->session->getFlashBag()->add('error', 'Ce contrôle est clôturé, vous ne pouvez pas modifier les lignes.');
             return $this->redirectTo("/admin/controles/edit/{$controle['id']}");
@@ -337,10 +434,17 @@ class ControleController extends AbstractController
             return $this->redirectTo('/admin/controles');
         }
         
+        // Vérification des droits
+        $user = $this->session->get('user');
+        if (!$this->canEdit($controle, $user)) {
+            $this->session->getFlashBag()->add('error', 'Vous n\'avez pas les droits pour clôturer ce contrôle.');
+            return $this->redirectTo('/admin/controles');
+        }
+        
         $ligneManager = new ControleLigneManager();
         $lignes = $ligneManager->findByControle($id);
         
-        // Chargement de la configuration (comme dans edit)
+        // Chargement de la configuration
         $config = include __DIR__ . '/../../.env.local.php';
         $secretKey = isset($config['SECRET_KEY']) ? hex2bin($config['SECRET_KEY']) : null;
         $cipherMethod = $config['CIPHER_METHOD'] ?? 'AES-256-CBC';
@@ -369,12 +473,13 @@ class ControleController extends AbstractController
         $controle['hash_remarques'] = $hashGlobal;
         $controleManager->save($controle);
         
-        // 4. Nettoyage de la session
-        $user = $this->session->get('user');
-        $user['controle_en_cours_id'] = null;
-        $utilisateurManager = new UtilisateurManager();
-        $utilisateurManager->save($user);
-        $this->session->set('user', $user);
+        // 4. Nettoyage de la session (seulement si c'est le contrôle en cours de l'utilisateur)
+        if ($user['controle_en_cours_id'] == $id) {
+            $user['controle_en_cours_id'] = null;
+            $utilisateurManager = new UtilisateurManager();
+            $utilisateurManager->save($user);
+            $this->session->set('user', $user);
+        }
         
         $this->session->getFlashBag()->add('success', 'Contrôle clôturé avec succès (remarques chiffrées).');
         return $this->redirectTo('/admin/controles');

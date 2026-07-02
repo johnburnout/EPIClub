@@ -4,6 +4,7 @@ namespace Epiclub\Engine;
 
 use Twig\TwigFunction;
 use Epiclub\Engine\Session;
+use Epiclub\Domain\UtilisateurManager; // ⬅️ AJOUT
 use Symfony\Component\Mime\Email;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -26,15 +27,15 @@ abstract class AbstractController
             return $this->isGranted($role);
         }));
 
-        // ✅ Ajout de la fonction Twig pour récupérer l'utilisateur
         $this->renderer->addFunction(new TwigFunction('app_user', function () {
             return $this->session->get('user');
         }));
+        
+        $this->updateLastActivity();
     }
 
     public function render(string $template, array $data = []): Response
     {
-        // ✅ Ajout automatique de l'utilisateur à toutes les vues
         $data['_user'] = $this->session->get('user');
         return new Response($this->renderer->render($template, $data));
     }
@@ -47,7 +48,6 @@ abstract class AbstractController
             ->from($from)
             ->to($to)
             ->subject($subject)
-            // ->text($text)
             ->html($html);
         return $email;
     }
@@ -75,5 +75,16 @@ abstract class AbstractController
     public function redirectTo(string $route, int $status = 302, array $headers = []): Response
     {
         return new RedirectResponse($route, $status, $headers);
+    }
+    
+    protected function updateLastActivity()
+    {
+        $user = $this->session->get('user');
+        if ($user && isset($user['id'])) {
+            $manager = new UtilisateurManager();
+            $user['last_activity'] = date('Y-m-d H:i:s');
+            $manager->save($user);
+            $this->session->set('user', $user);
+        }
     }
 }

@@ -30,13 +30,30 @@
                             <span class="badge bg-success">Clôturé</span>
                         {% endif %}
                     </td>
-                    <td>{{ controle.prenom }} {{ controle.nom }}</td>
+                    <td>
+                        {{ controle.prenom }} {{ controle.nom }}
+                        {% if controle.isOwnerOnline %}
+                        <span class="badge bg-success" title="Le contrôleur est actuellement en ligne">🟢 En ligne</span>
+                        {% endif %}
+                        {% if controle.isAdminEditable %}
+                        <span class="badge bg-warning text-dark" title="Modifiable par admin (contrôle d'avant-hier ou plus)">Admin</span>
+                        {% endif %}
+                    </td>
                     <td>
                         {% if controle.statut == 'cloture' %}
                             <a href="/admin/controles/edit/{{ controle.id }}" class="btn btn-sm btn-info">Voir</a>
-                        {% else %}
-                            <a href="/admin/controles/edit/{{ controle.id }}" class="btn btn-sm btn-primary">Voir / Modifier</a>
+                        {% elseif controle.canEdit %}
+                            <a href="/admin/controles/edit/{{ controle.id }}" class="btn btn-sm btn-primary">
+                                {% if controle.isAdminEditable %}
+                                    ✏️ Modifier (admin)
+                                {% else %}
+                                    Voir / Modifier
+                                {% endif %}
+                            </a>
                             <a href="/admin/controles/cloturer/{{ controle.id }}" class="btn btn-sm btn-success" onclick="return confirm('Clôturer ce contrôle ?')">Clôturer</a>
+                        {% else %}
+                            <a href="/admin/controles/edit/{{ controle.id }}" class="btn btn-sm btn-info">Voir</a>
+                            <span class="text-muted">(non modifiable)</span>
                         {% endif %}
                     </td>
                 </tr>
