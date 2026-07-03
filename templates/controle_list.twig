@@ -4,6 +4,73 @@
     <h3>Liste des contrôles</h3>
     <hr>
 
+    <!-- Filtres + Tri + Limite -->
+    <form method="get" class="mb-3">
+        <!-- LIGNE 1 : Filtres -->
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label for="statut" class="form-label">Statut</label>
+                <select name="statut" id="statut" class="form-select">
+                    <option value="">Tous</option>
+                    <option value="ouvert" {% if filtres.statut == 'ouvert' %}selected{% endif %}>Ouvert</option>
+                    <option value="en_cours" {% if filtres.statut == 'en_cours' %}selected{% endif %}>En cours</option>
+                    <option value="cloture" {% if filtres.statut == 'cloture' %}selected{% endif %}>Clôturé</option>
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <label for="controleur_id" class="form-label">Contrôleur</label>
+                <select name="controleur_id" id="controleur_id" class="form-select">
+                    <option value="">Tous</option>
+                    {% for controleur in controleurs %}
+                    <option value="{{ controleur.id }}" {% if filtres.controleur_id == controleur.id %}selected{% endif %}>
+                        {{ controleur.prenom }} {{ controleur.nom }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- LIGNE 2 : Tri, limite et bouton -->
+        <div class="row g-3 mt-2">
+            <div class="col-md-2">
+                <label for="order_by" class="form-label">Trier par</label>
+                <select name="order_by" id="order_by" class="form-select">
+                    <option value="date_debut" {% if filtres.order_by == 'date_debut' %}selected{% endif %}>Date de début</option>
+                    <option value="libelle" {% if filtres.order_by == 'libelle' %}selected{% endif %}>Libellé</option>
+                    <option value="statut" {% if filtres.order_by == 'statut' %}selected{% endif %}>Statut</option>
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <label for="order_dir" class="form-label">Ordre</label>
+                <select name="order_dir" id="order_dir" class="form-select">
+                    <option value="asc" {% if filtres.order_dir == 'asc' %}selected{% endif %}>Croissant</option>
+                    <option value="desc" {% if filtres.order_dir == 'desc' %}selected{% endif %}>Décroissant</option>
+                </select>
+            </div>
+
+            {% if pagination.total > 5 %}
+            <div class="col-md-2">
+                <label for="limit" class="form-label">Lignes par page</label>
+                <select name="limit" id="limit" class="form-select" onchange="this.form.submit()">
+                    <option value="5" {% if filtres.limit == 5 %}selected{% endif %}>5</option>
+                    <option value="10" {% if filtres.limit == 10 %}selected{% endif %}>10</option>
+                    <option value="25" {% if filtres.limit == 25 %}selected{% endif %}>25</option>
+                    <option value="50" {% if filtres.limit == 50 %}selected{% endif %}>50</option>
+                    <option value="100" {% if filtres.limit == 100 %}selected{% endif %}>100</option>
+                </select>
+            </div>
+            {% endif %}
+
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-secondary w-100">Appliquer</button>
+            </div>
+        </div>
+    </form>
+
+    <hr>
+
     <table class="table table-striped">
         <thead>
             <tr>
@@ -60,4 +127,34 @@
             {% endfor %}
         </tbody>
     </table>
+
+    <!-- Pagination sous la liste (uniquement si plusieurs pages) -->
+    {% if pagination.totalPages > 1 %}
+    <div class="row mt-3">
+        <div class="col-md-12">
+            <nav aria-label="Pagination">
+                <ul class="pagination">
+                    {% if pagination.hasPrevious %}
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.first }}">Premier</a></li>
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.previous }}">Précédent</a></li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">Premier</span></li>
+                    <li class="page-item disabled"><span class="page-link">Précédent</span></li>
+                    {% endif %}
+                    
+                    <li class="page-item disabled"><span class="page-link">Page {{ pagination.page }} sur {{ pagination.totalPages }}</span></li>
+                    
+                    {% if pagination.hasNext %}
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.next }}">Suivant</a></li>
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.last }}">Dernier</a></li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">Suivant</span></li>
+                    <li class="page-item disabled"><span class="page-link">Dernier</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            <p class="text-muted">Affichage de {{ controles|length }} contrôles sur {{ pagination.total }} (page {{ pagination.page }}/{{ pagination.totalPages }})</p>
+        </div>
+    </div>
+    {% endif %}
 {% endblock %}

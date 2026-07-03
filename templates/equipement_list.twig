@@ -4,14 +4,14 @@
 	<h3>Equipements</h3>
     <hr>
 
-    <!-- Filtres -->
+    <!-- Filtres + Tri + Limite -->
     <form method="get" class="mb-3">
+        <!-- LIGNE 1 : Filtres -->
         <div class="row g-3">
-            <!-- Première ligne : filtres -->
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label for="categorie" class="form-label">Catégorie</label>
                 <select name="categorie" id="categorie" class="form-select">
-                    <option value="">Toutes les catégories</option>
+                    <option value="">Toutes</option>
                     {% for categorie in categories %}
                     <option value="{{ categorie.id }}" {% if filtres.categorie_id == categorie.id %}selected{% endif %}>
                         {{ categorie.libelle }}
@@ -20,11 +20,10 @@
                 </select>
             </div>
             
-            <!-- Emplacement (avec option "Non défini") -->
             <div class="col-md-2">
                 <label for="emplacement" class="form-label">Emplacement</label>
                 <select name="emplacement" id="emplacement" class="form-select">
-                    <option value="">Tous les emplacements</option>
+                    <option value="">Tous</option>
                     <option value="null" {% if filtres.emplacement_id == 'null' %}selected{% endif %}>Non défini</option>
                     {% for emplacement in emplacements %}
                     <option value="{{ emplacement.id }}" {% if filtres.emplacement_id == emplacement.id %}selected{% endif %}>
@@ -34,12 +33,12 @@
                 </select>
             </div>
             
-            <div class="col-md-2">
+            <div class="col-md-1">
                 <label for="epi" class="form-label">EPI</label>
                 <select name="epi" id="epi" class="form-select">
                     <option value="">Tous</option>
-                    <option value="1" {% if filtres.epi == '1' %}selected{% endif %}>EPI</option>
-                    <option value="0" {% if filtres.epi == '0' %}selected{% endif %}>Non EPI</option>
+                    <option value="1" {% if filtres.epi == '1' %}selected{% endif %}>Oui</option>
+                    <option value="0" {% if filtres.epi == '0' %}selected{% endif %}>Non</option>
                 </select>
             </div>
             
@@ -51,7 +50,10 @@
                     <option value="non" {% if filtres.en_service == 'non' %}selected{% endif %}>Hors service</option>
                 </select>
             </div>
-            
+        </div>
+
+        <!-- LIGNE 2 : Tri, limite et bouton -->
+        <div class="row g-3 mt-2">
             <div class="col-md-2">
                 <label for="order_by" class="form-label">Trier par</label>
                 <select name="order_by" id="order_by" class="form-select">
@@ -59,6 +61,7 @@
                     <option value="date_fin" {% if filtres.order_by == 'date_fin' %}selected{% endif %}>Date de fin</option>
                 </select>
             </div>
+            
             <div class="col-md-2">
                 <label for="order_dir" class="form-label">Ordre</label>
                 <select name="order_dir" id="order_dir" class="form-select">
@@ -66,10 +69,8 @@
                     <option value="desc" {% if filtres.order_dir == 'desc' %}selected{% endif %}>Décroissant</option>
                 </select>
             </div>
-        </div>
-        
-        <!-- Deuxième ligne : limite et boutons -->
-        <div class="row g-3 mt-2">
+            
+            {% if pagination.total > 5 %}
             <div class="col-md-2">
                 <label for="limit" class="form-label">Lignes par page</label>
                 <select name="limit" id="limit" class="form-select" onchange="this.form.submit()">
@@ -80,6 +81,8 @@
                     <option value="100" {% if filtres.limit == 100 %}selected{% endif %}>100</option>
                 </select>
             </div>
+            {% endif %}
+            
             <div class="col-md-2 d-flex align-items-end">
                 <button type="submit" class="btn btn-secondary w-100">Appliquer</button>
             </div>
@@ -88,37 +91,7 @@
 
     <hr>
 
-    <!-- Pagination -->
-    <div class="row mt-3">
-        <div class="col-md-12">
-            <nav aria-label="Pagination">
-                <ul class="pagination">
-                    {% if pagination.hasPrevious %}
-                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.first }}">Premier</a></li>
-                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.previous }}">Précédent</a></li>
-                    {% else %}
-                    <li class="page-item disabled"><span class="page-link">Premier</span></li>
-                    <li class="page-item disabled"><span class="page-link">Précédent</span></li>
-                    {% endif %}
-                    
-                    <li class="page-item disabled"><span class="page-link">Page {{ pagination.page }} sur {{ pagination.totalPages }}</span></li>
-                    
-                    {% if pagination.hasNext %}
-                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.next }}">Suivant</a></li>
-                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.last }}">Dernier</a></li>
-                    {% else %}
-                    <li class="page-item disabled"><span class="page-link">Suivant</span></li>
-                    <li class="page-item disabled"><span class="page-link">Dernier</span></li>
-                    {% endif %}
-                </ul>
-            </nav>
-            <p class="text-muted">Affichage de {{ equipements|length }} équipements sur {{ pagination.total }} (page {{ pagination.page }}/{{ pagination.totalPages }})</p>
-        </div>
-    </div>
-
-    <hr>
-
-	<table class="table table-striped">
+    <table class="table table-striped">
 		<thead>
 			<tr>
 				<th>Référence</th>
@@ -177,4 +150,34 @@
             {% endfor %}
         </tbody>
 	</table>
+
+    <!-- Pagination sous la liste (uniquement si plusieurs pages) -->
+    {% if pagination.totalPages > 1 %}
+    <div class="row mt-3">
+        <div class="col-md-12">
+            <nav aria-label="Pagination">
+                <ul class="pagination">
+                    {% if pagination.hasPrevious %}
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.first }}">Premier</a></li>
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.previous }}">Précédent</a></li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">Premier</span></li>
+                    <li class="page-item disabled"><span class="page-link">Précédent</span></li>
+                    {% endif %}
+                    
+                    <li class="page-item disabled"><span class="page-link">Page {{ pagination.page }} sur {{ pagination.totalPages }}</span></li>
+                    
+                    {% if pagination.hasNext %}
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.next }}">Suivant</a></li>
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.last }}">Dernier</a></li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">Suivant</span></li>
+                    <li class="page-item disabled"><span class="page-link">Dernier</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            <p class="text-muted">Affichage de {{ equipements|length }} équipements sur {{ pagination.total }} (page {{ pagination.page }}/{{ pagination.totalPages }})</p>
+        </div>
+    </div>
+    {% endif %}
 {% endblock %}

@@ -21,7 +21,6 @@ class ControleController extends AbstractController
      * @param array $user
      * @return bool
      */
-    
     private function canEdit($controle, $user)
     {
         // Si clôturé => jamais modifiable
@@ -34,8 +33,8 @@ class ControleController extends AbstractController
             return true;
         }
         
-        // Sinon, est-il admin ?
-        if (in_array('ROLE_ADMIN', $user['roles'] ?? [])) {
+        // Sinon, est-il admin ? ✅ Utilisation de isGranted()
+        if ($this->isGranted('ROLE_ADMIN')) {
             // Vérifier que le contrôle est d'un jour antérieur
             $today = date('Y-m-d');
             $dateDebut = substr($controle['date_debut'], 0, 10);
@@ -60,28 +59,108 @@ class ControleController extends AbstractController
         
         $user = $this->session->get('user');
         $controleManager = new ControleManager();
-        $controles = $controleManager->findAll();
+        $allControles = $controleManager->findAll();
         
-        $filteredControles = [];
+        // Paramètres GET pour les filtres, tri et pagination
+        $statut = $request->query->get('statut');
+        $controleur_id = $request->query->get('controleur_id');
+        $order_by = $request->query->get('order_by', 'date_debut');
+        $order_dir = $request->query->get('order_dir', 'desc');
+        $page = (int) $request->query->get('page', 1);
+        $limit = (int) $request->query->get('limit', 10);
+        
+        // Nettoyage
+        if ($statut === '') $statut = null;
+        if ($controleur_id === '') $controleur_id = null;
+        if ($page < 1) $page = 1;
+        if ($limit < 1) $limit = 10;
+        
+        // Filtrer par statut
+        if ($statut !== null) {
+            $allControles = array_filter($allControles, function($c) use ($statut) {
+                return $c['statut'] == $statut;
+            });
+        }
+        
+        // Filtrer par contrôleur
+        if ($controleur_id !== null) {
+            $allControles = array_filter($allControles, function($c) use ($controleur_id) {
+                return $c['controleur_id'] == $controleur_id;
+            });
+        }
+        
+        // Ajouter les informations de permission (comme avant)
         $today = date('Y-m-d');
-        
-        foreach ($controles as $controle) {
+        foreach ($allControles as &$controle) {
             $isOwner = ($controle['controleur_id'] == $user['id']);
-            $isAdminEligible = in_array('ROLE_ADMIN', $user['roles'] ?? []) 
+            $isAdminEligible = $this->isGranted('ROLE_ADMIN')
             && $controle['statut'] !== 'cloture'
             && substr($controle['date_debut'], 0, 10) < $today
-            && !$this->isUserOnline($controle['controleur_id']); // ⬅️ NOUVEAU
+            && !$this->isUserOnline($controle['controleur_id']);
             
             $controle['canEdit'] = $isOwner || $isAdminEligible;
             $controle['isAdminEditable'] = !$isOwner && $isAdminEligible;
             $controle['isOwner'] = $isOwner;
-            $controle['isOwnerOnline'] = $this->isUserOnline($controle['controleur_id']); // ⬅️ NOUVEAU
-            
-            $filteredControles[] = $controle;
+            $controle['isOwnerOnline'] = $this->isUserOnline($controle['controleur_id']);
         }
+        unset($controle);
+        
+        // Tri
+        usort($allControles, function($a, $b) use ($order_by, $order_dir) {
+            $valA = $a[$order_by] ?? '';
+            $valB = $b[$order_by] ?? '';
+            if ($order_dir === 'asc') {
+                return strcmp((string)$valA, (string)$valB);
+            } else {
+                return strcmp((string)$valB, (string)$valA);
+            }
+        });
+        
+        // Pagination
+        $total = count($allControles);
+        $offset = ($page - 1) * $limit;
+        $controles = array_slice($allControles, $offset, $limit);
+        $totalPages = $limit > 0 ? ceil($total / $limit) : 1;
+        
+        // URLs de pagination
+        $baseParams = [
+            'statut' => $statut,
+            'controleur_id' => $controleur_id,
+            'order_by' => $order_by,
+            'order_dir' => $order_dir,
+            'limit' => $limit,
+        ];
+        $paginationUrls = [
+            'first' => '?' . http_build_query(array_merge($baseParams, ['page' => 1])),
+            'previous' => '?' . http_build_query(array_merge($baseParams, ['page' => max(1, $page - 1)])),
+            'next' => '?' . http_build_query(array_merge($baseParams, ['page' => min($totalPages, $page + 1)])),
+            'last' => '?' . http_build_query(array_merge($baseParams, ['page' => $totalPages])),
+        ];
+        
+        // Récupérer la liste des contrôleurs pour le filtre
+        $utilisateurManager = new UtilisateurManager();
+        $controleurs = $utilisateurManager->findAll('nom ASC');
         
         return $this->render('controle_list.twig', [
-            'controles' => $filteredControles,
+            'controles' => $controles,
+            'controleurs' => $controleurs,
+            'filtres' => [
+                'statut' => $statut,
+                'controleur_id' => $controleur_id,
+                'order_by' => $order_by,
+                'order_dir' => $order_dir,
+                'page' => $page,
+                'limit' => $limit,
+            ],
+            'pagination' => [
+                'total' => $total,
+                'page' => $page,
+                'limit' => $limit,
+                'totalPages' => $totalPages,
+                'hasPrevious' => $page > 1,
+                'hasNext' => $page < $totalPages,
+            ],
+            'paginationUrls' => $paginationUrls,
             'user' => $user,
         ]);
     }
@@ -143,59 +222,107 @@ class ControleController extends AbstractController
         }
         
         $user = $this->session->get('user');
-        
-        // 🔓 On autorise toujours l'affichage (lecture seule ou modifiable)
         $canEdit = $this->canEdit($controle, $user);
-        
-        // Mode lecture seule si clôturé OU si l'utilisateur n'a pas les droits de modification
         $readonly = ($controle['statut'] === 'cloture' || !$canEdit);
-        
-        // Indicateur pour l'interface (modification par un admin)
         $isAdminEdit = ($controle['controleur_id'] != $user['id'] && $canEdit);
         
+        // ---- 1. Récupération des lignes (équipements déjà ajoutés) ----
         $ligneManager = new ControleLigneManager();
-        $lignes = $ligneManager->findByControle($id);
+        $allLignes = $ligneManager->findByControle($id);
         
-        // Chargement de la configuration
-        $config = include __DIR__ . '/../../.env.local.php';
-        $secretKey = isset($config['SECRET_KEY']) ? hex2bin($config['SECRET_KEY']) : null;
-        $cipherMethod = $config['CIPHER_METHOD'] ?? 'AES-256-CBC';
-        
-        // Déchiffrement des remarques si le contrôle est clôturé (avec détection automatique)
+        // Déchiffrement si clôturé (sur toutes les lignes)
         if ($readonly && $controle['statut'] === 'cloture') {
-            foreach ($lignes as &$ligne) {
+            $config = include __DIR__ . '/../../.env.local.php';
+            $secretKey = isset($config['SECRET_KEY']) ? hex2bin($config['SECRET_KEY']) : null;
+            $cipherMethod = $config['CIPHER_METHOD'] ?? 'AES-256-CBC';
+            foreach ($allLignes as &$ligne) {
                 if (!empty($ligne['remarque'])) {
                     $data = base64_decode($ligne['remarque'], true);
-                    if ($data === false) {
-                        continue;
-                    }
-                    $ivLength = openssl_cipher_iv_length($cipherMethod);
-                    if (strlen($data) < $ivLength) {
-                        continue;
-                    }
-                    $iv = substr($data, 0, $ivLength);
-                    $chiffre = substr($data, $ivLength);
-                    $decrypted = openssl_decrypt($chiffre, $cipherMethod, $secretKey, 0, $iv);
-                    if ($decrypted !== false) {
-                        $ligne['remarque'] = $decrypted;
+                    if ($data !== false) {
+                        $ivLength = openssl_cipher_iv_length($cipherMethod);
+                        if (strlen($data) >= $ivLength) {
+                            $iv = substr($data, 0, $ivLength);
+                            $chiffre = substr($data, $ivLength);
+                            $decrypted = openssl_decrypt($chiffre, $cipherMethod, $secretKey, 0, $iv);
+                            if ($decrypted !== false) {
+                                $ligne['remarque'] = $decrypted;
+                            }
+                        }
                     }
                 }
             }
             unset($ligne);
         }
         
-        // Vérifier s'il reste des équipements "à contrôler"
+        // ---- 2. Paramètres pour la liste des lignes ----
+        $lignes_page = (int) $request->query->get('lignes_page', 1);
+        $lignes_limit = (int) $request->query->get('lignes_limit', 10);
+        $lignes_order_by = $request->query->get('lignes_order_by', 'reference');
+        $lignes_order_dir = $request->query->get('lignes_order_dir', 'asc');
+        $lignes_statut = $request->query->get('lignes_statut', null);
+        $lignes_search = $request->query->get('lignes_search', '');
+        
+        // Filtrer les lignes par statut
+        if ($lignes_statut !== null && $lignes_statut !== '') {
+            $allLignes = array_filter($allLignes, function($l) use ($lignes_statut) {
+                return $l['statut'] == $lignes_statut;
+            });
+        }
+        // Filtrer par recherche (référence ou libellé)
+        if (!empty($lignes_search)) {
+            $search = strtolower(trim($lignes_search));
+            $allLignes = array_filter($allLignes, function($l) use ($search) {
+                return strpos(strtolower($l['reference']), $search) !== false 
+                || strpos(strtolower($l['libelle']), $search) !== false;
+            });
+        }
+        
+        // Trier les lignes
+        usort($allLignes, function($a, $b) use ($lignes_order_by, $lignes_order_dir) {
+            $valA = $a[$lignes_order_by] ?? '';
+            $valB = $b[$lignes_order_by] ?? '';
+            if ($lignes_order_dir === 'asc') {
+                return strcmp((string)$valA, (string)$valB);
+            } else {
+                return strcmp((string)$valB, (string)$valA);
+            }
+        });
+        
+        // Paginer les lignes
+        $lignes_total = count($allLignes);
+        $lignes_offset = ($lignes_page - 1) * $lignes_limit;
+        $lignes = array_slice($allLignes, $lignes_offset, $lignes_limit);
+        $lignes_totalPages = $lignes_limit > 0 ? ceil($lignes_total / $lignes_limit) : 1;
+        
+        // URLs de pagination pour les lignes
+        $baseLignesParams = [
+            'lignes_statut' => $lignes_statut,
+            'lignes_search' => $lignes_search,
+            'lignes_order_by' => $lignes_order_by,
+            'lignes_order_dir' => $lignes_order_dir,
+            'lignes_limit' => $lignes_limit,
+        ];
+        $lignesPaginationUrls = [
+            'first' => '?' . http_build_query(array_merge($baseLignesParams, ['lignes_page' => 1])),
+            'previous' => '?' . http_build_query(array_merge($baseLignesParams, ['lignes_page' => max(1, $lignes_page - 1)])),
+            'next' => '?' . http_build_query(array_merge($baseLignesParams, ['lignes_page' => min($lignes_totalPages, $lignes_page + 1)])),
+            'last' => '?' . http_build_query(array_merge($baseLignesParams, ['lignes_page' => $lignes_totalPages])),
+        ];
+        
+        // ---- 3. Vérifier s'il reste des équipements "à contrôler" (sur toutes les lignes, avant filtrage) ----
         $hasPending = false;
-        foreach ($lignes as $ligne) {
+        foreach ($allLignes as $ligne) {
             if ($ligne['statut'] === 'a_controler') {
                 $hasPending = true;
                 break;
             }
         }
         
-        $idsDejaAjoutes = array_column($lignes, 'equipement_id');
+        // ---- 4. Liste des équipements disponibles (comme avant) ----
+        // On récupère les IDs déjà ajoutés (sur toutes les lignes, pas seulement celles paginées)
+        $idsDejaAjoutes = array_column($allLignes, 'equipement_id');
         
-        // Paramètres GET
+        // Paramètres GET pour la liste des disponibles
         $categorie_id = $request->query->get('categorie');
         $filter_epi = $request->query->get('epi');
         $en_service = $request->query->get('en_service');
@@ -205,7 +332,6 @@ class ControleController extends AbstractController
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 10);
         
-        // Nettoyer
         if ($categorie_id === '') $categorie_id = null;
         if ($filter_epi === '') $filter_epi = null;
         if ($en_service === '') $en_service = null;
@@ -213,7 +339,6 @@ class ControleController extends AbstractController
         if ($page < 1) $page = 1;
         if ($limit < 1) $limit = 10;
         
-        // Récupérer tous les équipements
         $equipementManager = new EquipementManager();
         $categorieManager = new CategorieManager();
         $emplacementManager = new EmplacementManager();
@@ -228,12 +353,10 @@ class ControleController extends AbstractController
             }
         }
         
-        // Filtrer les déjà ajoutés
         $equipementsDisponibles = array_filter($tousLesEquipements, function($e) use ($idsDejaAjoutes) {
             return !in_array($e['id'], $idsDejaAjoutes);
         });
         
-        // Appliquer les filtres
         if ($categorie_id) {
             $equipementsDisponibles = array_filter($equipementsDisponibles, function($e) use ($categorie_id) {
                 return isset($e['categorie_id']) && $e['categorie_id'] == $categorie_id;
@@ -268,7 +391,6 @@ class ControleController extends AbstractController
             }
         }
         
-        // Tri
         if ($order_by === 'reference') {
             usort($equipementsDisponibles, function($a, $b) use ($order_dir) {
                 return $order_dir === 'asc' ? strcmp($a['reference'], $b['reference']) : strcmp($b['reference'], $a['reference']);
@@ -285,13 +407,11 @@ class ControleController extends AbstractController
             });
         }
         
-        // Pagination
         $total = count($equipementsDisponibles);
         $offset = ($page - 1) * $limit;
         $equipementsDisponibles = array_slice($equipementsDisponibles, $offset, $limit);
         $totalPages = $limit > 0 ? ceil($total / $limit) : 1;
         
-        // URLs de pagination
         $baseParams = [
             'categorie' => $categorie_id,
             'epi' => $filter_epi,
@@ -308,14 +428,12 @@ class ControleController extends AbstractController
             'last' => '?' . http_build_query(array_merge($baseParams, ['page' => $totalPages])),
         ];
         
-        // Récupérer les listes pour les filtres
         $categories = $categorieManager->findAll();
         $emplacements = $emplacementManager->findAll();
         
-        // ⬇️ RENDER COMPLET avec TOUTES les variables
         return $this->render('controle_edit.twig', [
             'controle' => $controle,
-            'lignes' => $lignes,
+            'lignes' => $lignes, // les lignes paginées
             'equipements_disponibles' => array_values($equipementsDisponibles),
             'categories' => $categories,
             'emplacements' => $emplacements,
@@ -338,6 +456,24 @@ class ControleController extends AbstractController
                 'hasNext' => $page < $totalPages,
             ],
             'paginationUrls' => $paginationUrls,
+            // ----- variables pour la liste des lignes -----
+            'lignes_filtres' => [
+                'statut' => $lignes_statut,
+                'search' => $lignes_search,
+                'order_by' => $lignes_order_by,
+                'order_dir' => $lignes_order_dir,
+                'limit' => $lignes_limit,
+            ],
+            'lignes_pagination' => [
+                'total' => $lignes_total,
+                'page' => $lignes_page,
+                'limit' => $lignes_limit,
+                'totalPages' => $lignes_totalPages,
+                'hasPrevious' => $lignes_page > 1,
+                'hasNext' => $lignes_page < $lignes_totalPages,
+            ],
+            'lignes_paginationUrls' => $lignesPaginationUrls,
+            // ----- autres -----
             'readonly' => $readonly,
             'hasPending' => $hasPending,
             'isAdminEdit' => $isAdminEdit,
@@ -434,10 +570,15 @@ class ControleController extends AbstractController
             return $this->redirectTo('/admin/controles');
         }
         
-        // Vérification des droits
+        // Vérification des droits (utilise canEdit() qui a été corrigé)
         $user = $this->session->get('user');
         if (!$this->canEdit($controle, $user)) {
-            $this->session->getFlashBag()->add('error', 'Vous n\'avez pas les droits pour clôturer ce contrôle.');
+            // Message d'erreur plus précis
+            if ($this->isGranted('ROLE_ADMIN') && substr($controle['date_debut'], 0, 10) < date('Y-m-d')) {
+                $this->session->getFlashBag()->add('error', 'Impossible de clôturer : le contrôleur est actuellement en ligne.');
+            } else {
+                $this->session->getFlashBag()->add('error', 'Vous n\'avez pas les droits pour clôturer ce contrôle.');
+            }
             return $this->redirectTo('/admin/controles');
         }
         
