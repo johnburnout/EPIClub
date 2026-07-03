@@ -50,6 +50,15 @@
                     <option value="non" {% if filtres.en_service == 'non' %}selected{% endif %}>Hors service</option>
                 </select>
             </div>
+            <!-- ⬇️ NOUVEAU FILTRE : Dernier contrôle -->
+            <div class="col-md-2">
+                <label for="dernier_controle" class="form-label">Dernier contrôle</label>
+                <select name="dernier_controle" id="dernier_controle" class="form-select">
+                    <option value="">Tous</option>
+                    <option value="plus_1_an" {% if filtres.dernier_controle == 'plus_1_an' %}selected{% endif %}>Plus d'un an</option>
+                    <option value="moins_1_an" {% if filtres.dernier_controle == 'moins_1_an' %}selected{% endif %}>Moins d'un an</option>
+                </select>
+            </div>
         </div>
 
         <!-- LIGNE 2 : Tri, limite et bouton -->
@@ -59,6 +68,7 @@
                 <select name="order_by" id="order_by" class="form-select">
                     <option value="categorie" {% if filtres.order_by == 'categorie' %}selected{% endif %}>Catégorie</option>
                     <option value="date_fin" {% if filtres.order_by == 'date_fin' %}selected{% endif %}>Date de fin</option>
+                    <option value="date_dernier_controle" {% if filtres.order_by == 'date_dernier_controle' %}selected{% endif %}>Dernier contrôle</option> <!-- ⬅️ NOUVEAU -->
                 </select>
             </div>
             
@@ -69,6 +79,7 @@
                     <option value="desc" {% if filtres.order_dir == 'desc' %}selected{% endif %}>Décroissant</option>
                 </select>
             </div>
+            
             
             {% if pagination.total > 5 %}
             <div class="col-md-2">

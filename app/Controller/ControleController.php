@@ -318,7 +318,7 @@ class ControleController extends AbstractController
             }
         }
         
-        // ---- 4. Liste des équipements disponibles (comme avant) ----
+        // ---- 4. Liste des équipements disponibles (avec le nouveau filtre "dernier contrôle") ----
         // On récupère les IDs déjà ajoutés (sur toutes les lignes, pas seulement celles paginées)
         $idsDejaAjoutes = array_column($allLignes, 'equipement_id');
         
@@ -327,15 +327,18 @@ class ControleController extends AbstractController
         $filter_epi = $request->query->get('epi');
         $en_service = $request->query->get('en_service');
         $emplacement_id = $request->query->get('emplacement');
+        $dernier_controle = $request->query->get('dernier_controle'); // ⬅️ NOUVEAU
         $order_by = $request->query->get('order_by', 'reference');
         $order_dir = $request->query->get('order_dir', 'asc');
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 10);
         
+        // Nettoyer
         if ($categorie_id === '') $categorie_id = null;
         if ($filter_epi === '') $filter_epi = null;
         if ($en_service === '') $en_service = null;
         if ($emplacement_id === '') $emplacement_id = null;
+        if ($dernier_controle === '') $dernier_controle = null; // ⬅️ NOUVEAU
         if ($page < 1) $page = 1;
         if ($limit < 1) $limit = 10;
         
@@ -353,10 +356,12 @@ class ControleController extends AbstractController
             }
         }
         
+        // Filtrer les déjà ajoutés
         $equipementsDisponibles = array_filter($tousLesEquipements, function($e) use ($idsDejaAjoutes) {
             return !in_array($e['id'], $idsDejaAjoutes);
         });
         
+        // Appliquer les filtres existants
         if ($categorie_id) {
             $equipementsDisponibles = array_filter($equipementsDisponibles, function($e) use ($categorie_id) {
                 return isset($e['categorie_id']) && $e['categorie_id'] == $categorie_id;
@@ -391,6 +396,23 @@ class ControleController extends AbstractController
             }
         }
         
+        // ⬇️ NOUVEAU FILTRE : Dernier contrôle (même logique que dans equipement_list)
+        if ($dernier_controle !== null) {
+            $oneYearAgo = date('Y-m-d', strtotime('-1 year'));
+            if ($dernier_controle === 'plus_1_an') {
+                // "Plus d'un an" → contrôle récent (moins d'un an)
+                $equipementsDisponibles = array_filter($equipementsDisponibles, function($e) use ($oneYearAgo) {
+                    return isset($e['date_dernier_controle']) && $e['date_dernier_controle'] >= $oneYearAgo;
+                });
+            } elseif ($dernier_controle === 'moins_1_an') {
+                // "Moins d'un an" → contrôle ancien ou jamais contrôlé
+                $equipementsDisponibles = array_filter($equipementsDisponibles, function($e) use ($oneYearAgo) {
+                    return !isset($e['date_dernier_controle']) || $e['date_dernier_controle'] < $oneYearAgo;
+                });
+            }
+        }
+        
+        // Tri
         if ($order_by === 'reference') {
             usort($equipementsDisponibles, function($a, $b) use ($order_dir) {
                 return $order_dir === 'asc' ? strcmp($a['reference'], $b['reference']) : strcmp($b['reference'], $a['reference']);
@@ -407,6 +429,7 @@ class ControleController extends AbstractController
             });
         }
         
+        // Pagination
         $total = count($equipementsDisponibles);
         $offset = ($page - 1) * $limit;
         $equipementsDisponibles = array_slice($equipementsDisponibles, $offset, $limit);
@@ -417,6 +440,7 @@ class ControleController extends AbstractController
             'epi' => $filter_epi,
             'en_service' => $en_service,
             'emplacement' => $emplacement_id,
+            'dernier_controle' => $dernier_controle, // ⬅️ AJOUT
             'order_by' => $order_by,
             'order_dir' => $order_dir,
             'limit' => $limit,
@@ -433,7 +457,7 @@ class ControleController extends AbstractController
         
         return $this->render('controle_edit.twig', [
             'controle' => $controle,
-            'lignes' => $lignes, // les lignes paginées
+            'lignes' => $lignes,
             'equipements_disponibles' => array_values($equipementsDisponibles),
             'categories' => $categories,
             'emplacements' => $emplacements,
@@ -442,6 +466,7 @@ class ControleController extends AbstractController
                 'epi' => $filter_epi,
                 'en_service' => $en_service,
                 'emplacement_id' => $emplacement_id,
+                'dernier_controle' => $dernier_controle, // ⬅️ AJOUT
                 'order_by' => $order_by,
                 'order_dir' => $order_dir,
                 'page' => $page,

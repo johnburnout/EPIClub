@@ -1,10 +1,19 @@
+# Fichiers système
 .DS_Store
 *.swp
-!*.gitkeep
-/_storage
-/.env.local.php
+
+# Dossiers exclus
 /vendor
+/_storage
 /_dev
-/composer.locksetup/
-***setup/
-composer.lock
+
+# Fichiers de configuration sensibles
+.env.local.php
+
+# Fichiers de dépendances
+/composer.lock
+/composer.phar
+
+# Dossier setup (tout le contenu est volontairement inclus, donc on ne l'ignore pas)
+# Si vous voulez exclure certains sous-dossiers spécifiques, ajoutez-les ici
+# /setup/.DS_Store  # déjà exclu par .DS_Store global

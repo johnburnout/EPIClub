@@ -23,6 +23,7 @@ class EquipementController extends AbstractController
         $filter_epi = $request->query->get('epi');
         $en_service = $request->query->get('en_service');
         $emplacement_id = $request->query->get('emplacement');
+        $dernier_controle = $request->query->get('dernier_controle'); // ⬅️ NOUVEAU
         $order_by = $request->query->get('order_by', 'categorie');
         $order_dir = $request->query->get('order_dir', 'asc');
         $page = (int) $request->query->get('page', 1);
@@ -33,6 +34,7 @@ class EquipementController extends AbstractController
         if ($filter_epi === '') $filter_epi = null;
         if ($en_service === '') $en_service = null;
         if ($emplacement_id === '') $emplacement_id = null;
+        if ($dernier_controle === '') $dernier_controle = null;
         if ($page < 1) $page = 1;
         if ($limit < 1) $limit = 10;
         
@@ -49,7 +51,7 @@ class EquipementController extends AbstractController
             }
         }
         
-        // Filtres (inchangés)
+        // Filtres existants
         if ($categorie_id) {
             $equipements = array_filter($equipements, function($e) use ($categorie_id) {
                 return isset($e['categorie_id']) && $e['categorie_id'] == $categorie_id;
@@ -84,6 +86,22 @@ class EquipementController extends AbstractController
             }
         }
         
+        // ⬇️ FILTRE : Dernier contrôle (version inversée)
+        if ($dernier_controle !== null) {
+            $oneYearAgo = date('Y-m-d', strtotime('-1 year'));
+            if ($dernier_controle === 'plus_1_an') {
+                // ✅ "Plus d'un an" → contrôle récent (moins d'un an)
+                $equipements = array_filter($equipements, function($e) use ($oneYearAgo) {
+                    return isset($e['date_dernier_controle']) && $e['date_dernier_controle'] >= $oneYearAgo;
+                });
+            } elseif ($dernier_controle === 'moins_1_an') {
+                // ✅ "Moins d'un an" → contrôle ancien (plus d'un an ou NULL)
+                $equipements = array_filter($equipements, function($e) use ($oneYearAgo) {
+                    return !isset($e['date_dernier_controle']) || $e['date_dernier_controle'] < $oneYearAgo;
+                });
+            }
+        }
+        
         // Tri
         if ($order_by === 'categorie') {
             usort($equipements, function($a, $b) use ($order_dir) {
@@ -97,6 +115,12 @@ class EquipementController extends AbstractController
                 $b_date = $b['date_fin_utilisation'] ?? '9999-12-31';
                 return $order_dir === 'asc' ? strcmp($a_date, $b_date) : strcmp($b_date, $a_date);
             });
+        } elseif ($order_by === 'date_dernier_controle') {
+            usort($equipements, function($a, $b) use ($order_dir) {
+                $a_date = $a['date_dernier_controle'] ?? '1970-01-01';
+                $b_date = $b['date_dernier_controle'] ?? '1970-01-01';
+                return $order_dir === 'asc' ? strcmp($a_date, $b_date) : strcmp($b_date, $a_date);
+            });
         }
         
         // Pagination
@@ -105,12 +129,13 @@ class EquipementController extends AbstractController
         $equipements = array_slice($equipements, $offset, $limit);
         $totalPages = $limit > 0 ? ceil($total / $limit) : 1;
         
-        // Construire les URLs de pagination
+        // URLs de pagination
         $baseParams = [
             'categorie' => $categorie_id,
             'epi' => $filter_epi,
             'en_service' => $en_service,
             'emplacement' => $emplacement_id,
+            'dernier_controle' => $dernier_controle,
             'order_by' => $order_by,
             'order_dir' => $order_dir,
             'limit' => $limit,
@@ -135,6 +160,7 @@ class EquipementController extends AbstractController
                 'epi' => $filter_epi,
                 'en_service' => $en_service,
                 'emplacement_id' => $emplacement_id,
+                'dernier_controle' => $dernier_controle,
                 'order_by' => $order_by,
                 'order_dir' => $order_dir,
                 'page' => $page,

@@ -53,9 +53,9 @@
     <!-- Filtres, tri et limite pour la liste des équipements disponibles -->
     <form method="get" class="mb-3">
         <input type="hidden" name="section" value="disponibles">
+        <!-- LIGNE 1 : Filtres -->
         <div class="row g-3">
-            <!-- Ligne 1 : filtres -->
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <label for="categorie" class="form-label">Catégorie</label>
                 <select name="categorie" id="categorie" class="form-select">
                     <option value="">Toutes les catégories</option>
@@ -78,12 +78,12 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-md-2">
+            <div class="col-md-1">
                 <label for="epi" class="form-label">EPI</label>
                 <select name="epi" id="epi" class="form-select">
                     <option value="">Tous</option>
-                    <option value="1" {% if filtres.epi == '1' %}selected{% endif %}>EPI</option>
-                    <option value="0" {% if filtres.epi == '0' %}selected{% endif %}>Non EPI</option>
+                    <option value="1" {% if filtres.epi == '1' %}selected{% endif %}>Oui</option>
+                    <option value="0" {% if filtres.epi == '0' %}selected{% endif %}>Non</option>
                 </select>
             </div>
             <div class="col-md-2">
@@ -94,8 +94,17 @@
                     <option value="non" {% if filtres.en_service == 'non' %}selected{% endif %}>Hors service</option>
                 </select>
             </div>
+            <!-- ⬇️ FILTRE : Dernier contrôle -->
+            <div class="col-md-2">
+                <label for="dernier_controle" class="form-label">Dernier contrôle</label>
+                <select name="dernier_controle" id="dernier_controle" class="form-select">
+                    <option value="">Tous</option>
+                    <option value="plus_1_an" {% if filtres.dernier_controle == 'plus_1_an' %}selected{% endif %}>Plus d'un an</option>
+                    <option value="moins_1_an" {% if filtres.dernier_controle == 'moins_1_an' %}selected{% endif %}>Moins d'un an</option>
+                </select>
+            </div>
         </div>
-        <!-- Ligne 2 : tri et limite -->
+        <!-- LIGNE 2 : Tri, limite et bouton -->
         <div class="row g-3 mt-2">
             <div class="col-md-2">
                 <label for="order_by" class="form-label">Trier par</label>
@@ -103,6 +112,7 @@
                     <option value="reference" {% if filtres.order_by == 'reference' %}selected{% endif %}>Référence</option>
                     <option value="libelle" {% if filtres.order_by == 'libelle' %}selected{% endif %}>Nom</option>
                     <option value="categorie" {% if filtres.order_by == 'categorie' %}selected{% endif %}>Catégorie</option>
+                    <option value="date_dernier_controle" {% if filtres.order_by == 'date_dernier_controle' %}selected{% endif %}>Dernier contrôle</option>
                 </select>
             </div>
             <div class="col-md-2">
@@ -140,6 +150,7 @@
                 <th>Catégorie</th>
                 <th>EPI</th>
                 <th>Emplacement</th>
+                <th>Dernier contrôle</th>
                 <th>Actions</th>
             </tr>
         </thead>
@@ -159,6 +170,13 @@
                     {% endif %}
                 </td>
                 <td>{{ equipement.emplacement.libelle|default('Non défini') }}</td>
+                <td>
+                    {% if equipement.date_dernier_controle %}
+                        {{ equipement.date_dernier_controle|date('d/m/Y') }}
+                    {% else %}
+                        <span class="text-muted">Jamais</span>
+                    {% endif %}
+                </td>
                 <td>
                     <form method="post" action="/admin/controles/add-equipement/{{ controle.id }}" style="display: inline;">
                         <input type="hidden" name="equipement_id" value="{{ equipement.id }}">
@@ -208,44 +226,10 @@
 
 <h4>Équipements déjà dans le contrôle</h4>
 
-<!-- Filtres, tri et pagination pour la liste des équipements déjà ajoutés -->
+<!-- Sélecteur de limite (pagination) pour la liste des lignes -->
 <form method="get" class="mb-3">
     <input type="hidden" name="section" value="lignes">
     <div class="row g-3">
-        <!-- Ligne 1 : filtres -->
-        <div class="col-md-3">
-            <label for="lignes_statut" class="form-label">Statut de contrôle</label>
-            <select name="lignes_statut" id="lignes_statut" class="form-select">
-                <option value="">Tous les statuts</option>
-                <option value="a_controler" {% if lignes_filtres.statut == 'a_controler' %}selected{% endif %}>À contrôler</option>
-                <option value="controle_ok" {% if lignes_filtres.statut == 'controle_ok' %}selected{% endif %}>OK</option>
-                <option value="controle_ko" {% if lignes_filtres.statut == 'controle_ko' %}selected{% endif %}>KO</option>
-                <option value="hors_service" {% if lignes_filtres.statut == 'hors_service' %}selected{% endif %}>Hors service</option>
-            </select>
-        </div>
-        <div class="col-md-3">
-            <label for="lignes_search" class="form-label">Recherche (réf. ou nom)</label>
-            <input type="text" name="lignes_search" id="lignes_search" class="form-control" value="{{ lignes_filtres.search|default('') }}" placeholder="Rechercher...">
-        </div>
-    </div>
-    <!-- Ligne 2 : tri et limite -->
-    <div class="row g-3 mt-2">
-        <div class="col-md-2">
-            <label for="lignes_order_by" class="form-label">Trier par</label>
-            <select name="lignes_order_by" id="lignes_order_by" class="form-select">
-                <option value="reference" {% if lignes_filtres.order_by == 'reference' %}selected{% endif %}>Référence</option>
-                <option value="statut" {% if lignes_filtres.order_by == 'statut' %}selected{% endif %}>Statut</option>
-                <option value="date_controle" {% if lignes_filtres.order_by == 'date_controle' %}selected{% endif %}>Date contrôle</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <label for="lignes_order_dir" class="form-label">Ordre</label>
-            <select name="lignes_order_dir" id="lignes_order_dir" class="form-select">
-                <option value="asc" {% if lignes_filtres.order_dir == 'asc' %}selected{% endif %}>Croissant</option>
-                <option value="desc" {% if lignes_filtres.order_dir == 'desc' %}selected{% endif %}>Décroissant</option>
-            </select>
-        </div>
-        {% if lignes_pagination.total > 5 %}
         <div class="col-md-2">
             <label for="lignes_limit" class="form-label">Lignes par page</label>
             <select name="lignes_limit" id="lignes_limit" class="form-select" onchange="this.form.submit()">
@@ -255,10 +239,6 @@
                 <option value="50" {% if lignes_filtres.limit == 50 %}selected{% endif %}>50</option>
                 <option value="100" {% if lignes_filtres.limit == 100 %}selected{% endif %}>100</option>
             </select>
-        </div>
-        {% endif %}
-        <div class="col-md-2 d-flex align-items-end">
-            <button type="submit" class="btn btn-secondary w-100">Appliquer</button>
         </div>
     </div>
 </form>
