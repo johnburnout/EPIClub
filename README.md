@@ -8,8 +8,8 @@ EpiClub est une application de gestion et de journalisation des contrôles des E
 
 ## Prérequis
 
-* php >= 7.4
-* mySQL >= 5.4
+* php >= 8.3
+* mySQL >= 5.7
 * ext-gd
 
 ## Installation
