@@ -3,7 +3,7 @@
     "description": "Gestionnaire d'Equipements de Protection Individuelle (EPI)",
     "license": "LGPL-3.0-or-later",
     "require": {
-        "php": ">=7.4",
+        "php": ">=8.3",
         "ext-gd": "*",
         "symfony/http-foundation": "^7.3",
         "twig/twig": "^3.21",
