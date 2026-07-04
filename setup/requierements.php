@@ -9,7 +9,7 @@ return [
         'zip'
     ],
     'dbms' => [
-        'mysql' => '5.3',
+        'mysql' => '5.7',
         'mariadb' => '10.5'
     ]
 ];
