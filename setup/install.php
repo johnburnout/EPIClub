@@ -7,6 +7,13 @@ if (file_exists(__DIR__ . '/../.env.local.php')) {
 }
 $request = Request::createFromGlobals();
 
-$step = $_GET['step'] ?? 1;
+$step = $_GET['step'] ?? '1';
+
+// Liste des étapes autorisées
+$allowedSteps = ['1', 'dbms', 'admin', 'smtp', 'club', 'final'];
+
+if (!in_array($step, $allowedSteps)) {
+    $step = '1';
+}
 
 require __DIR__ . "/steps/step_$step.php";

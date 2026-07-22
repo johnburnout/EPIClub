@@ -44,6 +44,7 @@ $routes->add('acquisition_list', new Route('/admin/acquisitions', ['_controller'
 $routes->add('acquisition_create', new Route('/admin/acquisitions/nouvelle', ['_controller' => 'Epiclub\\Controller\\AcquisitionController', 'action' => 'create']));
 $routes->add('acquisition_edit', new Route('/admin/acquisitions/acquisition_modification-{id}', ['_controller' => 'Epiclub\\Controller\\AcquisitionController', 'action' => 'update']));
 $routes->add('acquisition_show', new Route('/admin/acquisitions/acquisition-{id}', ['_controller' => 'Epiclub\\Controller\\AcquisitionController', 'action' => 'show']));
+$routes->add('acquisition_valider', new Route('/admin/acquisitions/valider/{id}', ['_controller' => 'Epiclub\\Controller\\AcquisitionController', 'action' => 'valider']));
 $routes->add('acquisition_ligne_edit', new Route('/admin/acquisitions/ligne_modification-{id}', ['_controller' => 'Epiclub\\Controller\\AcquisitionLineController', 'action' => 'modifyLine']));
 $routes->add('acquisition_ligne_delete', new Route('/admin/acquisitions/ligne_supprimer-{id}', ['_controller' => 'Epiclub\\Controller\\AcquisitionLineController', 'action' => 'deleteLine']));
 

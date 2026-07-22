@@ -65,14 +65,18 @@ class UtilisateurManager extends AbstractManager
 
     private function _insert(array $utilisateur)
     {
-        // S'assurer que last_activity existe
-        if (!isset($utilisateur['last_activity'])) {
-            $utilisateur['last_activity'] = null;
-        }
+        // Définir les valeurs par défaut pour les champs optionnels
+        $utilisateur['controle_en_cours_id'] = $utilisateur['controle_en_cours_id'] ?? null;
+        $utilisateur['last_activity'] = $utilisateur['last_activity'] ?? null;
+        
+        // Ne garder que les champs autorisés
+        $allowedFields = ['nom', 'prenom', 'username', 'email', 'password', 'role', 'date_creation', 'derniere_connexion', 'controle_en_cours_id', 'last_activity'];
+        $filtered = array_intersect_key($utilisateur, array_flip($allowedFields));
+        
         $sql = "INSERT INTO utilisateur (nom, prenom, username, email, password, role, date_creation, derniere_connexion, controle_en_cours_id, last_activity) 
-                VALUES (:nom, :prenom, :username, :email, :password, :role, :date_creation, :derniere_connexion, :controle_en_cours_id, :last_activity)";
+        VALUES (:nom, :prenom, :username, :email, :password, :role, :date_creation, :derniere_connexion, :controle_en_cours_id, :last_activity)";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute($utilisateur);
+        return $stmt->execute($filtered);
     }
 
     private function _update(array $utilisateur)

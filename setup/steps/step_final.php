@@ -1,24 +1,13 @@
-<!DOCTYPE html>
-<html lang="fr">
+<?php require __DIR__ . '/../includes/header.php'; ?>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Epiclub</title>
-    <link rel="shortcut icon" href="/assets/img/favicon.ico" type="image/x-icon">
-    <link rel="stylesheet" type="text/css" href="/assets/css/cosmo.min.css">
-</head>
+<h1>Installation terminée</h1>
+<hr>
 
-<body>
-    <div class="container">
-        <h1>Epiclub | Nouvelle installation</h1>
-        <hr>
+<div class="alert alert-success">
+    <p>L'application est installée avec succès !</p>
+    <p>Avant de continuer, veuillez supprimer le dossier <strong>setup</strong> de votre serveur.</p>
+</div>
 
-        <p>
-            L'application est installée! <br>
-            Avant de continuer, veuillez supprimer le dossier setup de votre serveur.
-        </p>
-    </div>
-</body>
+<p><a href="/" class="btn btn-primary">Accéder au site</a></p>
 
-</html>
+<?php require __DIR__ . '/../includes/footer.php'; ?>

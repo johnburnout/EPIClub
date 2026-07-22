@@ -55,7 +55,7 @@ class AcquisitionProcess
     {
         $acquisitionLigneManager = new AcquisitionLigneManager();
         $acquisitionManager = new AcquisitionManager();
-        $categorieManager = new CategorieManager(); // utile pour récupérer est_epi si besoin
+        $categorieManager = new CategorieManager();
         
         if ($ligne = $acquisitionLigneManager->findId($ligne_id)) {
             if ($ligne['equipements_generes'] === 1) {
@@ -66,14 +66,12 @@ class AcquisitionProcess
             $annee = date('Y', strtotime($acquisition['facture_date']));
             $equipementManager = new EquipementManager();
             
-            // Récupération de la catégorie pour éventuellement récupérer est_epi
             $categorie = $categorieManager->findId($ligne['categorie_id']);
-            $est_epi = $categorie ? $categorie['est_epi'] : 1; // par défaut EPI
+            $est_epi = $categorie ? $categorie['est_epi'] : 1;
             
             $regrouper_en_lot = isset($ligne['regrouper_en_lot']) && $ligne['regrouper_en_lot'] == 1;
             
             if ($regrouper_en_lot) {
-                // 1 seul équipement avec le nombre total
                 $code = $annee . '-' . str_pad($ligne['acquisition_id'], 3, '0', STR_PAD_LEFT) . '-' .
                 str_pad($ligne['id'], 3, '0', STR_PAD_LEFT) . '-LOT';
                 while ($equipementManager->codeExists($code)) {
@@ -97,16 +95,13 @@ class AcquisitionProcess
                 ];
                 $equipementManager->save($new_equipement);
             } else {
-                // Création individuelle : un équipement par unité
                 for ($i = 1; $i <= $ligne['nombre']; $i++) {
-                    // Code unique (inchangé)
                     $code = $annee . '-' . str_pad($ligne['acquisition_id'], 3, '0', STR_PAD_LEFT) . '-' .
                     str_pad($ligne['id'], 3, '0', STR_PAD_LEFT) . '-' . str_pad($i, 3, '0', STR_PAD_LEFT);
                     while ($equipementManager->codeExists($code)) {
                         $code = $code . '-' . rand(10, 99);
                     }
                     
-                    // ✅ Référence unique : référence de base + "-" + numéro d'ordre
                     $reference = $ligne['reference'] . '-' . $i;
                     
                     $new_equipement = [
@@ -129,7 +124,6 @@ class AcquisitionProcess
                 }
             }
             
-            // Marquer la ligne comme générée
             $ligne['equipements_generes'] = 1;
             $acquisitionLigneManager->save($ligne);
             return true;
@@ -154,13 +148,11 @@ class AcquisitionProcess
             $this->create_equipement_process($ligne['id']);
         }
         
-        // ✅ MISE À JOUR DE TOUTES LES LIGNES
         foreach ($lignesNonGenerees as $ligne) {
             $ligne['equipements_generes'] = 1;
             $acquisitionLigneManager->save($ligne);
         }
         
-        // ✅ MISE À JOUR DE est_validee
         $acquisitionManager = new AcquisitionManager();
         $acquisition = $acquisitionManager->findId($acquisitionId);
         if ($acquisition) {

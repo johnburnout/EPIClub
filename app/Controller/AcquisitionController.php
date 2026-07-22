@@ -160,4 +160,40 @@ class AcquisitionController extends AbstractController
             'fournisseurs' => $fournisseurManager->findAll()
         ]);
     }
+
+    /**
+    * Valider une acquisition et générer les équipements
+    */
+    public function valider(Request $request)
+    {
+        $this->deniAccessUnlessGranted('ROLE_ADMIN');
+        
+        $id = $request->get('id');
+        $acquisitionManager = new AcquisitionManager();
+        $acquisition = $acquisitionManager->findId($id);
+        
+        if (!$acquisition) {
+            $this->session->getFlashBag()->add('error', 'Acquisition non trouvée.');
+            return $this->redirectTo('/admin/acquisitions');
+        }
+        
+        if ($acquisition['est_validee']) {
+            $this->session->getFlashBag()->add('error', 'Cette acquisition est déjà validée.');
+            return $this->redirectTo("/admin/acquisitions/acquisition-{$id}");
+        }
+        
+        try {
+            $acquisitionProcess = new AcquisitionProcess();
+            $acquisitionProcess->validerAcquisition($id);
+            
+            $acquisition['est_validee'] = 1;
+            $acquisitionManager->save($acquisition);
+            
+            $this->session->getFlashBag()->add('success', '✅ Acquisition validée avec succès ! Les équipements ont été générés.');
+        } catch (\Exception $e) {
+            $this->session->getFlashBag()->add('error', 'Erreur lors de la validation : ' . $e->getMessage());
+        }
+        
+        return $this->redirectTo("/admin/acquisitions/acquisition-{$id}");
+    }
 }

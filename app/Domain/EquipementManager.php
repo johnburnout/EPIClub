@@ -89,25 +89,43 @@ class EquipementManager extends AbstractManager
 
     private function _insert(array $equipement)
     {
+        $equipement['remarques'] = $equipement['remarques'] ?? null;
+        $equipement['date_dernier_controle'] = $equipement['date_dernier_controle'] ?? null;
+        $equipement['controle_en_cours'] = $equipement['controle_en_cours'] ?? 0;
+        $equipement['emplacement_id'] = $equipement['emplacement_id'] ?? null;
+        $equipement['date_mise_en_service'] = $equipement['date_mise_en_service'] ?? null;
+        $equipement['date_fin_utilisation'] = $equipement['date_fin_utilisation'] ?? null;
+        $equipement['nombre'] = $equipement['nombre'] ?? 1;
+        $equipement['photo'] = $equipement['photo'] ?? null;
+        $equipement['est_epi'] = $equipement['est_epi'] ?? 1;
+        
         $allowedFields = [
             'acquisition_id', 'categorie_id', 'reference', 'libelle', 'code', 
             'statut', 'remarques', 'date_dernier_controle', 'controle_en_cours', 
             'emplacement_id', 'date_mise_en_service', 'date_fin_utilisation',
-            'nombre',
-            'photo'  // Ajout pour la gestion de la photo
+            'nombre', 'photo', 'est_epi'
         ];
-        $filteredEquipement = array_intersect_key($equipement, array_flip($allowedFields));
+        
+        $filtered = array_intersect_key($equipement, array_flip($allowedFields));
         
         $sql = "INSERT INTO club_equipement 
-        (acquisition_id, categorie_id, reference, libelle, code, statut, remarques, date_dernier_controle, controle_en_cours, emplacement_id, date_mise_en_service, date_fin_utilisation, nombre, photo)
+        (acquisition_id, categorie_id, reference, libelle, code, statut, remarques, 
+            date_dernier_controle, controle_en_cours, emplacement_id, 
+            date_mise_en_service, date_fin_utilisation, nombre, photo, est_epi)
         VALUES 
-        (:acquisition_id, :categorie_id, :reference, :libelle, :code, :statut, :remarques, :date_dernier_controle, :controle_en_cours, :emplacement_id, :date_mise_en_service, :date_fin_utilisation, :nombre, :photo)";
+        (:acquisition_id, :categorie_id, :reference, :libelle, :code, :statut, :remarques, 
+            :date_dernier_controle, :controle_en_cours, :emplacement_id, 
+            :date_mise_en_service, :date_fin_utilisation, :nombre, :photo, :est_epi)";
+        
         $stmt = $this->db->prepare($sql);
-        $result = $stmt->execute($filteredEquipement);
-        if (!$result) {
-            var_dump('❌ Erreur SQL :', $stmt->errorInfo());
+        
+        foreach ($allowedFields as $field) {
+            if (!array_key_exists($field, $filtered)) {
+                $filtered[$field] = null;
+            }
         }
-        return $result;
+        
+        return $stmt->execute($filtered);
     }
     
     private function _update(array $equipement)
@@ -116,21 +134,24 @@ class EquipementManager extends AbstractManager
             'acquisition_id', 'categorie_id', 'reference', 'libelle', 'code', 
             'statut', 'remarques', 'date_dernier_controle', 'controle_en_cours', 
             'emplacement_id', 'id', 'date_mise_en_service', 'date_fin_utilisation',
-            'nombre',
-            'photo'  // Ajout pour la gestion de la photo
+            'nombre', 'photo', 'est_epi'
         ];
-        $filteredEquipement = array_intersect_key($equipement, array_flip($allowedFields));
+        $filtered = array_intersect_key($equipement, array_flip($allowedFields));
         
         $sql = "UPDATE club_equipement 
-        SET acquisition_id=:acquisition_id, categorie_id=:categorie_id, reference=:reference, libelle=:libelle, code=:code, 
-        statut=:statut, remarques=:remarques, date_dernier_controle=:date_dernier_controle, controle_en_cours=:controle_en_cours,
-        emplacement_id=:emplacement_id,
-        date_mise_en_service=:date_mise_en_service,
-        date_fin_utilisation=:date_fin_utilisation,
-        nombre=:nombre,
-        photo=:photo
-        WHERE id=:id";
+                SET acquisition_id=:acquisition_id, categorie_id=:categorie_id, 
+                    reference=:reference, libelle=:libelle, code=:code, 
+                    statut=:statut, remarques=:remarques, 
+                    date_dernier_controle=:date_dernier_controle, 
+                    controle_en_cours=:controle_en_cours,
+                    emplacement_id=:emplacement_id,
+                    date_mise_en_service=:date_mise_en_service,
+                    date_fin_utilisation=:date_fin_utilisation,
+                    nombre=:nombre,
+                    photo=:photo,
+                    est_epi=:est_epi
+                WHERE id=:id";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute($filteredEquipement);
+        return $stmt->execute($filtered);
     }
 }
