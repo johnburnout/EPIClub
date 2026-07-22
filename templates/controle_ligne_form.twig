@@ -6,6 +6,15 @@
 
     <p><strong>Équipement :</strong> {{ ligne.reference }} - {{ ligne.libelle }}</p>
 
+    {# ⬇️ AFFICHAGE DE LA PHOTO #}
+    {% if ligne.photo is defined and ligne.photo is not empty %}
+        <div class="mb-3">
+            <img src="{{ ligne.photo }}" alt="Photo de l'équipement" style="max-width: 100px; max-height: 100px;" class="img-thumbnail">
+        </div>
+    {% else %}
+        <p class="text-muted small">Aucune photo disponible</p>
+    {% endif %}
+
     <form method="post">
         <div class="mb-3">
             <label for="statut" class="form-label">Statut</label>

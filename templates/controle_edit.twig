@@ -94,7 +94,7 @@
                     <option value="non" {% if filtres.en_service == 'non' %}selected{% endif %}>Hors service</option>
                 </select>
             </div>
-            <!-- ⬇️ FILTRE : Dernier contrôle -->
+            <!-- FILTRE : Dernier contrôle -->
             <div class="col-md-2">
                 <label for="dernier_controle" class="form-label">Dernier contrôle</label>
                 <select name="dernier_controle" id="dernier_controle" class="form-select">
@@ -147,6 +147,7 @@
             <tr>
                 <th>Référence</th>
                 <th>Nom</th>
+                <th>Photo</th>                <!-- ⬅️ NOUVEAU -->
                 <th>Catégorie</th>
                 <th>EPI</th>
                 <th>Emplacement</th>
@@ -159,6 +160,13 @@
             <tr>
                 <td>{{ equipement.reference }}</td>
                 <td>{{ equipement.libelle }}</td>
+                <td>
+                    {% if equipement.photo %}
+                        <img src="{{ equipement.photo }}" alt="Photo" style="max-width: 50px; max-height: 50px;" class="img-thumbnail">
+                    {% else %}
+                        <span class="text-muted">—</span>
+                    {% endif %}
+                </td>
                 <td>{{ equipement.categorie.libelle|default('N/A') }}</td>
                 <td>
                     {% if equipement.categorie and equipement.categorie.est_epi %}
@@ -248,6 +256,7 @@
     <thead>
         <tr>
             <th>Équipement</th>
+            <th>Photo</th>                <!-- ⬅️ NOUVEAU -->
             <th>Statut</th>
             <th>Remarque</th>
             <th>Date contrôle</th>
@@ -258,6 +267,13 @@
         {% for ligne in lignes %}
         <tr>
             <td>{{ ligne.reference }} - {{ ligne.libelle }}</td>
+            <td>
+                {% if ligne.photo %}
+                    <img src="{{ ligne.photo }}" alt="Photo" style="max-width: 50px; max-height: 50px;" class="img-thumbnail">
+                {% else %}
+                    <span class="text-muted">—</span>
+                {% endif %}
+            </td>
             <td>
                 {% if ligne.statut == 'a_controler' %}
                 <span class="badge bg-secondary">À contrôler</span>

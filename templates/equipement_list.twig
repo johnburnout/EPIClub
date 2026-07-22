@@ -50,7 +50,7 @@
                     <option value="non" {% if filtres.en_service == 'non' %}selected{% endif %}>Hors service</option>
                 </select>
             </div>
-            <!-- ⬇️ NOUVEAU FILTRE : Dernier contrôle -->
+            <!-- Filtre Dernier contrôle -->
             <div class="col-md-2">
                 <label for="dernier_controle" class="form-label">Dernier contrôle</label>
                 <select name="dernier_controle" id="dernier_controle" class="form-select">
@@ -68,7 +68,7 @@
                 <select name="order_by" id="order_by" class="form-select">
                     <option value="categorie" {% if filtres.order_by == 'categorie' %}selected{% endif %}>Catégorie</option>
                     <option value="date_fin" {% if filtres.order_by == 'date_fin' %}selected{% endif %}>Date de fin</option>
-                    <option value="date_dernier_controle" {% if filtres.order_by == 'date_dernier_controle' %}selected{% endif %}>Dernier contrôle</option> <!-- ⬅️ NOUVEAU -->
+                    <option value="date_dernier_controle" {% if filtres.order_by == 'date_dernier_controle' %}selected{% endif %}>Dernier contrôle</option>
                 </select>
             </div>
             
@@ -107,6 +107,7 @@
 			<tr>
 				<th>Référence</th>
 				<th>Nom</th>
+				<th>Photo</th>                <!-- ⬅️ NOUVEAU -->
 				<th>Catégorie</th>
 				<th>EPI</th>
 				<th>Emplacement</th>
@@ -122,6 +123,13 @@
                 <tr>
                     <td>{{ equipement.reference }}</td>
                     <td>{{ equipement.libelle }}</td>
+                    <td>
+                        {% if equipement.photo %}
+                            <img src="{{ equipement.photo }}" alt="Photo" style="max-width: 50px; max-height: 50px;" class="img-thumbnail">
+                        {% else %}
+                            <span class="text-muted">—</span>
+                        {% endif %}
+                    </td>
                     <td>{{ equipement.categorie.libelle|default('N/A') }}</td>
                     <td>
                         {% if equipement.categorie and equipement.categorie.est_epi %}

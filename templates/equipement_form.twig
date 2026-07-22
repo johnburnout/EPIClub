@@ -5,7 +5,9 @@
 	<hr>
 	<a href="/tableau_de_bord" class="btn btn-primary">Tableau de bord</a>
 	<hr>
-	<form method="post">
+
+	{# ⬇️ MODIFICATION : ajout de enctype #}
+	<form method="post" enctype="multipart/form-data">
 		
 		<!-- Catégorie (lecture seule) -->
 		<div class="mb-3">
@@ -120,6 +122,21 @@
 			<textarea class="form-control" name="remarques" id="remarques" rows="3">{{ equipement.remarques }}</textarea>
 		</div>
 
+		{# ⬇️ NOUVEAU CHAMP : PHOTO #}
+		<div class="mb-3">
+			<label for="photo">Photo de l'équipement</label>
+			<input type="file" class="form-control" name="photo" id="photo" accept="image/*">
+
+			{# Afficher un aperçu si une photo existe déjà #}
+			{% if equipement.photo is defined and equipement.photo is not empty %}
+				<div class="mt-2">
+					<img src="{{ equipement.photo }}" alt="Photo actuelle" style="max-width: 200px; max-height: 200px;" class="img-thumbnail">
+					<p class="text-muted small mt-1">Photo actuelle (remplacée si vous en téléchargez une nouvelle).</p>
+				</div>
+			{% endif %}
+		</div>
+		{# ⬆️ FIN DU CHAMP PHOTO #}
+
 		<button type="submit" class="btn btn-primary">Enregistrer</button>
 		<a href="/equipements" class="btn btn-secondary">Annuler</a>
 	</form>
@@ -164,5 +181,4 @@
             });
         });
 	</script>
-
 {% endblock %}

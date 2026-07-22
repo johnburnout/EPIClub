@@ -12,6 +12,8 @@ use Symfony\Component\HttpFoundation\Request;
 
 class EquipementController extends AbstractController
 {
+    private const UPLOAD_DIR = '/images/equipements/'; // ⬅️ NOUVEAU
+
     public function list(Request $request)
     {
         $equipementManager = new EquipementManager();
@@ -23,7 +25,7 @@ class EquipementController extends AbstractController
         $filter_epi = $request->query->get('epi');
         $en_service = $request->query->get('en_service');
         $emplacement_id = $request->query->get('emplacement');
-        $dernier_controle = $request->query->get('dernier_controle'); // ⬅️ NOUVEAU
+        $dernier_controle = $request->query->get('dernier_controle');
         $order_by = $request->query->get('order_by', 'categorie');
         $order_dir = $request->query->get('order_dir', 'asc');
         $page = (int) $request->query->get('page', 1);
@@ -86,16 +88,14 @@ class EquipementController extends AbstractController
             }
         }
         
-        // ⬇️ FILTRE : Dernier contrôle (version inversée)
+        // Filtre dernier contrôle (inversé)
         if ($dernier_controle !== null) {
             $oneYearAgo = date('Y-m-d', strtotime('-1 year'));
             if ($dernier_controle === 'plus_1_an') {
-                // ✅ "Plus d'un an" → contrôle récent (moins d'un an)
                 $equipements = array_filter($equipements, function($e) use ($oneYearAgo) {
                     return isset($e['date_dernier_controle']) && $e['date_dernier_controle'] >= $oneYearAgo;
                 });
             } elseif ($dernier_controle === 'moins_1_an') {
-                // ✅ "Moins d'un an" → contrôle ancien (plus d'un an ou NULL)
                 $equipements = array_filter($equipements, function($e) use ($oneYearAgo) {
                     return !isset($e['date_dernier_controle']) || $e['date_dernier_controle'] < $oneYearAgo;
                 });
@@ -200,10 +200,13 @@ class EquipementController extends AbstractController
         ]);
     }
 
+    // ============================================================
+    // MÉTHODE edit MODIFIÉE (gestion de l'upload et redimensionnement)
+    // ============================================================
     public function edit(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
-
+        
         $categorieManager = new CategorieManager();
         $emplacementManager = new EmplacementManager();
         $equipementManager = new EquipementManager();
@@ -228,18 +231,41 @@ class EquipementController extends AbstractController
             $date_fin_utilisation = $request->request->get('date_fin_utilisation');
             if ($date_fin_utilisation === '') $date_fin_utilisation = null;
 
+            // ============================================
+            // GESTION DE LA PHOTO UPLOADÉE
+            // ============================================
+            $photoPath = null;
+            if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
+                try {
+                    $photoPath = $this->resizeAndSaveImage($_FILES['photo']);
+                } catch (\Exception $e) {
+                    $form_errors[] = 'Erreur lors du traitement de l\'image : ' . $e->getMessage();
+                }
+            }
+
             if (empty($form_errors)) {
-                $equipement = array_merge(
-                    $equipement,
-                    [
-                        'statut_id' => $request->request->get('statut_id'),
-                        'etat_usure_id' => $request->request->get('etat_usure_id'),
-                        'emplacement_id' => $emplacement_id,
-                        'remarques' => $request->request->get('remarques'),
-                        'date_mise_en_service' => $date_mise_en_service,
-                        'date_fin_utilisation' => $date_fin_utilisation,
-                    ]
-                );
+                // Données de base
+                $equipementData = [
+                    'statut_id' => $request->request->get('statut_id'),
+                    'etat_usure_id' => $request->request->get('etat_usure_id'),
+                    'emplacement_id' => $emplacement_id,
+                    'remarques' => $request->request->get('remarques'),
+                    'date_mise_en_service' => $date_mise_en_service,
+                    'date_fin_utilisation' => $date_fin_utilisation,
+                ];
+
+                // Si une nouvelle photo a été uploadée
+                if ($photoPath !== null) {
+                    // Supprimer l'ancienne photo si on est en mise à jour
+                    if (!empty($equipement['photo']) && file_exists($_SERVER['DOCUMENT_ROOT'] . $equipement['photo'])) {
+                        unlink($_SERVER['DOCUMENT_ROOT'] . $equipement['photo']);
+                    }
+                    $equipementData['photo'] = $photoPath;
+                }
+
+                // Fusionner avec les données existantes (pour conserver l'id, etc.)
+                $equipement = array_merge($equipement, $equipementData);
+
                 $equipementManager->save($equipement);
                 return $this->redirectTo("/equipements");
             }
@@ -261,5 +287,79 @@ class EquipementController extends AbstractController
     public function delete(Request $request)
     {
         throw new \Exception("Error Processing Request", 1);
+    }
+
+    // ============================================================
+    // NOUVELLE MÉTHODE : redimensionnement et sauvegarde de l'image
+    // ============================================================
+    /**
+     * Redimensionne l'image uploadée à 1000x1000 max (conservation des proportions)
+     * et la sauvegarde en WebP (ou JPEG en fallback).
+     *
+     * @param array $file Le fichier issu de $_FILES
+     * @return string Le chemin relatif (ex: /images/equipements/abc123.webp)
+     * @throws \Exception Si l'image est invalide ou l'écriture échoue
+     */
+    private function resizeAndSaveImage(array $file): string
+    {
+        // 1. Valider le type MIME
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+        if (!in_array($mimeType, $allowedTypes, true)) {
+            throw new \Exception("Type de fichier non autorisé. Seuls JPEG, PNG, WebP et GIF sont acceptés.");
+        }
+
+        // 2. Créer une ressource depuis le fichier
+        $image = imagecreatefromstring(file_get_contents($file['tmp_name']));
+        if ($image === false) {
+            throw new \Exception("Impossible de décoder l'image. Fichier corrompu ou format non supporté.");
+        }
+
+        // 3. Récupérer les dimensions originales
+        $originalWidth = imagesx($image);
+        $originalHeight = imagesy($image);
+
+        // 4. Calculer les nouvelles dimensions (max 1000, conservation ratio)
+        $maxDimension = 1000;
+        $ratio = min($maxDimension / $originalWidth, $maxDimension / $originalHeight, 1);
+        $newWidth = (int) ($originalWidth * $ratio);
+        $newHeight = (int) ($originalHeight * $ratio);
+
+        // 5. Créer l'image redimensionnée
+        $resizedImage = imagecreatetruecolor($newWidth, $newHeight);
+        // Conserver la transparence pour PNG/GIF
+        if ($mimeType === 'image/png' || $mimeType === 'image/gif') {
+            imagealphablending($resizedImage, false);
+            imagesavealpha($resizedImage, true);
+            $transparent = imagecolorallocatealpha($resizedImage, 255, 255, 255, 127);
+            imagefilledrectangle($resizedImage, 0, 0, $newWidth, $newHeight, $transparent);
+        }
+        imagecopyresampled($resizedImage, $image, 0, 0, 0, 0, $newWidth, $newHeight, $originalWidth, $originalHeight);
+
+        // 6. Sauvegarder
+        $uploadDir = $_SERVER['DOCUMENT_ROOT'] . self::UPLOAD_DIR;
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        $filename = uniqid() . '.webp';
+        $filepath = $uploadDir . $filename;
+
+        // Sauvegarde en WebP (qualité 80) ou fallback JPEG
+        $saved = imagewebp($resizedImage, $filepath, 80);
+        if (!$saved) {
+            // Fallback sur JPEG
+            $filename = uniqid() . '.jpg';
+            $filepath = $uploadDir . $filename;
+            imagejpeg($resizedImage, $filepath, 85);
+        }
+
+        // 7. Libérer la mémoire
+        imagedestroy($image);
+        imagedestroy($resizedImage);
+
+        return self::UPLOAD_DIR . $filename;
     }
 }

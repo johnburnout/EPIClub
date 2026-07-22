@@ -12,7 +12,7 @@ if (is_dir(__DIR__ . '/../setup')) {
 }
 
 $_ENV = require __DIR__ . '/../.env.local.php';
-require __DIR__ . '/ressources/routes.php';
+require __DIR__ . '/../ressources/routes.php';  // ⬅️ MODIFICATION ICI
 
 if (isset($_ENV['APP_ENV']) && $_ENV['APP_ENV'] === 'dev') {
     error_reporting(E_ALL);

@@ -131,9 +131,13 @@ CREATE TABLE IF NOT EXISTS `club_equipement` (
   `date_fin_utilisation` DATE NULL,
   `nombre` int(11) NOT NULL DEFAULT 1,
   `est_epi` tinyint(1) NOT NULL DEFAULT 1,
+  `photo` VARCHAR(255) DEFAULT NULL,   -- ⬅️ AJOUTER CETTE LIGNE
   PRIMARY KEY (`id`),
   UNIQUE KEY `code` (`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+-- =============================================
+-- 8. CLUB_EQUIPEMENT
+-- =============================================
 
 -- =============================================
 -- 9. CONTROLE (après utilisateur)

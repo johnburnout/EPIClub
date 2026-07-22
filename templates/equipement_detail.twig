@@ -91,6 +91,17 @@
 								<span class="text-muted">Aucune remarque</span>
 							{% endif %}
 						</p>
+
+						{# ⬇️ NOUVEAU : Affichage de la photo #}
+						{% if equipement.photo is defined and equipement.photo is not empty %}
+							<div class="mt-2">
+								<strong>Photo :</strong>
+								<div>
+									<img src="{{ equipement.photo }}" alt="Photo de l'équipement" style="max-width: 300px; max-height: 300px;" class="img-thumbnail">
+								</div>
+							</div>
+						{% endif %}
+						{# ⬆️ FIN NOUVEAU #}
 					</div>
 				</div>
 			</div>

@@ -230,6 +230,22 @@ class ControleController extends AbstractController
         $ligneManager = new ControleLigneManager();
         $allLignes = $ligneManager->findByControle($id);
         
+        // ⬇️ ENRICHISSEMENT : ajout de reference, libelle, photo
+        $equipementManager = new EquipementManager();
+        foreach ($allLignes as &$ligne) {
+            $equipement = $equipementManager->findId($ligne['equipement_id']);
+            if ($equipement) {
+                $ligne['reference'] = $equipement['reference'] ?? '';
+                $ligne['libelle'] = $equipement['libelle'] ?? '';
+                $ligne['photo'] = $equipement['photo'] ?? null;
+            } else {
+                $ligne['reference'] = '';
+                $ligne['libelle'] = '';
+                $ligne['photo'] = null;
+            }
+        }
+        unset($ligne);
+        
         // Déchiffrement si clôturé (sur toutes les lignes)
         if ($readonly && $controle['statut'] === 'cloture') {
             $config = include __DIR__ . '/../../.env.local.php';
@@ -327,7 +343,7 @@ class ControleController extends AbstractController
         $filter_epi = $request->query->get('epi');
         $en_service = $request->query->get('en_service');
         $emplacement_id = $request->query->get('emplacement');
-        $dernier_controle = $request->query->get('dernier_controle'); // ⬅️ NOUVEAU
+        $dernier_controle = $request->query->get('dernier_controle');
         $order_by = $request->query->get('order_by', 'reference');
         $order_dir = $request->query->get('order_dir', 'asc');
         $page = (int) $request->query->get('page', 1);
@@ -338,7 +354,7 @@ class ControleController extends AbstractController
         if ($filter_epi === '') $filter_epi = null;
         if ($en_service === '') $en_service = null;
         if ($emplacement_id === '') $emplacement_id = null;
-        if ($dernier_controle === '') $dernier_controle = null; // ⬅️ NOUVEAU
+        if ($dernier_controle === '') $dernier_controle = null;
         if ($page < 1) $page = 1;
         if ($limit < 1) $limit = 10;
         
@@ -396,16 +412,14 @@ class ControleController extends AbstractController
             }
         }
         
-        // ⬇️ NOUVEAU FILTRE : Dernier contrôle (même logique que dans equipement_list)
+        // Filtre dernier contrôle (même logique que dans equipement_list)
         if ($dernier_controle !== null) {
             $oneYearAgo = date('Y-m-d', strtotime('-1 year'));
             if ($dernier_controle === 'plus_1_an') {
-                // "Plus d'un an" → contrôle récent (moins d'un an)
                 $equipementsDisponibles = array_filter($equipementsDisponibles, function($e) use ($oneYearAgo) {
                     return isset($e['date_dernier_controle']) && $e['date_dernier_controle'] >= $oneYearAgo;
                 });
             } elseif ($dernier_controle === 'moins_1_an') {
-                // "Moins d'un an" → contrôle ancien ou jamais contrôlé
                 $equipementsDisponibles = array_filter($equipementsDisponibles, function($e) use ($oneYearAgo) {
                     return !isset($e['date_dernier_controle']) || $e['date_dernier_controle'] < $oneYearAgo;
                 });
@@ -440,7 +454,7 @@ class ControleController extends AbstractController
             'epi' => $filter_epi,
             'en_service' => $en_service,
             'emplacement' => $emplacement_id,
-            'dernier_controle' => $dernier_controle, // ⬅️ AJOUT
+            'dernier_controle' => $dernier_controle,
             'order_by' => $order_by,
             'order_dir' => $order_dir,
             'limit' => $limit,
@@ -466,7 +480,7 @@ class ControleController extends AbstractController
                 'epi' => $filter_epi,
                 'en_service' => $en_service,
                 'emplacement_id' => $emplacement_id,
-                'dernier_controle' => $dernier_controle, // ⬅️ AJOUT
+                'dernier_controle' => $dernier_controle,
                 'order_by' => $order_by,
                 'order_dir' => $order_dir,
                 'page' => $page,
@@ -576,6 +590,19 @@ class ControleController extends AbstractController
         
         if (is_null($ligne['date_controle'])) {
             $ligne['date_controle'] = date('Y-m-d H:i:s');
+        }
+        
+        // ⬇️ Récupérer l'équipement pour afficher la photo dans le formulaire
+        $equipementManager = new EquipementManager();
+        $equipement = $equipementManager->findId($ligne['equipement_id']);
+        if ($equipement) {
+            $ligne['reference'] = $equipement['reference'] ?? '';
+            $ligne['libelle'] = $equipement['libelle'] ?? '';
+            $ligne['photo'] = $equipement['photo'] ?? null;
+        } else {
+            $ligne['reference'] = '';
+            $ligne['libelle'] = '';
+            $ligne['photo'] = null;
         }
         
         return $this->render('controle_ligne_form.twig', [

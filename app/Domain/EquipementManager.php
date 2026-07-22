@@ -93,14 +93,15 @@ class EquipementManager extends AbstractManager
             'acquisition_id', 'categorie_id', 'reference', 'libelle', 'code', 
             'statut', 'remarques', 'date_dernier_controle', 'controle_en_cours', 
             'emplacement_id', 'date_mise_en_service', 'date_fin_utilisation',
-            'nombre'  // ✅ AJOUTER
+            'nombre',
+            'photo'  // Ajout pour la gestion de la photo
         ];
         $filteredEquipement = array_intersect_key($equipement, array_flip($allowedFields));
         
         $sql = "INSERT INTO club_equipement 
-        (acquisition_id, categorie_id, reference, libelle, code, statut, remarques, date_dernier_controle, controle_en_cours, emplacement_id, date_mise_en_service, date_fin_utilisation, nombre)
+        (acquisition_id, categorie_id, reference, libelle, code, statut, remarques, date_dernier_controle, controle_en_cours, emplacement_id, date_mise_en_service, date_fin_utilisation, nombre, photo)
         VALUES 
-        (:acquisition_id, :categorie_id, :reference, :libelle, :code, :statut, :remarques, :date_dernier_controle, :controle_en_cours, :emplacement_id, :date_mise_en_service, :date_fin_utilisation, :nombre)";
+        (:acquisition_id, :categorie_id, :reference, :libelle, :code, :statut, :remarques, :date_dernier_controle, :controle_en_cours, :emplacement_id, :date_mise_en_service, :date_fin_utilisation, :nombre, :photo)";
         $stmt = $this->db->prepare($sql);
         $result = $stmt->execute($filteredEquipement);
         if (!$result) {
@@ -115,7 +116,8 @@ class EquipementManager extends AbstractManager
             'acquisition_id', 'categorie_id', 'reference', 'libelle', 'code', 
             'statut', 'remarques', 'date_dernier_controle', 'controle_en_cours', 
             'emplacement_id', 'id', 'date_mise_en_service', 'date_fin_utilisation',
-            'nombre'  // ✅ AJOUTER
+            'nombre',
+            'photo'  // Ajout pour la gestion de la photo
         ];
         $filteredEquipement = array_intersect_key($equipement, array_flip($allowedFields));
         
@@ -125,7 +127,8 @@ class EquipementManager extends AbstractManager
         emplacement_id=:emplacement_id,
         date_mise_en_service=:date_mise_en_service,
         date_fin_utilisation=:date_fin_utilisation,
-        nombre=:nombre
+        nombre=:nombre,
+        photo=:photo
         WHERE id=:id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($filteredEquipement);
