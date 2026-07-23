@@ -14,6 +14,7 @@
 				<th>Référence facture</th>
 				<th>Date</th>
 				<th>Statut</th>
+				<th>Facture</th>
 				<th>Actions</th>
 			</tr>
 		</thead>
@@ -29,6 +30,15 @@
 							<span class="badge bg-success">✅ Validée</span>
 						{% else %}
 							<span class="badge bg-warning">⏳ En attente</span>
+						{% endif %}
+					</td>
+					<td>
+						{% if acquisition.facture_document %}
+							<a href="/uploads/{{ acquisition.facture_document }}" target="_blank" class="btn btn-sm btn-outline-primary" title="Voir la facture">
+								📄
+							</a>
+						{% else %}
+							<span class="text-muted">—</span>
 						{% endif %}
 					</td>
 					<td>

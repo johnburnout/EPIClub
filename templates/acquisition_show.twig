@@ -87,7 +87,7 @@
 								<td>{{ ligne.reference }}</td>
 								<td>{{ ligne.designation }}</td>
 								<td>{{ ligne.categorie.libelle }}</td>
-								<td>                                 <!-- ✅ AJOUT -->
+								<td>
 									{% if ligne.categorie and ligne.categorie.est_epi %}
 									<span class="badge bg-success">EPI</span>
 									{% else %}
@@ -137,12 +137,19 @@
 		
 		<!-- BOUTON VALIDER -->
 		{% if not acquisition.est_validee and acquisition.lignes and acquisition.lignes|length > 0 %}
-		<form method="post" action="/admin/acquisitions/valider/{{ acquisition.id }}" style="display: inline;">
-			<button type="submit" name="action" value="valider" class="btn btn-success" 
-				onclick="return confirm('⚠️ Valider cette acquisition ? Les équipements seront générés définitivement et vous ne pourrez plus modifier les lignes.')">
-				✅ Valider l'acquisition
-			</button>
-		</form>
+			{% if acquisition.facture_document %}
+				<form method="post" action="/admin/acquisitions/valider/{{ acquisition.id }}" style="display: inline;">
+					<button type="submit" name="action" value="valider" class="btn btn-success" 
+						onclick="return confirm('⚠️ Valider cette acquisition ? Les équipements seront générés définitivement et vous ne pourrez plus modifier les lignes.')">
+						✅ Valider l'acquisition
+					</button>
+				</form>
+			{% else %}
+				<button class="btn btn-success" disabled title="Veuillez d'abord télécharger la facture">
+					✅ Valider l'acquisition
+				</button>
+				<span class="text-muted ms-2">📄 Facture requise avant validation</span>
+			{% endif %}
 		{% endif %}
 		
 		<!-- BOUTON MODIFIER -->
