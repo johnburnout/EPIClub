@@ -44,9 +44,30 @@
     </div>
 </div>
 
+{# Affichage des remarques générales si lecture seule et clôturé #}
+{% if readonly and controle.hash_remarques %}
+<div class="row mt-3">
+    <div class="col-md-12">
+        <strong>Remarques générales :</strong>
+        <p class="mb-0">{{ controle.hash_remarques }}</p>
+    </div>
+</div>
+{% endif %}
+
 <hr>
 
 {% if not readonly %}
+    {# Formulaire de saisie des remarques générales #}
+    <form method="post" class="mb-4">
+        <div class="mb-3">
+            <label for="remarques_generales" class="form-label">Remarques générales</label>
+            <textarea name="remarques_generales" id="remarques_generales" class="form-control" rows="3">{{ controle.hash_remarques ?? '' }}</textarea>
+            <small class="text-muted">Ces remarques seront affichées dans le journal du contrôle.</small>
+        </div>
+        <button type="submit" class="btn btn-primary">Enregistrer les remarques</button>
+    </form>
+    <hr>
+
     <h4>Ajouter des équipements</h4>
     <p>Liste des équipements disponibles (non encore ajoutés à ce contrôle)</p>
 
@@ -147,7 +168,7 @@
             <tr>
                 <th>Référence</th>
                 <th>Nom</th>
-                <th>Photo</th>                <!-- ⬅️ NOUVEAU -->
+                <th>Photo</th>
                 <th>Catégorie</th>
                 <th>EPI</th>
                 <th>Emplacement</th>
@@ -256,7 +277,7 @@
     <thead>
         <tr>
             <th>Équipement</th>
-            <th>Photo</th>                <!-- ⬅️ NOUVEAU -->
+            <th>Photo</th>
             <th>Statut</th>
             <th>Remarque</th>
             <th>Date contrôle</th>

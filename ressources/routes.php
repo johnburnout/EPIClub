@@ -19,7 +19,11 @@ $routes->add('reset_password', new Route('/regenerer_mot_de_passe', ['_controlle
 
 $routes->add('equipement_list', new Route('/equipements', ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'list']));
 $routes->add('equipement_show', new Route('/equipements/equipement-{id}', ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'show']));
-$routes->add('equipement_edit', new Route('/equipements/equipement_modification-{id}', ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'edit'])); // ✅ AJOUTER
+$routes->add('equipement_edit', new Route('/equipements/equipement_modification-{id}', ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'edit']));
+
+// JOURNAUX - NOUVEAU
+$routes->add('journal_list', new Route('/journaux', ['_controller' => 'Epiclub\\Controller\\JournalController', 'action' => 'index']));
+$routes->add('journal_show', new Route('/journaux/{id}', ['_controller' => 'Epiclub\\Controller\\JournalController', 'action' => 'voir']));
 
 // CONTROLES
 $routes->add('controle_list', new Route('/admin/controles', ['_controller' => 'Epiclub\\Controller\\ControleController', 'action' => 'list']));

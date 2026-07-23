@@ -1,0 +1,150 @@
+{# templates/journaux/index.twig #}
+
+{% extends "_layout.twig" %}
+
+{% block body %}
+	<h3>📋 Journaux de contrôle</h3>
+    <hr>
+
+    <!-- Filtres + Tri + Limite -->
+    <form method="get" class="mb-3">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label for="controleur" class="form-label">Contrôleur</label>
+                <select name="controleur" id="controleur" class="form-select">
+                    <option value="">Tous</option>
+                    {% for controleur in controleurs %}
+                    <option value="{{ controleur.id }}" {% if filtres.controleur_id == controleur.id %}selected{% endif %}>
+                        {{ controleur.prenom }} {{ controleur.nom }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <label for="annee" class="form-label">Année</label>
+                <select name="annee" id="annee" class="form-select">
+                    <option value="">Toutes</option>
+                    {% for annee in annees %}
+                    <option value="{{ annee }}" {% if filtres.annee == annee %}selected{% endif %}>
+                        {{ annee }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <label for="order_by" class="form-label">Trier par</label>
+                <select name="order_by" id="order_by" class="form-select">
+                    <option value="date_debut" {% if filtres.order_by == 'date_debut' %}selected{% endif %}>Date de début</option>
+                    <option value="date_fin" {% if filtres.order_by == 'date_fin' %}selected{% endif %}>Date de fin</option>
+                    <option value="controleur" {% if filtres.order_by == 'controleur' %}selected{% endif %}>Contrôleur</option>
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <label for="order_dir" class="form-label">Ordre</label>
+                <select name="order_dir" id="order_dir" class="form-select">
+                    <option value="asc" {% if filtres.order_dir == 'asc' %}selected{% endif %}>Croissant</option>
+                    <option value="desc" {% if filtres.order_dir == 'desc' %}selected{% endif %}>Décroissant</option>
+                </select>
+            </div>
+            
+            <div class="col-md-2">
+                <label for="limit" class="form-label">Lignes par page</label>
+                <select name="limit" id="limit" class="form-select" onchange="this.form.submit()">
+                    <option value="5" {% if filtres.limit == 5 %}selected{% endif %}>5</option>
+                    <option value="10" {% if filtres.limit == 10 %}selected{% endif %}>10</option>
+                    <option value="25" {% if filtres.limit == 25 %}selected{% endif %}>25</option>
+                    <option value="50" {% if filtres.limit == 50 %}selected{% endif %}>50</option>
+                    <option value="100" {% if filtres.limit == 100 %}selected{% endif %}>100</option>
+                </select>
+            </div>
+            
+            <div class="col-md-1 d-flex align-items-end">
+                <button type="submit" class="btn btn-secondary w-100">Filtrer</button>
+            </div>
+        </div>
+    </form>
+
+    <hr>
+
+    <table class="table table-striped">
+		<thead>
+			<tr>
+				<th>ID</th>
+				<th>Contrôleur</th>
+				<th>Date début</th>
+				<th>Date fin</th>
+				<th>Équipements</th>
+				<th>Remarques</th>
+				<th>Actions</th>
+			</tr>
+		</thead>
+        <tbody>
+            {% for controle in journaux %}
+                <tr>
+                    <td>#{{ controle.id }}</td>
+                    <td>{{ controle.controleur_prenom }} {{ controle.controleur_nom }}</td>
+                    <td>{{ controle.date_debut|date("d/m/Y H:i") }}</td>
+                    <td>
+                        {% if controle.date_fin %}
+                            {{ controle.date_fin|date("d/m/Y H:i") }}
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span class="badge bg-info">{{ controle.nb_equipements }}</span>
+                    </td>
+                    <td>
+                        {% if controle.hash_remarques %}
+                            <span class="badge bg-warning text-dark">Avec remarques</span>
+                        {% else %}
+                            <span class="text-muted">-</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <a href="/journaux/{{ controle.id }}" class="btn btn-sm btn-primary">Voir</a>
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="7" class="text-center text-muted py-4">
+                        <i>Aucun journal de contrôle disponible</i>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+	</table>
+
+    <!-- Pagination -->
+    {% if pagination.totalPages > 1 %}
+    <div class="row mt-3">
+        <div class="col-md-12">
+            <nav aria-label="Pagination">
+                <ul class="pagination">
+                    {% if pagination.hasPrevious %}
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.first }}">Premier</a></li>
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.previous }}">Précédent</a></li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">Premier</span></li>
+                    <li class="page-item disabled"><span class="page-link">Précédent</span></li>
+                    {% endif %}
+                    
+                    <li class="page-item disabled"><span class="page-link">Page {{ pagination.page }} sur {{ pagination.totalPages }}</span></li>
+                    
+                    {% if pagination.hasNext %}
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.next }}">Suivant</a></li>
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.last }}">Dernier</a></li>
+                    {% else %}
+                    <li class="page-item disabled"><span class="page-link">Suivant</span></li>
+                    <li class="page-item disabled"><span class="page-link">Dernier</span></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            <p class="text-muted">Affichage de {{ journaux|length }} journaux sur {{ pagination.total }} (page {{ pagination.page }}/{{ pagination.totalPages }})</p>
+        </div>
+    </div>
+    {% endif %}
+{% endblock %}

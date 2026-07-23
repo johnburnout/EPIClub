@@ -33,16 +33,14 @@ class ControleController extends AbstractController
             return true;
         }
         
-        // Sinon, est-il admin ? ✅ Utilisation de isGranted()
+        // Sinon, est-il admin ?
         if ($this->isGranted('ROLE_ADMIN')) {
-            // Vérifier que le contrôle est d'un jour antérieur
             $today = date('Y-m-d');
             $dateDebut = substr($controle['date_debut'], 0, 10);
             if ($dateDebut >= $today) {
                 return false;
             }
             
-            // 🔒 Vérifier si le propriétaire est en ligne
             if ($this->isUserOnline($controle['controleur_id'])) {
                 return false;
             }
@@ -61,7 +59,6 @@ class ControleController extends AbstractController
         $controleManager = new ControleManager();
         $allControles = $controleManager->findAll();
         
-        // Paramètres GET pour les filtres, tri et pagination
         $statut = $request->query->get('statut');
         $controleur_id = $request->query->get('controleur_id');
         $order_by = $request->query->get('order_by', 'date_debut');
@@ -69,34 +66,30 @@ class ControleController extends AbstractController
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 10);
         
-        // Nettoyage
         if ($statut === '') $statut = null;
         if ($controleur_id === '') $controleur_id = null;
         if ($page < 1) $page = 1;
         if ($limit < 1) $limit = 10;
         
-        // Filtrer par statut
         if ($statut !== null) {
             $allControles = array_filter($allControles, function($c) use ($statut) {
                 return $c['statut'] == $statut;
             });
         }
         
-        // Filtrer par contrôleur
         if ($controleur_id !== null) {
             $allControles = array_filter($allControles, function($c) use ($controleur_id) {
                 return $c['controleur_id'] == $controleur_id;
             });
         }
         
-        // Ajouter les informations de permission (comme avant)
         $today = date('Y-m-d');
         foreach ($allControles as &$controle) {
             $isOwner = ($controle['controleur_id'] == $user['id']);
             $isAdminEligible = $this->isGranted('ROLE_ADMIN')
-            && $controle['statut'] !== 'cloture'
-            && substr($controle['date_debut'], 0, 10) < $today
-            && !$this->isUserOnline($controle['controleur_id']);
+                && $controle['statut'] !== 'cloture'
+                && substr($controle['date_debut'], 0, 10) < $today
+                && !$this->isUserOnline($controle['controleur_id']);
             
             $controle['canEdit'] = $isOwner || $isAdminEligible;
             $controle['isAdminEditable'] = !$isOwner && $isAdminEligible;
@@ -105,7 +98,6 @@ class ControleController extends AbstractController
         }
         unset($controle);
         
-        // Tri
         usort($allControles, function($a, $b) use ($order_by, $order_dir) {
             $valA = $a[$order_by] ?? '';
             $valB = $b[$order_by] ?? '';
@@ -116,13 +108,11 @@ class ControleController extends AbstractController
             }
         });
         
-        // Pagination
         $total = count($allControles);
         $offset = ($page - 1) * $limit;
         $controles = array_slice($allControles, $offset, $limit);
         $totalPages = $limit > 0 ? ceil($total / $limit) : 1;
         
-        // URLs de pagination
         $baseParams = [
             'statut' => $statut,
             'controleur_id' => $controleur_id,
@@ -137,7 +127,6 @@ class ControleController extends AbstractController
             'last' => '?' . http_build_query(array_merge($baseParams, ['page' => $totalPages])),
         ];
         
-        // Récupérer la liste des contrôleurs pour le filtre
         $utilisateurManager = new UtilisateurManager();
         $controleurs = $utilisateurManager->findAll('nom ASC');
         
@@ -187,7 +176,6 @@ class ControleController extends AbstractController
         $controleManager = new ControleManager();
         $id = $controleManager->save($controle);
         
-        // Mise à jour de l'utilisateur
         $user['controle_en_cours_id'] = $id;
         $utilisateurManager = new UtilisateurManager();
         $utilisateurManager->save($user);
@@ -225,12 +213,21 @@ class ControleController extends AbstractController
         $canEdit = $this->canEdit($controle, $user);
         $readonly = ($controle['statut'] === 'cloture' || !$canEdit);
         $isAdminEdit = ($controle['controleur_id'] != $user['id'] && $canEdit);
-        
+
+        // --- Gestion du POST pour la remarque générale ---
+        if ($request->getMethod() === 'POST' && !$readonly) {
+            $remarqueGenerale = $request->request->get('remarques_generales', '');
+            $controle['hash_remarques'] = $remarqueGenerale;
+            $controleManager->save($controle);
+            $this->session->getFlashBag()->add('success', 'Remarques générales mises à jour.');
+            return $this->redirectTo("/admin/controles/edit/$id");
+        }
+        // --- Fin de la gestion POST ---
+
         // ---- 1. Récupération des lignes (équipements déjà ajoutés) ----
         $ligneManager = new ControleLigneManager();
         $allLignes = $ligneManager->findByControle($id);
         
-        // ⬇️ ENRICHISSEMENT : ajout de reference, libelle, photo
         $equipementManager = new EquipementManager();
         foreach ($allLignes as &$ligne) {
             $equipement = $equipementManager->findId($ligne['equipement_id']);
@@ -268,6 +265,22 @@ class ControleController extends AbstractController
                 }
             }
             unset($ligne);
+            
+            // --- Déchiffrement de la remarque générale ---
+            if (!empty($controle['hash_remarques'])) {
+                $data = base64_decode($controle['hash_remarques'], true);
+                if ($data !== false) {
+                    $ivLength = openssl_cipher_iv_length($cipherMethod);
+                    if (strlen($data) >= $ivLength) {
+                        $iv = substr($data, 0, $ivLength);
+                        $chiffre = substr($data, $ivLength);
+                        $decrypted = openssl_decrypt($chiffre, $cipherMethod, $secretKey, 0, $iv);
+                        if ($decrypted !== false) {
+                            $controle['hash_remarques'] = $decrypted;
+                        }
+                    }
+                }
+            }
         }
         
         // ---- 2. Paramètres pour la liste des lignes ----
@@ -278,22 +291,19 @@ class ControleController extends AbstractController
         $lignes_statut = $request->query->get('lignes_statut', null);
         $lignes_search = $request->query->get('lignes_search', '');
         
-        // Filtrer les lignes par statut
         if ($lignes_statut !== null && $lignes_statut !== '') {
             $allLignes = array_filter($allLignes, function($l) use ($lignes_statut) {
                 return $l['statut'] == $lignes_statut;
             });
         }
-        // Filtrer par recherche (référence ou libellé)
         if (!empty($lignes_search)) {
             $search = strtolower(trim($lignes_search));
             $allLignes = array_filter($allLignes, function($l) use ($search) {
                 return strpos(strtolower($l['reference']), $search) !== false 
-                || strpos(strtolower($l['libelle']), $search) !== false;
+                    || strpos(strtolower($l['libelle']), $search) !== false;
             });
         }
         
-        // Trier les lignes
         usort($allLignes, function($a, $b) use ($lignes_order_by, $lignes_order_dir) {
             $valA = $a[$lignes_order_by] ?? '';
             $valB = $b[$lignes_order_by] ?? '';
@@ -304,13 +314,11 @@ class ControleController extends AbstractController
             }
         });
         
-        // Paginer les lignes
         $lignes_total = count($allLignes);
         $lignes_offset = ($lignes_page - 1) * $lignes_limit;
         $lignes = array_slice($allLignes, $lignes_offset, $lignes_limit);
         $lignes_totalPages = $lignes_limit > 0 ? ceil($lignes_total / $lignes_limit) : 1;
         
-        // URLs de pagination pour les lignes
         $baseLignesParams = [
             'lignes_statut' => $lignes_statut,
             'lignes_search' => $lignes_search,
@@ -334,11 +342,9 @@ class ControleController extends AbstractController
             }
         }
         
-        // ---- 4. Liste des équipements disponibles (avec le nouveau filtre "dernier contrôle") ----
-        // On récupère les IDs déjà ajoutés (sur toutes les lignes, pas seulement celles paginées)
+        // ---- 4. Liste des équipements disponibles ----
         $idsDejaAjoutes = array_column($allLignes, 'equipement_id');
         
-        // Paramètres GET pour la liste des disponibles
         $categorie_id = $request->query->get('categorie');
         $filter_epi = $request->query->get('epi');
         $en_service = $request->query->get('en_service');
@@ -349,7 +355,6 @@ class ControleController extends AbstractController
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 10);
         
-        // Nettoyer
         if ($categorie_id === '') $categorie_id = null;
         if ($filter_epi === '') $filter_epi = null;
         if ($en_service === '') $en_service = null;
@@ -358,7 +363,6 @@ class ControleController extends AbstractController
         if ($page < 1) $page = 1;
         if ($limit < 1) $limit = 10;
         
-        $equipementManager = new EquipementManager();
         $categorieManager = new CategorieManager();
         $emplacementManager = new EmplacementManager();
         
@@ -372,12 +376,10 @@ class ControleController extends AbstractController
             }
         }
         
-        // Filtrer les déjà ajoutés
         $equipementsDisponibles = array_filter($tousLesEquipements, function($e) use ($idsDejaAjoutes) {
             return !in_array($e['id'], $idsDejaAjoutes);
         });
         
-        // Appliquer les filtres existants
         if ($categorie_id) {
             $equipementsDisponibles = array_filter($equipementsDisponibles, function($e) use ($categorie_id) {
                 return isset($e['categorie_id']) && $e['categorie_id'] == $categorie_id;
@@ -412,7 +414,6 @@ class ControleController extends AbstractController
             }
         }
         
-        // Filtre dernier contrôle (même logique que dans equipement_list)
         if ($dernier_controle !== null) {
             $oneYearAgo = date('Y-m-d', strtotime('-1 year'));
             if ($dernier_controle === 'plus_1_an') {
@@ -426,7 +427,6 @@ class ControleController extends AbstractController
             }
         }
         
-        // Tri
         if ($order_by === 'reference') {
             usort($equipementsDisponibles, function($a, $b) use ($order_dir) {
                 return $order_dir === 'asc' ? strcmp($a['reference'], $b['reference']) : strcmp($b['reference'], $a['reference']);
@@ -443,7 +443,6 @@ class ControleController extends AbstractController
             });
         }
         
-        // Pagination
         $total = count($equipementsDisponibles);
         $offset = ($page - 1) * $limit;
         $equipementsDisponibles = array_slice($equipementsDisponibles, $offset, $limit);
@@ -495,7 +494,6 @@ class ControleController extends AbstractController
                 'hasNext' => $page < $totalPages,
             ],
             'paginationUrls' => $paginationUrls,
-            // ----- variables pour la liste des lignes -----
             'lignes_filtres' => [
                 'statut' => $lignes_statut,
                 'search' => $lignes_search,
@@ -512,7 +510,6 @@ class ControleController extends AbstractController
                 'hasNext' => $lignes_page < $lignes_totalPages,
             ],
             'lignes_paginationUrls' => $lignesPaginationUrls,
-            // ----- autres -----
             'readonly' => $readonly,
             'hasPending' => $hasPending,
             'isAdminEdit' => $isAdminEdit,
@@ -533,7 +530,6 @@ class ControleController extends AbstractController
             return $this->redirectTo("/admin/controles/edit/$controle_id");
         }
 
-        // Vérification des droits
         $user = $this->session->get('user');
         if (!$this->canEdit($controle, $user)) {
             $this->session->getFlashBag()->add('error', 'Vous n\'avez pas les droits pour modifier ce contrôle.');
@@ -567,14 +563,12 @@ class ControleController extends AbstractController
         $controleManager = new ControleManager();
         $controle = $controleManager->findId($ligne['controle_id']);
         
-        // Vérification des droits
         $user = $this->session->get('user');
         if (!$this->canEdit($controle, $user)) {
             $this->session->getFlashBag()->add('error', 'Vous n\'avez pas les droits pour modifier ce contrôle.');
             return $this->redirectTo('/admin/controles');
         }
         
-        // Interdire la modification si le contrôle est clôturé
         if ($controle['statut'] === 'cloture') {
             $this->session->getFlashBag()->add('error', 'Ce contrôle est clôturé, vous ne pouvez pas modifier les lignes.');
             return $this->redirectTo("/admin/controles/edit/{$controle['id']}");
@@ -592,7 +586,6 @@ class ControleController extends AbstractController
             $ligne['date_controle'] = date('Y-m-d H:i:s');
         }
         
-        // ⬇️ Récupérer l'équipement pour afficher la photo dans le formulaire
         $equipementManager = new EquipementManager();
         $equipement = $equipementManager->findId($ligne['equipement_id']);
         if ($equipement) {
@@ -622,10 +615,8 @@ class ControleController extends AbstractController
             return $this->redirectTo('/admin/controles');
         }
         
-        // Vérification des droits (utilise canEdit() qui a été corrigé)
         $user = $this->session->get('user');
         if (!$this->canEdit($controle, $user)) {
-            // Message d'erreur plus précis
             if ($this->isGranted('ROLE_ADMIN') && substr($controle['date_debut'], 0, 10) < date('Y-m-d')) {
                 $this->session->getFlashBag()->add('error', 'Impossible de clôturer : le contrôleur est actuellement en ligne.');
             } else {
@@ -637,17 +628,20 @@ class ControleController extends AbstractController
         $ligneManager = new ControleLigneManager();
         $lignes = $ligneManager->findByControle($id);
         
-        // Chargement de la configuration
         $config = include __DIR__ . '/../../.env.local.php';
         $secretKey = isset($config['SECRET_KEY']) ? hex2bin($config['SECRET_KEY']) : null;
         $cipherMethod = $config['CIPHER_METHOD'] ?? 'AES-256-CBC';
         
-        // 1. Hash global sur les remarques en clair
-        $remarquesConcatenes = '';
-        foreach ($lignes as $ligne) {
-            $remarquesConcatenes .= ($ligne['remarque'] ?? '') . '|';
+        // 1. Chiffrement de la remarque générale (stockée dans le champ hash_remarques)
+        $remarqueGenerale = $controle['hash_remarques'] ?? '';
+        if (!empty($remarqueGenerale)) {
+            $ivLength = openssl_cipher_iv_length($cipherMethod);
+            $iv = openssl_random_pseudo_bytes($ivLength);
+            $chiffre = openssl_encrypt($remarqueGenerale, $cipherMethod, $secretKey, 0, $iv);
+            $hashGlobal = base64_encode($iv . $chiffre);
+        } else {
+            $hashGlobal = null;
         }
-        $hashGlobal = hash('sha256', $remarquesConcatenes);
         
         // 2. Chiffrement individuel de chaque remarque
         foreach ($lignes as $ligne) {
@@ -666,7 +660,7 @@ class ControleController extends AbstractController
         $controle['hash_remarques'] = $hashGlobal;
         $controleManager->save($controle);
         
-        // 4. Nettoyage de la session (seulement si c'est le contrôle en cours de l'utilisateur)
+        // 4. Nettoyage de la session
         if ($user['controle_en_cours_id'] == $id) {
             $user['controle_en_cours_id'] = null;
             $utilisateurManager = new UtilisateurManager();
