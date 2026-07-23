@@ -24,6 +24,7 @@ $routes->add('equipement_edit', new Route('/equipements/equipement_modification-
 // JOURNAUX - NOUVEAU
 $routes->add('journal_list', new Route('/journaux', ['_controller' => 'Epiclub\\Controller\\JournalController', 'action' => 'index']));
 $routes->add('journal_show', new Route('/journaux/{id}', ['_controller' => 'Epiclub\\Controller\\JournalController', 'action' => 'voir']));
+$routes->add('journal_pdf', new Route('/journaux/pdf/{id}', ['_controller' => 'Epiclub\\Controller\\JournalController', 'action' => 'pdf']));
 
 // CONTROLES
 $routes->add('controle_list', new Route('/admin/controles', ['_controller' => 'Epiclub\\Controller\\ControleController', 'action' => 'list']));

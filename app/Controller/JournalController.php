@@ -7,6 +7,8 @@ use Epiclub\Engine\AbstractController;
 use Epiclub\Domain\JournalManager;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Dompdf\Dompdf;
+use Dompdf\Options;
 
 class JournalController extends AbstractController
 {
@@ -102,5 +104,71 @@ class JournalController extends AbstractController
             'controle' => $controle,
             'lignes' => $lignes
         ]);
+    }
+    
+    /**
+    * Génération PDF d'un journal
+    */
+    public function pdf(Request $request): Response
+    {
+        if (!$this->isGranted('ROLE_USER')) {
+            return $this->redirectTo('/se_connecter');
+        }
+        
+        $id = $request->attributes->get('id');
+        
+        if (!$id) {
+            $this->session->getFlashBag()->add('danger', 'Identifiant du journal manquant');
+            return $this->redirectTo('/journaux');
+        }
+        
+        $controle = $this->journalManager->getControleCloture((int)$id);
+        
+        if (!$controle) {
+            $this->session->getFlashBag()->add('danger', 'Journal de contrôle non trouvé');
+            return $this->redirectTo('/journaux');
+        }
+        
+        $lignes = $this->journalManager->getLignesControle((int)$id);
+        
+        // Génération du HTML pour le PDF
+        $html = $this->generatePdfHtml($controle, $lignes);
+        
+        // Configuration de Dompdf
+        $options = new Options();
+        $options->set('defaultFont', 'DejaVu Sans');
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('isRemoteEnabled', true);
+        
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        
+        // Téléchargement du PDF
+        $filename = 'journal_controle_' . $controle['id'] . '_' . date('Y-m-d') . '.pdf';
+        $output = $dompdf->output();
+        
+        return new Response($output, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Length' => strlen($output)
+        ]);
+    }
+    
+    /**
+    * Génère le HTML pour le PDF en utilisant la méthode render() du parent
+    */
+    private function generatePdfHtml(array $controle, array $lignes): string
+    {
+        // Utiliser la méthode render() du parent (AbstractController) qui retourne un objet Response
+        $response = $this->render('journaux/pdf.twig', [
+            'controle' => $controle,
+            'lignes' => $lignes,
+            'generated_at' => date('d/m/Y H:i:s')
+        ]);
+        
+        // Extraire le contenu HTML de la Response
+        return $response->getContent();
     }
 }

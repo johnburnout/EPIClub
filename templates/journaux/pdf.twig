@@ -1,0 +1,238 @@
+{# templates/journaux/pdf.twig #}
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Journal de contrôle #{{ controle.id }}</title>
+    <style>
+        body {
+            font-family: 'DejaVu Sans', Arial, sans-serif;
+            font-size: 12px;
+            color: #333;
+            margin: 20px;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #2c3e50;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            color: #2c3e50;
+            margin: 0;
+            font-size: 24px;
+        }
+        .header .subtitle {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .info-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+        .info-item {
+            padding: 5px 0;
+        }
+        .info-item strong {
+            display: block;
+            font-size: 11px;
+            color: #7f8c8d;
+            text-transform: uppercase;
+        }
+        .info-item .value {
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .remarques {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            border-radius: 3px;
+        }
+        .remarques strong {
+            display: block;
+            font-size: 11px;
+            color: #856404;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 11px;
+        }
+        table th {
+            background-color: #2c3e50;
+            color: white;
+            padding: 8px 6px;
+            text-align: left;
+            border: 1px solid #2c3e50;
+        }
+        table td {
+            padding: 6px;
+            border: 1px solid #dee2e6;
+            vertical-align: top;
+        }
+        table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: bold;
+            color: white;
+        }
+        .badge-success { background-color: #28a745; }
+        .badge-danger { background-color: #dc3545; }
+        .badge-warning { background-color: #ffc107; color: #333; }
+        .badge-secondary { background-color: #6c757d; }
+        .badge-dark { background-color: #343a40; }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            font-size: 10px;
+            color: #7f8c8d;
+            border-top: 1px solid #dee2e6;
+            padding-top: 15px;
+        }
+        .text-muted { color: #6c757d; }
+        .text-center { text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📄 Journal de contrôle #{{ controle.id }}</h1>
+        <div class="subtitle">Généré le {{ generated_at }}</div>
+    </div>
+
+    <div class="info-section">
+        <div class="info-grid">
+            <div class="info-item">
+                <strong>Contrôleur</strong>
+                <div class="value">{{ controle.controleur_prenom }} {{ controle.controleur_nom }}</div>
+            </div>
+            <div class="info-item">
+                <strong>Date début</strong>
+                <div class="value">{{ controle.date_debut|date("d/m/Y H:i") }}</div>
+            </div>
+            <div class="info-item">
+                <strong>Date fin</strong>
+                <div class="value">{{ controle.date_fin|date("d/m/Y H:i") }}</div>
+            </div>
+            <div class="info-item">
+                <strong>Créé par</strong>
+                <div class="value">{{ controle.cree_par_prenom }} {{ controle.cree_par_nom }}</div>
+            </div>
+            <div class="info-item">
+                <strong>Statut</strong>
+                <div class="value">
+                    <span class="badge badge-success">Clôturé</span>
+                </div>
+            </div>
+            <div class="info-item">
+                <strong>Équipements contrôlés</strong>
+                <div class="value">{{ lignes|length }}</div>
+            </div>
+        </div>
+
+        {% if controle.hash_remarques %}
+        <div class="remarques">
+            <strong>📝 Remarques générales</strong>
+            <div>{{ controle.hash_remarques }}</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <h3 style="margin-top: 20px;">Équipements contrôlés</h3>
+
+    {% if lignes %}
+    <table>
+        <thead>
+            <tr>
+                <th style="width:15%;">Référence</th>
+                <th style="width:15%;">Code</th>
+                <th style="width:20%;">Désignation</th>
+                <th style="width:12%;">Catégorie</th>
+                <th style="width:5%;">EPI</th>
+                <th style="width:12%;">Emplacement</th>
+                <th style="width:13%;">Date contrôle</th>
+                <th style="width:8%;">Statut</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ligne in lignes %}
+            <tr>
+                <td><strong>{{ ligne.reference }}</strong></td>
+                <td><code>{{ ligne.equipement_code }}</code></td>
+                <td>{{ ligne.equipement_libelle }}</td>
+                <td>{{ ligne.categorie_libelle|default('N/A') }}</td>
+                <td style="text-align:center;">
+                    {% if ligne.est_epi %}
+                        <span class="badge badge-success">EPI</span>
+                    {% else %}
+                        <span class="badge badge-secondary">Non</span>
+                    {% endif %}
+                </td>
+                <td>{{ ligne.emplacement_libelle|default('Non défini') }}</td>
+                <td>
+                    {% if ligne.date_controle %}
+                        {{ ligne.date_controle|date("d/m/Y H:i") }}
+                    {% else %}
+                        <span class="text-muted">-</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% set statutClasses = {
+                        'a_controler': 'badge-warning',
+                        'controle_ok': 'badge-success',
+                        'controle_ko': 'badge-danger',
+                        'hors_service': 'badge-dark'
+                    } %}
+                    {% set statutLabels = {
+                        'a_controler': 'À contrôler',
+                        'controle_ok': 'OK',
+                        'controle_ko': 'KO',
+                        'hors_service': 'Hors service'
+                    } %}
+                    <span class="badge {{ statutClasses[ligne.statut]|default('badge-secondary') }}">
+                        {{ statutLabels[ligne.statut]|default(ligne.statut) }}
+                    </span>
+                </td>
+            </tr>
+            {% if ligne.remarque %}
+            <tr>
+                <td colspan="8" style="background-color: #f8f9fa; font-style: italic; font-size: 10px; color: #6c757d;">
+                    📝 {{ ligne.remarque }}
+                </td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="text-muted">Aucun équipement contrôlé dans ce journal.</p>
+    {% endif %}
+
+    <div class="footer">
+        <p>Document généré automatiquement par EPIClub le {{ generated_at }}</p>
+        <p style="font-size: 9px; color: #adb5bd;">
+            Ce document est la propriété de EPIClub et ne peut être reproduit sans autorisation.
+        </p>
+    </div>
+</body>
+</html>

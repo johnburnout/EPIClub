@@ -154,4 +154,57 @@ class EquipementManager extends AbstractManager
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($filtered);
     }
+    
+    // app/Domain/EquipementManager.php
+    
+    /**
+    * Récupère l'historique des contrôles clôturés pour un équipement
+    */
+    public function getHistoriqueControles(int $equipementId): array
+    {
+        $sql = "SELECT cl.*, 
+        c.libelle as controle_libelle,
+        c.date_debut as controle_date_debut,
+        c.date_fin as controle_date_fin,
+        c.hash_remarques as controle_remarques,
+        u.nom as controleur_nom,
+        u.prenom as controleur_prenom
+        FROM controle_ligne cl
+        INNER JOIN controle c ON cl.controle_id = c.id
+        LEFT JOIN utilisateur u ON c.controleur_id = u.id
+        WHERE cl.equipement_id = :equipement_id 
+        AND c.statut = 'cloture'
+        ORDER BY c.date_fin DESC";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['equipement_id' => $equipementId]);
+        $result = $stmt->fetchAll();
+        
+        // Déchiffrer les remarques si nécessaire
+        if (!empty($result)) {
+            $config = include __DIR__ . '/../../.env.local.php';
+            $secretKey = isset($config['SECRET_KEY']) ? hex2bin($config['SECRET_KEY']) : null;
+            $cipherMethod = $config['CIPHER_METHOD'] ?? 'AES-256-CBC';
+            
+            foreach ($result as &$ligne) {
+                // Déchiffrer la remarque de la ligne si elle existe
+                if (!empty($ligne['remarque'])) {
+                    $data = base64_decode($ligne['remarque'], true);
+                    if ($data !== false) {
+                        $ivLength = openssl_cipher_iv_length($cipherMethod);
+                        if (strlen($data) >= $ivLength) {
+                            $iv = substr($data, 0, $ivLength);
+                            $chiffre = substr($data, $ivLength);
+                            $decrypted = openssl_decrypt($chiffre, $cipherMethod, $secretKey, 0, $iv);
+                            if ($decrypted !== false) {
+                                $ligne['remarque'] = $decrypted;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        return $result;
+    }
 }

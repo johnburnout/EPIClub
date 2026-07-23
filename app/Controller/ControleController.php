@@ -84,6 +84,8 @@ class ControleController extends AbstractController
         }
         
         $today = date('Y-m-d');
+        $ligneManager = new ControleLigneManager();
+        
         foreach ($allControles as &$controle) {
             $isOwner = ($controle['controleur_id'] == $user['id']);
             $isAdminEligible = $this->isGranted('ROLE_ADMIN')
@@ -95,6 +97,22 @@ class ControleController extends AbstractController
             $controle['isAdminEditable'] = !$isOwner && $isAdminEligible;
             $controle['isOwner'] = $isOwner;
             $controle['isOwnerOnline'] = $this->isUserOnline($controle['controleur_id']);
+            
+            // --- Vérifier si des équipements sont encore "à contrôler" ---
+            if ($controle['statut'] !== 'cloture') {
+                $lignes = $ligneManager->findByControle($controle['id']);
+                $hasPending = false;
+                foreach ($lignes as $ligne) {
+                    if ($ligne['statut'] === 'a_controler') {
+                        $hasPending = true;
+                        break;
+                    }
+                }
+                $controle['hasPending'] = $hasPending;
+            } else {
+                $controle['hasPending'] = false;
+            }
+            // --- FIN ---
         }
         unset($controle);
         
@@ -627,6 +645,14 @@ class ControleController extends AbstractController
         
         $ligneManager = new ControleLigneManager();
         $lignes = $ligneManager->findByControle($id);
+        
+        // Vérifier si des équipements sont encore "à contrôler"
+        foreach ($lignes as $ligne) {
+            if ($ligne['statut'] === 'a_controler') {
+                $this->session->getFlashBag()->add('error', 'Impossible de clôturer : des équipements sont encore marqués "À contrôler".');
+                return $this->redirectTo("/admin/controles/edit/$id");
+            }
+        }
         
         $config = include __DIR__ . '/../../.env.local.php';
         $secretKey = isset($config['SECRET_KEY']) ? hex2bin($config['SECRET_KEY']) : null;

@@ -117,7 +117,14 @@
                                     Voir / Modifier
                                 {% endif %}
                             </a>
-                            <a href="/admin/controles/cloturer/{{ controle.id }}" class="btn btn-sm btn-success" onclick="return confirm('Clôturer ce contrôle ?')">Clôturer</a>
+                            {% if controle.hasPending %}
+                                <button class="btn btn-sm btn-success" disabled title="Des équipements sont encore à contrôler">
+                                    Clôturer
+                                </button>
+                                <span class="text-muted small" title="Des équipements sont encore marqués « À contrôler »">⚠️</span>
+                            {% else %}
+                                <a href="/admin/controles/cloturer/{{ controle.id }}" class="btn btn-sm btn-success" onclick="return confirm('Clôturer ce contrôle ?')">Clôturer</a>
+                            {% endif %}
                         {% else %}
                             <a href="/admin/controles/edit/{{ controle.id }}" class="btn btn-sm btn-info">Voir</a>
                             <span class="text-muted">(non modifiable)</span>
