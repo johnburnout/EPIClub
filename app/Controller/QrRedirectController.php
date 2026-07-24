@@ -149,6 +149,10 @@ class QrRedirectController extends AbstractController
      * Génère et affiche le QR code
      * URL: /qr/generate/{id}
      */
+    /**
+    * Génère et affiche le QR code
+    * URL: /qr/generate/{id}
+    */
     public function generateQr(Request $request)
     {
         error_log("=== QR GENERATE ===");
@@ -185,16 +189,11 @@ class QrRedirectController extends AbstractController
         error_log("✅ Équipement trouvé: " . $equipement['reference']);
         
         $baseUrl = $this->getBaseUrl();
+        
+        // 🔧 CORRECTION : Encoder uniquement l'URL, pas du JSON
         $qrUrl = $baseUrl . '/qr/' . $id;
         
-        $qrData = json_encode([
-            'id' => (int)$equipement['id'],
-            'reference' => $equipement['reference'],
-            'libelle' => $equipement['libelle'],
-            'url' => $qrUrl
-        ]);
-        
-        error_log("📊 Données: " . $qrData);
+        error_log("📊 URL encodée: " . $qrUrl);
         
         if (!class_exists('Endroid\QrCode\Builder\Builder')) {
             error_log("❌ Endroid QR Code non trouvé");
@@ -205,7 +204,9 @@ class QrRedirectController extends AbstractController
         
         try {
             error_log("🔄 Génération du QR...");
-            $qrCodeContent = $this->qrCodeGenerator->generateFromData($qrData, 400, true);
+            
+            // 🔧 CORRECTION : Utiliser l'URL directement, pas du JSON
+            $qrCodeContent = $this->qrCodeGenerator->generateFromData($qrUrl, 400, false);
             
             if (empty($qrCodeContent)) {
                 throw new \Exception('QR code généré est vide');
@@ -228,9 +229,9 @@ class QrRedirectController extends AbstractController
     }
     
     /**
-     * Télécharge le QR code
-     * URL: /qr/download/{id}
-     */
+    * Télécharge le QR code
+    * URL: /qr/download/{id}
+    */
     public function downloadQr(Request $request)
     {
         $id = $request->attributes->get('id');
@@ -256,18 +257,13 @@ class QrRedirectController extends AbstractController
         }
         
         $baseUrl = $this->getBaseUrl();
-        $qrUrl = $baseUrl . '/qr/' . $id;
         
-        $qrData = json_encode([
-            'id' => (int)$equipement['id'],
-            'reference' => $equipement['reference'],
-            'libelle' => $equipement['libelle'],
-            'url' => $qrUrl
-        ]);
+        // 🔧 CORRECTION : Encoder uniquement l'URL
+        $qrUrl = $baseUrl . '/qr/' . $id;
         
         try {
             $filename = 'equipement_' . $id;
-            $filePath = $this->qrCodeGenerator->generateAndSave($filename, $qrData, 400);
+            $filePath = $this->qrCodeGenerator->generateAndSave($filename, $qrUrl, 400);
             
             if (file_exists($filePath)) {
                 header('Content-Type: image/png');
