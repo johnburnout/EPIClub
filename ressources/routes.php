@@ -79,3 +79,40 @@ $routes->add('emplacement_create', new Route('/admin/emplacements/nouveau', ['_c
 $routes->add('emplacement_update', new Route('/admin/emplacements/emplacement_modification-{id}', ['_controller' => 'Epiclub\\Controller\\EmplacementController', 'action' => 'edit']));
 $routes->add('emplacement_delete', new Route('/admin/emplacements/supprimer', ['_controller' => 'Epiclub\\Controller\\EmplacementController', 'action' => 'delete']));
 $routes->add('emplacement_show', new Route('/admin/emplacements/emplacement-{id}', ['_controller' => 'Epiclub\\Controller\\EmplacementController', 'action' => 'show']));
+
+// QR CODE
+$routes->add('qr_redirect', new Route('/qr/{id}', [
+	'_controller' => 'Epiclub\\Controller\\QrRedirectController',
+	'action' => 'redirect'
+]));
+
+$routes->add('qr_choice', new Route('/qr/choix/{id}', [
+	'_controller' => 'Epiclub\\Controller\\QrRedirectController',
+	'action' => 'choicePage'
+]));
+
+$routes->add('qr_generate', new Route('/qr/generate/{id}', [
+	'_controller' => 'Epiclub\\Controller\\QrRedirectController',
+	'action' => 'generateQr'
+]));
+
+$routes->add('qr_download', new Route('/qr/download/{id}', [
+	'_controller' => 'Epiclub\\Controller\\QrRedirectController',
+	'action' => 'downloadQr'
+]));
+	
+	$routes->add('qr_view', new Route('/qr/view/{filename}', [
+		'_controller' => 'Epiclub\\Controller\\QrRedirectController',
+		'action' => 'viewQr'
+	]));
+	
+	$routes->add('qr_save', new Route('/qr/save/{id}', [
+		'_controller' => 'Epiclub\\Controller\\QrRedirectController',
+		'action' => 'saveQr'
+	]));
+	
+	// QR Code API (pour génération JSON)
+	$routes->add('qr_api_generate', new Route('/api/qr/generate/{id}', [
+		'_controller' => 'Epiclub\\Controller\\QrRedirectController',
+		'action' => 'apiGenerateQr'
+	]));

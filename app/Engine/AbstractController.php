@@ -4,7 +4,7 @@ namespace Epiclub\Engine;
 
 use Twig\TwigFunction;
 use Epiclub\Engine\Session;
-use Epiclub\Domain\UtilisateurManager; // ⬅️ AJOUT
+use Epiclub\Domain\UtilisateurManager;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -15,7 +15,8 @@ abstract class AbstractController
 
     public function __construct(protected Session $session)
     {
-        $this->renderer = new TwigRenderer();
+        // Passer la session existante à TwigRenderer
+        $this->renderer = new TwigRenderer($this->session);
 
         $this->renderer->addGlobal('csrf_token', $session->get('csrf_token'));
 

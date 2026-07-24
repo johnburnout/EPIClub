@@ -26,12 +26,22 @@ class EmplacementManager extends AbstractManager
 
     public function findId(int $id)
     {
-        $sql = "SELECT * FROM emplacement WHERE id=:id";
+        error_log("=== EquipementManager::findId ===");
+        error_log("ID recherché: " . $id);
+        error_log("Classe de db: " . get_class($this->db));
+        
+        $sql = "SELECT * FROM club_equipement WHERE id=:id";
+        error_log("SQL: " . $sql);
+        
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['id' => $id]);
-        if ($emplacement = $stmt->fetch()) {
-            return $emplacement;
+        
+        if ($equipement = $stmt->fetch()) {
+            error_log("✅ Équipement trouvé: " . $equipement['reference']);
+            return $equipement;
         }
+        
+        error_log("❌ Aucun équipement trouvé pour ID: " . $id);
         return null;
     }
 

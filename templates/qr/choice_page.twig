@@ -1,0 +1,145 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-qrcode"></i>
+                        QR Code - {{ equipement.reference }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 text-center">
+                            <!-- QR Code généré dynamiquement -->
+                            <img src="/qr/generate/{{ equipement.id }}" 
+                                 alt="QR Code de {{ equipement.reference }}" 
+                                 class="img-fluid border p-2"
+                                 style="max-width: 200px;">
+                            <p class="text-muted small mt-2">Scannez ce QR code</p>
+                            <a href="/qr/download/{{ equipement.id }}" 
+                               class="btn btn-sm btn-outline-success mt-2">
+                                <i class="fas fa-download"></i> Télécharger
+                            </a>
+                        </div>
+                        <div class="col-md-8">
+                            <h5>{{ equipement.libelle }}</h5>
+                            <p><strong>Référence :</strong> {{ equipement.reference }}</p>
+                            <p><strong>Catégorie :</strong> 
+                                {% if equipement.categorie %}
+                                    {{ equipement.categorie.libelle }}
+                                {% else %}
+                                    <span class="text-muted">Non définie</span>
+                                {% endif %}
+                            </p>
+                            <p><strong>Statut :</strong> 
+                                {% if equipement.statut == 0 %}
+                                    <span class="badge bg-success">Disponible</span>
+                                {% elseif equipement.statut == 1 %}
+                                    <span class="badge bg-warning">En maintenance</span>
+                                {% elseif equipement.statut == 2 %}
+                                    <span class="badge bg-danger">Hors service</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Inconnu</span>
+                                {% endif %}
+                            </p>
+                            
+                            <hr>
+                            
+                            <div class="d-grid gap-2">
+                                {% if controleEnCours %}
+                                    <!-- Contrôle en cours -->
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-clipboard-check"></i>
+                                        Un contrôle est en cours pour cet équipement
+                                    </div>
+                                    <a href="/admin/controles/edit/{{ controleEnCours.id }}" 
+                                       class="btn btn-primary btn-lg">
+                                        <i class="fas fa-edit"></i> 
+                                        Reprendre le contrôle
+                                    </a>
+                                {% else %}
+                                    <!-- Aucun contrôle en cours -->
+                                    <div class="alert alert-success">
+                                        <i class="fas fa-check-circle"></i>
+                                        Aucun contrôle en cours pour cet équipement
+                                    </div>
+                                    <a href="/equipements/equipement-{{ equipement.id }}" 
+                                       class="btn btn-info btn-lg">
+                                        <i class="fas fa-eye"></i> 
+                                        Voir la fiche équipement
+                                    </a>
+                                    <a href="/admin/controles/nouveau?equipement_id={{ equipement.id }}" 
+                                       class="btn btn-warning btn-lg">
+                                        <i class="fas fa-play"></i> 
+                                        Démarrer un contrôle
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="/equipements" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> 
+                        Retour à la liste
+                    </a>
+                    <a href="/qr/download/{{ equipement.id }}" 
+                       class="btn btn-success float-end">
+                        <i class="fas fa-download"></i> 
+                        Télécharger le QR Code
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Historique des contrôles (optionnel) -->
+            {% if historiqueControles %}
+            <div class="card mt-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">📋 Derniers contrôles</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Statut</th>
+                                    <th>Contrôleur</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for controle in historiqueControles|slice(0, 5) %}
+                                    <tr>
+                                        <td>{{ controle.date_controle|date("d/m/Y H:i") }}</td>
+                                        <td>
+                                            <span class="badge bg-{{ {
+                                                'a_controler': 'warning',
+                                                'controle_ok': 'success',
+                                                'controle_ko': 'danger',
+                                                'hors_service': 'secondary'
+                                            }[controle.statut] }}">
+                                                {{ {
+                                                    'a_controler': 'À contrôler',
+                                                    'controle_ok': 'OK',
+                                                    'controle_ko': 'KO',
+                                                    'hors_service': 'Hors service'
+                                                }[controle.statut] }}
+                                            </span>
+                                        </td>
+                                        <td>{{ controle.controleur_prenom }} {{ controle.controleur_nom }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -7,8 +7,9 @@
 
 	{% if equipement %}
 		<div class="card">
-			<div class="card-header">
+			<div class="card-header d-flex justify-content-between align-items-center">
 				<h5 class="card-title mb-0">{{ equipement.libelle }}</h5>
+				<span class="badge bg-primary">{{ equipement.reference }}</span>
 			</div>
 			<div class="card-body">
 				<div class="row">
@@ -101,6 +102,63 @@
 								</div>
 							</div>
 						{% endif %}
+
+						{# ============================================ #}
+						{# === QR CODE === #}
+						{# ============================================ #}
+						<div class="mt-3 border-top pt-3">
+							<strong><i class="fas fa-qrcode"></i> QR Code :</strong>
+							<div class="mt-2 d-flex align-items-start gap-3">
+								<!-- Image du QR Code avec ID pour le JavaScript -->
+								<img id="qr-code-image" 
+									 src="/qr/generate/{{ equipement.id }}" 
+									 alt="QR Code de {{ equipement.reference }}" 
+									 style="width: 120px; height: 120px;" 
+									 class="img-thumbnail border-0 p-1"
+									 loading="lazy"
+									 onerror="this.src='/assets/img/qr-placeholder.png'; this.alt='QR Code non disponible';">
+								
+								<!-- Actions du QR Code -->
+								<div class="d-flex flex-column gap-1">
+									<a href="/qr/choix/{{ equipement.id }}" 
+									   class="btn btn-sm btn-outline-info text-start" 
+									   title="Voir la page du QR code">
+										<i class="fas fa-eye"></i> Voir le QR
+									</a>
+									<a href="/qr/download/{{ equipement.id }}" 
+									   class="btn btn-sm btn-outline-success text-start" 
+									   title="Télécharger le QR code">
+										<i class="fas fa-download"></i> Télécharger
+									</a>
+									<a href="#" 
+									   class="btn btn-sm btn-outline-secondary text-start" 
+									   title="Sauvegarder sur le serveur"
+									   onclick="event.preventDefault(); sauvegarderQR({{ equipement.id }});">
+										<i class="fas fa-save"></i> Sauvegarder
+									</a>
+									<a href="#" 
+									   class="btn btn-sm btn-outline-primary text-start" 
+									   title="Copier l'URL du QR code"
+									   onclick="event.preventDefault(); copierUrlQR({{ equipement.id }});">
+										<i class="fas fa-copy"></i> Copier l'URL
+									</a>
+								</div>
+							</div>
+							<small class="text-muted d-block mt-1">
+								<i class="fas fa-info-circle"></i> 
+								Scannez ce QR code pour accéder rapidement à la fiche ou au contrôle
+							</small>
+							{# Indicateur de sauvegarde #}
+							<div id="qr-status" class="mt-1">
+								<small class="text-muted" id="qr-status-text">
+									<i class="fas fa-circle" style="color: #6c757d; font-size: 8px;"></i> 
+									Généré à la demande
+								</small>
+							</div>
+						</div>
+						{# ============================================ #}
+						{# === FIN QR CODE === #}
+						{# ============================================ #}
 					</div>
 				</div>
 			</div>
@@ -189,15 +247,194 @@
 		{% endif %}
 		{# --- Fin historique --- #}
 
-		<div class="mt-3">
-			<a href="/equipements" class="btn btn-secondary">Retour à la liste</a>
-			<a href="/equipements/equipement_modification-{{ equipement.id }}" class="btn btn-warning">Modifier</a>
+		<div class="mt-3 d-flex flex-wrap gap-2">
+			<a href="/equipements" class="btn btn-secondary">
+				<i class="fas fa-arrow-left"></i> Retour à la liste
+			</a>
+			<a href="/equipements/equipement_modification-{{ equipement.id }}" class="btn btn-warning">
+				<i class="fas fa-edit"></i> Modifier
+			</a>
+			{# ============================================ #}
+			{# === BOUTON QR DANS LA BARRE D'ACTIONS === #}
+			{# ============================================ #}
+			<a href="/qr/choix/{{ equipement.id }}" class="btn btn-info">
+				<i class="fas fa-qrcode"></i> QR Code
+			</a>
+			{# ============================================ #}
+			{% if isGranted('ROLE_CONTROLLEUR') %}
+				<a href="/admin/controles/creer?equipement_id={{ equipement.id }}" class="btn btn-success">
+					<i class="fas fa-clipboard-check"></i> Démarrer un contrôle
+				</a>
+			{% endif %}
 		</div>
 	{% else %}
 		<div class="alert alert-warning">
-			Équipement non trouvé.
+			<i class="fas fa-exclamation-triangle"></i> Équipement non trouvé.
 		</div>
 		<a href="/equipements" class="btn btn-secondary">Retour à la liste</a>
 	{% endif %}
 
 {% endblock %}
+
+{# ============================================ #}
+{# === BLOCK JAVASCRIPT SPÉCIFIQUE === #}
+{# ============================================ #}
+{% block javascripts %}
+	{{ parent() }}
+	<script>
+		/**
+		 * Met à jour le statut du QR code après sauvegarde
+		 */
+		function updateQRStatus(saved) {
+			const statusText = document.getElementById('qr-status-text');
+			if (saved) {
+				statusText.innerHTML = '<i class="fas fa-circle" style="color: #28a745; font-size: 8px;"></i> Sauvegardé sur le serveur';
+			} else {
+				statusText.innerHTML = '<i class="fas fa-circle" style="color: #6c757d; font-size: 8px;"></i> Généré à la demande';
+			}
+		}
+
+		/**
+		 * Sauvegarde le QR code sur le serveur (avec mise à jour du statut)
+		 */
+		function sauvegarderQR(equipementId) {
+			const btn = document.querySelector('[onclick*="sauvegarderQR(' + equipementId + ')"]');
+			const originalHtml = btn ? btn.innerHTML : '';
+			
+			if (btn) {
+				btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sauvegarde...';
+				btn.disabled = true;
+			}
+
+			fetch('/qr/save/' + equipementId)
+				.then(response => {
+					if (!response.ok) {
+						throw new Error('Erreur HTTP: ' + response.status);
+					}
+					return response.json();
+				})
+				.then(data => {
+					if (btn) {
+						btn.innerHTML = originalHtml;
+						btn.disabled = false;
+					}
+
+					if (data.success) {
+						// Mettre à jour l'image
+						const img = document.getElementById('qr-code-image');
+						if (img) {
+							img.src = '/qr/view/' + data.filename.replace('.png', '') + '?t=' + Date.now();
+						}
+						
+						// Mettre à jour le statut
+						updateQRStatus(true);
+						
+						// Afficher la notification
+						showNotification('success', '✅ QR code sauvegardé !', 'Fichier : ' + data.filename);
+					} else {
+						showNotification('danger', '❌ Erreur', data.error || 'Erreur inconnue');
+					}
+				})
+				.catch(error => {
+					if (btn) {
+						btn.innerHTML = originalHtml;
+						btn.disabled = false;
+					}
+					showNotification('danger', '❌ Erreur', error.message);
+				});
+		}
+
+		/**
+		 * Copie l'URL du QR code dans le presse-papier
+		 */
+		function copierUrlQR(equipementId) {
+			const url = window.location.origin + '/qr/' + equipementId;
+			
+			if (navigator.clipboard && navigator.clipboard.writeText) {
+				navigator.clipboard.writeText(url)
+					.then(() => {
+						showNotification('success', '📋 URL copiée !', 'L\'URL du QR code a été copiée dans le presse-papier.');
+					})
+					.catch(() => {
+						copierUrlFallback(url);
+					});
+			} else {
+				copierUrlFallback(url);
+			}
+		}
+
+		/**
+		 * Fallback pour la copie d'URL
+		 */
+		function copierUrlFallback(url) {
+			const textarea = document.createElement('textarea');
+			textarea.value = url;
+			textarea.style.position = 'fixed';
+			textarea.style.opacity = '0';
+			textarea.style.left = '-9999px';
+			document.body.appendChild(textarea);
+			textarea.select();
+			
+			try {
+				document.execCommand('copy');
+				showNotification('success', '📋 URL copiée !', 'L\'URL du QR code a été copiée dans le presse-papier.');
+			} catch (err) {
+				showNotification('danger', '❌ Erreur', 'Impossible de copier l\'URL.');
+			}
+			document.body.removeChild(textarea);
+		}
+
+		/**
+		 * Affiche une notification (toast Bootstrap)
+		 */
+		function showNotification(type, title, message) {
+			// Créer le conteneur si nécessaire
+			let container = document.getElementById('toast-container');
+			if (!container) {
+				container = document.createElement('div');
+				container.id = 'toast-container';
+				container.className = 'position-fixed bottom-0 end-0 p-3';
+				container.style.zIndex = '9999';
+				document.body.appendChild(container);
+			}
+			
+			// Créer le toast
+			const toastEl = document.createElement('div');
+			toastEl.className = 'toast align-items-center text-white bg-' + type + ' border-0';
+			toastEl.role = 'alert';
+			toastEl.ariaLive = 'assertive';
+			toastEl.ariaAtomic = 'true';
+			toastEl.innerHTML = `
+				<div class="d-flex">
+					<div class="toast-body">
+						<strong>${title}</strong><br>
+						${message}
+					</div>
+					<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+				</div>
+			`;
+			container.appendChild(toastEl);
+			
+			const toast = new bootstrap.Toast(toastEl, { delay: 5000 });
+			toast.show();
+			
+			toastEl.addEventListener('hidden.bs.toast', function() {
+				this.remove();
+			});
+		}
+
+		// Initialisation : vérifier si le QR est déjà sauvegardé
+		document.addEventListener('DOMContentLoaded', function() {
+			const img = document.getElementById('qr-code-image');
+			if (img) {
+				// Si l'image a un attribut data-saved, on met à jour le statut
+				if (img.dataset.saved === 'true') {
+					updateQRStatus(true);
+				}
+			}
+		});
+	</script>
+{% endblock %}
+{# ============================================ #}
+{# === FIN BLOCK JAVASCRIPT === #}
+{# ============================================ #}

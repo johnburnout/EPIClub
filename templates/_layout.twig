@@ -117,7 +117,166 @@
 			</p>
 		</footer>
 		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-		{% block javascripts %}{% endblock %}
+		
+		{# ============================================ #}
+		{# === BLOCK POUR LES SCRIPTS PERSONNALISÉS === #}
+		{# ============================================ #}
+		{% block javascripts %}
+			<!-- Scripts par défaut pour les QR codes -->
+			<script>
+				/**
+				 * Sauvegarde un QR code sur le serveur
+				 * @param {number} equipementId - L'ID de l'équipement
+				 */
+				function sauvegarderQR(equipementId) {
+					// Afficher un indicateur de chargement
+					const btn = document.querySelector('[onclick*="sauvegarderQR(' + equipementId + ')"]');
+					if (btn) {
+						const originalHtml = btn.innerHTML;
+						btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sauvegarde...';
+						btn.disabled = true;
+					}
+
+					fetch('/qr/save/' + equipementId)
+						.then(response => {
+							if (!response.ok) {
+								throw new Error('Erreur HTTP: ' + response.status);
+							}
+							return response.json();
+						})
+						.then(data => {
+							// Restaurer le bouton
+							if (btn) {
+								btn.innerHTML = originalHtml;
+								btn.disabled = false;
+							}
+
+							if (data.success) {
+								// Afficher un message de succès
+								showNotification('success', 'QR code sauvegardé avec succès !', 'Fichier : ' + data.filename);
+								
+								// Mettre à jour l'image pour utiliser le fichier sauvegardé
+								const img = document.querySelector('#qr-code-image');
+								if (img) {
+									img.src = '/qr/view/' + data.filename.replace('.png', '');
+								}
+							} else {
+								showNotification('danger', 'Erreur lors de la sauvegarde', data.error || 'Erreur inconnue');
+							}
+						})
+						.catch(error => {
+							// Restaurer le bouton
+							if (btn) {
+								btn.innerHTML = originalHtml;
+								btn.disabled = false;
+							}
+							showNotification('danger', 'Erreur', error.message);
+						});
+				}
+
+				/**
+				 * Affiche une notification
+				 * @param {string} type - success, danger, warning, info
+				 * @param {string} title - Titre de la notification
+				 * @param {string} message - Message de la notification
+				 */
+				function showNotification(type, title, message) {
+					// Vérifier si Bootstrap est disponible
+					if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
+						// Créer un toast Bootstrap
+						const toastContainer = document.getElementById('toast-container') || createToastContainer();
+						
+						const toastEl = document.createElement('div');
+						toastEl.className = 'toast align-items-center text-white bg-' + type + ' border-0';
+						toastEl.role = 'alert';
+						toastEl.ariaLive = 'assertive';
+						toastEl.ariaAtomic = 'true';
+						toastEl.innerHTML = `
+							<div class="d-flex">
+								<div class="toast-body">
+									<strong>${title}</strong><br>
+									${message}
+								</div>
+								<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+							</div>
+						`;
+						toastContainer.appendChild(toastEl);
+						
+						const toast = new bootstrap.Toast(toastEl, { delay: 5000 });
+						toast.show();
+						
+						// Supprimer le toast après fermeture
+						toastEl.addEventListener('hidden.bs.toast', function() {
+							this.remove();
+						});
+					} else {
+						// Fallback avec alert standard
+						alert(title + '\n' + message);
+					}
+				}
+
+				/**
+				 * Crée le conteneur pour les toasts
+				 * @returns {HTMLElement} Le conteneur créé
+				 */
+				function createToastContainer() {
+					const container = document.createElement('div');
+					container.id = 'toast-container';
+					container.className = 'position-fixed bottom-0 end-0 p-3';
+					container.style.zIndex = '9999';
+					document.body.appendChild(container);
+					return container;
+				}
+
+				/**
+				 * Copie l'URL du QR code dans le presse-papier
+				 * @param {number} equipementId - L'ID de l'équipement
+				 */
+				function copierUrlQR(equipementId) {
+					const url = window.location.origin + '/qr/' + equipementId;
+					if (navigator.clipboard) {
+						navigator.clipboard.writeText(url)
+							.then(() => {
+								showNotification('success', 'URL copiée !', 'L\'URL du QR code a été copiée dans le presse-papier.');
+							})
+							.catch(() => {
+								// Fallback
+								copierUrlFallback(url);
+							});
+					} else {
+						copierUrlFallback(url);
+					}
+				}
+
+				/**
+				 * Fallback pour la copie d'URL
+				 * @param {string} url - L'URL à copier
+				 */
+				function copierUrlFallback(url) {
+					const textarea = document.createElement('textarea');
+					textarea.value = url;
+					textarea.style.position = 'fixed';
+					textarea.style.opacity = '0';
+					document.body.appendChild(textarea);
+					textarea.select();
+					try {
+						document.execCommand('copy');
+						showNotification('success', 'URL copiée !', 'L\'URL du QR code a été copiée dans le presse-papier.');
+					} catch (err) {
+						showNotification('danger', 'Erreur', 'Impossible de copier l\'URL.');
+					}
+					document.body.removeChild(textarea);
+				}
+
+				// Initialiser le conteneur de toasts au chargement
+				document.addEventListener('DOMContentLoaded', function() {
+					createToastContainer();
+				});
+			</script>
+		{% endblock %}
+		{# ============================================ #}
+		{# === FIN BLOCK JAVASCRIPTS === #}
+		{# ============================================ #}
 	</body>
 
 </html>
