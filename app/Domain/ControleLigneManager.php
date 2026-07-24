@@ -17,6 +17,61 @@ class ControleLigneManager extends AbstractManager
         return $stmt->fetchAll();
     }
 
+    /**
+     * Récupère les lignes de contrôle pour un équipement donné
+     */
+    public function findByEquipement(int $equipement_id)
+    {
+        $sql = "SELECT cl.*, c.statut as controle_statut, c.controleur_id
+                FROM controle_ligne cl
+                JOIN controle c ON cl.controle_id = c.id
+                WHERE cl.equipement_id = :equipement_id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['equipement_id' => $equipement_id]);
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Récupère une ligne de contrôle par controle_id et equipement_id
+     */
+    public function findByControleAndEquipement(int $controleId, int $equipementId): ?array
+    {
+        $sql = "SELECT * FROM controle_ligne WHERE controle_id = :controle_id AND equipement_id = :equipement_id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            'controle_id' => $controleId,
+            'equipement_id' => $equipementId
+        ]);
+        $result = $stmt->fetch();
+        return $result ?: null;
+    }
+
+    /**
+     * Ajoute un équipement à un contrôle
+     */
+    public function addEquipement(int $controleId, int $equipementId): bool
+    {
+        // Vérifier si l'équipement est déjà dans le contrôle
+        $sql = "SELECT COUNT(*) FROM controle_ligne WHERE controle_id = :controle_id AND equipement_id = :equipement_id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            'controle_id' => $controleId,
+            'equipement_id' => $equipementId
+        ]);
+        
+        if ($stmt->fetchColumn() > 0) {
+            return true;
+        }
+        
+        // Ajouter l'équipement
+        $sql = "INSERT INTO controle_ligne (controle_id, equipement_id, statut) VALUES (:controle_id, :equipement_id, 'a_controler')";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            'controle_id' => $controleId,
+            'equipement_id' => $equipementId
+        ]);
+    }
+
     public function findId(int $id)
     {
         $sql = "SELECT * FROM controle_ligne WHERE id = :id";
@@ -51,7 +106,6 @@ class ControleLigneManager extends AbstractManager
 
     private function _update(array $ligne)
     {
-        // Filtrer les champs pour éviter les erreurs
         $allowedFields = ['remarque', 'date_controle', 'statut', 'id'];
         $filteredLigne = array_intersect_key($ligne, array_flip($allowedFields));
         

@@ -40,6 +40,7 @@ class QrRedirectController extends AbstractController
      */
     public function redirect(Request $request)
     {
+        // 1. Récupérer l'ID de l'équipement
         $id = $request->attributes->get('id');
         
         if (!$id) {
@@ -54,6 +55,7 @@ class QrRedirectController extends AbstractController
             exit;
         }
         
+        // 2. Vérifier que l'équipement existe
         $equipement = $this->equipementManager->findId((int)$id);
         
         if (!$equipement) {
@@ -62,6 +64,7 @@ class QrRedirectController extends AbstractController
             exit;
         }
         
+        // 3. Vérifier que l'utilisateur est connecté
         $user = $this->getCurrentUser();
         
         if (!$user) {
@@ -69,14 +72,29 @@ class QrRedirectController extends AbstractController
             exit;
         }
         
-        $controleEnCours = $this->findControleEnCours((int)$id, $user['id']);
+        // 4. Chercher un contrôle en cours pour l'utilisateur
+        $controleEnCours = $this->findControleEnCours(null, $user['id']);
         
         if ($controleEnCours) {
+            // 5. Ajouter l'équipement au contrôle s'il n'y est pas
+            $this->addEquipementToControle((int)$id, $controleEnCours['id']);
+            
+            // 6. Récupérer la ligne de contrôle de l'équipement
+            $controleLigne = $this->findControleLigneByEquipement($controleEnCours['id'], (int)$id);
+            
+            if ($controleLigne) {
+                // 7. Rediriger vers la page d'édition de la ligne
+                header('Location: /admin/controles/update-ligne/' . $controleLigne['id']);
+                exit;
+            }
+            
+            // Fallback : rediriger vers le contrôle
             header('Location: /admin/controles/edit/' . $controleEnCours['id']);
             exit;
         }
         
-        header('Location: /equipements/equipement-' . $id);
+        // 5b. Aucun contrôle en cours - Créer un nouveau contrôle
+        header('Location: /admin/controles/creer?equipement_id=' . $id);
         exit;
     }
     
@@ -408,36 +426,28 @@ class QrRedirectController extends AbstractController
     }
     
     /**
-     * Trouve un contrôle en cours pour un équipement et un utilisateur
-     */
-    private function findControleEnCours(int $equipementId, int $userId): ?array
+    * Trouve un contrôle en cours pour un équipement et un utilisateur
+    */
+    private function findControleEnCours(?int $equipementId, int $userId): ?array
     {
-        $controleLignes = [];
-        if (method_exists($this->controleLigneManager, 'findByEquipement')) {
-            $controleLignes = $this->controleLigneManager->findByEquipement($equipementId);
-        } elseif (method_exists($this->controleLigneManager, 'getByEquipement')) {
-            $controleLignes = $this->controleLigneManager->getByEquipement($equipementId);
-        } else {
-            $sql = "SELECT * FROM controle_ligne WHERE equipement_id = :equipement_id";
-            $stmt = $this->controleLigneManager->db->prepare($sql);
-            $stmt->execute(['equipement_id' => $equipementId]);
-            $controleLignes = $stmt->fetchAll();
+        error_log("=== findControleEnCours ===");
+        error_log("User ID: " . $userId);
+        
+        // Utiliser la méthode du Manager
+        $controle = $this->controleManager->findActiveByUser($userId);
+        
+        if ($controle) {
+            error_log("✅ Contrôle en cours trouvé: " . $controle['id']);
+            return $controle;
         }
         
-        if (empty($controleLignes)) {
-            return null;
-        }
-        
-        foreach ($controleLignes as $ligne) {
-            $controle = $this->getControleById($ligne['controle_id']);
-            if ($controle && 
-                $controle['statut'] === 'en_cours' && 
-                $controle['utilisateur_id'] == $userId) {
-                return $controle;
-            }
-        }
-        
+        error_log("❌ Aucun contrôle en cours trouvé");
         return null;
+    }
+    
+    private function addEquipementToControle(int $equipementId, int $controleId): bool
+    {
+        return $this->controleLigneManager->addEquipement($controleId, $equipementId);
     }
     
     /**
@@ -471,13 +481,17 @@ class QrRedirectController extends AbstractController
     }
     
     /**
-     * Récupère l'utilisateur actuellement connecté
-     */
+    * Récupère l'utilisateur actuellement connecté
+    */
     private function getCurrentUser(): ?array
     {
-        if ($this->session->has('user_id')) {
-            return $this->getUtilisateurById($this->session->get('user_id'));
+        // La session Symfony stocke les données dans _sf2_attributes
+        $user = $this->session->get('user');
+        
+        if ($user && isset($user['id'])) {
+            return $user;
         }
+        
         return null;
     }
     
@@ -500,13 +514,31 @@ class QrRedirectController extends AbstractController
     }
     
     /**
-     * Récupère l'URL de base
-     */
+    * Récupère l'URL de base depuis la configuration
+    */
     private function getBaseUrl(): string
     {
+        // Charger la configuration
+        $configFile = __DIR__ . '/../../.env.local.php';
+        if (file_exists($configFile)) {
+            $config = include $configFile;
+            if (isset($config['ROOT_URL']) && !empty($config['ROOT_URL'])) {
+                return rtrim($config['ROOT_URL'], '/');
+            }
+        }
+        
+        // Fallback : construire l'URL depuis le serveur
         $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
         $host = $_SERVER['HTTP_HOST'];
         $basePath = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
         return $protocol . $host . $basePath;
+    }
+    
+    /**
+    * Récupère la ligne de contrôle pour un équipement dans un contrôle donné
+    */
+    private function findControleLigneByEquipement(int $controleId, int $equipementId): ?array
+    {
+        return $this->controleLigneManager->findByControleAndEquipement($controleId, $equipementId);
     }
 }

@@ -59,4 +59,16 @@ class ControleManager extends AbstractManager
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($filteredControle);
     }
+    
+    /**
+    * Trouve un contrôle en cours pour un utilisateur
+    */
+    public function findActiveByUser(int $userId): ?array
+    {
+        $sql = "SELECT * FROM controle WHERE statut = 'ouvert' AND controleur_id = :user_id LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['user_id' => $userId]);
+        $result = $stmt->fetch();
+        return $result ?: null;
+    }
 }
