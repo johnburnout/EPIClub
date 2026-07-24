@@ -19,21 +19,22 @@ $install_default_activity_data = false;
 $form_errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    /** @todo Need form validation here */
+    // Validation
+    if (empty($_POST['nom'])) { $form_errors[] = 'Le nom du club est requis.'; }
 
     if (empty($form_errors)) {
         $club = [
             'nom' => $_POST['nom'],
             'activite' => $_POST['activite'],
-            'description' => $_POST['description'],
-            'email' => $_POST['email'],
-            'phone' => $_POST['phone'],
+            'description' => $_POST['description'] ?? '',
+            'email' => $_POST['email'] ?? '',
+            'phone' => $_POST['phone'] ?? '',
         ];
         $clubManager = new ClubManager();
         $clubManager->save($club);
 
         if (isset($_POST['install_default_activity_data'])) {
-            /** @todo  install defaults */
+            /** @todo installer les données par défaut */
         }
         header('Location: ?step=final');
         exit();
@@ -47,22 +48,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <h1>Club</h1>
 <hr>
 
+<?php if (!empty($form_errors)): ?>
+    <div class="alert alert-danger">
+        <ul>
+            <?php foreach ($form_errors as $error): ?>
+                <li><?= htmlspecialchars($error) ?></li>
+            <?php endforeach; ?>
+        </ul>
+    </div>
+<?php endif; ?>
+
 <form method="post">
     <div class="mb-3">
-        <label for="nom" class="form-label">Nom</label>
+        <label for="nom" class="form-label">Nom du club *</label>
         <input type="text" class="form-control" name="nom" id="nom" value="<?= htmlspecialchars($club['nom']); ?>" required>
     </div>
     <div class="mb-3">
-        <label for="activite" class="form-label">Activité</label>
+        <label for="activite" class="form-label">Activité principale</label>
         <select class="form-select" name="activite" id="activite">
             <?php foreach ($activites as $activite) { ?>
-                <option value="<?= $activite; ?>"><?= $activite; ?></option>
+                <option value="<?= $activite; ?>" <?= ($club['activite'] === $activite) ? 'selected' : '' ?>><?= $activite; ?></option>
             <?php } ?>
         </select>
     </div>
     <div class="mb-3">
         <label for="description" class="form-label">Description</label>
-        <input type="text" class="form-control" name="description" id="description" value="<?= htmlspecialchars($club['description']); ?>">
+        <textarea class="form-control" name="description" id="description" rows="3"><?= htmlspecialchars($club['description']); ?></textarea>
     </div>
     <div class="mb-3">
         <label for="email" class="form-label">Adresse mail</label>

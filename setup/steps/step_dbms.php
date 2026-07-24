@@ -1,8 +1,5 @@
 <?php
 
-// Chargement du parser d'environnement
-require_once __DIR__ . '/../includes/EnvironmentFileParser.php';
-
 $db_params = [
     'db_host' => 'localhost:3306',
     'db_user' => 'root',
@@ -25,32 +22,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $db->exec("CREATE DATABASE IF NOT EXISTS `$db_name`");
             $db->exec("USE `$db_name`");
             
-            // Désactiver les contraintes de clés étrangères
+            // VIDER LA BASE SI ELLE EXISTE DÉJÀ
             $db->exec("SET FOREIGN_KEY_CHECKS = 0");
             
-            // Exécuter le script SQL
+            // Récupérer toutes les tables
+            $tables = $db->query("SHOW TABLES")->fetchAll(\PDO::FETCH_COLUMN);
+            foreach ($tables as $table) {
+                $db->exec("DROP TABLE IF EXISTS `$table`");
+            }
+            
+            $db->exec("SET FOREIGN_KEY_CHECKS = 1");
+            
+            // Exécuter le script SQL pour créer les tables
             $sql = file_get_contents(__DIR__ . '/../epiclub.sql');
             if (!empty($sql)) {
-                if ($db->exec($sql) === false) {
-                    $errors['tables'] = 'Création des tables impossible.';
+                $queries = array_filter(array_map('trim', explode(';', $sql)));
+                foreach ($queries as $query) {
+                    if (!empty($query)) {
+                        $db->exec($query);
+                    }
                 }
             }
             
-            // Réactiver les contraintes
-            $db->exec("SET FOREIGN_KEY_CHECKS = 1");
-            
         } catch (\Throwable $th) {
-            $errors['database'] = 'Les paramètres de la connection à la database sont incorrects ou le serveur est inaccessible.';
+            $errors['database'] = 'Les paramètres de la connection à la database sont incorrects ou le serveur est inaccessible. Erreur: ' . $th->getMessage();
         }
 
         if (empty($errors)) {
-            // Instancier directement la classe (sans namespace)
-            $env = new EnvironmentFileParser(__DIR__ . '/../../.env.local.php');
+            $env = new \Epiclub\Engine\EnvironmentFileParser();
             $env->set('DB_HOST', $db_host);
             $env->set('DB_NAME', $db_name);
             $env->set('DB_USER', $db_user);
             $env->set('DB_PASS', $db_pass);
-            $env->save();
 
             header("Location: ?step=admin");
             exit();
@@ -68,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <?php if (!empty($errors)): ?>
     <div class="alert alert-danger">
         <ul>
-            <?php foreach ($errors as $error): ?>
+            <?php foreach ($errors as $key => $error): ?>
                 <li><?= htmlspecialchars($error) ?></li>
             <?php endforeach; ?>
         </ul>

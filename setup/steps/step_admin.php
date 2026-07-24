@@ -16,7 +16,16 @@ $admin = [
 $form_errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    /** @todo Need form validation here */
+    // Validation
+    if (empty($_POST['nom'])) { $form_errors[] = 'Le nom est requis.'; }
+    if (empty($_POST['prenom'])) { $form_errors[] = 'Le prénom est requis.'; }
+    if (empty($_POST['username'])) { $form_errors[] = 'Le nom d\'utilisateur est requis.'; }
+    if (empty($_POST['email']) || !filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
+        $form_errors[] = 'Une adresse email valide est requise.';
+    }
+    if (empty($_POST['password']) || strlen($_POST['password']) < 6) {
+        $form_errors[] = 'Le mot de passe doit contenir au moins 6 caractères.';
+    }
 
     if (empty($form_errors)) {
         $admin = [
@@ -27,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'password' => password_hash($_POST['password'], PASSWORD_DEFAULT)
         ];
         $admin['role'] = 'ROLE_ADMIN';
-        $admin['date_creation'] = (new DateTime())->format('Y-m-d h:m:s');
+        $admin['date_creation'] = (new DateTime())->format('Y-m-d H:i:s');
         $admin['derniere_connexion'] = null;
 
         $utilisateurManager = new UtilisateurManager();
@@ -60,6 +69,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <h1>Administrateur</h1>
 <hr>
+
+<?php if (!empty($form_errors)): ?>
+    <div class="alert alert-danger">
+        <ul>
+            <?php foreach ($form_errors as $error): ?>
+                <li><?= htmlspecialchars($error) ?></li>
+            <?php endforeach; ?>
+        </ul>
+    </div>
+<?php endif; ?>
 
 <?php if (isset($keyGenerated) && $keyGenerated): ?>
     <div class="alert alert-success">

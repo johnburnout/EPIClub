@@ -3,23 +3,26 @@
 use Epiclub\Engine\EnvironmentFileParser;
 
 $smtp = [
-    'domain' => 'smtp.example.com',
+    'domain' => 'smtp.free.fr',
     'port' => 25,
-    'user' => 'root',
-    'password' => 'secret'
+    'user' => '',
+    'password' => ''
 ];
 $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    /** @todo Need form validation here */
+    // Validation
+    if (empty($_POST['domain'])) { $errors[] = 'Le domaine SMTP est requis.'; }
+    if (empty($_POST['port'])) { $errors[] = 'Le port SMTP est requis.'; }
+    if (empty($_POST['user'])) { $errors[] = 'Le nom d\'utilisateur SMTP est requis.'; }
 
     if (empty($errors)) {
         $mailer_dsn = "smtp://" . $_POST['user'] . ":" . $_POST['password'] . "@" . $_POST['domain'] . ":" . $_POST['port'];
         $env = new EnvironmentFileParser();
-        $env->set('mailer_dsn', $mailer_dsn);
-    }
-
-    if (empty($errors)) {
+        $env->set('MAILER_DSN', $mailer_dsn);
+        $env->set('MAILER_FROM', 'admin@' . $_POST['domain']);
+        $env->set('MAILER_NAME', 'EPIClub');
+        
         header('Location: ?step=club');
         exit();
     }
@@ -44,12 +47,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <form method="post">
     <div class="mb-3">
-        <label for="domain" class="form-label">Domaine</label>
+        <label for="domain" class="form-label">Domaine SMTP</label>
         <input type="text" class="form-control" name="domain" id="domain" value="<?= htmlspecialchars($smtp['domain']); ?>" required>
+        <small class="text-muted">Ex: smtp.free.fr, smtp.gmail.com, etc.</small>
     </div>
     <div class="mb-3">
         <label for="port" class="form-label">Port</label>
         <input type="number" class="form-control" name="port" id="port" value="<?= htmlspecialchars($smtp['port']); ?>" required>
+        <small class="text-muted">Généralement 25, 465 (SSL) ou 587 (TLS).</small>
     </div>
     <div class="mb-3">
         <label for="user" class="form-label">Nom d'utilisateur</label>

@@ -1,13 +1,19 @@
 <?php require __DIR__ . '/../includes/header.php'; ?>
 
-<h1>Installation terminée</h1>
+<h1>🎉 Installation terminée !</h1>
 <hr>
 
 <div class="alert alert-success">
-    <p>L'application est installée avec succès !</p>
-    <p>Avant de continuer, veuillez supprimer le dossier <strong>setup</strong> de votre serveur.</p>
+    <h4>✅ L'application est installée avec succès !</h4>
+    <p>Vous pouvez maintenant accéder à votre site.</p>
 </div>
 
-<p><a href="/" class="btn btn-primary">Accéder au site</a></p>
+<div class="alert alert-warning">
+    <strong>⚠️ Important :</strong> Avant de continuer, veuillez supprimer le dossier <strong>setup</strong> de votre serveur pour des raisons de sécurité.
+</div>
+
+<div class="mt-4">
+    <a href="/" class="btn btn-primary btn-lg">🚀 Accéder au site</a>
+</div>
 
 <?php require __DIR__ . '/../includes/footer.php'; ?>

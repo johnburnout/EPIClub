@@ -5,11 +5,19 @@
  * Ce fichier gère la configuration initiale : nom du site et URL racine.
  */
 
-require_once __DIR__ . '/../includes/helpers.php';
-require_once __DIR__ . '/../includes/EnvironmentFileParser.php';
+    require_once __DIR__ . '/../includes/helpers.php';
+    require_once __DIR__ . '/../includes/EnvironmentFileParser.php';
 
+// 🔧 CRÉER LE FICHIER .env.local.php S'IL N'EXISTE PAS
 $envFile = __DIR__ . '/../../.env.local.php';
-$env = new EnvironmentFileParser($envFile);
+if (!file_exists($envFile)) {
+    file_put_contents($envFile, '<?php return [];');
+    chmod($envFile, 0664);
+}
+
+use Epiclub\Engine\EnvironmentFileParser;
+
+$env = new EnvironmentFileParser();
 $existing = $env->load();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_step1'])) {
@@ -29,7 +37,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_step1'])) {
     if (empty($errors)) {
         $env->set('SITE_NAME', $siteName);
         $env->set('ROOT_URL', $rootUrl);
-        $env->save();
 
         header('Location: ?step=dbms');
         exit;
