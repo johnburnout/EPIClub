@@ -15,12 +15,21 @@ class AcquisitionProcess
         $acquisitionManager = new AcquisitionManager();
         $fournisseurManager = new FournisseurManager();
 
-        /** @todo facture_document process here*/
+        // ✅ S'assurer que toutes les clés existent avec des valeurs par défaut
+        $defaults = [
+            'fournisseur_nom' => null,
+            'facture_reference' => null,
+            'facture_date' => date('Y-m-d'),
+            'facture_document' => null,
+            'saisie_par' => null,
+            'est_validee' => 0,
+        ];
+        
+        $acquisition = array_merge($defaults, $acquisition);
 
         if ($fournisseur = $fournisseurManager->findOneByCriteria(['nom' => $acquisition['fournisseur_nom']])) {
             $fournisseur_id = $fournisseur['id'];
         } else {
-            /** create new fournisseur */
             $fournisseur_id = $fournisseurManager->save(['nom' => $acquisition['fournisseur_nom']]);
         }
 
@@ -37,14 +46,12 @@ class AcquisitionProcess
         if ($categorie = $categorieManager->findOneByCriteria(['libelle' => $ligne['categorie_libelle']])) {
             $categorie_id = $categorie['id'];
         } else {
-            /** create new equipement_categorie */
             $new_categorie = [
                 'libelle' => ucfirst($ligne['categorie_libelle']),
                 'description' => '',
                 'image' => '',
                 'est_epi' => 1
             ];
-
             $categorie_id = $categorieManager->save($new_categorie);
         }
 
@@ -73,7 +80,7 @@ class AcquisitionProcess
             
             if ($regrouper_en_lot) {
                 $code = $annee . '-' . str_pad($ligne['acquisition_id'], 3, '0', STR_PAD_LEFT) . '-' .
-                str_pad($ligne['id'], 3, '0', STR_PAD_LEFT) . '-LOT';
+                        str_pad($ligne['id'], 3, '0', STR_PAD_LEFT) . '-LOT';
                 while ($equipementManager->codeExists($code)) {
                     $code = $code . '-' . rand(10, 99);
                 }
@@ -97,7 +104,7 @@ class AcquisitionProcess
             } else {
                 for ($i = 1; $i <= $ligne['nombre']; $i++) {
                     $code = $annee . '-' . str_pad($ligne['acquisition_id'], 3, '0', STR_PAD_LEFT) . '-' .
-                    str_pad($ligne['id'], 3, '0', STR_PAD_LEFT) . '-' . str_pad($i, 3, '0', STR_PAD_LEFT);
+                            str_pad($ligne['id'], 3, '0', STR_PAD_LEFT) . '-' . str_pad($i, 3, '0', STR_PAD_LEFT);
                     while ($equipementManager->codeExists($code)) {
                         $code = $code . '-' . rand(10, 99);
                     }

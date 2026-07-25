@@ -35,9 +35,13 @@ class QrRedirectController extends AbstractController
     }
     
     /**
-     * Point d'entrée pour le scan du QR code
-     * URL: /qr/{id}
-     */
+    * Point d'entrée pour le scan du QR code
+    * URL: /qr/{id}
+    */
+    /**
+    * Point d'entrée pour le scan du QR code
+    * URL: /qr/{id}
+    */
     public function redirect(Request $request)
     {
         // 1. Récupérer l'ID de l'équipement
@@ -72,29 +76,8 @@ class QrRedirectController extends AbstractController
             exit;
         }
         
-        // 4. Chercher un contrôle en cours pour l'utilisateur
-        $controleEnCours = $this->findControleEnCours(null, $user['id']);
-        
-        if ($controleEnCours) {
-            // 5. Ajouter l'équipement au contrôle s'il n'y est pas
-            $this->addEquipementToControle((int)$id, $controleEnCours['id']);
-            
-            // 6. Récupérer la ligne de contrôle de l'équipement
-            $controleLigne = $this->findControleLigneByEquipement($controleEnCours['id'], (int)$id);
-            
-            if ($controleLigne) {
-                // 7. Rediriger vers la page d'édition de la ligne
-                header('Location: /admin/controles/update-ligne/' . $controleLigne['id']);
-                exit;
-            }
-            
-            // Fallback : rediriger vers le contrôle
-            header('Location: /admin/controles/edit/' . $controleEnCours['id']);
-            exit;
-        }
-        
-        // 5b. Aucun contrôle en cours - Créer un nouveau contrôle
-        header('Location: /admin/controles/creer?equipement_id=' . $id);
+        // ✅ TOUS LES UTILISATEURS (quel que soit le rôle) → rediriger vers la fiche de l'équipement
+        header('Location: /equipements/equipement-' . $id);
         exit;
     }
     
@@ -128,19 +111,22 @@ class QrRedirectController extends AbstractController
         
         $user = $this->getCurrentUser();
         
+        // ✅ Vérifier si l'utilisateur peut créer un contrôle (via la méthode parente)
+        $peutCreerControle = $user ? ($this->isGranted('ROLE_CONTROLLEUR') || $this->isGranted('ROLE_ADMIN')) : false;
+        
         $controleEnCours = null;
-        if ($user) {
+        if ($user && $peutCreerControle) {
             $controleEnCours = $this->findControleEnCours((int)$id, $user['id']);
         }
         
         $historique = $this->equipementManager->getHistoriqueControles((int)$id);
         
-        // Utiliser la méthode render du contrôleur
-        return $this->render('qr/choice_page.twig', [
+        return $this->render('choice_page.twig', [
             'equipement' => $equipement,
             'controleEnCours' => $controleEnCours,
             'historiqueControles' => $historique,
             'user' => $user,
+            'peutCreerControle' => $peutCreerControle,
             'qrCodeFilename' => 'equipement_' . $id
         ]);
     }
@@ -149,10 +135,6 @@ class QrRedirectController extends AbstractController
      * Génère et affiche le QR code
      * URL: /qr/generate/{id}
      */
-    /**
-    * Génère et affiche le QR code
-    * URL: /qr/generate/{id}
-    */
     public function generateQr(Request $request)
     {
         error_log("=== QR GENERATE ===");
@@ -189,8 +171,6 @@ class QrRedirectController extends AbstractController
         error_log("✅ Équipement trouvé: " . $equipement['reference']);
         
         $baseUrl = $this->getBaseUrl();
-        
-        // 🔧 CORRECTION : Encoder uniquement l'URL, pas du JSON
         $qrUrl = $baseUrl . '/qr/' . $id;
         
         error_log("📊 URL encodée: " . $qrUrl);
@@ -205,7 +185,6 @@ class QrRedirectController extends AbstractController
         try {
             error_log("🔄 Génération du QR...");
             
-            // 🔧 CORRECTION : Utiliser l'URL directement, pas du JSON
             $qrCodeContent = $this->qrCodeGenerator->generateFromData($qrUrl, 400, false);
             
             if (empty($qrCodeContent)) {
@@ -229,9 +208,9 @@ class QrRedirectController extends AbstractController
     }
     
     /**
-    * Télécharge le QR code
-    * URL: /qr/download/{id}
-    */
+     * Télécharge le QR code
+     * URL: /qr/download/{id}
+     */
     public function downloadQr(Request $request)
     {
         $id = $request->attributes->get('id');
@@ -257,8 +236,6 @@ class QrRedirectController extends AbstractController
         }
         
         $baseUrl = $this->getBaseUrl();
-        
-        // 🔧 CORRECTION : Encoder uniquement l'URL
         $qrUrl = $baseUrl . '/qr/' . $id;
         
         try {
@@ -422,14 +399,13 @@ class QrRedirectController extends AbstractController
     }
     
     /**
-    * Trouve un contrôle en cours pour un équipement et un utilisateur
-    */
+     * Trouve un contrôle en cours pour un équipement et un utilisateur
+     */
     private function findControleEnCours(?int $equipementId, int $userId): ?array
     {
         error_log("=== findControleEnCours ===");
         error_log("User ID: " . $userId);
         
-        // Utiliser la méthode du Manager
         $controle = $this->controleManager->findActiveByUser($userId);
         
         if ($controle) {
@@ -477,11 +453,10 @@ class QrRedirectController extends AbstractController
     }
     
     /**
-    * Récupère l'utilisateur actuellement connecté
-    */
+     * Récupère l'utilisateur actuellement connecté
+     */
     private function getCurrentUser(): ?array
     {
-        // La session Symfony stocke les données dans _sf2_attributes
         $user = $this->session->get('user');
         
         if ($user && isset($user['id'])) {
@@ -510,11 +485,10 @@ class QrRedirectController extends AbstractController
     }
     
     /**
-    * Récupère l'URL de base depuis la configuration
-    */
+     * Récupère l'URL de base depuis la configuration
+     */
     private function getBaseUrl(): string
     {
-        // Charger la configuration
         $configFile = __DIR__ . '/../../.env.local.php';
         if (file_exists($configFile)) {
             $config = include $configFile;
@@ -523,7 +497,6 @@ class QrRedirectController extends AbstractController
             }
         }
         
-        // Fallback : construire l'URL depuis le serveur
         $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
         $host = $_SERVER['HTTP_HOST'];
         $basePath = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
@@ -531,8 +504,8 @@ class QrRedirectController extends AbstractController
     }
     
     /**
-    * Récupère la ligne de contrôle pour un équipement dans un contrôle donné
-    */
+     * Récupère la ligne de contrôle pour un équipement dans un contrôle donné
+     */
     private function findControleLigneByEquipement(int $controleId, int $equipementId): ?array
     {
         return $this->controleLigneManager->findByControleAndEquipement($controleId, $equipementId);

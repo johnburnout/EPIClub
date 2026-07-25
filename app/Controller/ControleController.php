@@ -56,6 +56,20 @@ class ControleController extends AbstractController
         $this->deniAccessUnlessGranted('ROLE_CONTROLLEUR');
         
         $user = $this->session->get('user');
+        
+        // ✅ Vérifier si l'utilisateur a un contrôle en cours qui est clôturé
+        if (!empty($user['controle_en_cours_id'])) {
+            $controleManager = new ControleManager();
+            $controle = $controleManager->findId($user['controle_en_cours_id']);
+            if (!$controle || $controle['statut'] === 'cloture') {
+                // Le contrôle n'existe plus ou est clôturé : on réinitialise
+                $user['controle_en_cours_id'] = null;
+                $utilisateurManager = new UtilisateurManager();
+                $utilisateurManager->save($user);
+                $this->session->set('user', $user);
+            }
+        }
+        
         $controleManager = new ControleManager();
         $allControles = $controleManager->findAll();
         

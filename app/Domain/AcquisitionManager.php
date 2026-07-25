@@ -45,7 +45,6 @@ class AcquisitionManager extends AbstractManager
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['id' => $id]);
         if ($acquisition = $stmt->fetch()) {
-            // ✅ S'assurer que est_validee existe
             if (!isset($acquisition['est_validee'])) {
                 $acquisition['est_validee'] = 0;
             }
@@ -108,8 +107,7 @@ class AcquisitionManager extends AbstractManager
             return $this->_update($acquisition);
         }
         
-        $this->_insert($acquisition);
-        return $this->db->lastInsertId('acquisition');
+        return $this->_insert($acquisition);
     }
     
     public function delete(int $id)
@@ -121,14 +119,14 @@ class AcquisitionManager extends AbstractManager
     
     private function _insert(array $acquisition)
     {
-        if (!isset($acquisition['est_validee'])) {
-            $acquisition['est_validee'] = 0;
-        }
+        // ✅ On ne garde que les champs attendus par la requête
+        $allowedFields = ['fournisseur_id', 'facture_reference', 'facture_date', 'facture_document', 'saisie_par', 'est_validee'];
+        $filteredAcquisition = array_intersect_key($acquisition, array_flip($allowedFields));
         
         $sql = "INSERT INTO acquisition (fournisseur_id, facture_reference, facture_date, facture_document, saisie_par, est_validee) 
-        VALUES (:fournisseur_id, :facture_reference, :facture_date, :facture_document, :saisie_par, :est_validee)";
+                VALUES (:fournisseur_id, :facture_reference, :facture_date, :facture_document, :saisie_par, :est_validee)";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute($acquisition);
+        return $stmt->execute($filteredAcquisition);
     }
     
     private function _update(array $acquisition)
@@ -137,14 +135,10 @@ class AcquisitionManager extends AbstractManager
         $allowedFields = ['fournisseur_id', 'facture_reference', 'facture_date', 'facture_document', 'saisie_par', 'est_validee', 'id'];
         $filteredAcquisition = array_intersect_key($acquisition, array_flip($allowedFields));
         
-        if (!isset($filteredAcquisition['est_validee'])) {
-            $filteredAcquisition['est_validee'] = 0;
-        }
-        
         $sql = "UPDATE acquisition 
-        SET fournisseur_id=:fournisseur_id, facture_reference=:facture_reference, facture_date=:facture_date, 
-        facture_document=:facture_document, saisie_par=:saisie_par, est_validee=:est_validee
-        WHERE id=:id";
+                SET fournisseur_id=:fournisseur_id, facture_reference=:facture_reference, facture_date=:facture_date, 
+                    facture_document=:facture_document, saisie_par=:saisie_par, est_validee=:est_validee
+                WHERE id=:id";
         $stmt = $this->db->prepare($sql);
         $result = $stmt->execute($filteredAcquisition);
         

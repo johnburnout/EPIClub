@@ -38,11 +38,14 @@ class AcquisitionController extends AbstractController
                 $acquisition = $request->request->all();
                 $acquisition['saisie_par'] = $this->session->get('user')['id'];
                 
+                // ✅ Initialiser facture_document à null par défaut
+                $acquisition['facture_document'] = null;
+                
+                // Téléchargement de la facture
                 $factureDocument = $this->uploadFacture($_FILES['facture_document'] ?? null);
                 if ($factureDocument === false) {
                     $form_errors['facture_document'] = 'Erreur lors du téléchargement du fichier. Formats acceptés : PDF, JPG, PNG (max 10 Mo).';
-                    $acquisition['facture_document'] = null;
-                } else {
+                } elseif ($factureDocument !== null) {
                     $acquisition['facture_document'] = $factureDocument;
                 }
                 
@@ -50,7 +53,7 @@ class AcquisitionController extends AbstractController
                     $acquisitionProcess = new AcquisitionProcess();
                     if ($id = $acquisitionProcess->acquisition_process($acquisition)) {
                         $acquisition['id'] = $id;
-                        $this->session->getFlashBag()->add('success', '✅ Acquisition créée avec succès. Vous pouvez maintenant ajouter des lignes et télécharger la facture.');
+                        $this->session->getFlashBag()->add('success', '✅ Acquisition créée avec succès. Vous pouvez maintenant ajouter des lignes.');
                         return $this->redirectTo("/admin/acquisitions/acquisition_modification-$id");
                     }
                     $form_errors['general'] = 'Erreur lors de la création de l\'acquisition.';
@@ -114,10 +117,11 @@ class AcquisitionController extends AbstractController
                     if ($factureDocument === false) {
                         $form_errors['facture_document'] = 'Erreur lors du téléchargement du fichier. Formats acceptés : PDF, JPG, PNG (max 10 Mo).';
                     } else {
+                        // Supprimer l'ancien fichier
                         if (!empty($acquisition['facture_document'])) {
                             $oldFilePath = $_SERVER['DOCUMENT_ROOT'] . '/uploads/' . $acquisition['facture_document'];
                             if (file_exists($oldFilePath)) {
-                                unlink($oldFilePath);
+                                @unlink($oldFilePath);
                             }
                         }
                         $acquisition['facture_document'] = $factureDocument;
@@ -278,18 +282,24 @@ class AcquisitionController extends AbstractController
 
     private function uploadFacture(?array $file)
     {
+        // Aucun fichier téléchargé
         if (!$file || $file['error'] === UPLOAD_ERR_NO_FILE) {
             return null;
         }
         
+        // Erreur de téléchargement
         if ($file['error'] !== UPLOAD_ERR_OK) {
+            $this->session->getFlashBag()->add('error', 'Erreur de téléchargement : code ' . $file['error']);
             return false;
         }
         
+        // Taille maximum : 10 Mo
         if ($file['size'] > 10 * 1024 * 1024) {
+            $this->session->getFlashBag()->add('error', 'Le fichier dépasse la taille maximum autorisée (10 Mo).');
             return false;
         }
         
+        // Vérification du type MIME
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mimeType = finfo_file($finfo, $file['tmp_name']);
         finfo_close($finfo);
@@ -303,19 +313,36 @@ class AcquisitionController extends AbstractController
         ];
         
         if (!in_array($mimeType, $allowedTypes, true)) {
+            $this->session->getFlashBag()->add('error', 'Type de fichier non autorisé. Formats acceptés : PDF, JPG, PNG, DOC, DOCX.');
             return false;
         }
         
+        // ✅ Chemin absolu avec $_SERVER['DOCUMENT_ROOT']
         $uploadDir = $_SERVER['DOCUMENT_ROOT'] . '/uploads/factures/';
+        
+        // Créer le dossier s'il n'existe pas
         if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
+            if (!mkdir($uploadDir, 0755, true)) {
+                $this->session->getFlashBag()->add('error', 'Impossible de créer le dossier de téléchargement.');
+                return false;
+            }
         }
         
+        // Vérifier les permissions
+        if (!is_writable($uploadDir)) {
+            $this->session->getFlashBag()->add('error', 'Le dossier de téléchargement n\'est pas accessible en écriture.');
+            return false;
+        }
+        
+        // Générer un nom de fichier unique
         $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
         $filename = 'facture_' . uniqid() . '.' . $extension;
         $filepath = $uploadDir . $filename;
         
+        // Déplacer le fichier
         if (!move_uploaded_file($file['tmp_name'], $filepath)) {
+            $error = error_get_last();
+            $this->session->getFlashBag()->add('error', 'Erreur lors du déplacement du fichier : ' . ($error['message'] ?? 'inconnue'));
             return false;
         }
         

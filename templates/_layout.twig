@@ -46,7 +46,7 @@
 							<li class="nav-item dropdown">
 								<a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Contrôles</a>
 								<div class="dropdown-menu">
-									{% if _user.controle_en_cours_id is empty %}
+									{% if _user.controle_en_cours_id is empty or _user.controle_en_cours_id == 0 %}
 									<a class="dropdown-item" href="/admin/controles/creer">➕ Créer un contrôle</a>
 									<div class="dropdown-divider"></div>
 									{% endif %}
