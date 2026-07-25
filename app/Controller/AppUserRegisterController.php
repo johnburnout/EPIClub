@@ -23,35 +23,86 @@ class AppUserRegisterController extends AbstractController
 
     public function forgotPassword(Request $request)
     {
-        // ✅ Vérifier si une demande récente a déjà été faite
+        $timeout = 60; // 1 minute pour tests
+        
+        // Vérification session
         if ($this->session->get('reset_email_sent')) {
             $elapsed = time() - $this->session->get('reset_email_time');
-            if ($elapsed < 300) { // 5 minutes
-                $this->session->getFlashBag()->add('info', 'Un email de réinitialisation a déjà été envoyé récemment. Vérifiez votre boîte de réception.');
+            if ($elapsed < $timeout) {
+                $this->session->getFlashBag()->add('info', 'Un email a déjà été envoyé récemment.');
                 return new RedirectResponse('/');
             } else {
                 $this->session->remove('reset_email_sent');
                 $this->session->remove('reset_email_time');
             }
         }
-
+        
         $form_errors = [];
+        $submitToken = bin2hex(random_bytes(16));
         
         if ($request->getMethod() === 'POST') {
-            if (false == filter_var($request->request->get('email'), FILTER_VALIDATE_EMAIL)) {
+            // Anti-double-submit
+            $submittedToken = $request->request->get('submit_token');
+            if ($this->session->get('last_submit_token') && $submittedToken === $this->session->get('last_submit_token')) {
+                $this->session->getFlashBag()->add('info', 'Une demande est déjà en cours.');
+                return new RedirectResponse('/');
+            }
+            $this->session->set('last_submit_token', $submittedToken);
+            
+            $email = $request->request->get('email');
+            if (false == filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 $form_errors['email'] = 'Veuillez entrer une adresse mail valide.';
             }
             
             if (empty($form_errors)) {
                 $utilisateurManager = new UtilisateurManager();
-                if ($utilisateur = $utilisateurManager->findOneByCriteria(['email' => $request->request->get('email')])) {
+                $utilisateur = $utilisateurManager->findOneByCriteria(['email' => $email]);
+                
+                if ($utilisateur) {
+                    // ✅ Vérification en base (colonne reset_email_sent)
+                    if (!empty($utilisateur['reset_email_sent']) && $utilisateur['reset_email_sent'] == 1) {
+                        // Si le flag est à 1, vérifier le timestamp
+                        if (!empty($utilisateur['reset_email_sent_at'])) {
+                            $lastSent = new \DateTime($utilisateur['reset_email_sent_at']);
+                            $now = new \DateTime();
+                            $diff = $now->getTimestamp() - $lastSent->getTimestamp();
+                            if ($diff < $timeout) {
+                                $this->session->getFlashBag()->add('info', 'Un email a déjà été envoyé récemment.');
+                                return new RedirectResponse('/');
+                            } else {
+                                // Réinitialiser le flag si le délai est dépassé
+                                $sql = "UPDATE utilisateur SET reset_email_sent = 0 WHERE id = :id";
+                                $pdo = $utilisateurManager->getDb();
+                                $stmt = $pdo->prepare($sql);
+                                $stmt->execute(['id' => $utilisateur['id']]);
+                                $utilisateur['reset_email_sent'] = 0;
+                            }
+                        }
+                    }
+                    
+                    // Génération du token
                     $clubManager = new ClubManager();
                     $club = $clubManager->findParameters();
                     
                     $token = bin2hex(random_bytes(32));
-                    $utilisateur['reset_token'] = $token;
-                    $utilisateur['reset_token_expires'] = date('Y-m-d H:i:s', strtotime('+24 hours'));
-                    $utilisateurManager->save($utilisateur);
+                    $expires = date('Y-m-d H:i:s', strtotime('+24 hours'));
+                    $sentAt = date('Y-m-d H:i:s');
+                    
+                    // ✅ Mise à jour directe avec reset_email_sent = 1
+                    $pdo = $utilisateurManager->getDb();
+                    $sql = "UPDATE utilisateur 
+                    SET reset_token = :token, 
+                    reset_token_expires = :expires, 
+                    reset_email_sent_at = :sent_at,
+                    reset_email_sent = 1
+                    WHERE id = :id";
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([
+                        'token' => $token,
+                        'expires' => $expires,
+                        'sent_at' => $sentAt,
+                        'id' => $utilisateur['id']
+                    ]);
                     
                     $resetUrl = $this->getBaseUrl() . '/regenerer_mot_de_passe?token=' . $token;
                     
@@ -70,20 +121,22 @@ class AppUserRegisterController extends AbstractController
                         );
                         $mailerService = new MailerService();
                         $mailerService->sendEmail($email);
+                        error_log("✅ Email envoyé à " . $utilisateur['email'] . " (token: $token)");
                     }
                 }
                 
-                // ✅ Flag pour éviter les doublons
+                // Session flag
                 $this->session->set('reset_email_sent', true);
                 $this->session->set('reset_email_time', time());
-
-                $this->session->getFlashBag()->add('info', 'La procédure de récupération a été envoyée à l\'adresse mail indiquée. Vérifiez votre boîte de réception et vos spams.');
+                
+                $this->session->getFlashBag()->add('info', 'La procédure de récupération a été envoyée à l\'adresse mail indiquée.');
                 return new RedirectResponse('/');
             }
         }
         
         return $this->render('user_forgot_password.twig', [
-            'form_errors' => $form_errors
+            'form_errors' => $form_errors,
+            'submit_token' => $submitToken
         ]);
     }
 
@@ -97,35 +150,22 @@ class AppUserRegisterController extends AbstractController
         }
         
         $utilisateurManager = new UtilisateurManager();
-        $utilisateur = $utilisateurManager->findByResetToken($token);
+        $utilisateur = $utilisateurManager->findOneByCriteria(['reset_token' => $token]);
         
         if (!$utilisateur) {
             $this->session->getFlashBag()->add('error', 'Lien de réinitialisation invalide ou expiré.');
             return new RedirectResponse('/');
         }
         
-        // ✅ Vérifier l'expiration avec reset_token_expires
-        if (!empty($utilisateur['reset_token_expires'])) {
+        // ✅ Vérification d'expiration (optionnelle)
+        if (isset($utilisateur['reset_token_expires']) && $utilisateur['reset_token_expires'] !== null) {
+            $now = new \DateTime();
             $expires = new \DateTime($utilisateur['reset_token_expires']);
-            $now = new \DateTime();
             if ($now > $expires) {
-                // Token expiré
                 $utilisateur['reset_token'] = null;
                 $utilisateur['reset_token_expires'] = null;
                 $utilisateurManager->save($utilisateur);
-                $this->session->getFlashBag()->add('error', 'Le lien de réinitialisation a expiré. Veuillez faire une nouvelle demande.');
-                return new RedirectResponse('/');
-            }
-        } else {
-            // Fallback : si pas de date d'expiration, on vérifie avec date_creation (24h)
-            $tokenDate = new \DateTime($utilisateur['date_creation']);
-            $now = new \DateTime();
-            $interval = $tokenDate->diff($now);
-            if ($interval->h >= 24 || $interval->days > 0) {
-                $utilisateur['reset_token'] = null;
-                $utilisateur['reset_token_expires'] = null;
-                $utilisateurManager->save($utilisateur);
-                $this->session->getFlashBag()->add('error', 'Le lien de réinitialisation a expiré. Veuillez faire une nouvelle demande.');
+                $this->session->getFlashBag()->add('error', 'Le lien a expiré.');
                 return new RedirectResponse('/');
             }
         }
@@ -150,7 +190,7 @@ class AppUserRegisterController extends AbstractController
                 $utilisateur['reset_token_expires'] = null;
                 $utilisateurManager->save($utilisateur);
                 
-                $this->session->getFlashBag()->add('success', 'Votre mot de passe a été réinitialisé avec succès. Vous pouvez maintenant vous connecter.');
+                $this->session->getFlashBag()->add('success', 'Votre mot de passe a été réinitialisé avec succès.');
                 return new RedirectResponse('/se_connecter');
             }
         }

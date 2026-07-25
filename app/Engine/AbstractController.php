@@ -79,8 +79,7 @@ abstract class AbstractController
     }
     
     /**
-     * Met à jour la dernière activité de l'utilisateur connecté
-     * (sans écraser les autres champs comme reset_token)
+     * ✅ Met à jour uniquement last_activity, sans écraser les autres champs
      */
     protected function updateLastActivity()
     {

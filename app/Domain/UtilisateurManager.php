@@ -48,21 +48,18 @@ class UtilisateurManager extends AbstractManager
     }
 
     /**
-     * Trouve un utilisateur par son token de réinitialisation (non expiré)
+     * Trouve un utilisateur par son token de réinitialisation
      */
     public function findByResetToken(string $token): ?array
     {
-        $sql = "SELECT * FROM utilisateur 
-                WHERE reset_token = :token 
-                AND reset_token IS NOT NULL 
-                AND reset_token_expires > NOW()";
+        $sql = "SELECT * FROM utilisateur WHERE reset_token = :token AND reset_token IS NOT NULL";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['token' => $token]);
         return $stmt->fetch() ?: null;
     }
-
+    
     /**
-     * Met à jour uniquement la dernière activité (sans écraser les autres champs)
+     * ✅ Met à jour UNIQUEMENT la colonne last_activity
      */
     public function updateLastActivity(int $userId): void
     {
@@ -93,31 +90,43 @@ class UtilisateurManager extends AbstractManager
         $utilisateur['last_activity'] = $utilisateur['last_activity'] ?? null;
         $utilisateur['reset_token'] = $utilisateur['reset_token'] ?? null;
         $utilisateur['reset_token_expires'] = $utilisateur['reset_token_expires'] ?? null;
-
-        $allowedFields = ['nom', 'prenom', 'username', 'email', 'password', 'role', 'date_creation', 'derniere_connexion', 'controle_en_cours_id', 'last_activity', 'reset_token', 'reset_token_expires'];
+        $utilisateur['reset_email_sent_at'] = $utilisateur['reset_email_sent_at'] ?? null;
+        $utilisateur['reset_email_sent'] = $utilisateur['reset_email_sent'] ?? 0;
+        
+        $allowedFields = ['nom', 'prenom', 'username', 'email', 'password', 'role', 'date_creation', 'derniere_connexion', 'controle_en_cours_id', 'last_activity', 'reset_token', 'reset_token_expires', 'reset_email_sent_at', 'reset_email_sent'];
+        
         $filtered = array_intersect_key($utilisateur, array_flip($allowedFields));
-
-        $sql = "INSERT INTO utilisateur (nom, prenom, username, email, password, role, date_creation, derniere_connexion, controle_en_cours_id, last_activity, reset_token, reset_token_expires) 
-        VALUES (:nom, :prenom, :username, :email, :password, :role, :date_creation, :derniere_connexion, :controle_en_cours_id, :last_activity, :reset_token, :reset_token_expires)";
+        
+        $sql = "INSERT INTO utilisateur (nom, prenom, username, email, password, role, date_creation, derniere_connexion, controle_en_cours_id, last_activity, reset_token, reset_token_expires, reset_email_sent_at) 
+        VALUES (:nom, :prenom, :username, :email, :password, :role, :date_creation, :derniere_connexion, :controle_en_cours_id, :last_activity, :reset_token, :reset_token_expires, :reset_email_sent_at)";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($filtered);
     }
-
+    
     private function _update(array $utilisateur)
     {
         $utilisateur['reset_token'] = $utilisateur['reset_token'] ?? null;
         $utilisateur['reset_token_expires'] = $utilisateur['reset_token_expires'] ?? null;
-
-        $allowedFields = ['nom', 'prenom', 'username', 'email', 'password', 'role', 'date_creation', 'derniere_connexion', 'controle_en_cours_id', 'last_activity', 'reset_token', 'reset_token_expires', 'id'];
+        $utilisateur['reset_email_sent_at'] = $utilisateur['reset_email_sent_at'] ?? null;
+        $utilisateur['reset_email_sent'] = $utilisateur['reset_email_sent'] ?? 0;
+        
+        $allowedFields = ['nom', 'prenom', 'username', 'email', 'password', 'role', 'date_creation', 'derniere_connexion', 'controle_en_cours_id', 'last_activity', 'reset_token', 'reset_token_expires', 'reset_email_sent_at', 'reset_email_sent', 'id'];
+        
         $filtered = array_intersect_key($utilisateur, array_flip($allowedFields));
-
+        
         $sql = "UPDATE utilisateur 
-                SET nom=:nom, prenom=:prenom, username=:username, email=:email, password=:password, role=:role, 
-                    date_creation=:date_creation, derniere_connexion=:derniere_connexion, 
-                    controle_en_cours_id=:controle_en_cours_id, last_activity=:last_activity,
-                    reset_token=:reset_token, reset_token_expires=:reset_token_expires
-                WHERE id=:id";
+        SET nom=:nom, prenom=:prenom, username=:username, email=:email, password=:password, role=:role, 
+        date_creation=:date_creation, derniere_connexion=:derniere_connexion, 
+        controle_en_cours_id=:controle_en_cours_id, last_activity=:last_activity,
+        reset_token=:reset_token, reset_token_expires=:reset_token_expires,
+        reset_email_sent_at=:reset_email_sent_at
+        WHERE id=:id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($filtered);
+    }
+    
+    public function getDb()
+    {
+        return $this->db;
     }
 }
