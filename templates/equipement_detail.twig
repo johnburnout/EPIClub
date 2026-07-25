@@ -92,6 +92,30 @@
 								<span class="text-muted">Aucune remarque</span>
 							{% endif %}
 						</p>
+						<p><strong>Remarques :</strong> 
+							{% if equipement.remarques %}
+							{{ equipement.remarques }}
+							{% else %}
+							<span class="text-muted">Aucune remarque</span>
+							{% endif %}
+						</p>
+						
+						{# --- Facture d'achat --- #}
+						{% if acquisition is defined and acquisition %}
+						<p>
+							<strong>Facture d'achat :</strong><br>
+							{% if acquisition.facture_document %}
+							<a href="/uploads/{{ acquisition.facture_document }}" target="_blank" class="btn btn-sm btn-outline-primary mt-1">
+								📄 Voir la facture
+								{% if acquisition.facture_reference %}
+								({{ acquisition.facture_reference }})
+								{% endif %}
+							</a>
+							{% else %}
+							<span class="text-muted">Aucune facture enregistrée</span>
+							{% endif %}
+						</p>
+						{% endif %}
 
 						{# Affichage de la photo #}
 						{% if equipement.photo is defined and equipement.photo is not empty %}

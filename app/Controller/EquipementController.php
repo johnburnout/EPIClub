@@ -200,9 +200,17 @@ class EquipementController extends AbstractController
         
         $historiqueControles = $equipementManager->getHistoriqueControles((int)$id);
         
+        // Charger l'acquisition pour la facture
+        $acquisition = null;
+        if (!empty($equipement['acquisition_id'])) {
+            $acquisitionManager = new \Epiclub\Domain\AcquisitionManager();
+            $acquisition = $acquisitionManager->findId($equipement['acquisition_id']);
+        }
+        
         return $this->render('equipement_detail.twig', [
             'equipement' => $equipement,
-            'historiqueControles' => $historiqueControles
+            'historiqueControles' => $historiqueControles,
+            'acquisition' => $acquisition,
         ]);
     }
 
