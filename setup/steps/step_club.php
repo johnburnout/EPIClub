@@ -1,6 +1,7 @@
 <?php
 
 use Epiclub\Domain\ClubManager;
+use Epiclub\Domain\UtilisateurManager;
 
 $activites = [
     'Alpinisme',
@@ -21,6 +22,9 @@ $form_errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Validation
     if (empty($_POST['nom'])) { $form_errors[] = 'Le nom du club est requis.'; }
+    if (empty($_POST['email']) || !filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
+        $form_errors[] = 'L\'adresse email du club est requise et doit être valide.';
+    }
 
     if (empty($form_errors)) {
         $club = [
@@ -33,11 +37,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $clubManager = new ClubManager();
         $clubManager->save($club);
 
-        if (isset($_POST['install_default_activity_data'])) {
-            /** @todo installer les données par défaut */
+        // 🔧 CRÉER LE SUPER ADMINISTRATEUR
+        try {
+            $superAdmin = [
+                'nom' => 'Admin',
+                'prenom' => 'Super',
+                'username' => 'admin',  // 👈 Login admin
+                'email' => $club['email'],
+                'password' => password_hash('admin', PASSWORD_DEFAULT),  // 👈 Mot de passe admin
+                'role' => 'ROLE_ADMIN',
+                'date_creation' => (new DateTime())->format('Y-m-d H:i:s'),
+                'derniere_connexion' => null
+            ];
+            $utilisateurManager = new UtilisateurManager();
+            $utilisateurManager->save($superAdmin);
+            
+            $_SESSION['super_admin_created'] = true;
+            $_SESSION['super_admin_email'] = $club['email'];
+            $_SESSION['super_admin_password'] = 'admin';
+        } catch (\Exception $e) {
+            $form_errors[] = 'Erreur lors de la création du super administrateur : ' . $e->getMessage();
         }
-        header('Location: ?step=final');
-        exit();
+
+        if (empty($form_errors)) {
+            if (isset($_POST['install_default_activity_data'])) {
+                /** @todo installer les données par défaut */
+            }
+            header('Location: ?step=final');
+            exit();
+        }
     }
 }
 
@@ -76,8 +104,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <textarea class="form-control" name="description" id="description" rows="3"><?= htmlspecialchars($club['description']); ?></textarea>
     </div>
     <div class="mb-3">
-        <label for="email" class="form-label">Adresse mail</label>
-        <input type="email" class="form-control" name="email" id="email" value="<?= htmlspecialchars($club['email']); ?>">
+        <label for="email" class="form-label">Adresse mail du club *</label>
+        <input type="email" class="form-control" name="email" id="email" value="<?= htmlspecialchars($club['email']); ?>" required>
+        <small class="text-muted">Cette adresse sera utilisée pour le compte super administrateur.</small>
     </div>
     <div class="mb-3">
         <label for="phone" class="form-label">N° téléphone</label>
@@ -90,6 +119,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <button type="submit" class="btn btn-primary">Valider</button>
     <div class="mt-3">
         <p class="text-muted">* Initialise la database avec des données (catégories, fournisseurs) pour l'activité sélectionnée.</p>
+        <p class="text-muted">🔑 Un compte super administrateur sera créé automatiquement :<br>
+        <strong>Identifiant :</strong> admin<br>
+        <strong>Mot de passe :</strong> admin</p>
     </div>
 </form>
 

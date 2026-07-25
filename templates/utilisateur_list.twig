@@ -32,9 +32,13 @@
 					<td>{{ utilisateur.rolelabel }}</td>
 					<td>
 						<a href="/admin/utilisateurs/utilisateur-{{ utilisateur.id }}" class="btn btn-sm btn-primary">Voir</a>
+						{% if utilisateur.username != 'admin' %}
 						<a href="/admin/utilisateurs/utilisateur_supprimer-{{ utilisateur.id }}" 
-						   onclick="return confirm('Supprimer {{ utilisateur.prenom }} {{ utilisateur.nom }} ?')" 
-						   class="btn btn-sm btn-danger">Supprimer</a>
+							onclick="return confirm('Supprimer {{ utilisateur.prenom }} {{ utilisateur.nom }} ?')" 
+							class="btn btn-sm btn-danger">Supprimer</a>
+						{% else %}
+						<span class="badge bg-info">🔒 Protégé</span>
+						{% endif %}
 					</td>
 				</tr>
 			{% endfor %}

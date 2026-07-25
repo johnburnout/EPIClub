@@ -52,12 +52,18 @@
 			<button type="submit" class="btn btn-primary">Enregistrer</button>
 			<a href="/admin/utilisateurs" class="btn btn-secondary">Retour à la liste</a>
 			
-			<!-- Bouton de suppression -->
-			<a href="/admin/utilisateurs/utilisateur_supprimer-{{ utilisateur.id }}" 
-			   onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.')" 
-			   class="btn btn-danger ms-auto">
-				🗑️ Supprimer l'utilisateur
-			</a>
+			<!-- 🔒 Bouton de suppression : masqué pour le super admin -->
+			{% if utilisateur.username != 'admin' %}
+				<a href="/admin/utilisateurs/utilisateur_supprimer-{{ utilisateur.id }}" 
+				   onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.')" 
+				   class="btn btn-danger ms-auto">
+					🗑️ Supprimer l'utilisateur
+				</a>
+			{% else %}
+				<span class="badge bg-info ms-auto p-2">
+					🔒 Ce compte est protégé
+				</span>
+			{% endif %}
 		</div>
 	</form>
 

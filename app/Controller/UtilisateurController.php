@@ -164,11 +164,15 @@ class UtilisateurController extends AbstractController
             return new RedirectResponse("/admin/utilisateurs");
         }
         
+        // 🔒 PROTECTION DU SUPER ADMINISTRATEUR "admin"
+        if ($utilisateur['username'] === 'admin') {
+            $this->session->getFlashBag()->add('error', "❌ Le super administrateur 'admin' ne peut pas être supprimé.");
+            return new RedirectResponse("/admin/utilisateurs");
+        }
+        
         // Récupérer l'utilisateur connecté
         $currentUser = $this->session->get('user');
         if (!$currentUser) {
-            // Si l'utilisateur n'est pas dans la session, essayez de le récupérer autrement
-            // ou ignorez la vérification d'auto-suppression
             $this->session->getFlashBag()->add('error', 'Impossible de vérifier votre identité.');
             return new RedirectResponse("/admin/utilisateurs");
         }
