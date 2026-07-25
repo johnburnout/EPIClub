@@ -15,7 +15,6 @@ abstract class AbstractController
 
     public function __construct(protected Session $session)
     {
-        // Passer la session existante à TwigRenderer
         $this->renderer = new TwigRenderer($this->session);
 
         $this->renderer->addGlobal('csrf_token', $session->get('csrf_token'));
@@ -43,7 +42,8 @@ abstract class AbstractController
 
     public function createEmail(string $from, string $to, string $subject, string $template, array $data = [])
     {
-        $html = $this->render($template, $data);
+        $response = $this->render($template, $data);
+        $html = $response->getContent();
 
         $email = (new Email())
             ->from($from)
@@ -78,14 +78,16 @@ abstract class AbstractController
         return new RedirectResponse($route, $status, $headers);
     }
     
+    /**
+     * Met à jour la dernière activité de l'utilisateur connecté
+     * (sans écraser les autres champs comme reset_token)
+     */
     protected function updateLastActivity()
     {
         $user = $this->session->get('user');
         if ($user && isset($user['id'])) {
             $manager = new UtilisateurManager();
-            $user['last_activity'] = date('Y-m-d H:i:s');
-            $manager->save($user);
-            $this->session->set('user', $user);
+            $manager->updateLastActivity($user['id']);
         }
     }
 }

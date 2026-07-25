@@ -12,7 +12,8 @@ CREATE TABLE IF NOT EXISTS `utilisateur` (
   `role` varchar(32) NOT NULL,
   `date_creation` datetime NOT NULL,
   `derniere_connexion` datetime NULL,
-  `last_activity` datetime NULL,   -- ⬅️ AJOUT
+  `last_activity` datetime NULL,
+  `reset_token` varchar(255) NULL,
   `controle_en_cours_id` int(11) NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`),
@@ -131,16 +132,13 @@ CREATE TABLE IF NOT EXISTS `club_equipement` (
   `date_fin_utilisation` DATE NULL,
   `nombre` int(11) NOT NULL DEFAULT 1,
   `est_epi` tinyint(1) NOT NULL DEFAULT 1,
-  `photo` VARCHAR(255) DEFAULT NULL,   -- ⬅️ AJOUTER CETTE LIGNE
+  `photo` VARCHAR(255) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `code` (`code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
--- =============================================
--- 8. CLUB_EQUIPEMENT
--- =============================================
 
 -- =============================================
--- 9. CONTROLE (après utilisateur)
+-- 9. CONTROLE
 -- =============================================
 DROP TABLE IF EXISTS `controle`;
 CREATE TABLE IF NOT EXISTS `controle` (
@@ -181,7 +179,7 @@ CREATE TABLE IF NOT EXISTS `controle_ligne` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- =============================================
--- 11. ANCIENNE TABLE équipement_controle (obsolète, on la garde vide)
+-- 11. ANCIENNE TABLE équipement_controle (obsolète)
 -- =============================================
 DROP TABLE IF EXISTS `equipement_controle`;
 CREATE TABLE IF NOT EXISTS `equipement_controle` (

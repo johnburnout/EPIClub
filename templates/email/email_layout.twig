@@ -1,0 +1,23 @@
+{# templates/email/email_layout.twig #}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ club.nom }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; background: #ffffff; padding: 20px; border-radius: 8px; }
+        h1 { color: #333; }
+        .footer { font-size: 12px; color: #999; margin-top: 20px; border-top: 1px solid #ddd; padding-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% block body %}{% endblock %}
+        <div class="footer">
+            {{ club.nom }} - {{ club.email }}
+        </div>
+    </div>
+</body>
+</html>
