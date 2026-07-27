@@ -130,8 +130,15 @@ class AppUserRegisterController extends AbstractController
                 $this->session->set('reset_email_time', time());
                 
                 $this->session->getFlashBag()->add('info', 'La procédure de récupération a été envoyée à l\'adresse mail indiquée.');
-                return new RedirectResponse('/');
+                // ✅ Redirection vers la page de confirmation
+                return new RedirectResponse('/mot_de_passe_oublie/confirmation');
             }
+            
+            // En cas d'erreur, on reste sur le formulaire
+            return $this->render('user_forgot_password.twig', [
+                'form_errors' => $form_errors,
+                'submit_token' => $submitToken
+            ]);
         }
         
         return $this->render('user_forgot_password.twig', [
@@ -215,5 +222,10 @@ class AppUserRegisterController extends AbstractController
         $host = $_SERVER['HTTP_HOST'];
         $basePath = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
         return $protocol . $host . $basePath;
+    }
+    
+    public function forgotPasswordConfirm(): Response
+    {
+        return $this->render('user_forgot_password_confirm.twig');
     }
 }

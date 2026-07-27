@@ -84,43 +84,52 @@ class UtilisateurManager extends AbstractManager
         return $stmt->execute(['id' => $id]);
     }
 
-    private function _insert(array $utilisateur)
-    {
-        $utilisateur['controle_en_cours_id'] = $utilisateur['controle_en_cours_id'] ?? null;
-        $utilisateur['last_activity'] = $utilisateur['last_activity'] ?? null;
-        $utilisateur['reset_token'] = $utilisateur['reset_token'] ?? null;
-        $utilisateur['reset_token_expires'] = $utilisateur['reset_token_expires'] ?? null;
-        $utilisateur['reset_email_sent_at'] = $utilisateur['reset_email_sent_at'] ?? null;
-        $utilisateur['reset_email_sent'] = $utilisateur['reset_email_sent'] ?? 0;
-        
-        $allowedFields = ['nom', 'prenom', 'username', 'email', 'password', 'role', 'date_creation', 'derniere_connexion', 'controle_en_cours_id', 'last_activity', 'reset_token', 'reset_token_expires', 'reset_email_sent_at', 'reset_email_sent'];
-        
-        $filtered = array_intersect_key($utilisateur, array_flip($allowedFields));
-        
-        $sql = "INSERT INTO utilisateur (nom, prenom, username, email, password, role, date_creation, derniere_connexion, controle_en_cours_id, last_activity, reset_token, reset_token_expires, reset_email_sent_at) 
-        VALUES (:nom, :prenom, :username, :email, :password, :role, :date_creation, :derniere_connexion, :controle_en_cours_id, :last_activity, :reset_token, :reset_token_expires, :reset_email_sent_at)";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute($filtered);
-    }
-    
     private function _update(array $utilisateur)
     {
-        $utilisateur['reset_token'] = $utilisateur['reset_token'] ?? null;
-        $utilisateur['reset_token_expires'] = $utilisateur['reset_token_expires'] ?? null;
-        $utilisateur['reset_email_sent_at'] = $utilisateur['reset_email_sent_at'] ?? null;
-        $utilisateur['reset_email_sent'] = $utilisateur['reset_email_sent'] ?? 0;
+        // Supprimer la ligne qui initialise 'reset_email_sent'
+        // $utilisateur['reset_email_sent'] = $utilisateur['reset_email_sent'] ?? 0;
         
-        $allowedFields = ['nom', 'prenom', 'username', 'email', 'password', 'role', 'date_creation', 'derniere_connexion', 'controle_en_cours_id', 'last_activity', 'reset_token', 'reset_token_expires', 'reset_email_sent_at', 'reset_email_sent', 'id'];
+        // Ne garder que les colonnes réellement présentes dans la table
+        $allowedFields = ['nom', 'prenom', 'username', 'email', 'password', 'role',
+            'date_creation', 'derniere_connexion', 'controle_en_cours_id',
+            'last_activity', 'reset_token', 'reset_token_expires',
+            'reset_email_sent_at', 'id']; // ← 'reset_email_sent' retiré
         
         $filtered = array_intersect_key($utilisateur, array_flip($allowedFields));
         
         $sql = "UPDATE utilisateur 
-        SET nom=:nom, prenom=:prenom, username=:username, email=:email, password=:password, role=:role, 
-        date_creation=:date_creation, derniere_connexion=:derniere_connexion, 
-        controle_en_cours_id=:controle_en_cours_id, last_activity=:last_activity,
-        reset_token=:reset_token, reset_token_expires=:reset_token_expires,
+        SET nom=:nom, prenom=:prenom, username=:username, email=:email,
+        password=:password, role=:role, date_creation=:date_creation,
+        derniere_connexion=:derniere_connexion,
+        controle_en_cours_id=:controle_en_cours_id,
+        last_activity=:last_activity,
+        reset_token=:reset_token,
+        reset_token_expires=:reset_token_expires,
         reset_email_sent_at=:reset_email_sent_at
         WHERE id=:id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute($filtered);
+    }
+    
+    private function _insert(array $utilisateur)
+    {
+        // Supprimer la ligne qui initialise 'reset_email_sent'
+        // $utilisateur['reset_email_sent'] = $utilisateur['reset_email_sent'] ?? 0;
+        
+        $allowedFields = ['nom', 'prenom', 'username', 'email', 'password', 'role',
+            'date_creation', 'derniere_connexion', 'controle_en_cours_id',
+            'last_activity', 'reset_token', 'reset_token_expires',
+            'reset_email_sent_at']; // ← 'reset_email_sent' retiré
+        
+        $filtered = array_intersect_key($utilisateur, array_flip($allowedFields));
+        
+        $sql = "INSERT INTO utilisateur (nom, prenom, username, email, password, role,
+            date_creation, derniere_connexion, controle_en_cours_id, last_activity,
+            reset_token, reset_token_expires, reset_email_sent_at)
+        VALUES (:nom, :prenom, :username, :email, :password, :role,
+            :date_creation, :derniere_connexion, :controle_en_cours_id,
+            :last_activity, :reset_token, :reset_token_expires,
+            :reset_email_sent_at)";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($filtered);
     }
