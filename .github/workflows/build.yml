@@ -21,17 +21,19 @@ jobs:
         with:
           php-version: '8.4'
           extensions: gd, mbstring, pdo_mysql, zip
+          tools: composer
           coverage: none
-
-      # 3. Cache Composer (version v5 = Node.js 24)
+          
+      - name: Debug PHP version
+        run: php -v
+        
       - name: Cache Composer dependencies
         uses: actions/cache@v5
         with:
           path: vendor/
           key: composer-${{ hashFiles('composer.lock') }}
           restore-keys: composer-
-
-      # 4. Installer les dépendances (sans les dev pour un build)
+          
       - name: Install dependencies
         run: composer install --no-progress --no-dev --optimize-autoloader
 
@@ -57,3 +59,4 @@ jobs:
         with:
           name: epiclub-archive
           path: releases/
+          
