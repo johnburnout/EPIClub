@@ -24,8 +24,12 @@ jobs:
           tools: composer
           coverage: none
           
-      - name: Debug PHP version
-        run: php -v
+      - name: Debug PHP & Composer
+        run: |
+          php -v
+          which php
+          which composer
+          composer -V
         
       - name: Cache Composer dependencies
         uses: actions/cache@v5
