@@ -6,6 +6,12 @@
 /vendor
 /_storage
 /_dev
+/releases
+/public/uploads
+/public/images
+
+# Fichiers de construction
+build-release.sh
 
 # Fichiers de configuration sensibles
 .env.local.php
