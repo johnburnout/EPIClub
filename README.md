@@ -15,6 +15,6 @@ EpiClub est une application de gestion et de journalisation des contrôles des E
 ## Installation
 
 * Téléchargez la dernière version [ici](https://github.com/johnburnout/EPIClub/releases)
-* Dézipez le dossier sur votre serveur.
+* Dézippez le dossier sur votre serveur.
 * Parametrez le serveur pour qu'il pointe sur le dossier "public".
 * Ouvrez l'url dans votre navigateur et suivez les instructions.
