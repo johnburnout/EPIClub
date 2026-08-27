@@ -15,12 +15,12 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 class ControleController extends AbstractController
 {
     /**
-     * Vérifie si l'utilisateur courant peut modifier le contrôle.
-     *
-     * @param array $controle
-     * @param array $user
-     * @return bool
-     */
+    * Vérifie si l'utilisateur courant peut modifier le contrôle.
+    *
+    * @param array $controle
+    * @param array $user
+    * @return bool
+    */
     private function canEdit($controle, $user)
     {
         // Si clôturé => jamais modifiable
@@ -50,7 +50,7 @@ class ControleController extends AbstractController
         
         return false;
     }
-
+    
     public function list(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_CONTROLLEUR');
@@ -103,9 +103,9 @@ class ControleController extends AbstractController
         foreach ($allControles as &$controle) {
             $isOwner = ($controle['controleur_id'] == $user['id']);
             $isAdminEligible = $this->isGranted('ROLE_ADMIN')
-                && $controle['statut'] !== 'cloture'
-                && substr($controle['date_debut'], 0, 10) < $today
-                && !$this->isUserOnline($controle['controleur_id']);
+            && $controle['statut'] !== 'cloture'
+            && substr($controle['date_debut'], 0, 10) < $today
+            && !$this->isUserOnline($controle['controleur_id']);
             
             $controle['canEdit'] = $isOwner || $isAdminEligible;
             $controle['isAdminEditable'] = !$isOwner && $isAdminEligible;
@@ -583,7 +583,6 @@ class ControleController extends AbstractController
     public function updateLigne(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_CONTROLLEUR');
-        
         $ligne_id = $request->get('id');
         $ligneManager = new ControleLigneManager();
         $ligne = $ligneManager->findId($ligne_id);
@@ -594,8 +593,8 @@ class ControleController extends AbstractController
         
         $controleManager = new ControleManager();
         $controle = $controleManager->findId($ligne['controle_id']);
-        
         $user = $this->session->get('user');
+        
         if (!$this->canEdit($controle, $user)) {
             $this->session->getFlashBag()->add('error', 'Vous n\'avez pas les droits pour modifier ce contrôle.');
             return $this->redirectTo('/admin/controles');
@@ -611,6 +610,15 @@ class ControleController extends AbstractController
             $ligne['date_controle'] = $request->request->get('date_controle');
             $ligne['statut'] = $request->request->get('statut');
             $ligneManager->save($ligne);
+            
+            // ✅ Mettre à jour le statut de l'équipement : "en contrôle"
+            $equipementManager = new EquipementManager();
+            $equipement = $equipementManager->findId($ligne['equipement_id']);
+            if ($equipement) {
+                $equipement['controle_en_cours'] = 1;
+                $equipementManager->save($equipement);
+            }
+            
             return $this->redirectTo("/admin/controles/edit/{$controle['id']}");
         }
         
@@ -624,17 +632,13 @@ class ControleController extends AbstractController
             $ligne['reference'] = $equipement['reference'] ?? '';
             $ligne['libelle'] = $equipement['libelle'] ?? '';
             $ligne['photo'] = $equipement['photo'] ?? null;
-        } else {
-            $ligne['reference'] = '';
-            $ligne['libelle'] = '';
-            $ligne['photo'] = null;
         }
         
         return $this->render('controle_ligne_form.twig', [
             'ligne' => $ligne
         ]);
     }
-
+    
     public function cloturer(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_CONTROLLEUR');
@@ -672,7 +676,7 @@ class ControleController extends AbstractController
         $secretKey = isset($config['SECRET_KEY']) ? hex2bin($config['SECRET_KEY']) : null;
         $cipherMethod = $config['CIPHER_METHOD'] ?? 'AES-256-CBC';
         
-        // 1. Chiffrement de la remarque générale (stockée dans le champ hash_remarques)
+        // Chiffrement des remarques
         $remarqueGenerale = $controle['hash_remarques'] ?? '';
         if (!empty($remarqueGenerale)) {
             $ivLength = openssl_cipher_iv_length($cipherMethod);
@@ -683,7 +687,6 @@ class ControleController extends AbstractController
             $hashGlobal = null;
         }
         
-        // 2. Chiffrement individuel de chaque remarque
         foreach ($lignes as $ligne) {
             if (!is_null($ligne['remarque']) && $ligne['remarque'] !== '') {
                 $ivLength = openssl_cipher_iv_length($cipherMethod);
@@ -694,13 +697,36 @@ class ControleController extends AbstractController
             }
         }
         
-        // 3. Mise à jour du contrôle
+        // Mise à jour du contrôle
         $controle['statut'] = 'cloture';
         $controle['date_fin'] = date('Y-m-d H:i:s');
         $controle['hash_remarques'] = $hashGlobal;
         $controleManager->save($controle);
         
-        // 4. Nettoyage de la session
+        // ✅ Mettre à jour le statut des équipements
+        $equipementManager = new EquipementManager();
+        foreach ($lignes as $ligne) {
+            $equipement = $equipementManager->findId($ligne['equipement_id']);
+            if ($equipement) {
+                switch ($ligne['statut']) {
+                    case 'hors_service':
+                        $equipement['statut'] = 2; // Hors service
+                        break;
+                    case 'controle_ko':
+                        $equipement['statut'] = 1; // En maintenance (à adapter)
+                        break;
+                    case 'controle_ok':
+                        $equipement['statut'] = 0; // Disponible
+                        break;
+                    default:
+                        break;
+                }
+                $equipement['controle_en_cours'] = 0;
+                $equipementManager->save($equipement);
+            }
+        }
+        
+        // Nettoyage de la session
         if ($user['controle_en_cours_id'] == $id) {
             $user['controle_en_cours_id'] = null;
             $utilisateurManager = new UtilisateurManager();

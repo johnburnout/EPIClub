@@ -38,21 +38,15 @@ class QrRedirectController extends AbstractController
     * Point d'entrée pour le scan du QR code
     * URL: /qr/{id}
     */
-    /**
-    * Point d'entrée pour le scan du QR code
-    * URL: /qr/{id}
-    */
     public function redirect(Request $request)
     {
         // 1. Récupérer l'ID de l'équipement
         $id = $request->attributes->get('id');
-        
         if (!$id) {
             $path = $request->getPathInfo();
             preg_match('/\/qr\/(\d+)/', $path, $matches);
             $id = $matches[1] ?? null;
         }
-        
         if (!$id) {
             $this->addFlash('danger', 'ID d\'équipement manquant');
             header('Location: /equipements');
@@ -61,7 +55,6 @@ class QrRedirectController extends AbstractController
         
         // 2. Vérifier que l'équipement existe
         $equipement = $this->equipementManager->findId((int)$id);
-        
         if (!$equipement) {
             $this->addFlash('danger', 'Équipement non trouvé');
             header('Location: /equipements');
@@ -70,13 +63,35 @@ class QrRedirectController extends AbstractController
         
         // 3. Vérifier que l'utilisateur est connecté
         $user = $this->getCurrentUser();
-        
         if (!$user) {
             header('Location: /se_connecter?redirect=/qr/' . $id);
             exit;
         }
         
-        // ✅ TOUS LES UTILISATEURS (quel que soit le rôle) → rediriger vers la fiche de l'équipement
+        // 4. Vérifier si l'utilisateur a un contrôle en cours
+        $controleEnCours = $this->findControleEnCours((int)$id, $user['id']);
+        if ($controleEnCours) {
+            // Vérifier si l'équipement est déjà dans une ligne de ce contrôle
+            $controleLigne = $this->findControleLigneByEquipement($controleEnCours['id'], (int)$id);
+            if ($controleLigne) {
+                // Rediriger vers la page d'édition de la ligne (saisie des remarques)
+                header('Location: /admin/controles/update-ligne/' . $controleLigne['id']);
+                exit;
+            }
+            // L'équipement n'est pas encore dans le contrôle : on l'ajoute
+            $this->addEquipementToControle((int)$id, $controleEnCours['id']);
+            // Récupérer la nouvelle ligne
+            $newLigne = $this->findControleLigneByEquipement($controleEnCours['id'], (int)$id);
+            if ($newLigne) {
+                header('Location: /admin/controles/update-ligne/' . $newLigne['id']);
+                exit;
+            }
+            // Fallback : rediriger vers l'édition du contrôle
+            header('Location: /admin/controles/edit/' . $controleEnCours['id']);
+            exit;
+        }
+        
+        // 5. Aucun contrôle en cours → fiche de l'équipement
         header('Location: /equipements/equipement-' . $id);
         exit;
     }

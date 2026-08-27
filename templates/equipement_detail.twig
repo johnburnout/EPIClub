@@ -61,14 +61,16 @@
 					</div>
 					<div class="col-md-6">
 						<p><strong>Statut :</strong> 
-							{% if equipement.statut == 0 %}
-								<span class="badge bg-success">Disponible</span>
+							{% if equipement.controle_en_cours %}
+							<span class="badge bg-info">En contrôle</span>
+							{% elseif equipement.statut == 0 %}
+							<span class="badge bg-success">Disponible</span>
 							{% elseif equipement.statut == 1 %}
-								<span class="badge bg-warning">En maintenance</span>
+							<span class="badge bg-warning">En maintenance</span>
 							{% elseif equipement.statut == 2 %}
-								<span class="badge bg-danger">Hors service</span>
+							<span class="badge bg-danger">Hors service</span>
 							{% else %}
-								<span class="badge bg-secondary">Inconnu</span>
+							<span class="badge bg-secondary">Inconnu</span>
 							{% endif %}
 						</p>
 						<p><strong>État :</strong> 
