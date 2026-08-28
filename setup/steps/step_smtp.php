@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($_POST['user'])) { $errors[] = 'Le nom d\'utilisateur SMTP est requis.'; }
 
     if (empty($errors)) {
-        $mailer_dsn = "smtp://" . $_POST['user'] . ":" . $_POST['password'] . "@" . $_POST['domain'] . ":" . $_POST['port'];
+        $mailer_dsn = "smtp://" . urlencode($_POST['user']) . ":" . urlencode($_POST['password']) . "@" . $_POST['domain'] . ":" . $_POST['port'];
         $env = new EnvironmentFileParser();
         $env->set('MAILER_DSN', $mailer_dsn);
         $env->set('MAILER_FROM', 'admin@' . $_POST['domain']);

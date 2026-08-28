@@ -1,0 +1,161 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+    <h3>Paramètres système – Configuration SMTP</h3>
+    <hr>
+
+    {# Affichage des messages de succès/erreur #}
+    {% if app.request.get('success') %}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            ✅ Configuration SMTP mise à jour avec succès.
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% elseif app.request.get('error') %}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            ❌ Erreur : {{ app.request.get('error') }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-server"></i> Serveur SMTP et envoi d'emails
+                </div>
+                <div class="card-body">
+                    <form method="post" action="/update-smtp" id="smtpForm">
+                        {# Champ CSRF si votre système l'utilise #}
+                        {% if csrf_token is defined %}
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        {% endif %}
+
+                        <div class="row">
+                            {# --- COLONNE GAUCHE : SMTP --- #}
+                            <div class="col-md-6">
+                                <h5 class="border-bottom pb-2">Serveur SMTP</h5>
+                                
+                                <div class="mb-3">
+                                    <label for="smtp_host" class="form-label">Hôte (Host) *</label>
+                                    <input type="text" class="form-control" id="smtp_host" name="smtp_host" 
+                                           value="{{ settings.smtp_host|default('') }}" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="smtp_port" class="form-label">Port *</label>
+                                    <input type="number" class="form-control" id="smtp_port" name="smtp_port" 
+                                           value="{{ settings.smtp_port|default(587) }}" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="smtp_encryption" class="form-label">Chiffrement</label>
+                                    <select class="form-select" id="smtp_encryption" name="smtp_encryption">
+                                        <option value="none" {% if settings.smtp_encryption == 'none' %}selected{% endif %}>Aucun</option>
+                                        <option value="ssl" {% if settings.smtp_encryption == 'ssl' %}selected{% endif %}>SSL</option>
+                                        <option value="tls" {% if settings.smtp_encryption == 'tls' %}selected{% endif %}>TLS</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="smtp_username" class="form-label">Nom d'utilisateur *</label>
+                                    <input type="text" class="form-control" id="smtp_username" name="smtp_username" 
+                                           value="{{ settings.smtp_username|default('') }}" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="smtp_password" class="form-label">Mot de passe</label>
+                                    <input type="password" class="form-control" id="smtp_password" name="smtp_password" 
+                                           value="{{ settings.smtp_password|default('') }}" placeholder="Laisser vide pour ne pas modifier">
+                                    <div class="form-text">Le mot de passe existant reste inchangé si ce champ est vide.</div>
+                                </div>
+                            </div>
+
+                            {# --- COLONNE DROITE : PARAMÈTRES D'ENVOI --- #}
+                            <div class="col-md-6">
+                                <h5 class="border-bottom pb-2">Paramètres d'envoi</h5>
+
+                                <div class="mb-3">
+                                    <label for="mail_from" class="form-label">Email de l'expéditeur (From) *</label>
+                                    <input type="email" class="form-control" id="mail_from" name="mail_from" 
+                                           value="{{ settings.mail_from|default('') }}" required>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="mail_from_name" class="form-label">Nom de l'expéditeur (From Name)</label>
+                                    <input type="text" class="form-control" id="mail_from_name" name="mail_from_name" 
+                                           value="{{ settings.mail_from_name|default('Mon Site') }}">
+                                    <div class="form-text">Nom affiché dans les emails envoyés.</div>
+                                </div>
+
+                                <hr>
+
+                                <div class="mb-3">
+                                    <label for="mail_reply_to" class="form-label">Adresse de réponse (Reply-To)</label>
+                                    <input type="email" class="form-control" id="mail_reply_to" name="mail_reply_to" 
+                                           value="{{ settings.mail_reply_to|default('') }}" placeholder="réponse@domaine.fr">
+                                    <div class="form-text">Laissez vide pour utiliser l'email de l'expéditeur.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-3">
+                            <div class="col-12 d-flex gap-2">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save"></i> Enregistrer la configuration
+                                </button>
+                                <button type="button" class="btn btn-secondary" id="testMailBtn">
+                                    <i class="fas fa-envelope"></i> Tester l'envoi
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }} {# Conserve les scripts existants de _layout.twig #}
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const testBtn = document.getElementById('testMailBtn');
+            if (testBtn) {
+                testBtn.addEventListener('click', function() {
+                    // Désactiver le bouton pendant l'envoi
+                    const originalHtml = this.innerHTML;
+                    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Envoi en cours...';
+                    this.disabled = true;
+
+                    // Appel AJAX vers /test-mail
+                    fetch('/test-mail', {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        // Réactiver le bouton
+                        this.innerHTML = originalHtml;
+                        this.disabled = false;
+
+                        // Afficher une notification
+                        if (data.success) {
+                            showNotification('success', '✅ Succès', data.message);
+                        } else {
+                            showNotification('danger', '❌ Erreur', data.error || 'Erreur inconnue');
+                        }
+                    })
+                    .catch(error => {
+                        this.innerHTML = originalHtml;
+                        this.disabled = false;
+                        showNotification('danger', '❌ Erreur', 'Impossible de contacter le serveur.');
+                        console.error('Erreur :', error);
+                    });
+                });
+            }
+        });
+    </script>
+{% endblock %}

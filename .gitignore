@@ -14,7 +14,10 @@
 build-release.sh
 
 # Fichiers de configuration sensibles
+.env
+.env.local
 .env.local.php
+.env.*.local
 
 # Fichiers de dépendances
 /composer.lock

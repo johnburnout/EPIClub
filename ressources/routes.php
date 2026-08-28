@@ -9,6 +9,11 @@ $routes = new RouteCollection();
 $routes->add('index', new Route('/', ['_controller' => 'Epiclub\\Controller\\IndexController', 'action' => 'index']));
 $routes->add('dashboard', new Route('/tableau_de_bord', ['_controller' => 'Epiclub\\Controller\\IndexController', 'action' => 'dashboard']));
 
+// ROUTES SYSTEME (Configuration SMTP)
+$routes->add('system_settings', new Route('/admin/system-settings', ['_controller' => 'Epiclub\\Controller\\IndexController', 'action' => 'systemSettings']));
+$routes->add('update_smtp', new Route('/update-smtp', ['_controller' => 'Epiclub\\Controller\\IndexController', 'action' => 'updateSmtp']));
+$routes->add('test_mail', new Route('/test-mail', ['_controller' => 'Epiclub\\Controller\\IndexController', 'action' => 'testMail']));
+
 $routes->add('login', new Route('/se_connecter', ['_controller' => 'Epiclub\\Controller\\AppUserAuthController', 'action' => 'login']));
 $routes->add('logout', new Route('/se_deconnecter', ['_controller' => 'Epiclub\\Controller\\AppUserAuthController', 'action' => 'logout']));
 
