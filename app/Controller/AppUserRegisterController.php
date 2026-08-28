@@ -8,6 +8,7 @@ use Epiclub\Domain\UtilisateurManager;
 use Epiclub\Engine\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class AppUserRegisterController extends AbstractController
 {
@@ -23,9 +24,8 @@ class AppUserRegisterController extends AbstractController
 
     public function forgotPassword(Request $request)
     {
-        $timeout = 60; // 1 minute pour tests
+        $timeout = 60;
         
-        // Vérification session
         if ($this->session->get('reset_email_sent')) {
             $elapsed = time() - $this->session->get('reset_email_time');
             if ($elapsed < $timeout) {
@@ -41,110 +41,106 @@ class AppUserRegisterController extends AbstractController
         $submitToken = bin2hex(random_bytes(16));
         
         if ($request->getMethod() === 'POST') {
-            // Anti-double-submit
             $submittedToken = $request->request->get('submit_token');
-            if ($this->session->get('last_submit_token') && $submittedToken === $this->session->get('last_submit_token')) {
-                $this->session->getFlashBag()->add('info', 'Une demande est déjà en cours.');
-                return new RedirectResponse('/');
+            $sessionToken = $this->session->get('last_submit_token');
+            
+            if (!$submittedToken || !$sessionToken || $submittedToken !== $sessionToken) {
+                $this->session->getFlashBag()->add('error', 'Formulaire invalide ou déjà soumis.');
+                return new RedirectResponse('/mot_de_passe_oublie');
             }
-            $this->session->set('last_submit_token', $submittedToken);
+            
+            $this->session->remove('last_submit_token');
             
             $email = $request->request->get('email');
-            if (false == filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 $form_errors['email'] = 'Veuillez entrer une adresse mail valide.';
             }
             
             if (empty($form_errors)) {
                 $utilisateurManager = new UtilisateurManager();
-                $utilisateur = $utilisateurManager->findOneByCriteria(['email' => $email]);
+                $user = $utilisateurManager->findOneByCriteria(['email' => $email]);
                 
-                if ($utilisateur) {
-                    // ✅ Vérification en base (colonne reset_email_sent)
-                    if (!empty($utilisateur['reset_email_sent']) && $utilisateur['reset_email_sent'] == 1) {
-                        // Si le flag est à 1, vérifier le timestamp
-                        if (!empty($utilisateur['reset_email_sent_at'])) {
-                            $lastSent = new \DateTime($utilisateur['reset_email_sent_at']);
-                            $now = new \DateTime();
-                            $diff = $now->getTimestamp() - $lastSent->getTimestamp();
-                            if ($diff < $timeout) {
-                                $this->session->getFlashBag()->add('info', 'Un email a déjà été envoyé récemment.');
-                                return new RedirectResponse('/');
-                            } else {
-                                // Réinitialiser le flag si le délai est dépassé
-                                $sql = "UPDATE utilisateur SET reset_email_sent = 0 WHERE id = :id";
-                                $pdo = $utilisateurManager->getDb();
-                                $stmt = $pdo->prepare($sql);
-                                $stmt->execute(['id' => $utilisateur['id']]);
-                                $utilisateur['reset_email_sent'] = 0;
-                            }
+                if (!$user) {
+                    $this->session->set('reset_email_sent', true);
+                    $this->session->set('reset_email_time', time());
+                    $this->session->getFlashBag()->add('info', 'La procédure de récupération a été envoyée à l\'adresse mail indiquée.');
+                    return new RedirectResponse('/mot_de_passe_oublie/confirmation');
+                }
+                
+                if (!empty($user['reset_email_sent']) && $user['reset_email_sent'] == 1) {
+                    if (!empty($user['reset_email_sent_at'])) {
+                        $lastSent = new \DateTime($user['reset_email_sent_at']);
+                        $now = new \DateTime();
+                        if ($now->getTimestamp() - $lastSent->getTimestamp() < $timeout) {
+                            $this->session->getFlashBag()->add('info', 'Un email a déjà été envoyé récemment.');
+                            return new RedirectResponse('/');
                         }
-                    }
-                    
-                    // Génération du token
-                    $clubManager = new ClubManager();
-                    $club = $clubManager->findParameters();
-                    
-                    $token = bin2hex(random_bytes(32));
-                    $expires = date('Y-m-d H:i:s', strtotime('+24 hours'));
-                    $sentAt = date('Y-m-d H:i:s');
-                    
-                    // ✅ Mise à jour directe avec reset_email_sent = 1
-                    $pdo = $utilisateurManager->getDb();
-                    $sql = "UPDATE utilisateur 
-                    SET reset_token = :token, 
-                    reset_token_expires = :expires, 
-                    reset_email_sent_at = :sent_at,
-                    reset_email_sent = 1
-                    WHERE id = :id";
-                    $stmt = $pdo->prepare($sql);
-                    $stmt->execute([
-                        'token' => $token,
-                        'expires' => $expires,
-                        'sent_at' => $sentAt,
-                        'id' => $utilisateur['id']
-                    ]);
-                    
-                    $resetUrl = $this->getBaseUrl() . '/regenerer_mot_de_passe?token=' . $token;
-                    
-                    if (null !== $club['email']) {
-                        $email = $this->createEmail(
-                            $club['email'],
-                            $utilisateur['email'],
-                            'Changement de mot de passe',
-                            'email/reset_password.twig',
-                            [
-                                'club' => $club,
-                                'user' => $utilisateur,
-                                'reset_url' => $resetUrl,
-                                'expiration_date' => new \DateTime('+24 hours')
-                            ]
-                        );
-                        $mailerService = new MailerService();
-                        $mailerService->sendEmail($email);
-                        error_log("✅ Email envoyé à " . $utilisateur['email'] . " (token: $token)");
                     }
                 }
                 
-                // Session flag
+                $clubManager = new ClubManager();
+                $club = $clubManager->findParameters();
+                $token = bin2hex(random_bytes(32));
+                $expires = date('Y-m-d H:i:s', strtotime('+24 hours'));
+                $sentAt = date('Y-m-d H:i:s');
+                
+                $pdo = $utilisateurManager->getDb();
+                $sql = "UPDATE utilisateur 
+                SET reset_token = :token,
+                reset_token_expires = :expires,
+                reset_email_sent_at = :sent_at,
+                reset_email_sent = 1
+                WHERE id = :id";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([
+                    'token' => $token,
+                    'expires' => $expires,
+                    'sent_at' => $sentAt,
+                    'id' => $user['id']
+                ]);
+                
                 $this->session->set('reset_email_sent', true);
                 $this->session->set('reset_email_time', time());
                 
+                $resetUrl = $this->getBaseUrl() . '/regenerer_mot_de_passe?token=' . $token;
+                if (null !== $club['email']) {
+                    $emailContent = $this->createEmail(
+                        $club['email'],
+                        $user['email'],
+                        'Changement de mot de passe',
+                        'email/reset_password.twig',
+                        [
+                            'club' => $club,
+                            'user' => $user,
+                            'reset_url' => $resetUrl,
+                            'expiration_date' => new \DateTime('+24 hours')
+                        ]
+                    );
+                    $mailerService = new MailerService();
+                    $mailerService->sendEmail($emailContent);
+                }
+                
                 $this->session->getFlashBag()->add('info', 'La procédure de récupération a été envoyée à l\'adresse mail indiquée.');
-                // ✅ Redirection vers la page de confirmation
                 return new RedirectResponse('/mot_de_passe_oublie/confirmation');
             }
             
-            // En cas d'erreur, on reste sur le formulaire
             return $this->render('user_forgot_password.twig', [
                 'form_errors' => $form_errors,
-                'submit_token' => $submitToken
+                'submit_token' => $submitToken,
+                'email' => $email
             ]);
         }
         
+        $this->session->set('last_submit_token', $submitToken);
         return $this->render('user_forgot_password.twig', [
             'form_errors' => $form_errors,
             'submit_token' => $submitToken
         ]);
+    }
+    
+    public function forgotPasswordConfirm(Request $request): Response
+    {
+        return $this->render('user_forgot_password_confirm.twig');
     }
 
     public function resetPassword(Request $request)
@@ -222,10 +218,5 @@ class AppUserRegisterController extends AbstractController
         $host = $_SERVER['HTTP_HOST'];
         $basePath = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
         return $protocol . $host . $basePath;
-    }
-    
-    public function forgotPasswordConfirm(): Response
-    {
-        return $this->render('user_forgot_password_confirm.twig');
     }
 }
