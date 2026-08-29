@@ -61,7 +61,7 @@
             </div>
         </div>
 
-        <!-- LIGNE 2 : Tri, limite et bouton -->
+        <!-- LIGNE 2 : Tri, limite et boutons -->
         <div class="row g-3 mt-2">
             <div class="col-md-2">
                 <label for="order_by" class="form-label">Trier par</label>
@@ -80,7 +80,6 @@
                 </select>
             </div>
             
-            
             {% if pagination.total > 5 %}
             <div class="col-md-2">
                 <label for="limit" class="form-label">Lignes par page</label>
@@ -94,8 +93,12 @@
             </div>
             {% endif %}
             
-            <div class="col-md-2 d-flex align-items-end">
-                <button type="submit" class="btn btn-secondary w-100">Appliquer</button>
+            <!-- Zone des boutons : Appliquer + PDF -->
+            <div class="col-md-3 d-flex align-items-end gap-2">
+                <button type="submit" name="action" value="filter" class="btn btn-secondary w-100">Appliquer</button>
+                <button type="submit" name="action" value="pdf" class="btn btn-danger w-100" formtarget="_blank">
+                    <i class="fas fa-file-pdf"></i> PDF
+                </button>
             </div>
         </div>
     </form>
@@ -107,7 +110,7 @@
 			<tr>
 				<th>Référence</th>
 				<th>Nom</th>
-				<th>Photo</th>                <!-- ⬅️ NOUVEAU -->
+				<th>Photo</th>
 				<th>Catégorie</th>
 				<th>EPI</th>
 				<th>Emplacement</th>
