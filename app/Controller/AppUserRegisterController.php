@@ -24,33 +24,9 @@ class AppUserRegisterController extends AbstractController
 
     public function forgotPassword(Request $request)
     {
-        $timeout = 60;
-        
-        if ($this->session->get('reset_email_sent')) {
-            $elapsed = time() - $this->session->get('reset_email_time');
-            if ($elapsed < $timeout) {
-                $this->session->getFlashBag()->add('info', 'Un email a déjà été envoyé récemment.');
-                return new RedirectResponse('/');
-            } else {
-                $this->session->remove('reset_email_sent');
-                $this->session->remove('reset_email_time');
-            }
-        }
-        
         $form_errors = [];
-        $submitToken = bin2hex(random_bytes(16));
         
         if ($request->getMethod() === 'POST') {
-            $submittedToken = $request->request->get('submit_token');
-            $sessionToken = $this->session->get('last_submit_token');
-            
-            if (!$submittedToken || !$sessionToken || $submittedToken !== $sessionToken) {
-                $this->session->getFlashBag()->add('error', 'Formulaire invalide ou déjà soumis.');
-                return new RedirectResponse('/mot_de_passe_oublie');
-            }
-            
-            $this->session->remove('last_submit_token');
-            
             $email = $request->request->get('email');
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 $form_errors['email'] = 'Veuillez entrer une adresse mail valide.';
@@ -60,36 +36,35 @@ class AppUserRegisterController extends AbstractController
                 $utilisateurManager = new UtilisateurManager();
                 $user = $utilisateurManager->findOneByCriteria(['email' => $email]);
                 
+                // Ne pas révéler si l'email existe ou non
                 if (!$user) {
-                    $this->session->set('reset_email_sent', true);
-                    $this->session->set('reset_email_time', time());
-                    $this->session->getFlashBag()->add('info', 'La procédure de récupération a été envoyée à l\'adresse mail indiquée.');
+                    $this->session->getFlashBag()->add('info', 'Un email a été envoyé si le compte existe.');
                     return new RedirectResponse('/mot_de_passe_oublie/confirmation');
                 }
                 
-                if (!empty($user['reset_email_sent']) && $user['reset_email_sent'] == 1) {
-                    if (!empty($user['reset_email_sent_at'])) {
-                        $lastSent = new \DateTime($user['reset_email_sent_at']);
-                        $now = new \DateTime();
-                        if ($now->getTimestamp() - $lastSent->getTimestamp() < $timeout) {
-                            $this->session->getFlashBag()->add('info', 'Un email a déjà été envoyé récemment.');
-                            return new RedirectResponse('/');
-                        }
+                // Vérifier le délai depuis le dernier envoi
+                $timeout = 60; // secondes
+                $now = new \DateTime();
+                if (!empty($user['reset_email_sent_at'])) {
+                    $lastSent = new \DateTime($user['reset_email_sent_at']);
+                    $diff = $now->getTimestamp() - $lastSent->getTimestamp();
+                    if ($diff < $timeout) {
+                        $this->session->getFlashBag()->add('info', 'Un email a déjà été envoyé récemment.');
+                        return new RedirectResponse('/');
                     }
                 }
                 
-                $clubManager = new ClubManager();
-                $club = $clubManager->findParameters();
+                // Génération du token
                 $token = bin2hex(random_bytes(32));
-                $expires = date('Y-m-d H:i:s', strtotime('+24 hours'));
-                $sentAt = date('Y-m-d H:i:s');
+                $expires = (new \DateTime('+24 hours'))->format('Y-m-d H:i:s');
+                $sentAt = $now->format('Y-m-d H:i:s');
                 
+                // Mise à jour de l'utilisateur
                 $pdo = $utilisateurManager->getDb();
                 $sql = "UPDATE utilisateur 
                 SET reset_token = :token,
                 reset_token_expires = :expires,
-                reset_email_sent_at = :sent_at,
-                reset_email_sent = 1
+                reset_email_sent_at = :sent_at
                 WHERE id = :id";
                 $stmt = $pdo->prepare($sql);
                 $stmt->execute([
@@ -99,10 +74,11 @@ class AppUserRegisterController extends AbstractController
                     'id' => $user['id']
                 ]);
                 
-                $this->session->set('reset_email_sent', true);
-                $this->session->set('reset_email_time', time());
-                
+                // Envoi de l'email
+                $clubManager = new ClubManager();
+                $club = $clubManager->findParameters();
                 $resetUrl = $this->getBaseUrl() . '/regenerer_mot_de_passe?token=' . $token;
+                
                 if (null !== $club['email']) {
                     $emailContent = $this->createEmail(
                         $club['email'],
@@ -120,21 +96,13 @@ class AppUserRegisterController extends AbstractController
                     $mailerService->sendEmail($emailContent);
                 }
                 
-                $this->session->getFlashBag()->add('info', 'La procédure de récupération a été envoyée à l\'adresse mail indiquée.');
+                $this->session->getFlashBag()->add('info', 'Un email a été envoyé avec les instructions.');
                 return new RedirectResponse('/mot_de_passe_oublie/confirmation');
             }
-            
-            return $this->render('user_forgot_password.twig', [
-                'form_errors' => $form_errors,
-                'submit_token' => $submitToken,
-                'email' => $email
-            ]);
         }
         
-        $this->session->set('last_submit_token', $submitToken);
         return $this->render('user_forgot_password.twig', [
-            'form_errors' => $form_errors,
-            'submit_token' => $submitToken
+            'form_errors' => $form_errors
         ]);
     }
     
@@ -160,14 +128,16 @@ class AppUserRegisterController extends AbstractController
             return new RedirectResponse('/');
         }
         
-        // ✅ Vérification d'expiration (optionnelle)
+        // Vérification d'expiration
         if (isset($utilisateur['reset_token_expires']) && $utilisateur['reset_token_expires'] !== null) {
             $now = new \DateTime();
             $expires = new \DateTime($utilisateur['reset_token_expires']);
             if ($now > $expires) {
-                $utilisateur['reset_token'] = null;
-                $utilisateur['reset_token_expires'] = null;
-                $utilisateurManager->save($utilisateur);
+                // Nettoyer le token
+                $pdo = $utilisateurManager->getDb();
+                $sql = "UPDATE utilisateur SET reset_token = NULL, reset_token_expires = NULL, reset_email_sent_at = NULL WHERE id = :id";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute(['id' => $utilisateur['id']]);
                 $this->session->getFlashBag()->add('error', 'Le lien a expiré.');
                 return new RedirectResponse('/');
             }
@@ -191,9 +161,10 @@ class AppUserRegisterController extends AbstractController
                 $utilisateur['password'] = password_hash($password, PASSWORD_DEFAULT);
                 $utilisateur['reset_token'] = null;
                 $utilisateur['reset_token_expires'] = null;
+                $utilisateur['reset_email_sent_at'] = null;
                 $utilisateurManager->save($utilisateur);
                 
-                $this->session->getFlashBag()->add('success', 'Votre mot de passe a été réinitialisé avec succès.');
+                $this->session->getFlashBag()->add('success', 'Votre mot de passe a ete reinitialise avec succes.');
                 return new RedirectResponse('/se_connecter');
             }
         }

@@ -14,8 +14,8 @@ CREATE TABLE IF NOT EXISTS `utilisateur` (
   `derniere_connexion` datetime NULL,
   `last_activity` datetime NULL,
   `reset_token` varchar(255) NULL,
-  `reset_token_expires` datetime NULL,          -- ✅ AJOUTÉ
-  `reset_email_sent_at` datetime NULL,          -- ✅ AJOUTÉ
+  `reset_token_expires` datetime NULL,
+  `reset_email_sent_at` datetime NULL,
   `controle_en_cours_id` int(11) NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `email` (`email`),

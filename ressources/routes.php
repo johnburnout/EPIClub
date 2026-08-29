@@ -23,11 +23,10 @@ $routes->add('forgot_password', new Route('/mot_de_passe_oublie', ['_controller'
 $routes->add('forgot_password_confirm', new Route('/mot_de_passe_oublie/confirmation', ['_controller' => 'Epiclub\\Controller\\AppUserRegisterController', 'action' => 'forgotPasswordConfirm']));
 $routes->add('reset_password', new Route('/regenerer_mot_de_passe', ['_controller' => 'Epiclub\\Controller\\AppUserRegisterController', 'action' => 'resetPassword']));
 
-$routes->add('equipement_list', new Route('/equipements', ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'list']));// Routes spécifiques d'équipement (ordre important !)
-$routes->add('equipement_pdf', new Route('/equipements/equipement-pdf-{id}', ['_controller' => 'Epiclub\\Controller\\EquipementController','action' => 'pdf']));	
-$routes->add('equipement_edit', new Route('/equipements/equipement_modification-{id}', ['_controller' => 'Epiclub\\Controller\\EquipementController','action' => 'edit']));	
-$routes->add('equipement_list_pdf', new Route('/equipements/pdf-liste', ['_controller' => 'Epiclub\\Controller\\EquipementController','action' => 'listPdf']));
-$routes->add('equipement_show', new Route('/equipements/equipement-{id}', ['_controller' => 'Epiclub\\Controller\\EquipementController','action' => 'show']));
+$routes->add('equipement_list', new Route('/equipements', ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'list']));
+$routes->add('equipement_list_excel', new Route('/equipements/excel-liste', ['_controller' => 'Epiclub\\Controller\\EquipementController','action' => 'listExcel']));
+$routes->add('equipement_show', new Route('/equipements/equipement-{id}', ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'show']));
+$routes->add('equipement_edit', new Route('/equipements/equipement_modification-{id}', ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'edit']));
 
 // JOURNAUX - NOUVEAU
 $routes->add('journal_list', new Route('/journaux', ['_controller' => 'Epiclub\\Controller\\JournalController', 'action' => 'index']));
