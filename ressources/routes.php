@@ -96,3 +96,6 @@ $routes->add('qr_save', new Route('/qr/save/{id}', ['_controller' => 'Epiclub\\C
 	
 // QR Code API (pour génération JSON)
 $routes->add('qr_api_generate', new Route('/api/qr/generate/{id}', ['_controller' => 'Epiclub\\Controller\\QrRedirectController', 'action' => 'apiGenerateQr']));
+
+// Guide utilisateurs
+$routes->add('guide_utilisateur', new Route('/guide', ['_controller' => 'Epiclub\\Controller\\GuideController', 'action' => 'index']));
