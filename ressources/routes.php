@@ -24,6 +24,7 @@ $routes->add('forgot_password_confirm', new Route('/mot_de_passe_oublie/confirma
 $routes->add('reset_password', new Route('/regenerer_mot_de_passe', ['_controller' => 'Epiclub\\Controller\\AppUserRegisterController', 'action' => 'resetPassword']));
 
 $routes->add('equipement_list', new Route('/equipements', ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'list']));
+$routes->add('equipement_list_excel', new Route('/equipements/excel-liste', ['_controller' => 'Epiclub\\Controller\\EquipementController','action' => 'listExcel']));
 $routes->add('equipement_show', new Route('/equipements/equipement-{id}', ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'show']));
 $routes->add('equipement_edit', new Route('/equipements/equipement_modification-{id}', ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'edit']));
 
