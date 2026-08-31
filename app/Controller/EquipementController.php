@@ -30,29 +30,44 @@ class EquipementController extends AbstractController
     // --------------------------------------------------------------
     public function list(Request $request)
     {
-        // Si on demande l'export Excel
+        // --- Gestion du menu déroulant d'export ---
+        if ($request->query->get('action') === 'export') {
+            $type = $request->query->get('export_type', 'pdf');
+            switch ($type) {
+                case 'pdf':
+                    return $this->listPdf($request);
+                case 'excel':
+                    return $this->listExcel($request);
+                case 'etiquettes':
+                    return $this->etiquettesPdf($request);
+                default:
+                    return $this->listPdf($request);
+            }
+        }
+
+        // Rétrocompatibilité avec les anciens boutons directs (optionnel)
         if ($request->query->get('action') === 'excel') {
             return $this->listExcel($request);
         }
-        // Si on demande l'export PDF
         if ($request->query->get('action') === 'pdf') {
             return $this->listPdf($request);
         }
+
         // Récupération des paramètres de pagination
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 10);
         if ($page < 1) $page = 1;
         if ($limit < 1) $limit = 10;
-        
+
         // Récupération de la liste filtrée et triée
         $equipements = $this->getFilteredEquipments($request);
         $total = count($equipements);
-        
+
         // Pagination
         $offset = ($page - 1) * $limit;
         $equipements = array_slice($equipements, $offset, $limit);
         $totalPages = $limit > 0 ? ceil($total / $limit) : 1;
-        
+
         // Construction des paramètres pour les URLs de pagination
         $baseParams = [
             'categorie' => $request->query->get('categorie'),
@@ -68,20 +83,20 @@ class EquipementController extends AbstractController
         $baseParams = array_filter($baseParams, function($v) {
             return $v !== null && $v !== '';
         });
-        
+
         $paginationUrls = [
             'first' => '?' . http_build_query(array_merge($baseParams, ['page' => 1])),
             'previous' => '?' . http_build_query(array_merge($baseParams, ['page' => max(1, $page - 1)])),
             'next' => '?' . http_build_query(array_merge($baseParams, ['page' => min($totalPages, $page + 1)])),
             'last' => '?' . http_build_query(array_merge($baseParams, ['page' => $totalPages])),
         ];
-        
+
         // Chargement des catégories et emplacements pour le formulaire de filtre
         $categorieManager = new CategorieManager();
         $emplacementManager = new EmplacementManager();
         $categories = $categorieManager->findAll();
         $emplacements = $emplacementManager->findAll();
-        
+
         // Récupération des filtres pour l'affichage
         $filtres = [
             'categorie_id' => $request->query->get('categorie'),
@@ -94,7 +109,7 @@ class EquipementController extends AbstractController
             'page' => $page,
             'limit' => $limit,
         ];
-        
+
         return $this->render('equipement_list.twig', [
             'equipements' => $equipements,
             'categories' => $categories,
@@ -489,6 +504,8 @@ class EquipementController extends AbstractController
         <div class="row"><span class="label">Emplacement :</span> {$emplacementLibelle}</div>
         <div class="row"><span class="label">Date mise en service :</span> {$dateMise}</div>
         <div class="row"><span class="label">Date fin d'utilisation :</span> {$dateFin}</div>
+        <div class="row"><span class="label">Statut :</span> {$statutHtml}</div>
+        <div class="row"><span class="label">État d'usure :</span> {$etatUsure}</div>
         <div class="row"><span class="label">Remarques :</span> {$remarques}</div>
     </div>
 
@@ -795,6 +812,98 @@ HTML;
         return $response;
     }
     
+    // --------------------------------------------------------------
+    // ÉTIQUETTES
+    // --------------------------------------------------------------
+    /**
+    * Génère une planche d'étiquettes au format Avery 5160
+    */
+    public function etiquettesPdf(Request $request): Response
+    {
+        $this->deniAccessUnlessGranted('ROLE_USER');
+        
+        // Récupération des équipements filtrés
+        $equipements = $this->getFilteredEquipments($request);
+        
+        // Génération du HTML
+        $html = $this->renderEtiquettesHtml($equipements);
+        
+        // Configuration Dompdf
+        $options = new Options();
+        $options->set('isRemoteEnabled', false);
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('defaultFont', 'DejaVu Sans');
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+        
+        $output = $dompdf->output();
+        return new Response($output, 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="etiquettes_avery5160.pdf"'
+        ]);
+    }
+
+    /**
+    * Génère le HTML pour la planche d'étiquettes Avery 5160
+    */
+    private function renderEtiquettesHtml(array $equipements): string
+    {
+        $qrGenerator = new QrCodeGenerator();
+        $baseUrl = $this->getBaseUrl();
+
+        $etiquettesHtml = '';
+        foreach ($equipements as $e) {
+            $qrUrl = $baseUrl . '/qr/' . $e['id'];
+            $qrPng = $qrGenerator->generateFromData($qrUrl, 240, false);
+            $qrBase64 = 'data:image/png;base64,' . base64_encode($qrPng);
+
+            $etiquettesHtml .= <<<LABEL
+        <div class="etiquette">
+            <div class="etiquette-content">
+                <div class="qr-code">
+                    <img src="{$qrBase64}" alt="QR Code">
+                </div>
+                <div class="infos">
+                    <div class="reference">{$e['reference']}</div>
+                    <div class="libelle">{$e['libelle']}</div>
+                </div>
+            </div>
+        </div>
+LABEL;
+        }
+
+        if (empty($etiquettesHtml)) {
+            $etiquettesHtml = '<div class="empty-message">Aucun équipement à étiqueter.</div>';
+        }
+
+        return <<<HTML
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Étiquettes Avery 5160</title>
+    <style>
+        @page { margin: 1.8cm 0.5cm 1.8cm 0.5cm; }
+        body { font-family: DejaVu Sans, sans-serif; margin: 0; padding: 0; background: #fff; }
+        .etiquette { display: inline-block; width: 63.5mm; height: 29.6mm; margin: 0; padding: 0; border: none; box-sizing: border-box; vertical-align: top; border: 0.5px dashed #e0e0e0; page-break-inside: avoid; }
+        .etiquette-content { display: table; width: 100%; height: 100%; padding: 1.5mm 1.5mm; box-sizing: border-box; }
+        .qr-code { display: table-cell; vertical-align: middle; width: 18mm; height: 18mm; text-align: center; padding-right: 2mm; }
+        .qr-code img { width: 18mm; height: 18mm; object-fit: contain; }
+        .infos { display: table-cell; vertical-align: middle; padding-left: 1mm; }
+        .reference { font-weight: bold; font-size: 8.5pt; color: #2c3e50; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 1px; }
+        .libelle { font-size: 7.5pt; color: #34495e; font-weight: normal; white-space: normal; word-break: normal; overflow-wrap: break-word; line-height: 1.3; }
+        .empty-message { text-align: center; padding: 50px; font-size: 16px; color: #999; }
+    </style>
+</head>
+<body>
+    {$etiquettesHtml}
+</body>
+</html>
+HTML;
+    }
+
     // --------------------------------------------------------------
     // UTILITAIRES
     // --------------------------------------------------------------
