@@ -489,8 +489,6 @@ class EquipementController extends AbstractController
         <div class="row"><span class="label">Emplacement :</span> {$emplacementLibelle}</div>
         <div class="row"><span class="label">Date mise en service :</span> {$dateMise}</div>
         <div class="row"><span class="label">Date fin d'utilisation :</span> {$dateFin}</div>
-        <div class="row"><span class="label">Statut :</span> {$statutHtml}</div>
-        <div class="row"><span class="label">État d'usure :</span> {$etatUsure}</div>
         <div class="row"><span class="label">Remarques :</span> {$remarques}</div>
     </div>
 
