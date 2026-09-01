@@ -39,6 +39,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $admin['date_creation'] = (new DateTime())->format('Y-m-d H:i:s');
         $admin['derniere_connexion'] = null;
 
+        // 🔧 Ajout des colonnes manquantes (requises par la table)
+        $admin['last_activity'] = null;
+        $admin['reset_token'] = null;
+        $admin['reset_token_expires'] = null;
+        $admin['reset_email_sent_at'] = null;
+        $admin['controle_en_cours_id'] = null;
+
         $utilisateurManager = new UtilisateurManager();
         $utilisateurManager->save($admin);
 

@@ -34,7 +34,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'email' => $_POST['email'] ?? '',
             'phone' => $_POST['phone'] ?? '',
         ];
+
         $clubManager = new ClubManager();
+
+        // 🔍 Vérifier si un club existe déjà
+        $existingClub = $clubManager->findParameters(); // méthode qui retourne le club (si un seul)
+        if ($existingClub && isset($existingClub['id'])) {
+            // Mise à jour
+            $club['id'] = $existingClub['id'];
+        }
+
         $clubManager->save($club);
 
         // 🔧 CRÉER LE SUPER ADMINISTRATEUR
@@ -42,14 +51,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $superAdmin = [
                 'nom' => 'Admin',
                 'prenom' => 'Super',
-                'username' => 'admin',  // 👈 Login admin
+                'username' => 'admin',
                 'email' => $club['email'],
-                'password' => password_hash('admin', PASSWORD_DEFAULT),  // 👈 Mot de passe admin
+                'password' => password_hash('admin', PASSWORD_DEFAULT),
                 'role' => 'ROLE_ADMIN',
                 'date_creation' => (new DateTime())->format('Y-m-d H:i:s'),
-                'derniere_connexion' => null
+                'derniere_connexion' => null,
+                'last_activity' => null,
+                'reset_token' => null,
+                'reset_token_expires' => null,
+                'reset_email_sent_at' => null,
+                'controle_en_cours_id' => null
             ];
+
+            // Vérifier si l'utilisateur 'admin' existe déjà pour éviter un doublon
             $utilisateurManager = new UtilisateurManager();
+            $existingUser = $utilisateurManager->findOneByCriteria(['username' => 'admin']);
+            if ($existingUser) {
+                // Mettre à jour l'utilisateur existant
+                $superAdmin['id'] = $existingUser['id'];
+            }
             $utilisateurManager->save($superAdmin);
             
             $_SESSION['super_admin_created'] = true;

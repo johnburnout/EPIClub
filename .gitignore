@@ -26,3 +26,4 @@ build-release.sh
 # Dossier setup (tout le contenu est volontairement inclus, donc on ne l'ignore pas)
 # Si vous voulez exclure certains sous-dossiers spécifiques, ajoutez-les ici
 # /setup/.DS_Store  # déjà exclu par .DS_Store globalpublic/uploads/
+var/
