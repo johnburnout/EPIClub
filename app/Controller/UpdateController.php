@@ -13,7 +13,7 @@ class UpdateController extends AbstractController
     private const GITHUB_REPO = 'johnburnout/EPIClub';
     private const VERSION_FILE = __DIR__ . '/../../version.txt';
     private const TEMP_DIR = __DIR__ . '/../../var/tmp/update';
-    private const EXCLUDED_DIRS = ['var', 'vendor', '.git', 'public/uploads', 'config'];
+    private const EXCLUDED_DIRS = ['var', 'vendor', '.git', 'public/uploads', 'config', 'setup'];
     private const EXCLUDED_FILES = ['.env', '.env.local', '.env.local.php', 'version.txt'];
 
     // --------------------------------------------------------------
