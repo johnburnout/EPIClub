@@ -112,7 +112,7 @@ class JournalManager extends AbstractManager
     }
     
     /**
-     * Détails d'un contrôle clôturé (avec déchiffrement des remarques générales)
+     * Détails d'un contrôle clôturé (retourne les données brutes)
      */
     public function getControleCloture(int $controleId): ?array
     {
@@ -131,15 +131,12 @@ class JournalManager extends AbstractManager
         $stmt->execute([':id' => $controleId]);
         $result = $stmt->fetch(\PDO::FETCH_ASSOC);
         
-        if ($result && !empty($result['hash_remarques'])) {
-            $result['hash_remarques'] = $this->decrypt($result['hash_remarques']);
-        }
-        
+        // Le déchiffrement des remarques est désormais effectué dans le contrôleur
         return $result ?: null;
     }
     
     /**
-     * Lignes d'un contrôle clôturé (avec déchiffrement des remarques)
+     * Lignes d'un contrôle clôturé (retourne les données brutes)
      */
     public function getLignesControle(int $controleId): array
     {
@@ -162,13 +159,7 @@ class JournalManager extends AbstractManager
         $stmt->execute([':controle_id' => $controleId]);
         $lignes = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         
-        // Déchiffrer la remarque de chaque ligne
-        foreach ($lignes as &$ligne) {
-            if (!empty($ligne['remarque'])) {
-                $ligne['remarque'] = $this->decrypt($ligne['remarque']);
-            }
-        }
-        
+        // Le déchiffrement des remarques est désormais effectué dans le contrôleur
         return $lignes;
     }
     
@@ -203,41 +194,5 @@ class JournalManager extends AbstractManager
         $stmt = $pdo->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll(\PDO::FETCH_COLUMN);
-    }
-
-    // ... (début du fichier)
-    
-    // ------------------------------------------------------------
-    //  Gestion du déchiffrement (identique à ControleController)
-    // ------------------------------------------------------------
-    
-    private function decrypt(string $encrypted): string
-    {
-        $config = include __DIR__ . '/../../.env.local.php';
-        $secretKey = isset($config['SECRET_KEY']) ? hex2bin($config['SECRET_KEY']) : null;
-        $cipherMethod = $config['CIPHER_METHOD'] ?? 'AES-256-CBC';
-        
-        if (!$secretKey || !$cipherMethod) {
-            return $encrypted;
-        }
-        
-        $data = base64_decode($encrypted, true);
-        if ($data === false) {
-            return $encrypted;
-        }
-        
-        $ivLength = openssl_cipher_iv_length($cipherMethod);
-        if ($ivLength === false || strlen($data) < $ivLength) {
-            return $encrypted;
-        }
-        
-        $iv = substr($data, 0, $ivLength);
-        $ciphertext = substr($data, $ivLength);
-        $decrypted = openssl_decrypt($ciphertext, $cipherMethod, $secretKey, 0, $iv);
-        if ($decrypted === false) {
-            return $encrypted;
-        }
-        
-        return $decrypted;
     }
 }

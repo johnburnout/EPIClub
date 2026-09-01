@@ -4,6 +4,7 @@
 namespace Epiclub\Controller;
 
 use Epiclub\Engine\AbstractController;
+use Epiclub\Engine\EncryptionService;
 use Epiclub\Domain\JournalManager;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -13,11 +14,13 @@ use Dompdf\Options;
 class JournalController extends AbstractController
 {
     private JournalManager $journalManager;
+    private EncryptionService $encryptionService;
     
     public function __construct(\Epiclub\Engine\Session $session)
     {
         parent::__construct($session);
         $this->journalManager = new JournalManager();
+        $this->encryptionService = new EncryptionService();
     }
     
     /**
@@ -83,22 +86,30 @@ class JournalController extends AbstractController
             return $this->redirectTo('/se_connecter');
         }
         
-        // Récupérer l'ID depuis les attributs de la requête
         $id = $request->attributes->get('id');
-        
         if (!$id) {
             $this->session->getFlashBag()->add('danger', 'Identifiant du journal manquant');
             return $this->redirectTo('/journaux');
         }
         
         $controle = $this->journalManager->getControleCloture((int)$id);
-        
         if (!$controle) {
             $this->session->getFlashBag()->add('danger', 'Journal de contrôle non trouvé');
             return $this->redirectTo('/journaux');
         }
         
+        // Déchiffrer les remarques générales du contrôle
+        if (!empty($controle['hash_remarques'])) {
+            $controle['hash_remarques'] = $this->encryptionService->decrypt($controle['hash_remarques']);
+        }
+        
         $lignes = $this->journalManager->getLignesControle((int)$id);
+        // Déchiffrer les remarques de chaque ligne
+        foreach ($lignes as &$ligne) {
+            if (!empty($ligne['remarque'])) {
+                $ligne['remarque'] = $this->encryptionService->decrypt($ligne['remarque']);
+            }
+        }
         
         return $this->render('journaux/voir.twig', [
             'controle' => $controle,
@@ -107,8 +118,8 @@ class JournalController extends AbstractController
     }
     
     /**
-    * Génération PDF d'un journal
-    */
+     * Génération PDF d'un journal
+     */
     public function pdf(Request $request): Response
     {
         if (!$this->isGranted('ROLE_USER')) {
@@ -116,20 +127,29 @@ class JournalController extends AbstractController
         }
         
         $id = $request->attributes->get('id');
-        
         if (!$id) {
             $this->session->getFlashBag()->add('danger', 'Identifiant du journal manquant');
             return $this->redirectTo('/journaux');
         }
         
         $controle = $this->journalManager->getControleCloture((int)$id);
-        
         if (!$controle) {
             $this->session->getFlashBag()->add('danger', 'Journal de contrôle non trouvé');
             return $this->redirectTo('/journaux');
         }
         
+        // Déchiffrer les remarques générales
+        if (!empty($controle['hash_remarques'])) {
+            $controle['hash_remarques'] = $this->encryptionService->decrypt($controle['hash_remarques']);
+        }
+        
         $lignes = $this->journalManager->getLignesControle((int)$id);
+        // Déchiffrer les remarques de chaque ligne
+        foreach ($lignes as &$ligne) {
+            if (!empty($ligne['remarque'])) {
+                $ligne['remarque'] = $this->encryptionService->decrypt($ligne['remarque']);
+            }
+        }
         
         // Génération du HTML pour le PDF
         $html = $this->generatePdfHtml($controle, $lignes);
@@ -145,30 +165,27 @@ class JournalController extends AbstractController
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
         
-        // Téléchargement du PDF
         $filename = 'journal_controle_' . $controle['id'] . '_' . date('Y-m-d') . '.pdf';
         $output = $dompdf->output();
         
         return new Response($output, 200, [
             'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
             'Content-Length' => strlen($output)
         ]);
     }
     
     /**
-    * Génère le HTML pour le PDF en utilisant la méthode render() du parent
-    */
+     * Génère le HTML pour le PDF en utilisant la méthode render() du parent
+     */
     private function generatePdfHtml(array $controle, array $lignes): string
     {
-        // Utiliser la méthode render() du parent (AbstractController) qui retourne un objet Response
         $response = $this->render('journaux/pdf.twig', [
             'controle' => $controle,
             'lignes' => $lignes,
             'generated_at' => date('d/m/Y H:i:s')
         ]);
         
-        // Extraire le contenu HTML de la Response
         return $response->getContent();
     }
 }
