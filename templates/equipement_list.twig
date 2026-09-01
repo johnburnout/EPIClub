@@ -93,21 +93,19 @@
             </div>
             {% endif %}
             
-            <!-- Zone des boutons : Appliquer + PDF -->
-            <div class="col-md-3 d-flex align-items-end gap-2">
-                <button type="submit" name="action" value="filter" class="btn btn-secondary w-100">Appliquer</button>
-                <button type="submit" name="action" value="pdf" class="btn btn-danger w-100" formtarget="_blank">
-                    <i class="fas fa-file-pdf"></i> PDF
-                </button>
-            </div>
-            <div class="col-md-3 d-flex align-items-end gap-2">
-                <button type="submit" name="action" value="filter" class="btn btn-secondary w-100">Appliquer</button>
-                <button type="submit" name="action" value="pdf" class="btn btn-danger w-100" formtarget="_blank">
-                    <i class="fas fa-file-pdf"></i> PDF
-                </button>
-                <button type="submit" name="action" value="excel" class="btn btn-success w-100" formtarget="_blank">
-                    <i class="fas fa-file-excel"></i> Excel
-                </button>
+            <!-- Boutons : Appliquer + Menu Export -->
+            <div class="col-md-4 d-flex align-items-end gap-2">
+                <button type="submit" name="action" value="filter" class="btn btn-secondary">Appliquer</button>
+                <div class="input-group">
+                    <select name="export_type" class="form-select" style="max-width: 130px;">
+                        <option value="pdf">PDF</option>
+                        <option value="excel">Excel</option>
+                        <option value="etiquettes">Étiquettes</option>
+                    </select>
+                    <button type="submit" name="action" value="export" class="btn btn-primary" formtarget="_blank">
+                        <i class="fas fa-file-export"></i> Exporter
+                    </button>
+                </div>
             </div>
         </div>
     </form>
