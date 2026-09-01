@@ -93,6 +93,11 @@ $routes->add('qr_generate', new Route('/qr/generate/{id}', ['_controller' => 'Ep
 $routes->add('qr_download', new Route('/qr/download/{id}', ['_controller' => 'Epiclub\\Controller\\QrRedirectController','action' => 'downloadQr']));
 $routes->add('qr_view', new Route('/qr/view/{filename}', ['_controller' => 'Epiclub\\Controller\\QrRedirectController', 'action' => 'viewQr']));
 $routes->add('qr_save', new Route('/qr/save/{id}', ['_controller' => 'Epiclub\\Controller\\QrRedirectController', 'action' => 'saveQr']));
+
+//Update
+$routes->add('admin_update', new Route('/admin/update', ['_controller' => 'Epiclub\\Controller\\UpdateController', 'action' => 'index']));
+$routes->add('admin_update_perform', new Route('/admin/update/perform', ['_controller' => 'Epiclub\\Controller\\UpdateController', 'action' => 'perform']));
+$routes->add('admin_update_cleanup', new Route('/admin/update/cleanup', ['_controller' => 'Epiclub\\Controller\\UpdateController', 'action' => 'cleanup']));	
 	
 // QR Code API (pour génération JSON)
 $routes->add('qr_api_generate', new Route('/api/qr/generate/{id}', ['_controller' => 'Epiclub\\Controller\\QrRedirectController', 'action' => 'apiGenerateQr']));

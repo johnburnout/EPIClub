@@ -61,57 +61,55 @@ class UpdateController extends AbstractController
     // --------------------------------------------------------------
     public function perform(Request $request): Response
     {
-        $this->deniAccessUnlessGranted('ROLE_ADMIN');
-
-        if ($request->getMethod() !== 'POST') {
-            return new RedirectResponse('/admin/update');
-        }
-
-        // Vérifier CSRF
-        $token = $request->request->get('csrf_token');
-        if (!$token || $token !== $this->session->get('csrf_token')) {
-            $this->addFlash('danger', 'Token invalide.');
-            return new RedirectResponse('/admin/update');
-        }
-
-        $latest = $this->getLatestRelease();
-        if (!$latest) {
-            $this->addFlash('danger', 'Impossible de récupérer la version distante.');
-            return new RedirectResponse('/admin/update');
-        }
-
-        $zipUrl = $latest['zip_url'];
-        $version = $latest['tag'];
-
-        $tempZip = self::TEMP_DIR . '/release.zip';
-        if (!is_dir(self::TEMP_DIR)) {
-            mkdir(self::TEMP_DIR, 0755, true);
-        }
-
         try {
-            // 1. Télécharger le zip
+            $this->deniAccessUnlessGranted('ROLE_ADMIN');
+            
+            if ($request->getMethod() !== 'POST') {
+                return new RedirectResponse('/admin/update');
+            }
+            
+            // Vérifier CSRF
+            $token = $request->request->get('csrf_token');
+            if (!$token || $token !== $this->session->get('csrf_token')) {
+                return new Response('Token invalide');
+            }
+            
+            $latest = $this->getLatestRelease();
+            if (!$latest) {
+                return new Response('Impossible de récupérer la version distante.');
+            }
+            
+            $zipUrl = $latest['zip_url'];
+            $version = $latest['tag'];
+            
+            $tempZip = self::TEMP_DIR . '/release.zip';
+            if (!is_dir(self::TEMP_DIR)) {
+                mkdir(self::TEMP_DIR, 0755, true);
+            }
+            
+            // Télécharger le zip
             $zipContent = $this->downloadUrl($zipUrl);
             if (empty($zipContent)) {
-                throw new \Exception('Le fichier téléchargé est vide.');
+                return new Response('Le fichier téléchargé est vide.');
             }
             file_put_contents($tempZip, $zipContent);
-
-            // 2. Décompresser
+            
+            // Décompresser
             $zip = new ZipArchive();
             if ($zip->open($tempZip) !== true) {
-                throw new \Exception('Impossible d\'ouvrir le zip.');
+                return new Response('Impossible d\'ouvrir le zip.');
             }
             $extractPath = self::TEMP_DIR . '/extracted';
             if (!is_dir($extractPath)) {
                 mkdir($extractPath, 0755, true);
             }
             if (!$zip->extractTo($extractPath)) {
-                throw new \Exception('Erreur lors de l\'extraction du zip.');
+                return new Response('Erreur lors de l\'extraction du zip.');
             }
             $zip->close();
             unlink($tempZip);
-
-            // 3. Trouver le dossier source (nom dynamique)
+            
+            // Trouver le dossier source
             $extractedItems = scandir($extractPath);
             $sourceDir = null;
             foreach ($extractedItems as $item) {
@@ -121,39 +119,30 @@ class UpdateController extends AbstractController
                 }
             }
             if (!$sourceDir) {
-                throw new \Exception('Aucun dossier trouvé après extraction.');
+                return new Response('Aucun dossier trouvé après extraction.');
             }
-
-            // 4. Copier les fichiers (sauf exclus)
+            
+            // Copier les fichiers (sauf exclus)
             $targetDir = __DIR__ . '/../..';
             $this->copyFiles($sourceDir, $targetDir);
-
-            // 5. Nettoyer le dossier extrait
+            
+            // Nettoyer le dossier extrait
             $this->deleteDirectory($extractPath);
-
-            // 6. Mettre à jour le numéro de version
+            
+            // Mettre à jour le numéro de version
             file_put_contents(self::VERSION_FILE, $version);
-
-            // 7. Exécuter Composer (si possible)
+            
+            // Exécuter Composer (si possible)
             $this->runComposer();
-
-            // 8. Nettoyage final : supprimer le dossier temporaire (si vide)
+            
+            // Nettoyage final
             $this->cleanupTempDir();
-
-            $this->addFlash('success', 'Mise à jour terminée avec succès. Version : ' . $version);
-
+            
+            return new Response('Mise à jour réussie. Version : ' . $version);
+            
         } catch (\Exception $e) {
-            $this->addFlash('danger', 'Erreur : ' . $e->getMessage());
-            // Nettoyer en cas d'erreur
-            if (isset($extractPath) && is_dir($extractPath)) {
-                $this->deleteDirectory($extractPath);
-            }
-            if (file_exists($tempZip)) {
-                unlink($tempZip);
-            }
+            return new Response('ERREUR : ' . $e->getMessage() . ' dans ' . $e->getFile() . ' à la ligne ' . $e->getLine());
         }
-
-        return new RedirectResponse('/admin/update');
     }
 
     // --------------------------------------------------------------
