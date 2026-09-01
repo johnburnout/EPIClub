@@ -1,0 +1,71 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+<div class="container mt-4">
+    <h3>Mise à jour d'EPIClub</h3>
+    <hr>
+
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <i class="fas fa-sync-alt"></i> Gestion des versions
+        </div>
+        <div class="card-body">
+            <p><strong>Version installée :</strong> <span class="badge bg-secondary">{{ current_version }}</span></p>
+            <p><strong>Dernière version sur GitHub :</strong>
+                {% if latest_version %}
+                    <span class="badge bg-info">{{ latest_version }}</span>
+                {% else %}
+                    <span class="badge bg-danger">Non disponible</span>
+                {% endif %}
+            </p>
+
+            {% if error %}
+                <div class="alert alert-warning">{{ error }}</div>
+            {% endif %}
+
+            {% if cleanup_needed %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-trash"></i> Des fichiers temporaires persistent.
+                    <a href="/admin/update/cleanup" class="btn btn-sm btn-secondary">Nettoyer</a>
+                </div>
+            {% endif %}
+
+            {% if update_available %}
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> Une mise à jour est disponible !
+                </div>
+
+                {% if can_update %}
+                    <form method="post" action="/admin/update/perform" onsubmit="return confirm('Confirmer la mise à jour vers la version {{ latest_version }} ?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-download"></i> Télécharger et installer
+                        </button>
+                    </form>
+                    <p class="text-muted mt-2">
+                        <small>⚠️ Assurez-vous d'avoir sauvegardé vos données avant de lancer la mise à jour.</small>
+                    </p>
+                {% else %}
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i> Impossible d'écrire dans le répertoire du projet. Veuillez vérifier les droits.
+                    </div>
+                {% endif %}
+
+                {% if release_notes %}
+                    <div class="mt-4">
+                        <h5>Notes de version :</h5>
+                        <div class="border p-3 bg-light" style="max-height:300px; overflow-y:auto;">
+                            {{ release_notes|nl2br }}
+                        </div>
+                    </div>
+                {% endif %}
+
+            {% elseif latest_version and not update_available %}
+                <div class="alert alert-info">
+                    <i class="fas fa-check-circle"></i> Vous disposez de la version la plus récente.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

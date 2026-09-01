@@ -26,12 +26,17 @@ class TwigRenderer extends Environment
             $this->addExtension(new \Twig\Extension\DebugExtension());
         }
 
-        // Utiliser la session passée ou en créer une nouvelle (sans la démarrer)
         $this->session = $session ?? new Session();
-        
-        // NE PAS démarrer la session ici - elle est déjà démarrée dans index.php
 
-        // Ajouter les variables globales
+        // ⬇️ AJOUT : fonction Twig csrf_token()
+        $this->addFunction(new TwigFunction('csrf_token', function() {
+            if (!$this->session->has('csrf_token')) {
+                $this->session->set('csrf_token', bin2hex(random_bytes(32)));
+            }
+            return $this->session->get('csrf_token');
+        }));
+
+        // Variables globales
         if ($this->session->has('user')) {
             $this->addGlobal('_user', $this->session->get('user'));
         }
@@ -44,7 +49,6 @@ class TwigRenderer extends Environment
      */
     public function render($name, array $context = []): string
     {
-        // Ajouter les variables globales si non présentes
         if (!isset($context['_user']) && $this->session->has('user')) {
             $context['_user'] = $this->session->get('user');
         }
