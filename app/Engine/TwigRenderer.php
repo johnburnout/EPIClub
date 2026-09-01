@@ -42,6 +42,15 @@ class TwigRenderer extends Environment
         }
         $this->addGlobal('session', $this->session);
         $this->addGlobal('csrf_token', $this->session->get('csrf_token'));
+
+        // 🔧 NOUVEAU : Version de l'application (depuis version.txt)
+        $versionFile = __DIR__ . '/../../version.txt';
+        if (file_exists($versionFile)) {
+            $version = trim(file_get_contents($versionFile));
+        } else {
+            $version = '0.0.0';
+        }
+        $this->addGlobal('app_version', $version);
     }
 
     /**
@@ -57,6 +66,15 @@ class TwigRenderer extends Environment
         }
         if (!isset($context['csrf_token'])) {
             $context['csrf_token'] = $this->session->get('csrf_token');
+        }
+        if (!isset($context['app_version'])) {
+            // Fallback si la variable globale n'est pas passée
+            $versionFile = __DIR__ . '/../../version.txt';
+            if (file_exists($versionFile)) {
+                $context['app_version'] = trim(file_get_contents($versionFile));
+            } else {
+                $context['app_version'] = '0.0.0';
+            }
         }
 
         return parent::render($name, $context);
