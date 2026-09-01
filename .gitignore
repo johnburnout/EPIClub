@@ -27,3 +27,4 @@ build-release.sh
 # Si vous voulez exclure certains sous-dossiers spécifiques, ajoutez-les ici
 # /setup/.DS_Store  # déjà exclu par .DS_Store globalpublic/uploads/
 var/
+setup/
