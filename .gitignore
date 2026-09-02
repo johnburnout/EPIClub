@@ -28,4 +28,4 @@ build-release.sh
 # /setup/.DS_Store  # déjà exclu par .DS_Store globalpublic/uploads/
 var/
 #setup/
-#_setup/
+_setup/
