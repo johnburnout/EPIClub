@@ -432,8 +432,8 @@ class EquipementController extends AbstractController
     }
 
     /**
-     * Génère le contenu HTML du PDF individuel
-     */
+    * Génère le contenu HTML du PDF individuel
+    */
     private function renderPdfHtml(array $equipement, string $qrBase64, ?string $photoBase64): string
     {
         // --- Extraction sécurisée des valeurs ---
@@ -442,89 +442,112 @@ class EquipementController extends AbstractController
         $categorieLibelle = $equipement['categorie']['libelle'] ?? 'Non définie';
         $estEpi = (!empty($equipement['categorie']['est_epi'])) ? 'Oui' : 'Non';
         $emplacementLibelle = $equipement['emplacement']['libelle'] ?? 'Non défini';
-
+        
         $dateMise = $equipement['date_mise_en_service'] ?? 'Non renseignée';
         if ($dateMise !== 'Non renseignée') {
             $dateMise = (new \DateTime($dateMise))->format('d/m/Y');
         }
-
+        
         $dateFin = $equipement['date_fin_utilisation'] ?? 'Toujours en service';
         if ($dateFin !== 'Toujours en service') {
             $dateFin = (new \DateTime($dateFin))->format('d/m/Y');
         }
-
+        
         $statut = $equipement['statut'] ?? null;
         $controleEnCours = $equipement['controle_en_cours'] ?? false;
         $statutHtml = $this->renderStatutBadge($statut, $controleEnCours);
-
+        
         $etatUsure = $equipement['etat_usure_id'] ?? 'Non défini';
         $remarques = $equipement['remarques'] ?? 'Aucune';
-
-        // Photo
+        
+        // --- Photo (4 cm max, proportions conservées) ---
         $photoHtml = $photoBase64
-            ? '<img src="' . $photoBase64 . '" style="max-width:200px; max-height:200px; border:1px solid #ccc; padding:5px;">'
-            : '<span style="color:#999;">Aucune photo</span>';
-
-        // QR Code
-        $qrHtml = '<img src="' . $qrBase64 . '" style="width:150px; height:150px;">';
-
+        ? '<img src="' . $photoBase64 . '" style="height:4cm; width:auto; max-width:4cm; border:1px solid #ccc; padding:3px;">'
+        : '<span style="color:#999;">Aucune photo</span>';
+        
+        // --- QR Code (4 cm carré) ---
+        $qrHtml = '<img src="' . $qrBase64 . '" style="width:4cm; height:4cm;">';
+        
         $dateGeneration = date('d/m/Y H:i');
-
+        
         return <<<HTML
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Fiche équipement</title>
-    <style>
-        body { font-family: DejaVu Sans, sans-serif; padding: 20px; }
-        h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
-        .info { margin: 15px 0; }
-        .label { font-weight: bold; width: 180px; display: inline-block; }
-        .row { margin: 8px 0; }
-        .photo-container { margin: 20px 0; }
-        .qr-container { margin-top: 30px; text-align: center; }
-        .qr-container img { width: 150px; height: 150px; }
-        .footer { margin-top: 40px; font-size: 12px; color: #888; text-align: center; border-top: 1px solid #ddd; padding-top: 10px; }
-        .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; color: #fff; font-size: 12px; }
-        .badge-success { background: #28a745; }
-        .badge-warning { background: #ffc107; color: #212529; }
-        .badge-danger { background: #dc3545; }
-        .badge-info { background: #17a2b8; }
-        .badge-secondary { background: #6c757d; }
-    </style>
-</head>
-<body>
-    <h1>Fiche équipement</h1>
-    <div class="info">
-        <div class="row"><span class="label">Référence :</span> {$reference}</div>
-        <div class="row"><span class="label">Code :</span> {$code}</div>
-        <div class="row"><span class="label">Catégorie :</span> {$categorieLibelle}</div>
-        <div class="row"><span class="label">EPI :</span> {$estEpi}</div>
-        <div class="row"><span class="label">Emplacement :</span> {$emplacementLibelle}</div>
-        <div class="row"><span class="label">Date mise en service :</span> {$dateMise}</div>
-        <div class="row"><span class="label">Date fin d'utilisation :</span> {$dateFin}</div>
-        <div class="row"><span class="label">Statut :</span> {$statutHtml}</div>
-        <div class="row"><span class="label">État d'usure :</span> {$etatUsure}</div>
-        <div class="row"><span class="label">Remarques :</span> {$remarques}</div>
-    </div>
-
-    <div class="photo-container">
-        <div class="label">Photo :</div>
-        {$photoHtml}
-    </div>
-
-    <div class="qr-container">
-        <div style="font-weight:bold; margin-bottom:10px;">QR Code</div>
-        {$qrHtml}
-        <div style="margin-top:5px; font-size:11px; color:#555;">Scannez pour accéder à la fiche</div>
-    </div>
-
-    <div class="footer">
-        Généré le {$dateGeneration} – Epiclub
-    </div>
-</body>
-</html>
+        <!DOCTYPE html>
+        <html>
+            <head>
+                <meta charset="UTF-8">
+                <title>Fiche équipement</title>
+                <style>
+                    body { font-family: DejaVu Sans, sans-serif; padding: 20px; }
+                    h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+                    .info { margin: 15px 0; }
+                    .label { font-weight: bold; width: 180px; display: inline-block; }
+                    .row { margin: 8px 0; }
+                    /* Nouveau conteneur pour photo + QR */
+                    .media-container {
+                        margin-top: 20px;
+                        border-top: 1px solid #ddd;
+                        padding-top: 20px;
+                    }
+                    .media-container table {
+                        width: 100%;
+                        border-collapse: collapse;
+                    }
+                    .media-container td {
+                        text-align: center;
+                        vertical-align: middle;
+                        padding: 10px;
+                    }
+                    .media-container td:first-child {
+                        width: 50%;
+                        border-right: 1px solid #eee;
+                    }
+                    .media-container td:last-child {
+                        width: 50%;
+                    }
+                    .footer { margin-top: 40px; font-size: 12px; color: #888; text-align: center; border-top: 1px solid #ddd; padding-top: 10px; }
+                    .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; color: #fff; font-size: 12px; }
+                    .badge-success { background: #28a745; }
+                    .badge-warning { background: #ffc107; color: #212529; }
+                    .badge-danger { background: #dc3545; }
+                    .badge-info { background: #17a2b8; }
+                    .badge-secondary { background: #6c757d; }
+                </style>
+            </head>
+            <body>
+                <h1>Fiche équipement</h1>
+                <div class="info">
+                    <div class="row"><span class="label">Référence :</span> {$reference}</div>
+                    <div class="row"><span class="label">Code :</span> {$code}</div>
+                    <div class="row"><span class="label">Catégorie :</span> {$categorieLibelle}</div>
+                    <div class="row"><span class="label">EPI :</span> {$estEpi}</div>
+                    <div class="row"><span class="label">Emplacement :</span> {$emplacementLibelle}</div>
+                    <div class="row"><span class="label">Date mise en service :</span> {$dateMise}</div>
+                    <div class="row"><span class="label">Date fin d'utilisation :</span> {$dateFin}</div>
+                    <div class="row"><span class="label">Statut :</span> {$statutHtml}</div>
+                    <div class="row"><span class="label">État d'usure :</span> {$etatUsure}</div>
+                    <div class="row"><span class="label">Remarques :</span> {$remarques}</div>
+                </div>
+                
+                <!-- Photo + QR côte à côte -->
+                <div class="media-container">
+                    <table>
+                        <tr>
+                            <td>
+                                <div style="font-weight:bold; margin-bottom:5px;">Photo</div>
+                                {$photoHtml}
+                            </td>
+                            <td>
+                                <div style="font-weight:bold; margin-bottom:5px;">QR Code</div>
+                                {$qrHtml}
+                                <div style="margin-top:5px; font-size:11px; color:#555;">Scannez pour accéder à la fiche</div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div class="footer">Généré le {$dateGeneration} – Epiclub</div>
+            </body>
+        </html>
 HTML;
     }
 
@@ -623,7 +646,7 @@ HTML;
         // --- Construction des lignes du tableau ---
         $rows = '';
         foreach ($equipements as $e) {
-            // 1. Photo en base64 – proportions conservées (max 2.5 cm)
+            // 1. Photo en base64 – 3cm x 3cm
             $photoHtml = '';
             if (!empty($e['photo'])) {
                 $photoPath = $_SERVER['DOCUMENT_ROOT'] . $e['photo'];
@@ -631,20 +654,19 @@ HTML;
                     $imageData = file_get_contents($photoPath);
                     $mime = mime_content_type($photoPath);
                     $photoBase64 = 'data:' . $mime . ';base64,' . base64_encode($imageData);
-                    // max-width et max-height avec height:auto; width:auto; pour conserver le ratio
-                    $photoHtml = '<img src="' . $photoBase64 . '" style="max-width:2.5cm; max-height:2.5cm; height:auto; width:auto; border:1px solid #ddd;">';
+                    $photoHtml = '<img src="' . $photoBase64 . '" style="width:3cm; height:3cm; object-fit:cover; border:1px solid #ddd;">';
                 }
             }
             if (empty($photoHtml)) {
                 $photoHtml = '<span style="color:#ccc; font-size:10px;">—</span>';
             }
             
-            // 2. QR code en base64 (2.5 cm carré)
+            // 2. QR code en base64 – 3cm x 3cm
             $qrUrl = $baseUrl . '/qr/' . $e['id'];
             try {
-                $qrPngBinary = $qrGenerator->generateFromData($qrUrl, 250, false);
+                $qrPngBinary = $qrGenerator->generateFromData($qrUrl, 300, false);
                 $qrBase64 = 'data:image/png;base64,' . base64_encode($qrPngBinary);
-                $qrHtml = '<img src="' . $qrBase64 . '" style="width:2.5cm; height:2.5cm;">';
+                $qrHtml = '<img src="' . $qrBase64 . '" style="width:3cm; height:3cm;">';
             } catch (\Exception $ex) {
                 $qrHtml = '<span style="color:#999; font-size:9px;">QR indisponible</span>';
             }
@@ -677,6 +699,9 @@ ROW;
                     table { width: 100%; border-collapse: collapse; font-size: 10px; }
                     th { background: #3498db; color: white; padding: 5px 6px; text-align: left; }
                     td { padding: 4px 6px; border-bottom: 1px solid #ddd; vertical-align: middle; }
+                    /* Ajustement des colonnes photo et QR */
+                    th:nth-child(4), td:nth-child(4) { width: 3.2cm; text-align:center; }
+                    th:nth-child(5), td:nth-child(5) { width: 3.2cm; text-align:center; }
                     .footer { margin-top: 20px; font-size: 10px; color: #888; text-align: center; border-top: 1px solid #ddd; padding-top: 8px; }
                 </style>
             </head>
