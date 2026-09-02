@@ -1,0 +1,101 @@
+<?php
+
+$db_params = [
+    'db_host' => 'localhost:3306',
+    'db_user' => 'root',
+    'db_pass' => 'secret',
+    'db_name' => 'epiclub'
+];
+$errors = [];
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (empty($errors)) {
+        $db_host = $_POST['db_host'];
+        $db_name = $_POST['db_name'];
+        $db_user = $_POST['db_user'];
+        $db_pass = $_POST['db_pass'];
+
+        try {
+            $db = new \PDO('mysql:host=' . $db_host . ';charset=utf8', $db_user, $db_pass);
+            
+            // Créer la base si elle n'existe pas
+            $db->exec("CREATE DATABASE IF NOT EXISTS `$db_name`");
+            $db->exec("USE `$db_name`");
+            
+            // VIDER LA BASE SI ELLE EXISTE DÉJÀ
+            $db->exec("SET FOREIGN_KEY_CHECKS = 0");
+            
+            // Récupérer toutes les tables
+            $tables = $db->query("SHOW TABLES")->fetchAll(\PDO::FETCH_COLUMN);
+            foreach ($tables as $table) {
+                $db->exec("DROP TABLE IF EXISTS `$table`");
+            }
+            
+            $db->exec("SET FOREIGN_KEY_CHECKS = 1");
+            
+            // Exécuter le script SQL pour créer les tables
+            $sql = file_get_contents(__DIR__ . '/../epiclub.sql');
+            if (!empty($sql)) {
+                $queries = array_filter(array_map('trim', explode(';', $sql)));
+                foreach ($queries as $query) {
+                    if (!empty($query)) {
+                        $db->exec($query);
+                    }
+                }
+            }
+            
+        } catch (\Throwable $th) {
+            $errors['database'] = 'Les paramètres de la connection à la database sont incorrects ou le serveur est inaccessible. Erreur: ' . $th->getMessage();
+        }
+
+        if (empty($errors)) {
+            $env = new \Epiclub\Engine\EnvironmentFileParser();
+            $env->set('DB_HOST', $db_host);
+            $env->set('DB_NAME', $db_name);
+            $env->set('DB_USER', $db_user);
+            $env->set('DB_PASS', $db_pass);
+
+            header("Location: ?step=admin");
+            exit();
+        }
+    }
+}
+
+?>
+
+<?php require __DIR__ . '/../includes/header.php'; ?>
+
+<h1>Base de données</h1>
+<hr>
+
+<?php if (!empty($errors)): ?>
+    <div class="alert alert-danger">
+        <ul>
+            <?php foreach ($errors as $key => $error): ?>
+                <li><?= htmlspecialchars($error) ?></li>
+            <?php endforeach; ?>
+        </ul>
+    </div>
+<?php endif; ?>
+
+<form method="post">
+    <div class="mb-3">
+        <label for="db_host" class="form-label">Adresse serveur</label>
+        <input type="text" class="form-control" name="db_host" id="db_host" value="<?= htmlspecialchars($db_params['db_host']); ?>" required>
+    </div>
+    <div class="mb-3">
+        <label for="db_name" class="form-label">Nom de la base</label>
+        <input type="text" class="form-control" name="db_name" id="db_name" value="<?= htmlspecialchars($db_params['db_name']); ?>" required>
+    </div>
+    <div class="mb-3">
+        <label for="db_user" class="form-label">Nom d'utilisateur</label>
+        <input type="text" class="form-control" name="db_user" id="db_user" value="<?= htmlspecialchars($db_params['db_user']); ?>" required>
+    </div>
+    <div class="mb-3">
+        <label for="db_pass" class="form-label">Mot de passe</label>
+        <input type="password" class="form-control" name="db_pass" id="db_pass" value="<?= htmlspecialchars($db_params['db_pass']); ?>">
+    </div>
+    <button type="submit" class="btn btn-primary">Valider</button>
+</form>
+
+<?php require __DIR__ . '/../includes/footer.php'; ?>
