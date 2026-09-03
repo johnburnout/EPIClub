@@ -5,6 +5,7 @@ namespace Epiclub\Controller;
 use Epiclub\Domain\CategorieManager;
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\EmplacementManager;
+use Epiclub\Domain\AcquisitionManager;  // AJOUT
 use Epiclub\Enum\EquipementEtats;
 use Epiclub\Enum\EquipementStatuts;
 use Epiclub\Engine\AbstractController;
@@ -26,7 +27,7 @@ class EquipementController extends AbstractController
     private const UPLOAD_DIR = '/images/equipements/';
     
     // --------------------------------------------------------------
-    // LISTE (avec pagination)
+    // LISTE (avec pagination et filtres)
     // --------------------------------------------------------------
     public function list(Request $request)
     {
@@ -78,6 +79,7 @@ class EquipementController extends AbstractController
             'order_by' => $request->query->get('order_by', 'categorie'),
             'order_dir' => $request->query->get('order_dir', 'asc'),
             'limit' => $limit,
+            'acquisition' => $request->query->get('acquisition'), // AJOUT
         ];
         // Nettoyer les valeurs vides pour l'URL
         $baseParams = array_filter($baseParams, function($v) {
@@ -108,6 +110,7 @@ class EquipementController extends AbstractController
             'order_dir' => $request->query->get('order_dir', 'asc'),
             'page' => $page,
             'limit' => $limit,
+            'acquisition' => $request->query->get('acquisition'), // AJOUT
         ];
 
         return $this->render('equipement_list.twig', [
@@ -124,6 +127,7 @@ class EquipementController extends AbstractController
                 'hasNext' => $page < $totalPages,
             ],
             'paginationUrls' => $paginationUrls,
+            'acquisition_id' => $request->query->get('acquisition'), // AJOUT pour affichage
         ]);
     }
     
@@ -148,12 +152,14 @@ class EquipementController extends AbstractController
         $dernier_controle = $request->query->get('dernier_controle');
         $order_by = $request->query->get('order_by', 'categorie');
         $order_dir = $request->query->get('order_dir', 'asc');
+        $acquisition_id = $request->query->get('acquisition'); // AJOUT
         
         if ($categorie_id === '') $categorie_id = null;
         if ($filter_epi === '') $filter_epi = null;
         if ($en_service === '') $en_service = null;
         if ($emplacement_id === '') $emplacement_id = null;
         if ($dernier_controle === '') $dernier_controle = null;
+        if ($acquisition_id === '') $acquisition_id = null; // AJOUT
         
         // Chargement des équipements avec relations
         $equipements = $equipementManager->findAll();
@@ -172,6 +178,14 @@ class EquipementController extends AbstractController
                 return isset($e['categorie_id']) && $e['categorie_id'] == $categorie_id;
             });
         }
+        
+        // AJOUT : Filtre par acquisition
+        if ($acquisition_id) {
+            $equipements = array_filter($equipements, function($e) use ($acquisition_id) {
+                return isset($e['acquisition_id']) && $e['acquisition_id'] == $acquisition_id;
+            });
+        }
+        
         if ($filter_epi !== null) {
             $equipements = array_filter($equipements, function($e) use ($filter_epi) {
                 return isset($e['categorie']['est_epi']) && $e['categorie']['est_epi'] == $filter_epi;
@@ -274,7 +288,7 @@ class EquipementController extends AbstractController
         // Charger l'acquisition pour la facture
         $acquisition = null;
         if (!empty($equipement['acquisition_id'])) {
-            $acquisitionManager = new \Epiclub\Domain\AcquisitionManager();
+            $acquisitionManager = new AcquisitionManager();
             $acquisition = $acquisitionManager->findId($equipement['acquisition_id']);
         }
         
@@ -587,6 +601,7 @@ HTML;
             'en_service' => $request->query->get('en_service'),
             'emplacement' => $request->query->get('emplacement'),
             'dernier_controle' => $request->query->get('dernier_controle'),
+            'acquisition' => $request->query->get('acquisition'), // AJOUT
         ];
 
         // Génération du HTML pour le PDF
@@ -636,6 +651,9 @@ HTML;
         }
         if ($filtres['dernier_controle'] !== null && $filtres['dernier_controle'] !== '') {
             $filtresLabels[] = 'Dernier contrôle : ' . ($filtres['dernier_controle'] === 'plus_1_an' ? 'Plus d\'un an' : 'Moins d\'un an');
+        }
+        if (!empty($filtres['acquisition'])) { // AJOUT
+            $filtresLabels[] = 'Acquisition #' . $filtres['acquisition'];
         }
         $filtresStr = empty($filtresLabels) ? 'Aucun filtre' : implode(' | ', $filtresLabels);
         

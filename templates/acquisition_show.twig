@@ -159,9 +159,9 @@
 			<span class="text-muted">🔒 Modification verrouillée</span>
 		{% endif %}
 		
-		<!-- BOUTON VOIR LES ÉQUIPEMENTS -->
+		<!-- BOUTON VOIR LES ÉQUIPEMENTS - CORRIGÉ -->
 		{% if acquisition.est_validee %}
-			<a href="/admin/equipements?acquisition={{ acquisition.id }}" class="btn btn-success">📋 Voir les équipements</a>
+			<a href="/equipements?acquisition={{ acquisition.id }}" class="btn btn-success">📋 Voir les équipements</a>
 		{% endif %}
 	</div>
 

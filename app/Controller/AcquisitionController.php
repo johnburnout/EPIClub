@@ -16,9 +16,16 @@ class AcquisitionController extends AbstractController
 {
     public function list(Request $request)
     {
+        $this->deniAccessUnlessGranted('ROLE_USER');
+        
         $acquisitionManager = new AcquisitionManager();
         $acquisitions = $acquisitionManager->findAll();
-
+        
+        // Filtrer pour n'afficher que les acquisitions validées
+        $acquisitions = array_filter($acquisitions, function($a) {
+            return $a['est_validee'] == 1;
+        });
+        
         return $this->render('acquisition_list.twig', [
             'acquisitions' => $acquisitions
         ]);

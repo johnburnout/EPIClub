@@ -35,12 +35,14 @@
 							<li class="nav-item">
 								<a class="nav-link" href="/equipements">Liste équipements</a>
 							</li>
-							{# Lien Journaux visible uniquement pour les utilisateurs simples (ROLE_USER) #}
-							{% if _user.role == 'ROLE_USER' %}
+							<!-- Journaux : accessible à tous les utilisateurs connectés -->
 							<li class="nav-item">
 								<a class="nav-link" href="/journaux">📋 Journaux</a>
 							</li>
-							{% endif %}
+							<!-- Acquisitions : accessible à tous les utilisateurs connectés -->
+							<li class="nav-item">
+								<a class="nav-link" href="/admin/acquisitions">📦 Acquisitions</a>
+							</li>
 							{% endif %}
 							{% if isGranted('ROLE_CONTROLLEUR') %}
 							<li class="nav-item dropdown">
@@ -68,12 +70,9 @@
 										<a class="dropdown-item" href="/admin/emplacements">📍 Emplacements</a>
 										<a><hr class="dropdown-divider"></a>
 										<a class="dropdown-item" href="/admin/acquisitions">📦 Acquisitions</a>
-										{# <a class="dropdown-item" href="/affectations">Gestion des affectations</a>
-										<a class="dropdown-item" href="/fabricants">Gestion des fabricants</a> #}
 										<a href="/admin/update" class="text-decoration-none text-dark">
 											<i class="fas fa-sync-alt"></i> Mise à jour
 										</a>
-
 									</div>
 								</li>
 							{% endif %}

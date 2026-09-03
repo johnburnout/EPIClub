@@ -94,34 +94,39 @@
 								<span class="text-muted">Aucune remarque</span>
 							{% endif %}
 						</p>
-						<p><strong>Remarques :</strong> 
-							{% if equipement.remarques %}
-							{{ equipement.remarques }}
-							{% else %}
-							<span class="text-muted">Aucune remarque</span>
-							{% endif %}
-						</p>
 						
-						{# --- Facture d'achat --- #}
+						{# --- Acquisition d'origine --- #}
 						{% if acquisition is defined and acquisition %}
-						<p>
-							<strong>Facture d'achat :</strong><br>
-							{% if acquisition.facture_document %}
-							<a href="/uploads/{{ acquisition.facture_document }}" target="_blank" class="btn btn-sm btn-outline-primary mt-1">
-								📄 Voir la facture
+						<div class="mt-3 border-top pt-3">
+							<p class="mb-2"><strong><i class="fas fa-file-invoice"></i> Acquisition d'origine :</strong></p>
+							<div class="mb-2">
+								<span class="badge bg-secondary">#{{ acquisition.id }}</span>
 								{% if acquisition.facture_reference %}
-								({{ acquisition.facture_reference }})
+									<small class="text-muted">Facture : {{ acquisition.facture_reference }}</small>
 								{% endif %}
-							</a>
-							{% else %}
-							<span class="text-muted">Aucune facture enregistrée</span>
-							{% endif %}
-						</p>
+							</div>
+							<div class="d-flex flex-wrap gap-2">
+								{# Lien vers la liste des équipements de la même acquisition #}
+								<a href="/equipements?acquisition={{ acquisition.id }}" class="btn btn-sm btn-outline-primary">
+									<i class="fas fa-list"></i> Voir tous les équipements de cette acquisition
+								</a>
+								{# Lien vers la fiche acquisition #}
+								<a href="/admin/acquisitions/acquisition-{{ acquisition.id }}" class="btn btn-sm btn-outline-secondary">
+									<i class="fas fa-eye"></i> Voir la fiche acquisition
+								</a>
+								{# Lien vers la facture #}
+								{% if acquisition.facture_document %}
+								<a href="/uploads/{{ acquisition.facture_document }}" target="_blank" class="btn btn-sm btn-outline-info">
+									<i class="fas fa-file-pdf"></i> Voir la facture
+								</a>
+								{% endif %}
+							</div>
+						</div>
 						{% endif %}
 
 						{# Affichage de la photo #}
 						{% if equipement.photo is defined and equipement.photo is not empty %}
-							<div class="mt-2">
+							<div class="mt-3">
 								<strong>Photo :</strong>
 								<div>
 									<img src="{{ equipement.photo }}" alt="Photo de l'équipement" style="max-width: 300px; max-height: 300px;" class="img-thumbnail">
