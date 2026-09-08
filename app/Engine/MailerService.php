@@ -29,6 +29,6 @@ class MailerService
             throw new \Exception('Email failure' . $e->getMessage(), 1);
         }
 
-        return $mailer->send($email);
+        return;
     }
 }
