@@ -1,34 +1,56 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Epiclub\Engine;
 
-use Symfony\Component\Mime\Email;
-use Symfony\Component\Mailer\Mailer;
-use Symfony\Component\Mailer\Transport;
+use Epiclub\Engine\Exception\MailDeliveryException;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
+use Symfony\Component\Mailer\Mailer;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mailer\Transport;
+use Symfony\Component\Mime\Email;
 
 /**
- * MailerService uses an SMTP server to send emails
- * 
+ * MailerService uses an SMTP server to send emails.
+ *
  * ex: MAILER_DSN=smtp://user:pass@smtp.example.com:25
- * 
  * doc: https://symfony.com/doc/current/mailer.html
  */
-class MailerService
+final class MailerService
 {
-    public function sendEmail(Email $email)
-    {
-        // $dsn = 'smtp://localhost:1025';
-        $dsn = $_ENV['MAILER_DSN'];
-        $transport = Transport::fromDsn($dsn);
-        $mailer = new Mailer($transport);
+    private ?MailerInterface $mailer = null;
 
+    /**
+     * @throws MailDeliveryException
+     */
+    public function sendEmail(Email $email): void
+    {
         try {
-            $mailer->send($email);
+            $this->getMailer()->send($email);
         } catch (TransportExceptionInterface $e) {
-            throw new \Exception('Email failure' . $e->getMessage(), 1);
+            // On loggue le détail côté serveur — JAMAIS exposé au client.
+            error_log(sprintf(
+                '[MailerService] Transport failure: %s',
+                $e->getMessage()
+            ));
+
+            throw MailDeliveryException::fromTransport($e);
+        }
+    }
+
+    private function getMailer(): MailerInterface
+    {
+        if ($this->mailer === null) {
+            $dsn = $_ENV['MAILER_DSN'] ?? '';
+            if ($dsn === '') {
+                throw MailDeliveryException::fromTransport(
+                    new \RuntimeException('MAILER_DSN is not configured.')
+                );
+            }
+            $this->mailer = new Mailer(Transport::fromDsn($dsn));
         }
 
-        return;
+        return $this->mailer;
     }
 }
