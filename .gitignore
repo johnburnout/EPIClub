@@ -20,7 +20,7 @@ build-release.sh
 .env.*.local
 
 # Fichiers de dépendances
-/composer.lock
+#/composer.lock
 /composer.phar
 
 # Dossier setup (tout le contenu est volontairement inclus, donc on ne l'ignore pas)
