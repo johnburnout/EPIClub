@@ -12,6 +12,8 @@ class UtilisateurController extends AbstractController
 {
     public function list(Request $request)
     {
+        $this->deniAccessUnlessGranted('ROLE_ADMIN');
+        
         $utilisateurManager = new UtilisateurManager();
         $utilisateurs = $utilisateurManager->findAll();
 
@@ -145,10 +147,7 @@ class UtilisateurController extends AbstractController
      */
     public function delete(Request $request)
     {
-        $response = $this->deniAccessUnlessGranted('ROLE_ADMIN');
-        if ($response) {
-            return $response;
-        }
+        $this->deniAccessUnlessGranted('ROLE_ADMIN');
         
         $id = $request->get('id');
         if (!$id) {

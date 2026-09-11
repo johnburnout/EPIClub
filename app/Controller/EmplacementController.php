@@ -11,6 +11,8 @@ class EmplacementController extends AbstractController
 {
     public function list(Request $request)
     {
+        $this->deniAccessUnlessGranted('ROLE_USER');
+        
         $emplacementManager = new EmplacementManager();
         $emplacements = $emplacementManager->findAll();
 

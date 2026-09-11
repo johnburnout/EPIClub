@@ -12,6 +12,8 @@ class FournisseurController extends AbstractController
 {
     public function list(Request $request)
     {
+        $this->deniAccessUnlessGranted('ROLE_ADMIN');
+        
         $fournisseurManager = new FournisseurManager();
         $fournisseurs = $fournisseurManager->findAll();
 

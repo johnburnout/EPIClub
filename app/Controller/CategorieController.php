@@ -12,6 +12,8 @@ class CategorieController extends AbstractController
 {
     public function list(Request $request)
     {
+        $this->deniAccessUnlessGranted('ROLE_USER');
+        
         $categorieManager = new CategorieManager();
         $categories = $categorieManager->findAll();
 
@@ -79,10 +81,7 @@ class CategorieController extends AbstractController
 
     public function delete(Request $request)
     {
-        $response = $this->deniAccessUnlessGranted('ROLE_ADMIN');
-        if ($response) {
-            return $response;
-        }
+        $this->deniAccessUnlessGranted('ROLE_ADMIN');
         
         $id = $request->query->get('id');
         if (!$id) {

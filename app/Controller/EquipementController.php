@@ -31,6 +31,8 @@ class EquipementController extends AbstractController
     // --------------------------------------------------------------
     public function list(Request $request)
     {
+        $this->deniAccessUnlessGranted('ROLE_USER');
+        
         // --- Gestion du menu déroulant d'export ---
         if ($request->query->get('action') === 'export') {
             $type = $request->query->get('export_type', 'pdf');

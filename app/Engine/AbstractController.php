@@ -8,6 +8,7 @@ use Epiclub\Domain\UtilisateurManager;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 abstract class AbstractController
 {
@@ -63,14 +64,18 @@ abstract class AbstractController
         return $this->session->isGranted($role);
     }
 
-    public function deniAccessUnlessGranted(string $role): Response|null
+    /**
+    * Vérifie que l'utilisateur possède le rôle requis.
+    * Lance une AccessDeniedHttpException si ce n'est pas le cas.
+    *
+    * @throws \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException
+    */
+    public function deniAccessUnlessGranted(string $role): void
     {
         if (!$this->isGranted($role)) {
-            $this->session->getFlashBag()->add('note', 'Vous n\'avez pas les autorisations necessaire.');
-            return new RedirectResponse('/');
+            $this->session->getFlashBag()->add('note', 'Vous n\'avez pas les autorisations nécessaires.');
+            throw new AccessDeniedHttpException('Accès refusé.');
         }
-
-        return null;
     }
 
     public function redirectTo(string $route, int $status = 302, array $headers = []): Response
