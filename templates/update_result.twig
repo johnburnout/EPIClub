@@ -1,0 +1,29 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+<div class="row justify-content-center mt-4">
+    <div class="col-md-8">
+        <div class="card border-{{ success ? 'success' : 'danger' }}">
+            <div class="card-header bg-{{ success ? 'success' : 'danger' }} text-white">
+                <h3 class="mb-0">
+                    {% if success %}
+                        ✅ Mise à jour réussie
+                    {% else %}
+                        ❌ Erreur lors de la mise à jour
+                    {% endif %}
+                </h3>
+            </div>
+            <div class="card-body">
+                <p class="mb-3">{{ message }}</p>
+
+                {% if details is defined and details %}
+                    <pre class="bg-light p-3 rounded"><code>{{ details }}</code></pre>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="/admin/update" class="btn btn-primary">← Retour à la page de mise à jour</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

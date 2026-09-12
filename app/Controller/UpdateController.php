@@ -71,12 +71,18 @@ class UpdateController extends AbstractController
             // Vérifier CSRF
             $token = $request->request->get('csrf_token');
             if (!$token || $token !== $this->session->get('csrf_token')) {
-                return new Response('Token invalide');
+                return $this->render('update_result.twig', [
+                    'success' => false,
+                    'message' => 'Token CSRF invalide. Merci de recharger la page.',
+                ]);
             }
             
             $latest = $this->getLatestRelease();
             if (!$latest) {
-                return new Response('Impossible de récupérer la version distante.');
+                return $this->render('update_result.twig', [
+                    'success' => false,
+                    'message' => 'Impossible de récupérer la version distante.',
+                ]);
             }
             
             $zipUrl = $latest['zip_url'];
@@ -90,21 +96,30 @@ class UpdateController extends AbstractController
             // Télécharger le zip
             $zipContent = $this->downloadUrl($zipUrl);
             if (empty($zipContent)) {
-                return new Response('Le fichier téléchargé est vide.');
+                return $this->render('update_result.twig', [
+                    'success' => false,
+                    'message' => 'Le fichier téléchargé est vide.',
+                ]);
             }
             file_put_contents($tempZip, $zipContent);
             
             // Décompresser
             $zip = new ZipArchive();
             if ($zip->open($tempZip) !== true) {
-                return new Response('Impossible d\'ouvrir le zip.');
+                return $this->render('update_result.twig', [
+                    'success' => false,
+                    'message' => 'Impossible d\'ouvrir l\'archive téléchargée.',
+                ]);
             }
             $extractPath = self::TEMP_DIR . '/extracted';
             if (!is_dir($extractPath)) {
                 mkdir($extractPath, 0755, true);
             }
             if (!$zip->extractTo($extractPath)) {
-                return new Response('Erreur lors de l\'extraction du zip.');
+                return $this->render('update_result.twig', [
+                    'success' => false,
+                    'message' => 'Erreur lors de l\'extraction de l\'archive.',
+                ]);
             }
             $zip->close();
             unlink($tempZip);
@@ -119,7 +134,10 @@ class UpdateController extends AbstractController
                 }
             }
             if (!$sourceDir) {
-                return new Response('Aucun dossier trouvé après extraction.');
+                return $this->render('update_result.twig', [
+                    'success' => false,
+                    'message' => 'Aucun dossier trouvé après extraction.',
+                ]);
             }
             
             // Copier les fichiers (sauf exclus)
@@ -138,10 +156,24 @@ class UpdateController extends AbstractController
             // Nettoyage final
             $this->cleanupTempDir();
             
-            return new Response('Mise à jour réussie. Version : ' . $version);
+            return $this->render('update_result.twig', [
+                'success' => true,
+                'message' => 'Mise à jour réussie. Version actuelle : ' . $version,
+            ]);
             
-        } catch (\Exception $e) {
-            return new Response('ERREUR : ' . $e->getMessage() . ' dans ' . $e->getFile() . ' à la ligne ' . $e->getLine());
+        } catch (\Throwable $e) {
+            // [SÉCURITÉ] Log serveur uniquement — ne pas exposer les détails au client
+            error_log(sprintf(
+                '[UpdateController] Update failed: %s in %s:%d',
+                $e->getMessage(),
+                $e->getFile(),
+                $e->getLine()
+            ));
+            
+            return $this->render('update_result.twig', [
+                'success' => false,
+                'message' => 'Une erreur est survenue lors de la mise à jour. Merci de réessayer ou de contacter un administrateur.',
+            ]);
         }
     }
 
@@ -226,7 +258,7 @@ class UpdateController extends AbstractController
             curl_setopt($ch, CURLOPT_URL, $url);
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
             curl_setopt($ch, CURLOPT_TIMEOUT, 30);
             curl_setopt($ch, CURLOPT_USERAGENT, 'EPIClub-Update/1.0');
             $content = curl_exec($ch);
@@ -342,12 +374,6 @@ class UpdateController extends AbstractController
 
     private function addFlash(string $type, string $message): void
     {
-        if (method_exists($this->session, 'getFlashBag')) {
-            $this->session->getFlashBag()->add($type, $message);
-        } else {
-            $flash = $this->session->get('flash_messages', []);
-            $flash[$type][] = $message;
-            $this->session->set('flash_messages', $flash);
-        }
+        $this->session->getFlashBag()->add($type, $message);
     }
 }
