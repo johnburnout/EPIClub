@@ -341,13 +341,12 @@ class AcquisitionController extends AbstractController
     }
 
     /**
-     * [ROBUSTESSE] Centralise le chemin de base des uploads.
-     * À terme : injecter via .env (UPLOADS_DIR) ou constante de config.
+     * [ROBUSTESSE] Centralise le chemin de base des uploads privés.
+     * _storage/ est à la racine du projet, hors document_root.
      */
     private function getUploadsDir(): string
     {
-        $base = $_ENV['UPLOADS_DIR'] ?? ($_SERVER['DOCUMENT_ROOT'] . '/uploads');
-        return rtrim($base, '/') . '/';
+        return dirname(__DIR__, 2) . '/_storage/uploads/';
     }
 
     private function uploadFacture(?array $file)

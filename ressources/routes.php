@@ -63,7 +63,7 @@ $routes->add('acquisition_ligne_edit', new Route('/admin/acquisitions/ligne_modi
 $routes->add('acquisition_ligne_delete', new Route('/admin/acquisitions/ligne_supprimer-{id}', ['_controller' => 'Epiclub\\Controller\\AcquisitionLineController', 'action' => 'deleteLine']));
 
 // --- ROUTE POUR SERVIR LES FICHIERS UPLOADÉS ---
-$routes->add('uploads', new Route('/uploads/{path}', ['_controller' => 'Epiclub\\Controller\\UploadController', 'action' => 'serve']));
+$routes->add('uploads', new Route('/uploads/{path}',['_controller' => 'Epiclub\\Controller\\UploadController', 'action' => 'serve'],['path' => '.+']));
 
 // FOURNISSEUR - DELETE avant SHOW
 $routes->add('fournisseur_list', new Route('/admin/fournisseurs', ['_controller' => 'Epiclub\\Controller\\FournisseurController', 'action' => 'list']));
