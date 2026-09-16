@@ -18,88 +18,90 @@ class IndexController extends AbstractController
     {
         return $this->render('tableau_de_bord.twig', []);
     }
-    
+
     public function systemSettings(Request $request): Response
     {
-        // Vérification des droits admin (si nécessaire)
-        // if (!$this->isAdmin()) { return $this->redirectTo('/'); }
-        
+        $this->deniAccessUnlessGranted('ROLE_ADMIN');
+
         // Lecture des paramètres actuels depuis .env.local.php
         $mailerDsn = getenv('MAILER_DSN') ?: $_ENV['MAILER_DSN'] ?? '';
         $mailerFrom = getenv('MAILER_FROM') ?: $_ENV['MAILER_FROM'] ?? '';
         $mailerName = getenv('MAILER_NAME') ?: $_ENV['MAILER_NAME'] ?? '';
-        
+
         $dsnParts = parse_url($mailerDsn);
         $smtpHost = $dsnParts['host'] ?? '';
         $smtpPort = $dsnParts['port'] ?? 25;
         $smtpUser = $dsnParts['user'] ?? '';
-        $smtpPass = urldecode($dsnParts['pass'] ?? '');
+        // [SÉCURITÉ] Ne JAMAIS renvoyer le mot de passe au client.
         parse_str($dsnParts['query'] ?? '', $query);
         $smtpEncryption = $query['encryption'] ?? '';
-        
+
         return $this->render('system_settings.twig', [
             'settings' => [
                 'smtp_host' => $smtpHost,
                 'smtp_port' => $smtpPort,
                 'smtp_username' => $smtpUser,
-                'smtp_password' => $smtpPass,
                 'smtp_encryption' => $smtpEncryption,
                 'mail_from' => $mailerFrom,
                 'mail_from_name' => $mailerName,
             ]
         ]);
     }
-    
-    /**
-    * @Route("/update-smtp", name="update_smtp", methods={"POST"})
-    */
+
     public function updateSmtp(Request $request): Response
     {
+        // [SÉCURITÉ] Contrôle d'accès manquant
+        $this->deniAccessUnlessGranted('ROLE_ADMIN');
+
         // Récupération des données du formulaire
-        $host = $request->request->get('smtp_host');
-        $port = $request->request->get('smtp_port');
-        $user = $request->request->get('smtp_username');
-        $pass = $request->request->get('smtp_password');
-        $encryption = $request->request->get('smtp_encryption');
-        $from = $request->request->get('mail_from');
-        $fromName = $request->request->get('mail_from_name');
-        
+        $host = (string) $request->request->get('smtp_host', '');
+        $port = (string) $request->request->get('smtp_port', '');
+        $user = (string) $request->request->get('smtp_username', '');
+        $pass = (string) $request->request->get('smtp_password', '');
+        $encryption = (string) $request->request->get('smtp_encryption', '');
+        $from = (string) $request->request->get('mail_from', '');
+        $fromName = (string) $request->request->get('mail_from_name', '');
+
         // Validation basique
         if (empty($host) || empty($port) || empty($user) || empty($from)) {
-            // Rediriger avec un message d'erreur (vous pouvez utiliser des sessions)
-            return $this->redirectTo('/tableau_de_bord?error=missing_fields');
+            $this->session->getFlashBag()->add('error', 'Tous les champs obligatoires doivent être remplis.');
+            return $this->redirectTo('/admin/system-settings');
         }
-        
-        // Encoder le mot de passe pour l'URL (si il contient des caractères spéciaux comme @)
-        $passEncoded = urlencode($pass);
-        
-        // Construire le nouveau DSN
-        $dsn = sprintf('smtp://%s:%s@%s:%s',
-            $user,
-            $passEncoded,
-            $host,
-            $port
-        );
-        if ($encryption && $encryption !== 'none') {
-            $dsn .= '?encryption=' . $encryption;
-        }
-        
+
         // Lire le fichier .env.local.php actuel
-        $envFile = __DIR__ . '/../../.env.local.php'; // ajustez le chemin si nécessaire
+        $envFile = __DIR__ . '/../../.env.local.php';
         if (!file_exists($envFile)) {
-            return $this->redirectTo('/tableau_de_bord?error=env_file_not_found');
+            $this->session->getFlashBag()->add('error', 'Fichier de configuration introuvable.');
+            return $this->redirectTo('/admin/system-settings');
         }
-        
+
         $current = require $envFile;
         if (!is_array($current)) {
-            return $this->redirectTo('/tableau_de_bord?error=invalid_env');
+            $this->session->getFlashBag()->add('error', 'Fichier de configuration invalide.');
+            return $this->redirectTo('/admin/system-settings');
         }
-        
+
+        // [SÉCURITÉ] Si le champ mot de passe est vide, on conserve l'ancien.
+        if ($pass === '') {
+            $currentDsn = $current['MAILER_DSN'] ?? '';
+            $currentParts = parse_url($currentDsn);
+            $pass = $currentParts['pass'] ?? '';
+        }
+
+        // Encoder le mot de passe (caractères spéciaux comme @, :, /)
+        $passEncoded = urlencode($pass);
+
+        // Construire le nouveau DSN
+        $dsn = sprintf('smtp://%s:%s@%s:%s', $user, $passEncoded, $host, $port);
+        if ($encryption !== '' && $encryption !== 'none') {
+            $dsn .= '?encryption=' . $encryption;
+        }
+
         // Mettre à jour les clés
         $current['MAILER_DSN'] = $dsn;
         $current['MAILER_FROM'] = $from;
         $current['MAILER_NAME'] = $fromName;
-        
+
         // Réécrire le fichier
         $content = '<?php' . "\n\n";
         $content .= '/**' . "\n";
@@ -107,20 +109,23 @@ class IndexController extends AbstractController
         $content .= ' * Do not edit manually.' . "\n";
         $content .= ' */' . "\n";
         $content .= 'return ' . var_export($current, true) . ';' . "\n";
-        
-        // Écrire le fichier
-        file_put_contents($envFile, $content);
-        
-        // Rediriger vers le tableau de bord avec un message de succès
-        return $this->redirectTo('/tableau_de_bord?success=1');
+
+        // [SÉCURITÉ] Vérifier que l'écriture a réussi
+        if (file_put_contents($envFile, $content) === false) {
+            error_log('[IndexController] Failed to write .env.local.php');
+            $this->session->getFlashBag()->add('error', 'Impossible d\'enregistrer la configuration.');
+            return $this->redirectTo('/admin/system-settings');
+        }
+
+        $this->session->getFlashBag()->add('success', 'Configuration SMTP mise à jour avec succès.');
+        return $this->redirectTo('/admin/system-settings');
     }
-    
-    /**
-    * Envoie un email de test pour vérifier la configuration SMTP
-    */
-    // Dans la classe IndexController, remplacez ou ajoutez cette méthode :
+
     public function testMail(Request $request): Response
     {
+        // [SÉCURITÉ] Contrôle d'accès manquant
+        $this->deniAccessUnlessGranted('ROLE_ADMIN');
+
         try {
             // Charger .env.local.php
             $envFile = __DIR__ . '/../../.env.local.php';
@@ -130,37 +135,41 @@ class IndexController extends AbstractController
             $env = require $envFile;
             $from = $env['MAILER_FROM'] ?? '';
             $fromName = $env['MAILER_NAME'] ?? 'EPIClub';
-            $dsn = $env['MAILER_DSN'] ?? '';
-            
-            if (empty($from) || empty($dsn)) {
-                return new JsonResponse(['success' => false, 'error' => 'Adresse expéditeur ou DSN manquant dans .env.local.php']);
+
+            if (empty($from)) {
+                return new JsonResponse(['success' => false, 'error' => 'Adresse expéditeur manquante']);
             }
-            
-            // Instancier le service mailer
-            $mailer = new \Epiclub\Engine\MailerService($dsn);
-            
+
+            // Instancier le service mailer (il lit MAILER_DSN depuis $_ENV)
+            $mailer = new \Epiclub\Engine\MailerService();
+
             // Créer l'email de test
             $email = new \Symfony\Component\Mime\Email();
-            // Format valide : "Nom <email>"
             $email->from($fromName . ' <' . $from . '>')
-            ->to($from)
-            ->subject('[TEST] Configuration SMTP EPIClub')
-            ->text("Ceci est un email de test.\n\nSi vous recevez ce message, votre configuration SMTP est correcte.\n\nDate : " . date('d/m/Y H:i:s'));
-            
+                ->to($from)
+                ->subject('[TEST] Configuration SMTP EPIClub')
+                ->text("Ceci est un email de test.\n\nSi vous recevez ce message, votre configuration SMTP est correcte.\n\nDate : " . date('d/m/Y H:i:s'));
+
             $mailer->sendEmail($email);
-            
+
             return new JsonResponse([
                 'success' => true,
                 'message' => '✅ Email de test envoyé avec succès à ' . $from
             ]);
-            
-        } catch (\Exception $e) {
+
+        } catch (\Throwable $e) {
+            // [SÉCURITÉ] Log serveur, message générique au client
+            error_log(sprintf(
+                '[IndexController] testMail failed: %s in %s:%d',
+                $e->getMessage(),
+                $e->getFile(),
+                $e->getLine()
+            ));
+
             return new JsonResponse([
                 'success' => false,
-                'error' => 'Erreur lors de l\'envoi : ' . $e->getMessage()
+                'error' => 'Erreur lors de l\'envoi de l\'email de test. Consultez les logs serveur pour plus de détails.'
             ], 500);
         }
     }
-
 }
-    
