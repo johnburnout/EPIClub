@@ -6,6 +6,13 @@ use Epiclub\Engine\AbstractManager;
 
 class UtilisateurManager extends AbstractManager
 {
+    private const ALLOWED_FIELDS = [
+        'nom', 'prenom', 'username', 'email', 'password', 'role',
+        'date_creation', 'derniere_connexion', 'controle_en_cours_id',
+        'last_activity', 'reset_token', 'reset_token_expires',
+        'reset_email_sent_at',
+    ];
+
     public function findAll($order = '', $limit = -1, $offset = 0)
     {
         $params = '';
@@ -57,9 +64,9 @@ class UtilisateurManager extends AbstractManager
         $stmt->execute(['token' => $token]);
         return $stmt->fetch() ?: null;
     }
-    
+
     /**
-     * ✅ Met à jour UNIQUEMENT la colonne last_activity
+     * Met à jour UNIQUEMENT la colonne last_activity
      */
     public function updateLastActivity(int $userId): void
     {
@@ -84,56 +91,56 @@ class UtilisateurManager extends AbstractManager
         return $stmt->execute(['id' => $id]);
     }
 
-    private function _update(array $utilisateur)
+    private function _update(array $utilisateur): bool
     {
-        // Supprimer la ligne qui initialise 'reset_email_sent'
-        // $utilisateur['reset_email_sent'] = $utilisateur['reset_email_sent'] ?? 0;
-        
-        // Ne garder que les colonnes réellement présentes dans la table
-        $allowedFields = ['nom', 'prenom', 'username', 'email', 'password', 'role',
-            'date_creation', 'derniere_connexion', 'controle_en_cours_id',
-            'last_activity', 'reset_token', 'reset_token_expires',
-            'reset_email_sent_at', 'id']; // ← 'reset_email_sent' retiré
-        
-        $filtered = array_intersect_key($utilisateur, array_flip($allowedFields));
-        
-        $sql = "UPDATE utilisateur 
-        SET nom=:nom, prenom=:prenom, username=:username, email=:email,
-        password=:password, role=:role, date_creation=:date_creation,
-        derniere_connexion=:derniere_connexion,
-        controle_en_cours_id=:controle_en_cours_id,
-        last_activity=:last_activity,
-        reset_token=:reset_token,
-        reset_token_expires=:reset_token_expires,
-        reset_email_sent_at=:reset_email_sent_at
-        WHERE id=:id";
+        $filtered = array_intersect_key($utilisateur, array_flip(self::ALLOWED_FIELDS));
+
+        if (empty($filtered)) {
+            throw new \RuntimeException('Aucun champ valide à mettre à jour.');
+        }
+
+        if (empty($utilisateur['id'])) {
+            throw new \RuntimeException('ID utilisateur manquant pour la mise à jour.');
+        }
+
+        // Construire dynamiquement SET col = :col
+        $sets = [];
+        foreach (array_keys($filtered) as $col) {
+            $sets[] = "$col = :$col";
+        }
+
+        $sql = sprintf(
+            'UPDATE utilisateur SET %s WHERE id = :id',
+            implode(', ', $sets)
+        );
+
+        $filtered['id'] = $utilisateur['id'];
+
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($filtered);
     }
-    
-    private function _insert(array $utilisateur)
+
+    private function _insert(array $utilisateur): bool
     {
-        // Supprimer la ligne qui initialise 'reset_email_sent'
-        // $utilisateur['reset_email_sent'] = $utilisateur['reset_email_sent'] ?? 0;
-        
-        $allowedFields = ['nom', 'prenom', 'username', 'email', 'password', 'role',
-            'date_creation', 'derniere_connexion', 'controle_en_cours_id',
-            'last_activity', 'reset_token', 'reset_token_expires',
-            'reset_email_sent_at']; // ← 'reset_email_sent' retiré
-        
-        $filtered = array_intersect_key($utilisateur, array_flip($allowedFields));
-        
-        $sql = "INSERT INTO utilisateur (nom, prenom, username, email, password, role,
-            date_creation, derniere_connexion, controle_en_cours_id, last_activity,
-            reset_token, reset_token_expires, reset_email_sent_at)
-        VALUES (:nom, :prenom, :username, :email, :password, :role,
-            :date_creation, :derniere_connexion, :controle_en_cours_id,
-            :last_activity, :reset_token, :reset_token_expires,
-            :reset_email_sent_at)";
+        $filtered = array_intersect_key($utilisateur, array_flip(self::ALLOWED_FIELDS));
+
+        if (empty($filtered)) {
+            throw new \RuntimeException('Aucun champ valide à insérer.');
+        }
+
+        $columns = array_keys($filtered);
+        $placeholders = array_map(fn($c) => ':' . $c, $columns);
+
+        $sql = sprintf(
+            'INSERT INTO utilisateur (%s) VALUES (%s)',
+            implode(', ', $columns),
+            implode(', ', $placeholders)
+        );
+
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($filtered);
     }
-    
+
     public function getDb()
     {
         return $this->db;
