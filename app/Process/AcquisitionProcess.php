@@ -36,7 +36,7 @@ class AcquisitionProcess
         $acquisition['fournisseur_id'] = $fournisseur_id;
         unset($acquisition['fournisseur_nom']);
 
-        return $acquisitionManager->save($acquisition);
+        return (int) $acquisitionManager->save($acquisition);
     }
 
     public function categorie_process(array $ligne)

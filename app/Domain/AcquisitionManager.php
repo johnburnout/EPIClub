@@ -100,14 +100,15 @@ class AcquisitionManager extends AbstractManager
 
         return null;
     }
-
+    
     public function save(array $acquisition)
     {
         if (isset($acquisition['id'])) {
             return $this->_update($acquisition);
         }
         
-        return $this->_insert($acquisition);
+        $this->_insert($acquisition);
+        return (int) $this->db->lastInsertId('acquisition');
     }
     
     public function delete(int $id)

@@ -163,6 +163,15 @@
 		{% if acquisition.est_validee %}
 			<a href="/equipements?acquisition={{ acquisition.id }}" class="btn btn-success">📋 Voir les équipements</a>
 		{% endif %}
+		
+		<!-- BOUTON SUPPRIMER LE BROUILLO -->
+		{% if isGranted('ROLE_ADMIN') and not acquisition.est_validee %}
+		<a href="/admin/acquisitions/acquisition_supprimer-{{ acquisition.id }}"
+			class="btn btn-danger"
+			onclick="return confirm('⚠️ Supprimer définitivement cette acquisition ({{ acquisition.facture_reference }}) ?\n\nCette action est irréversible.');">
+			🗑️ Supprimer le brouillon
+		</a>
+		{% endif %}
 	</div>
 
 {% endblock %}

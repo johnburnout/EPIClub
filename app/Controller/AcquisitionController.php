@@ -21,15 +21,14 @@ class AcquisitionController extends AbstractController
     public function list(Request $request): Response
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
-
+        
         $acquisitionManager = new AcquisitionManager();
         $acquisitions = $acquisitionManager->findAll();
-
-        // Filtrer pour n'afficher que les acquisitions validées
-        $acquisitions = array_filter($acquisitions, function ($a) {
-            return $a['est_validee'] == 1;
-        });
-
+        
+        // Toutes les acquisitions (brouillons + validées).
+        // Les brouillons ne sont pas cachés : ils sont accessibles pour
+        // reprendre la saisie ou valider.
+        
         return $this->render('acquisition_list.twig', [
             'acquisitions' => $acquisitions,
         ]);
@@ -39,41 +38,63 @@ class AcquisitionController extends AbstractController
     {
         // [SÉCURITÉ] Contrôle d'accès manquant
         $this->deniAccessUnlessGranted('ROLE_USER');
-
+        
         $fournisseurManager = new FournisseurManager();
         $categorieManager = new CategorieManager();
         $acquisition = [];
         $form_errors = [];
-
+        
         if ($request->getMethod() === 'POST') {
             $action = $request->request->get('action');
-
+            
             if ($action === 'create') {
                 $acquisition = $request->request->all();
                 $acquisition['saisie_par'] = $this->session->get('user')['id'];
-
                 $acquisition['facture_document'] = null;
-
-                // [ROBUSTESSE] Utilisation de $request->files (sera affiné en vague 2)
-                $factureDocument = $this->uploadFacture($_FILES['facture_document'] ?? null);
-                if ($factureDocument === false) {
-                    $form_errors['facture_document'] = 'Erreur lors du téléchargement du fichier. Formats acceptés : PDF, JPG, PNG (max 10 Mo).';
-                } elseif ($factureDocument !== null) {
-                    $acquisition['facture_document'] = $factureDocument;
+                
+                // [ROBUSTESSE] Vérifier l'unicité de la référence AVANT l'insert
+                $factureReference = trim((string) ($acquisition['facture_reference'] ?? ''));
+                if ($factureReference === '') {
+                    $form_errors['facture_reference'] = 'La référence de facture est obligatoire.';
+                } else {
+                    $acquisitionManager = new AcquisitionManager();
+                    if ($acquisitionManager->findOneByCriteria(['facture_reference' => $factureReference])) {
+                        $form_errors['facture_reference'] = 'Cette référence de facture existe déjà. Merci d\'en choisir une autre.';
+                    }
                 }
-
+                
+                // Téléchargement de la facture (seulement si pas d'erreur bloquante)
+                if (empty($form_errors)) {
+                    $factureDocument = $this->uploadFacture($_FILES['facture_document'] ?? null);
+                    if ($factureDocument === false) {
+                        $form_errors['facture_document'] = 'Erreur lors du téléchargement du fichier. Formats acceptés : PDF, JPG, PNG (max 10 Mo).';
+                    } elseif ($factureDocument !== null) {
+                        $acquisition['facture_document'] = $factureDocument;
+                    }
+                }
+                
                 if (empty($form_errors)) {
                     $acquisitionProcess = new AcquisitionProcess();
-                    if ($id = $acquisitionProcess->acquisition_process($acquisition)) {
-                        $acquisition['id'] = $id;
-                        $this->session->getFlashBag()->add('success', '✅ Acquisition créée avec succès. Vous pouvez maintenant ajouter des lignes.');
-                        return $this->redirectTo("/admin/acquisitions/acquisition_modification-$id");
+                    try {
+                        if ($id = $acquisitionProcess->acquisition_process($acquisition)) {
+                            $acquisition['id'] = $id;
+                            $this->session->getFlashBag()->add('success', '✅ Acquisition créée avec succès. Vous pouvez maintenant ajouter des lignes.');
+                            return $this->redirectTo("/admin/acquisitions/acquisition_modification-$id");
+                        }
+                        $form_errors['general'] = 'Erreur lors de la création de l\'acquisition.';
+                    } catch (\Throwable $e) {
+                        error_log(sprintf(
+                            '[AcquisitionController] Create failed: %s in %s:%d',
+                            $e->getMessage(),
+                            $e->getFile(),
+                            $e->getLine()
+                        ));
+                        $form_errors['general'] = 'Une erreur est survenue lors de la création. Merci de réessayer.';
                     }
-                    $form_errors['general'] = 'Erreur lors de la création de l\'acquisition.';
                 }
             }
         }
-
+        
         return $this->render('acquisition_form.twig', [
             'acquisition' => $acquisition,
             'fournisseurs' => $fournisseurManager->findAll(),
@@ -86,40 +107,40 @@ class AcquisitionController extends AbstractController
     {
         // [SÉCURITÉ] Contrôle d'accès manquant
         $this->deniAccessUnlessGranted('ROLE_USER');
-
+        
         $acquisitionManager = new AcquisitionManager();
         $acquisitionLigneManager = new AcquisitionLigneManager();
         $fournisseurManager = new FournisseurManager();
         $categorieManager = new CategorieManager();
         $equipementManager = new EquipementManager();
-
+        
         // [ROBUSTESSE] Cast explicite de l'id
         $id = (int) $request->get('id');
         if ($id <= 0) {
             $this->session->getFlashBag()->add('error', 'Acquisition invalide.');
             return $this->redirectTo('/admin/acquisitions');
         }
-
+        
         $acquisition = $acquisitionManager->findId($id);
         if (!$acquisition) {
             $this->session->getFlashBag()->add('error', 'Acquisition non trouvée.');
             return $this->redirectTo('/admin/acquisitions');
         }
-
+        
         $acquisition['lignes'] = $acquisitionLigneManager->findByAcquisition($acquisition['id']);
         $form_errors = [];
         $ligneData = [];
-
+        
         if ($request->getMethod() === 'POST') {
             $action = $request->request->get('action');
-
+            
             // --- Action : Valider ---
             if ($action === 'valider') {
                 if (empty($acquisition['facture_document'])) {
                     $this->session->getFlashBag()->add('error', '❌ Impossible de valider : veuillez d\'abord télécharger la facture.');
                     return $this->redirectTo("/admin/acquisitions/acquisition_modification-{$acquisition['id']}");
                 }
-
+                
                 $acquisitionProcess = new AcquisitionProcess();
                 try {
                     $acquisitionProcess->validerAcquisition($acquisition['id']);
@@ -141,15 +162,25 @@ class AcquisitionController extends AbstractController
                     return $this->redirectTo("/admin/acquisitions/acquisition_modification-{$acquisition['id']}");
                 }
             }
-
+            
             // --- Action : Mise à jour de l'acquisition ---
             if ($action === 'update') {
-                $fournisseurNom = $request->request->get('fournisseur_nom');
-                $factureReference = $request->request->get('facture_reference');
+                $fournisseurNom = trim((string) $request->request->get('fournisseur_nom', ''));
+                $factureReference = trim((string) $request->request->get('facture_reference', ''));
                 $factureDate = $request->request->get('facture_date');
-
-                // Gestion du téléchargement du PDF
-                if (isset($_FILES['facture_document']) && $_FILES['facture_document']['error'] !== UPLOAD_ERR_NO_FILE) {
+                
+                // [ROBUSTESSE] Vérifier l'unicité de la référence AVANT l'update
+                if ($factureReference === '') {
+                    $form_errors['facture_reference'] = 'La référence de facture est obligatoire.';
+                } else {
+                    $existing = $acquisitionManager->findOneByCriteria(['facture_reference' => $factureReference]);
+                    if ($existing && (int) $existing['id'] !== (int) $acquisition['id']) {
+                        $form_errors['facture_reference'] = 'Cette référence de facture est déjà utilisée par une autre acquisition.';
+                    }
+                }
+                
+                // Gestion du téléchargement du PDF (seulement si pas d'erreur bloquante)
+                if (empty($form_errors['facture_reference']) && isset($_FILES['facture_document']) && $_FILES['facture_document']['error'] !== UPLOAD_ERR_NO_FILE) {
                     $factureDocument = $this->uploadFacture($_FILES['facture_document']);
                     if ($factureDocument === false) {
                         $form_errors['facture_document'] = 'Erreur lors du téléchargement du fichier. Formats acceptés : PDF, JPG, PNG (max 10 Mo).';
@@ -164,42 +195,54 @@ class AcquisitionController extends AbstractController
                         $acquisition['facture_document'] = $factureDocument;
                     }
                 }
-
-                // Gestion du fournisseur
-                $fournisseur = $fournisseurManager->findOneByCriteria(['nom' => $fournisseurNom]);
-                if ($fournisseur) {
-                    $fournisseurId = $fournisseur['id'];
-                } else {
-                    $fournisseurId = $fournisseurManager->save(['nom' => $fournisseurNom]);
-                }
-
-                $acquisition['fournisseur_id'] = $fournisseurId;
-                $acquisition['facture_reference'] = $factureReference;
-                $acquisition['facture_date'] = $factureDate;
-
+                
+                // [ROBUSTESSE] Ne mettre à jour le fournisseur que si pas d'erreur
                 if (empty($form_errors)) {
-                    $acquisitionManager->save($acquisition);
-                    $this->session->getFlashBag()->add('success', '✅ Acquisition mise à jour avec succès.');
-                    return $this->redirectTo("/admin/acquisitions/acquisition_modification-{$acquisition['id']}");
+                    $fournisseur = $fournisseurManager->findOneByCriteria(['nom' => $fournisseurNom]);
+                    if ($fournisseur) {
+                        $fournisseurId = $fournisseur['id'];
+                    } else {
+                        $fournisseurId = $fournisseurManager->save(['nom' => $fournisseurNom]);
+                    }
+                    
+                    $acquisition['fournisseur_id'] = $fournisseurId;
+                    $acquisition['facture_reference'] = $factureReference;
+                    $acquisition['facture_date'] = $factureDate;
+                    
+                    try {
+                        $acquisitionManager->save($acquisition);
+                        $this->session->getFlashBag()->add('success', '✅ Acquisition mise à jour avec succès.');
+                        return $this->redirectTo("/admin/acquisitions/acquisition_modification-{$acquisition['id']}");
+                    } catch (\Throwable $e) {
+                        // [SÉCURITÉ] Log serveur, message générique au client
+                        error_log(sprintf(
+                            '[AcquisitionController] Update failed for acquisition id=%s: %s in %s:%d',
+                            $acquisition['id'],
+                            $e->getMessage(),
+                            $e->getFile(),
+                            $e->getLine()
+                        ));
+                        $form_errors['general'] = 'Une erreur est survenue lors de la mise à jour. Merci de réessayer.';
+                    }
                 }
             }
-
+            
             // --- Action : Ajout d'une ligne ---
             if ($action === 'add_ligne') {
                 $ligne = $request->request->all()['ligne'] ?? [];
                 $ligneData = $ligne;
-
+                
                 if (!empty($ligne) && !empty($ligne['reference'])) {
                     $ligne['regrouper_en_lot'] = isset($ligne['regrouper_en_lot']) ? 1 : 0;
-
+                    
                     $reference = $ligne['reference'] ?? '';
-
+                    
                     if (empty($reference)) {
                         $form_errors['ligne_reference'] = 'La référence est obligatoire.';
                     } elseif ($acquisitionLigneManager->findByReference($reference)) {
                         $form_errors['ligne_reference'] = 'Cette référence existe déjà. Veuillez en saisir une autre.';
                     }
-
+                    
                     if (empty($ligne['designation'] ?? '')) {
                         $form_errors['ligne_designation'] = 'Le libellé est obligatoire.';
                     }
@@ -209,25 +252,36 @@ class AcquisitionController extends AbstractController
                     if (empty($ligne['nombre'] ?? 0) || $ligne['nombre'] < 1) {
                         $form_errors['ligne_nombre'] = 'Le nombre doit être supérieur à 0.';
                     }
-
+                    
                     if (empty($form_errors)) {
-                        $acquisitionProcess = new AcquisitionProcess();
-                        $ligne['categorie_id'] = $acquisitionProcess->categorie_process($ligne);
-                        $ligne['acquisition_id'] = $acquisition['id'];
-                        $ligne['equipements_generes'] = 0;
-
-                        $acquisitionLigneManager->save($ligne);
-                        $this->session->getFlashBag()->add('success', '✅ Ligne ajoutée avec succès.');
-                        return $this->redirectTo("/admin/acquisitions/acquisition_modification-{$acquisition['id']}");
+                        try {
+                            $acquisitionProcess = new AcquisitionProcess();
+                            $ligne['categorie_id'] = $acquisitionProcess->categorie_process($ligne);
+                            $ligne['acquisition_id'] = $acquisition['id'];
+                            $ligne['equipements_generes'] = 0;
+                            
+                            $acquisitionLigneManager->save($ligne);
+                            $this->session->getFlashBag()->add('success', '✅ Ligne ajoutée avec succès.');
+                            return $this->redirectTo("/admin/acquisitions/acquisition_modification-{$acquisition['id']}");
+                        } catch (\Throwable $e) {
+                            error_log(sprintf(
+                                '[AcquisitionController] Add ligne failed for acquisition id=%s: %s in %s:%d',
+                                $acquisition['id'],
+                                $e->getMessage(),
+                                $e->getFile(),
+                                $e->getLine()
+                            ));
+                            $form_errors['ligne_general'] = 'Une erreur est survenue lors de l\'ajout de la ligne.';
+                        }
                     }
                 } else {
                     $form_errors['ligne_reference'] = 'Veuillez remplir les champs de la ligne.';
                 }
             }
         }
-
+        
         $equipements = $equipementManager->findAll();
-
+        
         return $this->render('acquisition_form.twig', [
             'acquisition' => $acquisition,
             'fournisseurs' => $fournisseurManager->findAll(),
@@ -236,6 +290,82 @@ class AcquisitionController extends AbstractController
             'form_errors' => $form_errors,
             'ligne_data' => $ligneData ?? [],
         ]);
+    }
+    
+    public function delete(Request $request): Response
+    {
+        // [SÉCURITÉ] Seul un admin peut supprimer une acquisition
+        $this->deniAccessUnlessGranted('ROLE_ADMIN');
+        
+        $id = (int) $request->get('id');
+        if ($id <= 0) {
+            $this->session->getFlashBag()->add('error', 'Acquisition invalide.');
+            return $this->redirectTo('/admin/acquisitions');
+        }
+        
+        $acquisitionManager = new AcquisitionManager();
+        $acquisition = $acquisitionManager->findId($id);
+        
+        if (!$acquisition) {
+            $this->session->getFlashBag()->add('error', 'Acquisition non trouvée.');
+            return $this->redirectTo('/admin/acquisitions');
+        }
+        
+        // [MÉTIER] Seuls les brouillons peuvent être supprimés
+        if ($acquisition['est_validee']) {
+            $this->session->getFlashBag()->add(
+                'error',
+                "Impossible de supprimer une acquisition validée. Elle contient des équipements générés."
+            );
+            return $this->redirectTo("/admin/acquisitions/acquisition-{$id}");
+        }
+        
+        // [SÉCURITÉ] Refuser si une ligne a déjà généré des équipements
+        $acquisitionLigneManager = new AcquisitionLigneManager();
+        $lignes = $acquisitionLigneManager->findByAcquisition($id);
+        foreach ($lignes as $ligne) {
+            if ($ligne['equipements_generes'] == 1) {
+                $this->session->getFlashBag()->add(
+                    'error',
+                    "Impossible de supprimer cette acquisition : certaines lignes ont généré des équipements."
+                );
+                return $this->redirectTo("/admin/acquisitions/acquisition_modification-{$id}");
+            }
+        }
+        
+        try {
+            // [SÉCURITÉ] Supprimer d'abord les lignes (pas de FK ON DELETE CASCADE déclarée)
+            foreach ($lignes as $ligne) {
+                $acquisitionLigneManager->delete($ligne['id']);
+            }
+            
+            // Supprimer la facture associée si elle existe
+            if (!empty($acquisition['facture_document'])) {
+                $facturePath = $this->getUploadsDir() . $acquisition['facture_document'];
+                if (file_exists($facturePath) && !unlink($facturePath)) {
+                    error_log("[AcquisitionController] Failed to delete facture: $facturePath");
+                }
+            }
+            
+            // Puis l'acquisition
+            $acquisitionManager->delete($id);
+            
+            $this->session->getFlashBag()->add('success', "L'acquisition #{$id} a été supprimée.");
+            return $this->redirectTo('/admin/acquisitions');
+        } catch (\Throwable $e) {
+            error_log(sprintf(
+                '[AcquisitionController] Delete failed for acquisition id=%s: %s in %s:%d',
+                $id,
+                $e->getMessage(),
+                $e->getFile(),
+                $e->getLine()
+            ));
+            $this->session->getFlashBag()->add(
+                'error',
+                'Une erreur est survenue lors de la suppression. Merci de réessayer.'
+            );
+            return $this->redirectTo("/admin/acquisitions/acquisition-{$id}");
+        }
     }
 
     public function show(Request $request): Response

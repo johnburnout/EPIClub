@@ -1,7 +1,7 @@
 {% extends "_layout.twig" %}
 
 {% block body %}
-	<h3>Acquisitions validées</h3>
+	<h3>Acquisitions</h3>
 	<hr>
 	
 	{% if isGranted('ROLE_ADMIN') %}
@@ -48,18 +48,23 @@
 						<a href="/admin/acquisitions/acquisition-{{ acquisition.id }}" class="btn btn-sm btn-primary">Voir</a>
 						
 						{% if isGranted('ROLE_ADMIN') %}
-							{% if not acquisition.est_validee %}
-								<a href="/admin/acquisitions/acquisition_modification-{{ acquisition.id }}" class="btn btn-sm btn-warning">Modifier</a>
-							{% else %}
-								<span class="text-muted">🔒 Verrouillée</span>
-							{% endif %}
+						{% if not acquisition.est_validee %}
+						<a href="/admin/acquisitions/acquisition_modification-{{ acquisition.id }}" class="btn btn-sm btn-warning">Modifier</a>
+						<a href="/admin/acquisitions/acquisition_supprimer-{{ acquisition.id }}"
+							class="btn btn-sm btn-danger"
+							onclick="return confirm('⚠️ Supprimer définitivement l\'acquisition #{{ acquisition.id }} ({{ acquisition.facture_reference }}) ?\n\nCette action est irréversible.');">
+							🗑️ Supprimer
+						</a>
+						{% else %}
+						<span class="text-muted">🔒 Verrouillée</span>
+						{% endif %}
 						{% endif %}
 					</td>
 				</tr>
 			{% else %}
 				<tr>
 					<td colspan="7" class="text-center text-muted py-4">
-						<i>Aucune acquisition validée pour le moment.</i>
+						<i>Aucune acquisition pour le moment.</i>
 					</td>
 				</tr>
 			{% endfor %}

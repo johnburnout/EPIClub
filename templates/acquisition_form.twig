@@ -11,6 +11,18 @@
 		{% endif %}
 	{% endif %}
 
+	{# Erreurs générales en haut du formulaire #}
+	{% if form_errors.general %}
+		<div class="alert alert-danger">
+			<i class="fas fa-exclamation-triangle"></i> {{ form_errors.general }}
+		</div>
+	{% endif %}
+	{% if form_errors.ligne_general %}
+		<div class="alert alert-danger">
+			<i class="fas fa-exclamation-triangle"></i> {{ form_errors.ligne_general }}
+		</div>
+	{% endif %}
+
 	<form method="post" enctype="multipart/form-data">
 		<div class="mb-3">
 			<label for="fournisseur_nom">Fournisseur</label>
@@ -24,7 +36,16 @@
 
 		<div class="mb-3">
 			<label for="facture_reference">Référence facture</label>
-			<input type="text" class="form-control" name="facture_reference" id="facture_reference" value="{{ acquisition.facture_reference }}" required {{ is_readonly }}>
+			<input type="text" 
+			       class="form-control {% if form_errors.facture_reference %}is-invalid{% endif %}" 
+			       name="facture_reference" 
+			       id="facture_reference" 
+			       value="{{ acquisition.facture_reference }}" 
+			       required 
+			       {{ is_readonly }}>
+			{% if form_errors.facture_reference %}
+				<div class="invalid-feedback">{{ form_errors.facture_reference }}</div>
+			{% endif %}
 		</div>
 
 		<div class="mb-3">
@@ -42,7 +63,16 @@
 					<span class="badge bg-success">✅ Téléchargée</span>
 				{% endif %}
 			</label>
-			<input type="file" name="facture_document" id="facture_document" class="form-control" accept=".pdf,.jpg,.jpeg,.png" {{ is_readonly }}>
+			<input type="file" 
+			       name="facture_document" 
+			       id="facture_document" 
+			       class="form-control {% if form_errors.facture_document %}is-invalid{% endif %}" 
+			       accept=".pdf,.jpg,.jpeg,.png" 
+			       {{ is_readonly }}>
+			
+			{% if form_errors.facture_document %}
+				<div class="invalid-feedback">{{ form_errors.facture_document }}</div>
+			{% endif %}
 			
 			{% if acquisition.facture_document %}
 			<div class="mt-2">
@@ -51,10 +81,6 @@
 					📄 Voir la facture
 				</a>
 			</div>
-			{% endif %}
-			
-			{% if form_errors.facture_document is defined %}
-			<div class="text-danger small">{{ form_errors.facture_document }}</div>
 			{% endif %}
 			
 			<small class="form-text text-muted">
