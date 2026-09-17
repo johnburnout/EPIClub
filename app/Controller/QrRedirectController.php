@@ -40,6 +40,7 @@ class QrRedirectController extends AbstractController
     */
     public function redirect(Request $request)
     {
+        $this->deniAccessUnlessGranted('ROLE_USER');
         // 1. Récupérer l'ID de l'équipement
         $id = $request->attributes->get('id');
         if (!$id) {
@@ -102,6 +103,7 @@ class QrRedirectController extends AbstractController
      */
     public function choicePage(Request $request)
     {
+        $this->deniAccessUnlessGranted('ROLE_USER');
         $id = $request->attributes->get('id');
         
         if (!$id) {
@@ -152,6 +154,7 @@ class QrRedirectController extends AbstractController
      */
     public function generateQr(Request $request)
     {
+        $this->deniAccessUnlessGranted('ROLE_USER');
         error_log("=== QR GENERATE ===");
         
         $id = $request->attributes->get('id');
@@ -228,6 +231,7 @@ class QrRedirectController extends AbstractController
      */
     public function downloadQr(Request $request)
     {
+        $this->deniAccessUnlessGranted('ROLE_USER');
         $id = $request->attributes->get('id');
         
         if (!$id) {
@@ -280,6 +284,7 @@ class QrRedirectController extends AbstractController
      */
     public function viewQr(Request $request)
     {
+        $this->deniAccessUnlessGranted('ROLE_USER');
         $filename = $request->attributes->get('filename');
         
         if (!$filename) {
@@ -314,6 +319,7 @@ class QrRedirectController extends AbstractController
      */
     public function saveQr(Request $request)
     {
+        $this->deniAccessUnlessGranted('ROLE_USER');
         header('Content-Type: application/json');
         
         $id = $request->attributes->get('id');
@@ -372,6 +378,7 @@ class QrRedirectController extends AbstractController
      */
     public function apiGenerateQr(Request $request)
     {
+        $this->deniAccessUnlessGranted('ROLE_USER');
         header('Content-Type: application/json');
         
         $id = $request->attributes->get('id');

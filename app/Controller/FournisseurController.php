@@ -24,9 +24,17 @@ class FournisseurController extends AbstractController
 
     public function show(Request $request)
     {
+        // Cohérent avec list() : les fiches fournisseurs sont réservées aux admins
+        $this->deniAccessUnlessGranted('ROLE_ADMIN');
+        
         $fournisseurManager = new FournisseurManager();
         $fournisseur = $fournisseurManager->findId($request->get('id'));
-
+        
+        if (!$fournisseur) {
+            $this->session->getFlashBag()->add('error', "Le fournisseur demandé n'existe pas.");
+            return new RedirectResponse('/admin/fournisseurs');
+        }
+        
         return $this->render('fournisseur_show.twig', [
             'fournisseur' => $fournisseur
         ]);
@@ -73,13 +81,18 @@ class FournisseurController extends AbstractController
 
     public function delete(Request $request)
     {
-        // [SÉCURITÉ] Contrôle d'accès manquant (corrigé)
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
         
-        $id = $request->query->get('id');
+        // [SÉCURITÉ] Action destructive réservée à POST
+        if (!$request->isMethod('POST')) {
+            return new RedirectResponse('/admin/fournisseurs');
+        }
+        
+        // [ROBUSTESSE] id depuis le corps POST en priorité
+        $id = $request->request->get('id') ?? $request->query->get('id');
         if (!$id) {
             $this->session->getFlashBag()->add('error', 'ID fournisseur manquant.');
-            return new RedirectResponse("/admin/fournisseurs");
+            return new RedirectResponse('/admin/fournisseurs');
         }
         
         $fournisseurManager = new FournisseurManager();
@@ -87,19 +100,19 @@ class FournisseurController extends AbstractController
         
         if (!$fournisseur) {
             $this->session->getFlashBag()->add('error', "Le fournisseur demandé n'existe pas.");
-            return new RedirectResponse("/admin/fournisseurs");
+            return new RedirectResponse('/admin/fournisseurs');
         }
         
         // Vérifier si le fournisseur a des acquisitions associées
         if ($fournisseurManager->hasAcquisitions($id)) {
             $this->session->getFlashBag()->add('error', "Impossible de supprimer ce fournisseur car il a des acquisitions associées.");
-            return new RedirectResponse("/admin/fournisseurs");
+            return new RedirectResponse('/admin/fournisseurs');
         }
         
         $fournisseurManager->delete($id);
         
         $this->session->getFlashBag()->add('success', "Le fournisseur '{$fournisseur['nom']}' a été supprimé.");
         
-        return new RedirectResponse("/admin/fournisseurs");
+        return new RedirectResponse('/admin/fournisseurs');
     }
 }

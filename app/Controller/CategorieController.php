@@ -24,9 +24,16 @@ class CategorieController extends AbstractController
 
     public function show(Request $request)
     {
+        $this->deniAccessUnlessGranted('ROLE_USER');
+        
         $categorieManager = new CategorieManager();
         $categorie = $categorieManager->findId($request->get('id'));
-
+        
+        if (!$categorie) {
+            $this->session->getFlashBag()->add('error', "La catégorie demandée n'existe pas.");
+            return new RedirectResponse('/admin/categories');
+        }
+        
         return $this->render('categorie_show.twig', [
             'categorie' => $categorie
         ]);
@@ -83,10 +90,18 @@ class CategorieController extends AbstractController
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
         
-        $id = $request->query->get('id');
+        // [SÉCURITÉ] Action destructive réservée à POST (la route est déjà POST-only,
+        // mais on double la vérification côté contrôleur par défense en profondeur).
+        if (!$request->isMethod('POST')) {
+            return new RedirectResponse('/admin/categories');
+        }
+        
+        // [ROBUSTESSE] id depuis le corps POST en priorité, fallback query
+        // (utile pour les tests ou appels legacy).
+        $id = $request->request->get('id') ?? $request->query->get('id');
         if (!$id) {
             $this->session->getFlashBag()->add('error', 'ID catégorie manquant.');
-            return new RedirectResponse("/admin/categories");
+            return new RedirectResponse('/admin/categories');
         }
         
         $categorieManager = new CategorieManager();
@@ -94,18 +109,18 @@ class CategorieController extends AbstractController
         
         if (!$categorie) {
             $this->session->getFlashBag()->add('error', "La catégorie demandée n'existe pas.");
-            return new RedirectResponse("/admin/categories");
+            return new RedirectResponse('/admin/categories');
         }
         
         if ($categorieManager->hasEquipements($id)) {
             $this->session->getFlashBag()->add('error', "Impossible de supprimer cette catégorie car elle a des équipements associés.");
-            return new RedirectResponse("/admin/categories");
+            return new RedirectResponse('/admin/categories');
         }
         
         $categorieManager->delete($id);
         
         $this->session->getFlashBag()->add('success', "La catégorie '{$categorie['libelle']}' a été supprimée.");
         
-        return new RedirectResponse("/admin/categories");
+        return new RedirectResponse('/admin/categories');
     }
 }

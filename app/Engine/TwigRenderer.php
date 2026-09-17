@@ -28,19 +28,24 @@ class TwigRenderer extends Environment
 
         $this->session = $session ?? new Session();
 
-        // ⬇️ AJOUT : fonction Twig csrf_token()
+        // ⬇️ Fonction Twig csrf_token() — génère le token à la demande
         $this->addFunction(new TwigFunction('csrf_token', function() {
             if (!$this->session->has('csrf_token')) {
                 $this->session->set('csrf_token', bin2hex(random_bytes(32)));
             }
             return $this->session->get('csrf_token');
         }));
-
+        
         // Variables globales
         if ($this->session->has('user')) {
             $this->addGlobal('_user', $this->session->get('user'));
         }
         $this->addGlobal('session', $this->session);
+        
+        // ⬇️ CORRECTION : s'assurer que le token existe AVANT de l'exposer
+        if (!$this->session->has('csrf_token')) {
+            $this->session->set('csrf_token', bin2hex(random_bytes(32)));
+        }
         $this->addGlobal('csrf_token', $this->session->get('csrf_token'));
 
         // 🔧 NOUVEAU : Version de l'application (depuis version.txt)
@@ -65,6 +70,9 @@ class TwigRenderer extends Environment
             $context['session'] = $this->session;
         }
         if (!isset($context['csrf_token'])) {
+            if (!$this->session->has('csrf_token')) {
+                $this->session->set('csrf_token', bin2hex(random_bytes(32)));
+            }
             $context['csrf_token'] = $this->session->get('csrf_token');
         }
         if (!isset($context['app_version'])) {

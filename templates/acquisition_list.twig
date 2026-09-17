@@ -50,11 +50,12 @@
 						{% if isGranted('ROLE_ADMIN') %}
 						{% if not acquisition.est_validee %}
 						<a href="/admin/acquisitions/acquisition_modification-{{ acquisition.id }}" class="btn btn-sm btn-warning">Modifier</a>
-						<a href="/admin/acquisitions/acquisition_supprimer-{{ acquisition.id }}"
-							class="btn btn-sm btn-danger"
-							onclick="return confirm('⚠️ Supprimer définitivement l\'acquisition #{{ acquisition.id }} ({{ acquisition.facture_reference }}) ?\n\nCette action est irréversible.');">
-							🗑️ Supprimer
-						</a>
+						<form method="post" action="/admin/acquisitions/acquisition_supprimer-{{ acquisition.id }}" style="display:inline;">
+							<button type="submit" class="btn btn-sm btn-danger"
+								onclick="return confirm('⚠️ Supprimer définitivement l\'acquisition #{{ acquisition.id }} ({{ acquisition.facture_reference }}) ?\n\nCette action est irréversible.');">
+								🗑️ Supprimer
+							</button>
+						</form>
 						{% else %}
 						<span class="text-muted">🔒 Verrouillée</span>
 						{% endif %}

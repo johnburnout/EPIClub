@@ -1,5 +1,5 @@
 <?php
-    
+
 // Router script pour le serveur de dev php -S :
 // laisse le serveur servir les fichiers statiques (assets, images)
 // mais fait passer toutes les autres URLs par le routeur.
@@ -20,6 +20,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Matcher\UrlMatcher;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
+use Symfony\Component\Routing\Exception\MethodNotAllowedException;   // ← AJOUT
 
 require __DIR__ . '/../app/bootstrap.php';
 
@@ -47,6 +48,8 @@ $request->setDefaultLocale('fr');
 $request->setLocale('fr');
 
 $context = new RequestContext();
+$context->fromRequest($request);
+
 $matcher = new UrlMatcher($routes, $context);
 
 try {
@@ -58,12 +61,24 @@ try {
 
     $controller = new $parameters['_controller']($session);
     $response = call_user_func_array([$controller, $parameters['action']], [$request]);
+
 } catch (ResourceNotFoundException $exception) {
     $response = new Response('L\'url que vous demandez n\'existe pas.', Response::HTTP_NOT_FOUND);
+
+} catch (MethodNotAllowedException $exception) {                    // ← AJOUT
+    $response = new Response(
+        'Méthode non autorisée pour ' . $request->getPathInfo(),
+        Response::HTTP_METHOD_NOT_ALLOWED
+    );
+    if ($allowed = $exception->getAllowedMethods()) {
+        $response->headers->set('Allow', implode(', ', $allowed));
+    }
+
 } catch (AccessDeniedHttpException $exception) {
     // Accès refusé : le flash est déjà posé par deniAccessUnlessGranted().
     // On redirige vers l'accueil, comme le faisait l'ancienne implémentation.
     $response = new RedirectResponse('/');
+
 } catch (NotFoundHttpException $exception) {
     // Fichier non trouvé (UploadController::serve(), AcquisitionController::serveFile())
     // ou toute autre HttpException 404 levée explicitement.
@@ -71,6 +86,7 @@ try {
         $exception->getMessage() ?: 'Ressource non trouvée',
         Response::HTTP_NOT_FOUND
     );
+
 } catch (\Throwable $exception) {
     // Log serveur uniquement — JAMAIS exposé au client.
     error_log(sprintf(

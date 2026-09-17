@@ -278,44 +278,40 @@
 		{% endif %}
 		{# --- Fin historique --- #}
 
-		<div class="mt-3 d-flex flex-wrap gap-2">
-			<a href="/equipements" class="btn btn-secondary">
-				<i class="fas fa-arrow-left"></i> Retour à la liste
-			</a>
-			<a href="/equipements/equipement_modification-{{ equipement.id }}" class="btn btn-warning">
-				<i class="fas fa-edit"></i> Modifier
-			</a>
-			<a href="/equipements/equipement-pdf-{{ equipement.id }}" class="btn btn-danger" target="_blank">
-				<i class="fas fa-file-pdf"></i> PDF
-			</a>
-			{# ============================================ #}
-			{# === BOUTON QR DANS LA BARRE D'ACTIONS === #}
-			{# ============================================ #}
-			<a href="/qr/choix/{{ equipement.id }}" class="btn btn-info">
-				<i class="fas fa-qrcode"></i> QR Code
-			</a>
-			{# ============================================ #}
-			{% if isGranted('ROLE_CONTROLLEUR') %}
+			<div class="mt-3 d-flex flex-wrap gap-2">
+				<a href="/equipements" class="btn btn-secondary">
+					<i class="fas fa-arrow-left"></i> Retour à la liste
+				</a>
+				<a href="/equipements/equipement_modification-{{ equipement.id }}" class="btn btn-warning">
+					<i class="fas fa-edit"></i> Modifier
+				</a>
+				<a href="/equipements/equipement-pdf-{{ equipement.id }}" class="btn btn-danger" target="_blank">
+					<i class="fas fa-file-pdf"></i> PDF
+				</a>
+				<a href="/qr/choix/{{ equipement.id }}" class="btn btn-info">
+					<i class="fas fa-qrcode"></i> QR Code
+				</a>
+				{% if isGranted('ROLE_CONTROLLEUR') %}
 				<a href="/admin/controles/creer?equipement_id={{ equipement.id }}" class="btn btn-success">
 					<i class="fas fa-clipboard-check"></i> Démarrer un contrôle
 				</a>
-			{% endif %}
-			{% if isGranted('ROLE_ADMIN') %}
+				{% endif %}
+				{% if isGranted('ROLE_ADMIN') %}
 				{% if equipement.statut == 2 and not equipement.controle_en_cours %}
-				<a href="/equipements/equipement_supprimer-{{ equipement.id }}"
-					class="btn btn-danger"
-					onclick="return confirm('Confirmer la suppression définitive de cet équipement « {{ equipement.reference }} » ?\n\nCette action est irréversible.');">
-					<i class="fas fa-trash"></i> Supprimer
-				</a>
+				<form method="post" action="/equipements/equipement_supprimer-{{ equipement.id }}" style="display:inline;">
+					<button type="submit" class="btn btn-danger"
+						onclick="return confirm('Confirmer la suppression définitive de cet équipement « {{ equipement.reference }} » ?\n\nCette action est irréversible.');">
+						<i class="fas fa-trash"></i> Supprimer
+					</button>
+				</form>
 				{% else %}
 				<button type="button" class="btn btn-danger" disabled
 					title="Seul un équipement hors service et non contrôlé peut être supprimé">
 					<i class="fas fa-trash"></i> Supprimer
 				</button>
 				{% endif %}
-			{% endif %}
-			
-		</div>
+				{% endif %}
+			</div>
 	{% else %}
 		<div class="alert alert-warning">
 			<i class="fas fa-exclamation-triangle"></i> Équipement non trouvé.

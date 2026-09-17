@@ -364,19 +364,21 @@
             </button>
             <span class="text-muted ms-2">(certains équipements sont encore marqués « À contrôler »)</span>
         {% else %}
-            <a href="/admin/controles/cloturer/{{ controle.id }}" 
-                class="btn btn-success" 
-                onclick="return confirm('Clôturer ce contrôle ? Les remarques seront chiffrées et le contrôle ne sera plus modifiable.')">
-                Clôturer le contrôle
-            </a>
+            <form method="post" action="/admin/controles/cloturer/{{ controle.id }}" style="display:inline;">
+                <button type="submit" class="btn btn-success"
+                        onclick="return confirm('Clôturer ce contrôle ? Les remarques seront chiffrées et le contrôle ne sera plus modifiable.')">
+                    Clôturer le contrôle
+                </button>
+            </form>
         {% endif %}
     {% endif %}
     {% if controle.statut != 'cloture' and (isGranted('ROLE_ADMIN') or controle.controleur_id == _user.id) %}
-    <a href="/admin/controles/supprimer/{{ controle.id }}"
-        class="btn btn-danger"
-        onclick="return confirm('⚠️ Supprimer ce contrôle ?\n\nToutes les lignes saisies seront perdues. Cette action est irréversible.');">
-        🗑️ Supprimer le contrôle
-    </a>
+    <form method="post" action="/admin/controles/supprimer/{{ controle.id }}" style="display:inline;">
+        <button type="submit" class="btn btn-danger"
+                onclick="return confirm('⚠️ Supprimer ce contrôle ?\n\nToutes les lignes saisies seront perdues. Cette action est irréversible.');">
+            🗑️ Supprimer le contrôle
+        </button>
+    </form>
     {% endif %}
 </div>
 {% endblock %}

@@ -23,9 +23,12 @@ class UpdateController extends AbstractController
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
 
-        // Générer un token CSRF
-        $csrfToken = bin2hex(random_bytes(32));
-        $this->session->set('csrf_token', $csrfToken);
+        // [SÉCURITÉ] Ne pas régénérer : TwigRenderer s'en charge.
+        // On récupère simplement le token existant (ou on le crée si absent).
+        if (!$this->session->has('csrf_token')) {
+            $this->session->set('csrf_token', bin2hex(random_bytes(32)));
+        }
+        $csrfToken = $this->session->get('csrf_token');
 
         $currentVersion = $this->getCurrentVersion();
         $latestRelease = $this->getLatestRelease();
@@ -37,8 +40,8 @@ class UpdateController extends AbstractController
             $updateAvailable = version_compare($latestTag, $current, '>');
         }
 
-        $canUpdate = $updateAvailable 
-            && is_writable(dirname(self::VERSION_FILE)) 
+        $canUpdate = $updateAvailable
+            && is_writable(dirname(self::VERSION_FILE))
             && is_writable(__DIR__ . '/../..');
 
         // Vérifier si un nettoyage est nécessaire
@@ -52,7 +55,7 @@ class UpdateController extends AbstractController
             'release_notes' => $latestRelease ? $latestRelease['body'] : null,
             'error' => $latestRelease === null ? 'Impossible de contacter GitHub.' : null,
             'csrf_token' => $csrfToken,
-            'cleanup_needed' => $cleanupNeeded
+            'cleanup_needed' => $cleanupNeeded,
         ]);
     }
 
@@ -63,20 +66,21 @@ class UpdateController extends AbstractController
     {
         try {
             $this->deniAccessUnlessGranted('ROLE_ADMIN');
-            
+
             if ($request->getMethod() !== 'POST') {
                 return new RedirectResponse('/admin/update');
             }
-            
-            // Vérifier CSRF
+
+            // [SÉCURITÉ] Vérifier CSRF
             $token = $request->request->get('csrf_token');
-            if (!$token || $token !== $this->session->get('csrf_token')) {
+            $expected = $this->session->get('csrf_token');
+            if (!$token || !$expected || !hash_equals((string) $expected, (string) $token)) {
                 return $this->render('update_result.twig', [
                     'success' => false,
                     'message' => 'Token CSRF invalide. Merci de recharger la page.',
                 ]);
             }
-            
+
             $latest = $this->getLatestRelease();
             if (!$latest) {
                 return $this->render('update_result.twig', [
@@ -84,15 +88,15 @@ class UpdateController extends AbstractController
                     'message' => 'Impossible de récupérer la version distante.',
                 ]);
             }
-            
+
             $zipUrl = $latest['zip_url'];
             $version = $latest['tag'];
-            
+
             $tempZip = self::TEMP_DIR . '/release.zip';
             if (!is_dir(self::TEMP_DIR)) {
                 mkdir(self::TEMP_DIR, 0755, true);
             }
-            
+
             // Télécharger le zip
             $zipContent = $this->downloadUrl($zipUrl);
             if (empty($zipContent)) {
@@ -102,7 +106,7 @@ class UpdateController extends AbstractController
                 ]);
             }
             file_put_contents($tempZip, $zipContent);
-            
+
             // Décompresser
             $zip = new ZipArchive();
             if ($zip->open($tempZip) !== true) {
@@ -123,7 +127,7 @@ class UpdateController extends AbstractController
             }
             $zip->close();
             unlink($tempZip);
-            
+
             // Trouver le dossier source
             $extractedItems = scandir($extractPath);
             $sourceDir = null;
@@ -139,28 +143,28 @@ class UpdateController extends AbstractController
                     'message' => 'Aucun dossier trouvé après extraction.',
                 ]);
             }
-            
+
             // Copier les fichiers (sauf exclus)
             $targetDir = __DIR__ . '/../..';
             $this->copyFiles($sourceDir, $targetDir);
-            
+
             // Nettoyer le dossier extrait
             $this->deleteDirectory($extractPath);
-            
+
             // Mettre à jour le numéro de version
             file_put_contents(self::VERSION_FILE, $version);
-            
+
             // Exécuter Composer (si possible)
             $this->runComposer();
-            
+
             // Nettoyage final
             $this->cleanupTempDir();
-            
+
             return $this->render('update_result.twig', [
                 'success' => true,
                 'message' => 'Mise à jour réussie. Version actuelle : ' . $version,
             ]);
-            
+
         } catch (\Throwable $e) {
             // [SÉCURITÉ] Log serveur uniquement — ne pas exposer les détails au client
             error_log(sprintf(
@@ -169,7 +173,7 @@ class UpdateController extends AbstractController
                 $e->getFile(),
                 $e->getLine()
             ));
-            
+
             return $this->render('update_result.twig', [
                 'success' => false,
                 'message' => 'Une erreur est survenue lors de la mise à jour. Merci de réessayer ou de contacter un administrateur.',
@@ -183,6 +187,20 @@ class UpdateController extends AbstractController
     public function cleanup(Request $request): Response
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
+
+        // [SÉCURITÉ] Action destructive : POST uniquement
+        if ($request->getMethod() !== 'POST') {
+            return new RedirectResponse('/admin/update');
+        }
+
+        // [SÉCURITÉ] Vérifier le token CSRF
+        $token = $request->request->get('csrf_token');
+        $expected = $this->session->get('csrf_token');
+        if (!$token || !$expected || !hash_equals((string) $expected, (string) $token)) {
+            $this->addFlash('error', 'Token CSRF invalide. Merci de réessayer.');
+            return new RedirectResponse('/admin/update');
+        }
+
         $this->cleanupTempDir();
         $this->addFlash('success', 'Dossier temporaire nettoyé.');
         return new RedirectResponse('/admin/update');

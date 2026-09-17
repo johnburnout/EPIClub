@@ -20,12 +20,16 @@ class AppUserRegisterController extends AbstractController
 
     public function account(Request $request): Response
     {
-        return $this->render('', []);
+        $this->deniAccessUnlessGranted('ROLE_USER');
+        
+        return $this->render('user_account.twig', []);
     }
 
     public function edit(Request $request): Response
     {
-        return $this->render('', []);
+        $this->deniAccessUnlessGranted('ROLE_ADMIN');
+        
+        return $this->render('user_register.twig', []);
     }
 
     public function forgotPassword(Request $request): Response

@@ -73,6 +73,7 @@ abstract class AbstractController
     public function deniAccessUnlessGranted(string $role): void
     {
         if (!$this->isGranted($role)) {
+            error_log('[deniAccessUnlessGranted] refus pour rôle ' . $role);
             $this->session->getFlashBag()->add('note', 'Vous n\'avez pas les autorisations nécessaires.');
             throw new AccessDeniedHttpException('Accès refusé.');
         }

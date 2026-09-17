@@ -24,9 +24,13 @@
 						<td>
 							<a href="/admin/fournisseurs/fournisseur-{{ fournisseur.id }}" class="btn btn-primary btn-block">Voir</a>
 							<a href="/admin/fournisseurs/fournisseur_modification-{{ fournisseur.id }}" class="btn btn-primary btn-block">Editer</a>
-							<a href="/admin/fournisseurs/supprimer?id={{ fournisseur.id }}" 
-								onclick="return confirm('Êtes-vous sûr de vouloir supprimer le fournisseur « {{ fournisseur.nom }} » ?')" 
-								class="btn btn-danger btn-block">Supprimer</a>
+							<form method="post" action="/admin/fournisseurs/supprimer" style="display:inline;">
+								<input type="hidden" name="id" value="{{ fournisseur.id }}">
+								<button type="submit" class="btn btn-danger btn-block"
+								        onclick="return confirm('Êtes-vous sûr de vouloir supprimer le fournisseur « {{ fournisseur.nom }} » ?')">
+									Supprimer
+								</button>
+							</form>
 						</td>
 					</tr>
 				{% endfor %}
