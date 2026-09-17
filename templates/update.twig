@@ -26,7 +26,13 @@
             {% if cleanup_needed %}
                 <div class="alert alert-warning">
                     <i class="fas fa-trash"></i> Des fichiers temporaires persistent.
-                    <a href="/admin/update/cleanup" class="btn btn-sm btn-secondary">Nettoyer</a>
+                    <form method="post" action="/admin/update/cleanup" style="display:inline;">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-sm btn-secondary"
+                                onclick="return confirm('Nettoyer le dossier temporaire de mise à jour ?')">
+                            Nettoyer
+                        </button>
+                    </form>
                 </div>
             {% endif %}
 

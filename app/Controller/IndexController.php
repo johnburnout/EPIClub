@@ -11,11 +11,16 @@ class IndexController extends AbstractController
 {
     public function index(Request $request): Response
     {
+        if (!$this->isGranted('ROLE_USER')) {
+            return $this->redirectTo('/se_connecter');
+        }
         return $this->redirectTo('/tableau_de_bord');
     }
 
     public function dashboard(Request $request): Response
     {
+        $this->deniAccessUnlessGranted('ROLE_USER');
+        
         return $this->render('tableau_de_bord.twig', []);
     }
 

@@ -21,9 +21,13 @@
 					<td>
 						<a href="/admin/emplacements/emplacement-{{ emplacement.id }}" class="btn btn-sm btn-primary">Voir</a>
 						<a href="/admin/emplacements/emplacement_modification-{{ emplacement.id }}" class="btn btn-sm btn-warning">Modifier</a>
-						<a href="/admin/emplacements/supprimer?id={{ emplacement.id }}" 
-						   onclick="return confirm('Supprimer cet emplacement ?')" 
-						   class="btn btn-sm btn-danger">Supprimer</a>
+						<form method="post" action="/admin/emplacements/supprimer" style="display:inline;">
+							<input type="hidden" name="id" value="{{ emplacement.id }}">
+							<button type="submit" class="btn btn-sm btn-danger"
+							        onclick="return confirm('Supprimer cet emplacement ?')">
+								Supprimer
+							</button>
+						</form>
 					</td>
 				</tr>
 			{% endfor %}

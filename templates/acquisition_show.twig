@@ -104,12 +104,15 @@
 								</td>
 								<td>
 									{% if ligne.equipements_generes == 0 %}
-										<a href="/admin/acquisitions/ligne_modification-{{ ligne.id }}" class="btn btn-sm btn-warning">Modifier</a>
-										<a href="/admin/acquisitions/ligne_supprimer-{{ ligne.id }}" 
-										   onclick="return confirm('Supprimer cette ligne ?')" 
-										   class="btn btn-sm btn-danger">Supprimer</a>
+									<a href="/admin/acquisitions/ligne_modification-{{ ligne.id }}" class="btn btn-sm btn-warning">Modifier</a>
+									<form method="post" action="/admin/acquisitions/ligne_supprimer-{{ ligne.id }}" style="display:inline;">
+										<button type="submit" class="btn btn-sm btn-danger"
+											onclick="return confirm('Supprimer cette ligne ?')">
+											Supprimer
+										</button>
+									</form>
 									{% else %}
-										<span class="text-muted">Verrouillée</span>
+									<span class="text-muted">Verrouillée</span>
 									{% endif %}
 								</td>
 							</tr>
@@ -164,13 +167,14 @@
 			<a href="/equipements?acquisition={{ acquisition.id }}" class="btn btn-success">📋 Voir les équipements</a>
 		{% endif %}
 		
-		<!-- BOUTON SUPPRIMER LE BROUILLO -->
+		<!-- BOUTON SUPPRIMER LE BROUILLON -->
 		{% if isGranted('ROLE_ADMIN') and not acquisition.est_validee %}
-		<a href="/admin/acquisitions/acquisition_supprimer-{{ acquisition.id }}"
-			class="btn btn-danger"
-			onclick="return confirm('⚠️ Supprimer définitivement cette acquisition ({{ acquisition.facture_reference }}) ?\n\nCette action est irréversible.');">
-			🗑️ Supprimer le brouillon
-		</a>
+		<form method="post" action="/admin/acquisitions/acquisition_supprimer-{{ acquisition.id }}" style="display:inline;">
+			<button type="submit" class="btn btn-danger"
+				onclick="return confirm('⚠️ Supprimer définitivement cette acquisition ({{ acquisition.facture_reference }}) ?\n\nCette action est irréversible.');">
+				🗑️ Supprimer le brouillon
+			</button>
+		</form>
 		{% endif %}
 	</div>
 

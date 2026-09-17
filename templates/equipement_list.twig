@@ -175,11 +175,12 @@
                         <a href="/equipements/equipement-{{ equipement.id }}" class="btn btn-sm btn-primary">Voir</a>
                         <a href="/equipements/equipement_modification-{{ equipement.id }}" class="btn btn-sm btn-warning">Modifier</a>
                         {% if isGranted('ROLE_ADMIN') and equipement.statut == 2 and not equipement.controle_en_cours %}
-                        <a href="/equipements/equipement_supprimer-{{ equipement.id }}"
-                            class="btn btn-sm btn-danger"
-                            onclick="return confirm('Confirmer la suppression de « {{ equipement.reference }} » ?');">
-                            Supprimer
-                        </a>
+                        <form method="post" action="/equipements/equipement_supprimer-{{ equipement.id }}" style="display:inline;">
+                            <button type="submit" class="btn btn-sm btn-danger"
+                                onclick="return confirm('Confirmer la suppression de « {{ equipement.reference }} » ?');">
+                                Supprimer
+                            </button>
+                        </form>
                         {% endif %}
                     </td>
                 </tr>

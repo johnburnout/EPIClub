@@ -54,11 +54,10 @@
 			
 			<!-- 🔒 Bouton de suppression : masqué pour le super admin -->
 			{% if utilisateur.username != 'admin' %}
-				<a href="/admin/utilisateurs/utilisateur_supprimer-{{ utilisateur.id }}" 
-				   onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.')" 
-				   class="btn btn-danger ms-auto">
+				<button type="submit" form="delete-utilisateur-form" class="btn btn-danger ms-auto"
+				        onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.')">
 					🗑️ Supprimer l'utilisateur
-				</a>
+				</button>
 			{% else %}
 				<span class="badge bg-info ms-auto p-2">
 					🔒 Ce compte est protégé
@@ -66,5 +65,13 @@
 			{% endif %}
 		</div>
 	</form>
+
+	{# Formulaire de suppression séparé, hors du formulaire principal #}
+	{# (HTML n'autorise pas les formulaires imbriqués) #}
+	{% if utilisateur.username != 'admin' %}
+	<form id="delete-utilisateur-form" method="post"
+	      action="/admin/utilisateurs/utilisateur_supprimer-{{ utilisateur.id }}"
+	      style="display:none;"></form>
+	{% endif %}
 
 {% endblock %}

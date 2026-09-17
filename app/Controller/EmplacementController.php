@@ -23,9 +23,16 @@ class EmplacementController extends AbstractController
 
     public function show(Request $request)
     {
+        $this->deniAccessUnlessGranted('ROLE_USER');
+        
         $emplacementManager = new EmplacementManager();
         $emplacement = $emplacementManager->findId($request->get('id'));
-
+        
+        if (!$emplacement) {
+            $this->session->getFlashBag()->add('error', "L'emplacement demandé n'existe pas.");
+            return new RedirectResponse('/admin/emplacements');
+        }
+        
         return $this->render('emplacement_show.twig', [
             'emplacement' => $emplacement
         ]);
@@ -80,34 +87,33 @@ class EmplacementController extends AbstractController
         
         // [SÉCURITÉ] Une action destructive ne doit jamais être déclenchable par GET
         if (!$request->isMethod('POST')) {
-            return $this->redirectTo('/admin/fournisseurs');
+            return $this->redirectTo('/admin/emplacements'); // corrigé : était /admin/fournisseurs
         }
-
-        $this->deniAccessUnlessGranted('ROLE_ADMIN');
-
-        $id = $request->query->get('id');
+        
+        // [ROBUSTESSE] id depuis le corps POST (cohérent avec l'exigence POST)
+        $id = $request->request->get('id') ?? $request->query->get('id');
         if (!$id) {
             $this->session->getFlashBag()->add('error', 'ID emplacement manquant.');
-            return new RedirectResponse("/admin/emplacements");
+            return new RedirectResponse('/admin/emplacements');
         }
-
+        
         $emplacementManager = new EmplacementManager();
         $emplacement = $emplacementManager->findId($id);
-
+        
         if (!$emplacement) {
             $this->session->getFlashBag()->add('error', "L'emplacement demandé n'existe pas.");
-            return new RedirectResponse("/admin/emplacements");
+            return new RedirectResponse('/admin/emplacements');
         }
-
+        
         if ($emplacementManager->hasEquipements($id)) {
             $this->session->getFlashBag()->add('error', "Impossible de supprimer cet emplacement car il contient des équipements.");
-            return new RedirectResponse("/admin/emplacements");
+            return new RedirectResponse('/admin/emplacements');
         }
-
+        
         $emplacementManager->delete($id);
-
+        
         $this->session->getFlashBag()->add('success', "L'emplacement '{$emplacement['libelle']}' a été supprimé.");
-
-        return new RedirectResponse("/admin/emplacements");
+        
+        return new RedirectResponse('/admin/emplacements');
     }
 }

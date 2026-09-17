@@ -213,9 +213,12 @@
 								<td>
 									{% if ligne.equipements_generes == 0 and not acquisition.est_validee %}
 										<a href="/admin/acquisitions/ligne_modification-{{ ligne.id }}" class="btn btn-sm btn-warning">Modifier</a>
-										<a href="/admin/acquisitions/ligne_supprimer-{{ ligne.id }}" 
-										   onclick="return confirm('Supprimer cette ligne ?')" 
-										   class="btn btn-sm btn-danger">Supprimer</a>
+										<form method="post" action="/admin/acquisitions/ligne_supprimer-{{ ligne.id }}" style="display:inline;">
+											<button type="submit" class="btn btn-sm btn-danger"
+											        onclick="return confirm('Supprimer cette ligne ?')">
+												Supprimer
+											</button>
+										</form>
 									{% elseif ligne.equipements_generes == 1 %}
 										<span class="text-muted">Verrouillée</span>
 									{% else %}
