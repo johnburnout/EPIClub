@@ -371,5 +371,12 @@
             </a>
         {% endif %}
     {% endif %}
+    {% if controle.statut != 'cloture' and (isGranted('ROLE_ADMIN') or controle.controleur_id == _user.id) %}
+    <a href="/admin/controles/supprimer/{{ controle.id }}"
+        class="btn btn-danger"
+        onclick="return confirm('⚠️ Supprimer ce contrôle ?\n\nToutes les lignes saisies seront perdues. Cette action est irréversible.');">
+        🗑️ Supprimer le contrôle
+    </a>
+    {% endif %}
 </div>
 {% endblock %}

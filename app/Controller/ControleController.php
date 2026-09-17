@@ -11,6 +11,7 @@ use Epiclub\Domain\UtilisateurManager;
 use Epiclub\Engine\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class ControleController extends AbstractController
 {
@@ -736,5 +737,98 @@ class ControleController extends AbstractController
         
         $this->session->getFlashBag()->add('success', 'Contrôle clôturé avec succès (remarques chiffrées).');
         return $this->redirectTo('/admin/controles');
+    }
+    
+    /**
+    * Supprime un contrôle non clôturé.
+    * Règles :
+    *   - ROLE_CONTROLLEUR requis
+    *   - Seuls le contrôleur propriétaire ou un admin peuvent supprimer
+    *   - Refusé si le contrôle est clôturé (préserve l'historique)
+    *   - Remet controle_en_cours = 0 sur les équipements liés
+    *   - Les controle_ligne sont supprimées par ON DELETE CASCADE
+    */
+    public function delete(Request $request): Response
+    {
+        $this->deniAccessUnlessGranted('ROLE_CONTROLLEUR');
+        
+        $id = (int) $request->get('id');
+        if ($id <= 0) {
+            $this->session->getFlashBag()->add('error', 'Contrôle invalide.');
+            return $this->redirectTo('/admin/controles');
+        }
+        
+        $controleManager = new ControleManager();
+        $controle = $controleManager->findId($id);
+        
+        if (!$controle) {
+            $this->session->getFlashBag()->add('error', 'Contrôle non trouvé.');
+            return $this->redirectTo('/admin/controles');
+        }
+        
+        $user = $this->session->get('user');
+        $isAdmin = $this->isGranted('ROLE_ADMIN');
+        $isOwner = $controle['controleur_id'] == $user['id'];
+        
+        // [SÉCURITÉ] Seuls le propriétaire ou un admin peuvent supprimer
+        if (!$isOwner && !$isAdmin) {
+            $this->session->getFlashBag()->add(
+                'error',
+                "Vous n'avez pas les droits pour supprimer ce contrôle."
+            );
+            return $this->redirectTo('/admin/controles');
+        }
+        
+        // [MÉTIER] Refuser la suppression d'un contrôle clôturé
+        if ($controle['statut'] === 'cloture') {
+            $this->session->getFlashBag()->add(
+                'error',
+                "Impossible de supprimer un contrôle clôturé (l'historique doit être conservé)."
+            );
+            return $this->redirectTo("/admin/controles/edit/{$id}");
+        }
+        
+        try {
+            // [ROBUSTESSE] Remettre controle_en_cours = 0 sur les équipements liés
+            $controleLigneManager = new ControleLigneManager();
+            $equipementManager = new EquipementManager();
+            $lignes = $controleLigneManager->findByControle($id);
+            
+            foreach ($lignes as $ligne) {
+                $equipement = $equipementManager->findId($ligne['equipement_id']);
+                if ($equipement && !empty($equipement['controle_en_cours'])) {
+                    $equipement['controle_en_cours'] = 0;
+                    $equipementManager->save($equipement);
+                }
+            }
+            
+            // Retirer le contrôle en cours de l'utilisateur s'il y en a un
+            if (!empty($user['controle_en_cours_id']) && $user['controle_en_cours_id'] == $id) {
+                $user['controle_en_cours_id'] = null;
+                $utilisateurManager = new UtilisateurManager();
+                $utilisateurManager->save($user);
+                $this->session->set('user', $user);
+            }
+            
+            // [SÉCURITÉ] La FK ON DELETE CASCADE supprime automatiquement
+            // les controle_ligne associées.
+            $controleManager->delete($id);
+            
+            $this->session->getFlashBag()->add('success', "Le contrôle a été supprimé.");
+            return $this->redirectTo('/admin/controles');
+        } catch (\Throwable $e) {
+            error_log(sprintf(
+                '[ControleController] Delete failed for controle id=%s: %s in %s:%d',
+                $id,
+                $e->getMessage(),
+                $e->getFile(),
+                $e->getLine()
+            ));
+            $this->session->getFlashBag()->add(
+                'error',
+                'Une erreur est survenue lors de la suppression. Merci de réessayer.'
+            );
+            return $this->redirectTo("/admin/controles/edit/{$id}");
+        }
     }
 }

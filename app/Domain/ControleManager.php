@@ -71,4 +71,11 @@ class ControleManager extends AbstractManager
         $result = $stmt->fetch();
         return $result ?: null;
     }
+    
+    public function delete(int $id)
+    {
+        $sql = "DELETE FROM controle WHERE id=:id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute(['id' => $id]);
+    }
 }

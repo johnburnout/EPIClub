@@ -139,6 +139,13 @@
                             <a href="/admin/controles/edit/{{ controle.id }}" class="btn btn-sm btn-info">Voir</a>
                             <span class="text-muted">(non modifiable)</span>
                         {% endif %}
+                        {% if controle.statut != 'cloture' and (isGranted('ROLE_ADMIN') or controle.isOwner) %}
+                            <a href="/admin/controles/supprimer/{{ controle.id }}"
+                                class="btn btn-sm btn-danger"
+                                onclick="return confirm('⚠️ Supprimer le contrôle « {{ controle.libelle }} » ?\n\nToutes les lignes saisies seront perdues. Cette action est irréversible.');">
+                                🗑️
+                            </a>
+                        {% endif %}
                     </td>
                 </tr>
             {% endfor %}
