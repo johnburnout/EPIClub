@@ -9,57 +9,58 @@ class EquipementManager extends AbstractManager
     public function findAll($order = '', $limit = -1, $offset = 0)
     {
         $params = '';
-
+        
         if ($order) {
             $params .= " ORDER BY $order";
         }
-
+        
         if ($limit > 1) {
             $params .= " LIMIT $limit, $offset";
         }
-
-        $sql = "SELECT * FROM club_equipement $params";
+        
+        $sql = "SELECT * FROM club_equipement WHERE deleted_at IS NULL $params";
         $stmt = $this->db->prepare($sql);
         $stmt->execute();
-
+        
         return $stmt->fetchAll();
     }
-
+    
     public function findId(int $id)
     {
-        $sql = "SELECT * FROM club_equipement WHERE id=:id";
+        $sql = "SELECT * FROM club_equipement WHERE id=:id AND deleted_at IS NULL";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['id' => $id]);
-
+        
         if ($equipement = $stmt->fetch()) {
             return $equipement;
         }
-
+        
         return null;
     }
-
+    
     public function findOneByCriteria(array $criteria = [])
     {
-        $params = '';
-        $i = 0;
+        $params = 'deleted_at IS NULL';
         foreach ($criteria as $key => $value) {
-            if ($i === 0) {
-                $params .= "WHERE $key=:$key";
-            } else {
-                $params .= " AND $key=:$key";
-            }
-            $i++;
+            $params .= " AND $key=:$key";
         }
-
-        $sql = "SELECT * FROM club_equipement $params";
+        
+        $sql = "SELECT * FROM club_equipement WHERE $params";
         $stmt = $this->db->prepare($sql);
         $stmt->execute($criteria);
-
+        
         if ($equipement = $stmt->fetch()) {
             return $equipement;
         }
-
+        
         return null;
+    }
+    
+    public function delete(int $id)
+    {
+        $sql = "UPDATE club_equipement SET deleted_at = NOW() WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute(['id' => $id]);
     }
 
     public function save(array $equipement)
@@ -70,13 +71,6 @@ class EquipementManager extends AbstractManager
 
         $this->_insert($equipement);
         return $this->db->lastInsertId('club_equipement');
-    }
-
-    public function delete(int $id)
-    {
-        $sql = "DELETE FROM club_equipement WHERE id=:id";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute(['id' => $id]);
     }
 
     public function codeExists(string $code): bool

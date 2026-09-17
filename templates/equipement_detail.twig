@@ -300,6 +300,21 @@
 					<i class="fas fa-clipboard-check"></i> Démarrer un contrôle
 				</a>
 			{% endif %}
+			{% if isGranted('ROLE_ADMIN') %}
+				{% if equipement.statut == 2 and not equipement.controle_en_cours %}
+				<a href="/equipements/equipement_supprimer-{{ equipement.id }}"
+					class="btn btn-danger"
+					onclick="return confirm('Confirmer la suppression définitive de cet équipement « {{ equipement.reference }} » ?\n\nCette action est irréversible.');">
+					<i class="fas fa-trash"></i> Supprimer
+				</a>
+				{% else %}
+				<button type="button" class="btn btn-danger" disabled
+					title="Seul un équipement hors service et non contrôlé peut être supprimé">
+					<i class="fas fa-trash"></i> Supprimer
+				</button>
+				{% endif %}
+			{% endif %}
+			
 		</div>
 	{% else %}
 		<div class="alert alert-warning">

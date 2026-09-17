@@ -374,11 +374,68 @@ class EquipementController extends AbstractController
     }
     
     // --------------------------------------------------------------
-    // SUPPRESSION (non implémentée)
+    // SUPPRESSION
     // --------------------------------------------------------------
-    public function delete(Request $request)
+    public function delete(Request $request): Response
     {
-        throw new \Exception("Error Processing Request", 1);
+        $this->deniAccessUnlessGranted('ROLE_ADMIN');
+        
+        $id = (int) $request->get('id');
+        if ($id <= 0) {
+            $this->session->getFlashBag()->add('error', 'ID équipement manquant.');
+            return $this->redirectTo('/equipements');
+        }
+        
+        $equipementManager = new EquipementManager();
+        $equipement = $equipementManager->findId($id);
+        
+        if (!$equipement) {
+            $this->session->getFlashBag()->add('error', "L'équipement demandé n'existe pas.");
+            return $this->redirectTo('/equipements');
+        }
+        
+        // [MÉTIER] Seul un équipement hors service peut être supprimé
+        if ((int) ($equipement['statut'] ?? -1) !== 2) {
+            $this->session->getFlashBag()->add(
+                'error',
+                "Impossible de supprimer cet équipement : il doit d'abord être marqué « Hors service »."
+            );
+            return $this->redirectTo("/equipements/equipement-{$id}");
+        }
+        
+        // [SÉCURITÉ] Refuser si l'équipement est en cours de contrôle
+        if (!empty($equipement['controle_en_cours'])) {
+            $this->session->getFlashBag()->add(
+                'error',
+                "Impossible de supprimer cet équipement : un contrôle est en cours."
+            );
+            return $this->redirectTo("/equipements/equipement-{$id}");
+        }
+        
+        // [SÉCURITÉ] Refuser si l'équipement est référencé dans un contrôle
+        // (préserve l'historique)
+//      $controleLigneManager = new \Epiclub\Domain\ControleLigneManager();
+//      if ($controleLigneManager->findByEquipement($id)) {
+//          $this->session->getFlashBag()->add(
+//              'error',
+//              "Impossible de supprimer cet équipement : il est référencé dans un ou plusieurs contrôles."
+//          );
+//          return $this->redirectTo("/equipements/equipement-{$id}");
+//      }
+        
+        // Supprimer la photo associée si elle existe
+//      if (!empty($equipement['photo'])) {
+//          $photoPath = $_SERVER['DOCUMENT_ROOT'] . $equipement['photo'];
+//          if (file_exists($photoPath) && !unlink($photoPath)) {
+//              error_log("[EquipementController] Failed to delete photo: $photoPath");
+//          }
+//      }
+        
+        $equipementManager->delete($id);
+        
+        $this->session->getFlashBag()->add('success', "L'équipement '{$equipement['reference']}' a été supprimé.");
+        
+        return $this->redirectTo('/equipements');
     }
     
     // --------------------------------------------------------------

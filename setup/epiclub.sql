@@ -135,8 +135,10 @@ CREATE TABLE IF NOT EXISTS `club_equipement` (
   `nombre` int(11) NOT NULL DEFAULT 1,
   `est_epi` tinyint(1) NOT NULL DEFAULT 1,
   `photo` VARCHAR(255) DEFAULT NULL,
+  `deleted_at` datetime NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
-  UNIQUE KEY `code` (`code`)
+  UNIQUE KEY `code` (`code`),
+  KEY `idx_deleted_at` (`deleted_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- =============================================
