@@ -97,7 +97,6 @@ class CategorieController extends AbstractController
             return new RedirectResponse("/admin/categories");
         }
         
-        // Vérifier si la catégorie a des équipements associés
         if ($categorieManager->hasEquipements($id)) {
             $this->session->getFlashBag()->add('error', "Impossible de supprimer cette catégorie car elle a des équipements associés.");
             return new RedirectResponse("/admin/categories");

@@ -73,6 +73,9 @@ class FournisseurController extends AbstractController
 
     public function delete(Request $request)
     {
+        // [SÉCURITÉ] Contrôle d'accès manquant (corrigé)
+        $this->deniAccessUnlessGranted('ROLE_ADMIN');
+        
         $id = $request->query->get('id');
         if (!$id) {
             $this->session->getFlashBag()->add('error', 'ID fournisseur manquant.');

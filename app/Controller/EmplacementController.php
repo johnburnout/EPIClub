@@ -77,6 +77,13 @@ class EmplacementController extends AbstractController
     public function delete(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
+        
+        // [SÉCURITÉ] Une action destructive ne doit jamais être déclenchable par GET
+        if (!$request->isMethod('POST')) {
+            return $this->redirectTo('/admin/fournisseurs');
+        }
+
+        $this->deniAccessUnlessGranted('ROLE_ADMIN');
 
         $id = $request->query->get('id');
         if (!$id) {

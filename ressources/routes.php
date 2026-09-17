@@ -23,14 +23,16 @@ $routes->add('forgot_password', new Route('/mot_de_passe_oublie', ['_controller'
 $routes->add('forgot_password_confirm', new Route('/mot_de_passe_oublie/confirmation', ['_controller' => 'Epiclub\\Controller\\AppUserRegisterController', 'action' => 'forgotPasswordConfirm']));
 $routes->add('reset_password', new Route('/regenerer_mot_de_passe', ['_controller' => 'Epiclub\\Controller\\AppUserRegisterController', 'action' => 'resetPassword']));
 
+// EQUIPEMENTS
 $routes->add('equipement_list', new Route('/equipements', ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'list']));
 $routes->add('equipement_list_excel', new Route('/equipements/excel-liste', ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'listExcel']));
 $routes->add('equipement_etiquettes', new Route('/equipements/etiquettes', ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'etiquettesPdf']));
 $routes->add('equipement_pdf', new Route('/equipements/equipement-pdf-{id}', ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'pdf']));
 $routes->add('equipement_edit', new Route('/equipements/equipement_modification-{id}', ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'edit']));
 $routes->add('equipement_show', new Route('/equipements/equipement-{id}', ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'show']));
+$routes->add('equipement_delete', new Route('/equipements/equipement_supprimer-{id}', ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'delete']));
 
-// JOURNAUX - NOUVEAU
+// JOURNAUX
 $routes->add('journal_list', new Route('/journaux', ['_controller' => 'Epiclub\\Controller\\JournalController', 'action' => 'index']));
 $routes->add('journal_show', new Route('/journaux/{id}', ['_controller' => 'Epiclub\\Controller\\JournalController', 'action' => 'voir']));
 $routes->add('journal_pdf', new Route('/journaux/pdf/{id}', ['_controller' => 'Epiclub\\Controller\\JournalController', 'action' => 'pdf']));
@@ -42,6 +44,7 @@ $routes->add('controle_add_equipement', new Route('/admin/controles/add-equipeme
 $routes->add('controle_update_ligne', new Route('/admin/controles/update-ligne/{id}', ['_controller' => 'Epiclub\\Controller\\ControleController', 'action' => 'updateLigne']));
 $routes->add('controle_cloturer', new Route('/admin/controles/cloturer/{id}', ['_controller' => 'Epiclub\\Controller\\ControleController', 'action' => 'cloturer']));
 $routes->add('controle_creer', new Route('/admin/controles/creer', ['_controller' => 'Epiclub\\Controller\\ControleController', 'action' => 'create']));
+$routes->add('controle_delete', new Route('/admin/controles/supprimer/{id}',['_controller' => 'Epiclub\\Controller\\ControleController', 'action' => 'delete']));
 
 // ADMINISTRATEUR
 $routes->add('club_show', new Route('/admin/club', ['_controller' => 'Epiclub\\Controller\\ClubController', 'action' => 'show']));
@@ -58,6 +61,8 @@ $routes->add('acquisition_list', new Route('/admin/acquisitions', ['_controller'
 $routes->add('acquisition_create', new Route('/admin/acquisitions/nouvelle', ['_controller' => 'Epiclub\\Controller\\AcquisitionController', 'action' => 'create']));
 $routes->add('acquisition_edit', new Route('/admin/acquisitions/acquisition_modification-{id}', ['_controller' => 'Epiclub\\Controller\\AcquisitionController', 'action' => 'update']));
 $routes->add('acquisition_show', new Route('/admin/acquisitions/acquisition-{id}', ['_controller' => 'Epiclub\\Controller\\AcquisitionController', 'action' => 'show']));
+$routes->add('acquisition_delete', new Route('/admin/acquisitions/acquisition_supprimer-{id}',
+		['_controller' => 'Epiclub\\Controller\\AcquisitionController', 'action' => 'delete']));
 $routes->add('acquisition_valider', new Route('/admin/acquisitions/valider/{id}', ['_controller' => 'Epiclub\\Controller\\AcquisitionController', 'action' => 'valider']));
 $routes->add('acquisition_ligne_edit', new Route('/admin/acquisitions/ligne_modification-{id}', ['_controller' => 'Epiclub\\Controller\\AcquisitionLineController', 'action' => 'modifyLine']));
 $routes->add('acquisition_ligne_delete', new Route('/admin/acquisitions/ligne_supprimer-{id}', ['_controller' => 'Epiclub\\Controller\\AcquisitionLineController', 'action' => 'deleteLine']));
