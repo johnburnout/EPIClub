@@ -7,7 +7,7 @@ namespace Epiclub\Controller;
 use Epiclub\Engine\AbstractController;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Epiclub\Exception\NotFoundException;
 
 class UploadController extends AbstractController
 {
@@ -31,7 +31,7 @@ class UploadController extends AbstractController
             || $realPath === false
             || !str_starts_with($realPath, $realBase)
         ) {
-            throw new NotFoundHttpException('Fichier non trouvé');
+            throw new NotFoundException('Fichier non trouvé');
         }
         
         // Déterminer le type MIME

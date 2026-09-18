@@ -15,8 +15,8 @@ use Epiclub\Engine\Session;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Epiclub\Exception\AccessDeniedException;
+use Epiclub\Exception\NotFoundException;
 use Symfony\Component\Routing\Matcher\UrlMatcher;
 use Symfony\Component\Routing\RequestContext;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
@@ -74,12 +74,12 @@ try {
         $response->headers->set('Allow', implode(', ', $allowed));
     }
 
-} catch (AccessDeniedHttpException $exception) {
+} catch (AccessDeniedException $exception) {
     // Accès refusé : le flash est déjà posé par deniAccessUnlessGranted().
     // On redirige vers l'accueil, comme le faisait l'ancienne implémentation.
     $response = new RedirectResponse('/');
 
-} catch (NotFoundHttpException $exception) {
+} catch (NotFoundException $exception) {
     // Fichier non trouvé (UploadController::serve(), AcquisitionController::serveFile())
     // ou toute autre HttpException 404 levée explicitement.
     $response = new Response(

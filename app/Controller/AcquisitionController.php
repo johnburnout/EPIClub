@@ -14,7 +14,7 @@ use Epiclub\Process\AcquisitionProcess;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Epiclub\Exception\NotFoundException;
 
 class AcquisitionController extends AbstractController
 {
@@ -458,7 +458,7 @@ class AcquisitionController extends AbstractController
             || $realPath === false
             || !str_starts_with($realPath, $realBase)
         ) {
-            throw new NotFoundHttpException('Fichier non trouvé');
+            throw new NotFoundException('Fichier non trouvé');
         }
 
         $finfo = new \finfo(FILEINFO_MIME_TYPE);
