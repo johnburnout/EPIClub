@@ -7,11 +7,10 @@
 use Epiclub\Domain\UtilisateurManager;
 
 $admin = [
-    'nom' => 'Doe',
-    'prenom' => 'John',
-    'username' => 'JohnDoe',
-    'email' => 'johndoe@test.tld',
-    'password' => ''
+    'nom' => '',
+    'prenom' => '',
+    'username' => '',
+    'email' => '',
 ];
 $form_errors = [];
 
@@ -23,23 +22,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($_POST['email']) || !filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
         $form_errors[] = 'Une adresse email valide est requise.';
     }
-    if (empty($_POST['password']) || strlen($_POST['password']) < 6) {
-        $form_errors[] = 'Le mot de passe doit contenir au moins 6 caractères.';
+    if (empty($_POST['password']) || strlen($_POST['password']) < 12) {
+        $form_errors[] = 'Le mot de passe doit contenir au moins 12 caractères.';
+    }
+    if (($_POST['password'] ?? '') !== ($_POST['password_confirm'] ?? '')) {
+        $form_errors[] = 'Les deux mots de passe ne correspondent pas.';
     }
 
     if (empty($form_errors)) {
         $admin = [
-            'nom' => $_POST['nom'], 
-            'prenom' => $_POST['prenom'], 
-            'username' => $_POST['username'], 
-            'email' => $_POST['email'], 
+            'nom' => $_POST['nom'],
+            'prenom' => $_POST['prenom'],
+            'username' => $_POST['username'],
+            'email' => $_POST['email'],
             'password' => password_hash($_POST['password'], PASSWORD_DEFAULT)
         ];
         $admin['role'] = 'ROLE_ADMIN';
         $admin['date_creation'] = (new DateTime())->format('Y-m-d H:i:s');
         $admin['derniere_connexion'] = null;
-
-        // 🔧 Ajout des colonnes manquantes (requises par la table)
         $admin['last_activity'] = null;
         $admin['reset_token'] = null;
         $admin['reset_token_expires'] = null;
@@ -70,12 +70,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+require __DIR__ . '/../includes/header.php';
 ?>
-
-<?php require __DIR__ . '/../includes/header.php'; ?>
 
 <h1>Administrateur</h1>
 <hr>
+
+<p class="text-muted">
+    Créez le compte super administrateur. Ce compte aura tous les droits.
+    Choisissez un mot de passe robuste et unique.
+</p>
 
 <?php if (!empty($form_errors)): ?>
     <div class="alert alert-danger">
@@ -121,7 +125,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
     <div class="mb-3">
         <label for="password" class="form-label">Mot de passe</label>
-        <input type="password" class="form-control" name="password" id="password" required>
+        <input type="password" class="form-control" name="password" id="password" minlength="12" required>
+        <small class="text-muted">12 caractères minimum.</small>
+    </div>
+    <div class="mb-3">
+        <label for="password_confirm" class="form-label">Confirmer le mot de passe</label>
+        <input type="password" class="form-control" name="password_confirm" id="password_confirm" minlength="12" required>
     </div>
     <button type="submit" class="btn btn-primary">Valider</button>
 </form>
