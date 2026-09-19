@@ -1,16 +1,5 @@
 <?php
 
-// Router script pour le serveur de dev php -S :
-// laisse le serveur servir les fichiers statiques (assets, images)
-// mais fait passer toutes les autres URLs par le routeur.
-if (PHP_SAPI === 'cli-server') {
-    $requestPath = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-    $file = __DIR__ . $requestPath;
-    if ($requestPath !== '/' && is_file($file)) {
-        return false;
-    }
-}
-
 use Epiclub\Engine\Session;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -40,7 +29,7 @@ if (time() - $session->getMetadataBag()->getLastUsed() > Session::SESSION_LIFETI
     $session->invalidate();
     $response = new RedirectResponse('/');
     $response->send();
-    exit;
+    exit();
 }
 
 $request = Request::createFromGlobals();
