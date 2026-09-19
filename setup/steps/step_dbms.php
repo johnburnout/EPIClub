@@ -7,8 +7,7 @@
  *  - validation stricte des identifiants (regex)
  *  - pas de DROP TABLE par défaut (confirmation explicite si base non vide)
  *  - pas de réaffichage du mot de passe en cas d'erreur
- *  - parsing SQL robuste (commentaires + chaînes)
- *  - pas de transaction globale (MySQL ne supporte pas les DDL en transaction)
+ *  - parsing SQL délégué au MigrationManager
  */
 
 $db_params = [
@@ -98,84 +97,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $pdo->exec("SET FOREIGN_KEY_CHECKS = 1");
                 }
 
-                // ---- Exécution du script SQL d'installation ----
-                $sqlFile = __DIR__ . '/../epiclub.sql';
-                if (!is_readable($sqlFile)) {
-                    throw new \RuntimeException("Le fichier SQL d'installation est introuvable ou illisible.");
+                // ---- Exécution des migrations ----
+                $migrationsDir = __DIR__ . '/../../migrations';
+
+                if (!is_dir($migrationsDir)) {
+                    throw new \RuntimeException(
+                        "Le dossier des migrations est introuvable : $migrationsDir"
+                    );
                 }
 
-                $sql = file_get_contents($sqlFile);
-                if ($sql === false || trim($sql) === '') {
-                    throw new \RuntimeException("Le fichier SQL d'installation est vide.");
+                $migrationManager = new \Epiclub\Engine\MigrationManager(
+                    $pdo,
+                    $migrationsDir
+                );
+
+                $applied = $migrationManager->migrate(function ($version) {
+                    error_log('[setup/dbms] Migration appliquée : ' . $version);
+                });
+
+                if (empty($applied)) {
+                    throw new \RuntimeException(
+                        "Aucune migration n'a été appliquée. " .
+                        "Vérifiez le contenu du dossier migrations/."
+                    );
                 }
 
-                // Nettoyage des commentaires
-                $sql = preg_replace('/^\s*--.*$/m', '', $sql);
-                $sql = preg_replace('/^\s*#.*$/m', '', $sql);
-                $sql = preg_replace('#/\*.*?\*/#s', '', $sql);
-
-                // Découpage en respectant les chaînes de caractères
-                $statements = [];
-                $buffer = '';
-                $inString = false;
-                $stringChar = '';
-                $len = strlen($sql);
-                for ($i = 0; $i < $len; $i++) {
-                    $char = $sql[$i];
-                    $prev = $i > 0 ? $sql[$i - 1] : '';
-
-                    if ($inString) {
-                        if ($char === $stringChar && $prev !== '\\') {
-                            $inString = false;
-                        }
-                    } else {
-                        if ($char === "'" || $char === '"') {
-                            $inString = true;
-                            $stringChar = $char;
-                        } elseif ($char === ';') {
-                            $stmt = trim($buffer);
-                            if ($stmt !== '') {
-                                $statements[] = $stmt;
-                            }
-                            $buffer = '';
-                            continue;
-                        }
-                    }
-                    $buffer .= $char;
-                }
-                $last = trim($buffer);
-                if ($last !== '') {
-                    $statements[] = $last;
-                }
-
-                if (empty($statements)) {
-                    throw new \RuntimeException("Aucune instruction SQL valide trouvée dans le fichier d'installation.");
-                }
-
-                // ⚠️ PAS de transaction : MySQL ne supporte pas les transactions
-                // pour les instructions DDL (CREATE/DROP/ALTER TABLE).
-                // Chaque DDL provoque un commit implicite, ce qui ferait échouer
-                // le commit() final avec "There is no active transaction".
-                $executed = 0;
-                foreach ($statements as $statement) {
-                    try {
-                        $pdo->exec($statement);
-                        $executed++;
-                    } catch (\PDOException $e) {
-                        error_log(sprintf(
-                            '[setup/dbms] SQL error at statement #%d: %s | Statement: %s',
-                            $executed + 1,
-                            $e->getMessage(),
-                            substr($statement, 0, 200)
-                        ));
-                        throw new \RuntimeException(
-                            "Erreur lors de l'exécution du script d'installation " .
-                            "(instruction #" . ($executed + 1) . "). Consultez les logs serveur."
-                        );
-                    }
-                }
-
-                error_log(sprintf('[setup/dbms] Installation OK: %d statements executed.', $executed));
+                error_log(sprintf(
+                    '[setup/dbms] Installation OK : %d migration(s) appliquée(s).',
+                    count($applied)
+                ));
 
                 // ---- Écriture de la config ----
                 $env = new \Epiclub\Engine\EnvironmentFileParser();
