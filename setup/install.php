@@ -10,7 +10,7 @@ $request = Request::createFromGlobals();
 $step = $_GET['step'] ?? '1';
 
 // Liste des étapes autorisées
-$allowedSteps = ['1', 'dbms', 'admin', 'smtp', 'club', 'final', 'confirm_reinstall'];
+$allowedSteps = ['1', 'dbms', 'admin', 'smtp', 'club', 'final'];
 
 if (!in_array($step, $allowedSteps)) {
     $step = '1';
