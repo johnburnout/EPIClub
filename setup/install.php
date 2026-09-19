@@ -16,8 +16,4 @@ if (!in_array($step, $allowedSteps)) {
     $step = '1';
 }
 
-// Garde-fou : bloque l'accès au setup si une installation existe déjà
-// et que l'utilisateur n'a pas prouvé son identité admin.
-require __DIR__ . '/includes/guard.php';
-
 require __DIR__ . "/steps/step_$step.php";

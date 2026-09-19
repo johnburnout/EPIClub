@@ -5,7 +5,8 @@
  *
  * Sécurité :
  *  - validation stricte des identifiants (regex)
- *  - pas de DROP TABLE par défaut (confirmation explicite si base non vide)
+ *  - AUCUNE suppression de tables depuis le navigateur
+ *  - si la base contient des tables → erreur, suppression manuelle requise
  *  - pas de réaffichage du mot de passe en cas d'erreur
  *  - parsing SQL délégué au MigrationManager
  */
@@ -17,7 +18,6 @@ $db_params = [
     'db_pass' => ''
 ];
 $errors = [];
-$needs_confirmation = false;
 
 // Détection d'une installation existante pour pré-remplir
 $envFilePath = __DIR__ . '/../../.env.local.php';
@@ -35,7 +35,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $db_name = trim($_POST['db_name'] ?? '');
     $db_user = trim($_POST['db_user'] ?? '');
     $db_pass = $_POST['db_pass'] ?? '';
-    $confirm_wipe = isset($_POST['confirm_wipe']) && $_POST['confirm_wipe'] === '1';
 
     // ---- Validation stricte ----
     if (empty($db_host)) {
@@ -69,34 +68,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
 
             // Créer la base si elle n'existe pas.
-            // $db_name est déjà validé par regex, donc safe.
             $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$db_name}` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
             $pdo->exec("USE `{$db_name}`");
 
             // ---- Vérifier si la base contient déjà des tables ----
+            // Si oui → on refuse. La suppression doit être manuelle (CLI).
             $tables = $pdo->query("SHOW TABLES")->fetchAll(\PDO::FETCH_COLUMN);
             $existingTables = count($tables);
 
-            if ($existingTables > 0 && !$confirm_wipe) {
-                $needs_confirmation = true;
+            if ($existingTables > 0) {
                 $errors[] = sprintf(
                     "La base « %s » contient déjà %d table(s). " .
-                    "Cochez la case de confirmation pour tout effacer et réinstaller.",
+                    "L'installation ne peut pas continuer. " .
+                    "Pour réinstaller, supprimez la base manuellement " .
+                    "et relancez l'installateur.",
                     htmlspecialchars($db_name),
                     $existingTables
                 );
-            } else {
-                // ---- Suppression des tables (uniquement si confirmation ou base vide) ----
-                if ($existingTables > 0 && $confirm_wipe) {
-                    $pdo->exec("SET FOREIGN_KEY_CHECKS = 0");
-                    foreach ($tables as $table) {
-                        if (preg_match('/^[a-zA-Z0-9\_]+$/', $table)) {
-                            $pdo->exec("DROP TABLE IF EXISTS `{$table}`");
-                        }
-                    }
-                    $pdo->exec("SET FOREIGN_KEY_CHECKS = 1");
-                }
 
+                error_log(sprintf(
+                    '[setup/dbms] Installation refusée : la base %s contient déjà %d table(s).',
+                    $db_name,
+                    $existingTables
+                ));
+            } else {
                 // ---- Exécution des migrations ----
                 $migrationsDir = __DIR__ . '/../../migrations';
 
@@ -138,7 +133,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit();
             }
         } catch (\PDOException $e) {
-            // Message brut de PDO dans les logs uniquement (peut contenir des infos sensibles)
             error_log('[setup/dbms] PDO error: ' . $e->getMessage());
             $errors[] = "Connexion impossible à la base de données. " .
                         "Vérifiez l'hôte, le nom d'utilisateur et le mot de passe.";
@@ -201,15 +195,6 @@ require __DIR__ . '/../includes/header.php';
         <input type="password" class="form-control" name="db_pass" id="db_pass" value="">
         <small class="text-muted">Laissez vide si l'utilisateur n'a pas de mot de passe.</small>
     </div>
-
-    <?php if ($needs_confirmation): ?>
-        <div class="mb-3 form-check">
-            <input type="checkbox" class="form-check-input" name="confirm_wipe" id="confirm_wipe" value="1">
-            <label class="form-check-label" for="confirm_wipe">
-                Je confirme vouloir <strong>effacer toutes les tables</strong> de cette base et réinstaller.
-            </label>
-        </div>
-    <?php endif; ?>
 
     <button type="submit" class="btn btn-primary">Valider</button>
 </form>

@@ -2,17 +2,31 @@
 
 use Epiclub\Controller\AppSetupController;
 
-require __DIR__ .'/../vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
 
-if (is_dir(__DIR__ . '/../setup')) {
-    # throw new \Exception("L'application ne semble pas être installée correctement. Veuillez lire la documentation sur l'insatllation", 1);
-    # header('Location: /setup');
-    require __DIR__ . '/../setup/install.php';
-    exit();
+$envFile = __DIR__ . '/../.env.local.php';
+$config = file_exists($envFile) ? (include $envFile) : [];
+if (!is_array($config)) {
+    $config = [];
 }
 
-$_ENV = require __DIR__ . '/../.env.local.php';
-require __DIR__ . '/../ressources/routes.php';  // ⬅️ MODIFICATION ICI
+// L'installation est considérée terminée quand SETUP_COMPLETE est posé
+// ET que les paramètres DB sont présents.
+$setupComplete = !empty($config['SETUP_COMPLETE'])
+    && !empty($config['DB_HOST'])
+    && !empty($config['DB_NAME']);
+
+if (!$setupComplete) {
+    if (is_dir(__DIR__ . '/../setup')) {
+        require __DIR__ . '/../setup/install.php';
+        exit();
+    }
+    http_response_code(503);
+    exit("EPIClub n'est pas installé et le dossier setup/ est introuvable. Consultez la documentation.");
+}
+
+$_ENV = $config;
+require __DIR__ . '/../ressources/routes.php';
 
 if (isset($_ENV['APP_ENV']) && $_ENV['APP_ENV'] === 'dev') {
     error_reporting(E_ALL);
