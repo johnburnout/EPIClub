@@ -21,8 +21,19 @@
     <p>Vous pouvez maintenant accéder à votre site.</p>
 </div>
 
-<div class="alert alert-warning">
-    <strong>⚠️ Important :</strong> Avant de continuer, veuillez supprimer le dossier <strong>setup</strong> de votre serveur pour des raisons de sécurité.
+<div class="alert alert-danger">
+    <h4>⚠️ Action obligatoire</h4>
+    <p>
+        <strong>Supprimez immédiatement le dossier <code>setup/</code></strong>
+        de votre serveur (via FTP, SSH, ou votre panneau d'administration).
+    </p>
+    <p>
+        Tant que ce dossier existe, EPIClub est vulnérable.
+        Vous ne pourrez plus accéder à l'application tant qu'il n'est pas supprimé.
+    </p>
+    <p>
+        En cas d'oubli, l'application affichera une erreur 403 sur <code>/setup/</code>.
+    </p>
 </div>
 
 <div class="mt-4">
