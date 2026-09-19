@@ -23,8 +23,6 @@ class UpdateController extends AbstractController
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
 
-        // [SÉCURITÉ] Ne pas régénérer : TwigRenderer s'en charge.
-        // On récupère simplement le token existant (ou on le crée si absent).
         if (!$this->session->has('csrf_token')) {
             $this->session->set('csrf_token', bin2hex(random_bytes(32)));
         }
@@ -44,7 +42,6 @@ class UpdateController extends AbstractController
             && is_writable(dirname(self::VERSION_FILE))
             && is_writable(__DIR__ . '/../..');
 
-        // Vérifier si un nettoyage est nécessaire
         $cleanupNeeded = is_dir(self::TEMP_DIR . '/extracted');
 
         return $this->render('update.twig', [
@@ -71,7 +68,6 @@ class UpdateController extends AbstractController
                 return new RedirectResponse('/admin/update');
             }
 
-            // [SÉCURITÉ] Vérifier CSRF
             $token = $request->request->get('csrf_token');
             $expected = $this->session->get('csrf_token');
             if (!$token || !$expected || !hash_equals((string) $expected, (string) $token)) {
@@ -148,6 +144,55 @@ class UpdateController extends AbstractController
             $targetDir = __DIR__ . '/../..';
             $this->copyFiles($sourceDir, $targetDir);
 
+            // ------------------------------------------------------------
+            // MIGRATIONS DE BASE DE DONNÉES
+            // ------------------------------------------------------------
+            try {
+                $pdo = new \PDO(
+                    'mysql:host=' . $_ENV['DB_HOST']
+                    . ';dbname=' . $_ENV['DB_NAME']
+                    . ';charset=utf8mb4',
+                    $_ENV['DB_USER'],
+                    $_ENV['DB_PASS'],
+                    [
+                        \PDO::ATTR_ERRMODE            => \PDO::ERRMODE_EXCEPTION,
+                        \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
+                    ]
+                );
+
+                $migrationManager = new \Epiclub\Engine\MigrationManager(
+                    $pdo,
+                    __DIR__ . '/../../migrations'
+                );
+
+                $applied = $migrationManager->migrate(function ($migrationVersion) {
+                    error_log('[UpdateController] Migration appliquée : ' . $migrationVersion);
+                });
+
+                if (!empty($applied)) {
+                    error_log(sprintf(
+                        '[UpdateController] %d migration(s) appliquée(s).',
+                        count($applied)
+                    ));
+                } else {
+                    error_log('[UpdateController] Base déjà à jour.');
+                }
+            } catch (\Throwable $e) {
+                error_log(sprintf(
+                    '[UpdateController] Migration failed: %s in %s:%d',
+                    $e->getMessage(),
+                    $e->getFile(),
+                    $e->getLine()
+                ));
+
+                return $this->render('update_result.twig', [
+                    'success' => false,
+                    'message' => 'Les fichiers ont été mis à jour mais les migrations '
+                               . 'de base de données ont échoué. Consultez les logs '
+                               . 'serveur avant de relancer l\'application.',
+                ]);
+            }
+
             // Nettoyer le dossier extrait
             $this->deleteDirectory($extractPath);
 
@@ -166,7 +211,6 @@ class UpdateController extends AbstractController
             ]);
 
         } catch (\Throwable $e) {
-            // [SÉCURITÉ] Log serveur uniquement — ne pas exposer les détails au client
             error_log(sprintf(
                 '[UpdateController] Update failed: %s in %s:%d',
                 $e->getMessage(),
@@ -188,12 +232,10 @@ class UpdateController extends AbstractController
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
 
-        // [SÉCURITÉ] Action destructive : POST uniquement
         if ($request->getMethod() !== 'POST') {
             return new RedirectResponse('/admin/update');
         }
 
-        // [SÉCURITÉ] Vérifier le token CSRF
         $token = $request->request->get('csrf_token');
         $expected = $this->session->get('csrf_token');
         if (!$token || !$expected || !hash_equals((string) $expected, (string) $token)) {
@@ -221,7 +263,7 @@ class UpdateController extends AbstractController
     private function getLatestRelease(): ?array
     {
         $cacheFile = self::TEMP_DIR . '/latest_release.json';
-        $cacheTTL = 3600; // 1 heure
+        $cacheTTL = 3600;
 
         if (file_exists($cacheFile) && (time() - filemtime($cacheFile) < $cacheTTL)) {
             $cached = json_decode(file_get_contents($cacheFile), true);
@@ -264,13 +306,11 @@ class UpdateController extends AbstractController
 
     private function downloadUrl(string $url): string
     {
-        // Essayer file_get_contents
         $content = @file_get_contents($url);
         if ($content !== false) {
             return $content;
         }
 
-        // Fallback cURL
         if (function_exists('curl_version')) {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $url);
@@ -346,7 +386,6 @@ class UpdateController extends AbstractController
             return;
         }
 
-        // Essayer la méthode PHP
         try {
             $iterator = new \RecursiveDirectoryIterator($dir, \RecursiveDirectoryIterator::SKIP_DOTS);
             $files = new \RecursiveIteratorIterator($iterator, \RecursiveIteratorIterator::CHILD_FIRST);
@@ -359,7 +398,6 @@ class UpdateController extends AbstractController
             }
             rmdir($dir);
         } catch (\Exception $e) {
-            // Fallback via shell
             if (function_exists('system')) {
                 system('rm -rf ' . escapeshellarg($dir));
             }
@@ -371,7 +409,6 @@ class UpdateController extends AbstractController
         if (is_dir(self::TEMP_DIR)) {
             $this->deleteDirectory(self::TEMP_DIR);
         }
-        // Recréer le dossier temporaire vide
         if (!is_dir(self::TEMP_DIR)) {
             mkdir(self::TEMP_DIR, 0755, true);
         }

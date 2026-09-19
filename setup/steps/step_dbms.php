@@ -5,10 +5,10 @@
  *
  * Sécurité :
  *  - validation stricte des identifiants (regex)
- *  - pas de DROP TABLE par défaut (confirmation explicite si base non vide)
+ *  - AUCUNE suppression de tables depuis le navigateur
+ *  - si la base contient des tables → erreur, suppression manuelle requise
  *  - pas de réaffichage du mot de passe en cas d'erreur
- *  - parsing SQL robuste (commentaires + chaînes)
- *  - pas de transaction globale (MySQL ne supporte pas les DDL en transaction)
+ *  - parsing SQL délégué au MigrationManager
  */
 
 $db_params = [
@@ -18,7 +18,6 @@ $db_params = [
     'db_pass' => ''
 ];
 $errors = [];
-$needs_confirmation = false;
 
 // Détection d'une installation existante pour pré-remplir
 $envFilePath = __DIR__ . '/../../.env.local.php';
@@ -36,7 +35,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $db_name = trim($_POST['db_name'] ?? '');
     $db_user = trim($_POST['db_user'] ?? '');
     $db_pass = $_POST['db_pass'] ?? '';
-    $confirm_wipe = isset($_POST['confirm_wipe']) && $_POST['confirm_wipe'] === '1';
 
     // ---- Validation stricte ----
     if (empty($db_host)) {
@@ -70,112 +68,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
 
             // Créer la base si elle n'existe pas.
-            // $db_name est déjà validé par regex, donc safe.
             $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$db_name}` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
             $pdo->exec("USE `{$db_name}`");
 
             // ---- Vérifier si la base contient déjà des tables ----
+            // Si oui → on refuse. La suppression doit être manuelle (CLI).
             $tables = $pdo->query("SHOW TABLES")->fetchAll(\PDO::FETCH_COLUMN);
             $existingTables = count($tables);
 
-            if ($existingTables > 0 && !$confirm_wipe) {
-                $needs_confirmation = true;
+            if ($existingTables > 0) {
                 $errors[] = sprintf(
                     "La base « %s » contient déjà %d table(s). " .
-                    "Cochez la case de confirmation pour tout effacer et réinstaller.",
+                    "L'installation ne peut pas continuer. " .
+                    "Pour réinstaller, supprimez la base manuellement " .
+                    "et relancez l'installateur.",
                     htmlspecialchars($db_name),
                     $existingTables
                 );
+
+                error_log(sprintf(
+                    '[setup/dbms] Installation refusée : la base %s contient déjà %d table(s).',
+                    $db_name,
+                    $existingTables
+                ));
             } else {
-                // ---- Suppression des tables (uniquement si confirmation ou base vide) ----
-                if ($existingTables > 0 && $confirm_wipe) {
-                    $pdo->exec("SET FOREIGN_KEY_CHECKS = 0");
-                    foreach ($tables as $table) {
-                        if (preg_match('/^[a-zA-Z0-9\_]+$/', $table)) {
-                            $pdo->exec("DROP TABLE IF EXISTS `{$table}`");
-                        }
-                    }
-                    $pdo->exec("SET FOREIGN_KEY_CHECKS = 1");
+                // ---- Exécution des migrations ----
+                $migrationsDir = __DIR__ . '/../../migrations';
+
+                if (!is_dir($migrationsDir)) {
+                    throw new \RuntimeException(
+                        "Le dossier des migrations est introuvable : $migrationsDir"
+                    );
                 }
 
-                // ---- Exécution du script SQL d'installation ----
-                $sqlFile = __DIR__ . '/../epiclub.sql';
-                if (!is_readable($sqlFile)) {
-                    throw new \RuntimeException("Le fichier SQL d'installation est introuvable ou illisible.");
+                $migrationManager = new \Epiclub\Engine\MigrationManager(
+                    $pdo,
+                    $migrationsDir
+                );
+
+                $applied = $migrationManager->migrate(function ($version) {
+                    error_log('[setup/dbms] Migration appliquée : ' . $version);
+                });
+
+                if (empty($applied)) {
+                    throw new \RuntimeException(
+                        "Aucune migration n'a été appliquée. " .
+                        "Vérifiez le contenu du dossier migrations/."
+                    );
                 }
 
-                $sql = file_get_contents($sqlFile);
-                if ($sql === false || trim($sql) === '') {
-                    throw new \RuntimeException("Le fichier SQL d'installation est vide.");
-                }
-
-                // Nettoyage des commentaires
-                $sql = preg_replace('/^\s*--.*$/m', '', $sql);
-                $sql = preg_replace('/^\s*#.*$/m', '', $sql);
-                $sql = preg_replace('#/\*.*?\*/#s', '', $sql);
-
-                // Découpage en respectant les chaînes de caractères
-                $statements = [];
-                $buffer = '';
-                $inString = false;
-                $stringChar = '';
-                $len = strlen($sql);
-                for ($i = 0; $i < $len; $i++) {
-                    $char = $sql[$i];
-                    $prev = $i > 0 ? $sql[$i - 1] : '';
-
-                    if ($inString) {
-                        if ($char === $stringChar && $prev !== '\\') {
-                            $inString = false;
-                        }
-                    } else {
-                        if ($char === "'" || $char === '"') {
-                            $inString = true;
-                            $stringChar = $char;
-                        } elseif ($char === ';') {
-                            $stmt = trim($buffer);
-                            if ($stmt !== '') {
-                                $statements[] = $stmt;
-                            }
-                            $buffer = '';
-                            continue;
-                        }
-                    }
-                    $buffer .= $char;
-                }
-                $last = trim($buffer);
-                if ($last !== '') {
-                    $statements[] = $last;
-                }
-
-                if (empty($statements)) {
-                    throw new \RuntimeException("Aucune instruction SQL valide trouvée dans le fichier d'installation.");
-                }
-
-                // ⚠️ PAS de transaction : MySQL ne supporte pas les transactions
-                // pour les instructions DDL (CREATE/DROP/ALTER TABLE).
-                // Chaque DDL provoque un commit implicite, ce qui ferait échouer
-                // le commit() final avec "There is no active transaction".
-                $executed = 0;
-                foreach ($statements as $statement) {
-                    try {
-                        $pdo->exec($statement);
-                        $executed++;
-                    } catch (\PDOException $e) {
-                        error_log(sprintf(
-                            '[setup/dbms] SQL error at statement #%d: %s | Statement: %s',
-                            $executed + 1,
-                            $e->getMessage(),
-                            substr($statement, 0, 200)
-                        ));
-                        throw new \RuntimeException(
-                            "Erreur lors de l'exécution du script d'installation " .
-                            "(instruction #" . ($executed + 1) . "). Consultez les logs serveur."
-                        );
-                    }
-                }
-
-                error_log(sprintf('[setup/dbms] Installation OK: %d statements executed.', $executed));
+                error_log(sprintf(
+                    '[setup/dbms] Installation OK : %d migration(s) appliquée(s).',
+                    count($applied)
+                ));
 
                 // ---- Écriture de la config ----
                 $env = new \Epiclub\Engine\EnvironmentFileParser();
@@ -188,7 +133,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit();
             }
         } catch (\PDOException $e) {
-            // Message brut de PDO dans les logs uniquement (peut contenir des infos sensibles)
             error_log('[setup/dbms] PDO error: ' . $e->getMessage());
             $errors[] = "Connexion impossible à la base de données. " .
                         "Vérifiez l'hôte, le nom d'utilisateur et le mot de passe.";
@@ -251,15 +195,6 @@ require __DIR__ . '/../includes/header.php';
         <input type="password" class="form-control" name="db_pass" id="db_pass" value="">
         <small class="text-muted">Laissez vide si l'utilisateur n'a pas de mot de passe.</small>
     </div>
-
-    <?php if ($needs_confirmation): ?>
-        <div class="mb-3 form-check">
-            <input type="checkbox" class="form-check-input" name="confirm_wipe" id="confirm_wipe" value="1">
-            <label class="form-check-label" for="confirm_wipe">
-                Je confirme vouloir <strong>effacer toutes les tables</strong> de cette base et réinstaller.
-            </label>
-        </div>
-    <?php endif; ?>
 
     <button type="submit" class="btn btn-primary">Valider</button>
 </form>
