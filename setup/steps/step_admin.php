@@ -37,7 +37,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'email' => $_POST['email'],
             'password' => password_hash($_POST['password'], PASSWORD_DEFAULT)
         ];
-        $admin['role'] = 'ROLE_ADMIN';
+        // Le tout premier compte de l'installation est SUPER_ADMIN.
+        // C'est le seul moyen pour lui d'accéder aux réglages club,
+        // SMTP et mise à jour, et de créer d'autres ADMIN/SUPER_ADMIN.
+        $admin['role'] = 'ROLE_SUPER_ADMIN';
         $admin['date_creation'] = (new DateTime())->format('Y-m-d H:i:s');
         $admin['derniere_connexion'] = null;
         $admin['last_activity'] = null;

@@ -26,7 +26,8 @@ class IndexController extends AbstractController
 
     public function systemSettings(Request $request): Response
     {
-        $this->deniAccessUnlessGranted('ROLE_ADMIN');
+        // ⚠️ Configuration système (SMTP) : réservée au SUPER_ADMIN
+        $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
 
         // Lecture des paramètres actuels depuis .env.local.php
         $mailerDsn = getenv('MAILER_DSN') ?: $_ENV['MAILER_DSN'] ?? '';
@@ -55,8 +56,8 @@ class IndexController extends AbstractController
 
     public function updateSmtp(Request $request): Response
     {
-        // [SÉCURITÉ] Contrôle d'accès manquant
-        $this->deniAccessUnlessGranted('ROLE_ADMIN');
+        // ⚠️ Configuration système (SMTP) : réservée au SUPER_ADMIN
+        $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
 
         // Récupération des données du formulaire
         $host = (string) $request->request->get('smtp_host', '');
@@ -128,8 +129,8 @@ class IndexController extends AbstractController
 
     public function testMail(Request $request): Response
     {
-        // [SÉCURITÉ] Contrôle d'accès manquant
-        $this->deniAccessUnlessGranted('ROLE_ADMIN');
+        // ⚠️ Test de la configuration système : réservé au SUPER_ADMIN
+        $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
 
         try {
             // Charger .env.local.php

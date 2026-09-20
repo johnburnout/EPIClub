@@ -61,18 +61,23 @@
 								<li class="nav-item dropdown">
 									<a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Administration</a>
 									<div class="dropdown-menu">
-										<a class="dropdown-item" href="/admin/club">🏛️ Club</a>
-										<a class="nav-link" href="/admin/system-settings">⚙️ Système</a>
+										{# --- Section SUPER_ADMIN uniquement --- #}
+										{% if isGranted('ROLE_SUPER_ADMIN') %}
+											<h6 class="dropdown-header">⚡ Réglages critiques</h6>
+											<a class="dropdown-item" href="/admin/club">🏛️ Club</a>
+											<a class="dropdown-item" href="/admin/system-settings">⚙️ Système (SMTP)</a>
+											<a class="dropdown-item" href="/admin/update">🔄 Mise à jour</a>
+											<div class="dropdown-divider"></div>
+										{% endif %}
+
+										{# --- Section ADMIN (visible aussi pour SUPER_ADMIN via héritage) --- #}
 										<a class="dropdown-item" href="/admin/utilisateurs">👤 Utilisateurs</a>
 										<a class="dropdown-item" href="/admin/fournisseurs">🏷️ Fournisseurs</a>
-										<a><hr class="dropdown-divider"></a>
+										<div class="dropdown-divider"></div>
 										<a class="dropdown-item" href="/admin/categories">📂 Catégories</a>
 										<a class="dropdown-item" href="/admin/emplacements">📍 Emplacements</a>
-										<a><hr class="dropdown-divider"></a>
+										<div class="dropdown-divider"></div>
 										<a class="dropdown-item" href="/admin/acquisitions">📦 Acquisitions</a>
-										<a href="/admin/update" class="text-decoration-none text-dark">
-											<i class="fas fa-sync-alt"></i> Mise à jour
-										</a>
 									</div>
 								</li>
 							{% endif %}
@@ -87,9 +92,10 @@
 							{% set user = _user %}
 							{% if user %}
 							{% set roleLabels = {
-							'ROLE_ADMIN': 'Administrateur',
-							'ROLE_USER': 'Utilisateur',
-							'ROLE_CONTROLLEUR': 'Contrôleur'
+								'ROLE_USER': 'Utilisateur',
+								'ROLE_CONTROLLEUR': 'Contrôleur',
+								'ROLE_ADMIN': 'Administrateur',
+								'ROLE_SUPER_ADMIN': 'Super Administrateur'
 							} %}
 							<span class="me-3 text-white">
 								{{ user.prenom }} {{ user.nom }}
@@ -126,7 +132,7 @@
 			</p>
 		</footer>
 		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-		
+
 		{# ============================================ #}
 		{# === BLOCK POUR LES SCRIPTS PERSONNALISÉS === #}
 		{# ============================================ #}
@@ -163,7 +169,7 @@
 							if (data.success) {
 								// Afficher un message de succès
 								showNotification('success', 'QR code sauvegardé avec succès !', 'Fichier : ' + data.filename);
-								
+
 								// Mettre à jour l'image pour utiliser le fichier sauvegardé
 								const img = document.querySelector('#qr-code-image');
 								if (img) {
@@ -194,7 +200,7 @@
 					if (typeof bootstrap !== 'undefined' && bootstrap.Toast) {
 						// Créer un toast Bootstrap
 						const toastContainer = document.getElementById('toast-container') || createToastContainer();
-						
+
 						const toastEl = document.createElement('div');
 						toastEl.className = 'toast align-items-center text-white bg-' + type + ' border-0';
 						toastEl.role = 'alert';
@@ -210,10 +216,10 @@
 							</div>
 						`;
 						toastContainer.appendChild(toastEl);
-						
+
 						const toast = new bootstrap.Toast(toastEl, { delay: 5000 });
 						toast.show();
-						
+
 						// Supprimer le toast après fermeture
 						toastEl.addEventListener('hidden.bs.toast', function() {
 							this.remove();

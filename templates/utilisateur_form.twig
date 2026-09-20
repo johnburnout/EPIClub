@@ -2,7 +2,11 @@
 
 {% block body %}
 
-	<h3>{% if is_new is defined and is_new %}Créer un nouvel utilisateur{% else %}Modifier l'utilisateur{% endif %}</h3>
+	{# Détection du mode : création (pas d'ID) ou modification (ID présent) #}
+	{% set is_edit_mode = utilisateur.id is defined and utilisateur.id %}
+	{% set is_self_edit = is_self is defined and is_self %}
+
+	<h3>{% if is_edit_mode %}Modifier l'utilisateur{% else %}Créer un nouvel utilisateur{% endif %}</h3>
 	<hr>
 
 	<form method="post">
@@ -31,24 +35,49 @@
 		</div>
 
 		<div class="mb-3">
-			<label for="password">Mot de passe * :</label>
+			<label for="password">{% if is_edit_mode %}Nouveau mot de passe{% else %}Mot de passe *{% endif %} :</label>
 			<input type="password" id="password" name="password" class="form-control {% if form_errors.password %}is-invalid{% endif %}">
-			<small class="form-text text-muted">Le mot de passe est obligatoire pour un nouvel utilisateur.</small>
+			<small class="form-text text-muted">
+				{% if is_edit_mode %}
+					Laisser vide pour conserver le mot de passe actuel.
+				{% else %}
+					Le mot de passe est obligatoire pour un nouvel utilisateur.
+				{% endif %}
+			</small>
 			{% if form_errors.password %}<div class="invalid-feedback">{{ form_errors.password }}</div>{% endif %}
 		</div>
 
 		<div class="mb-3">
 			<label for="role">Rôle * :</label>
-			<select name="role" id="role" class="form-control">
-				{% for role, label in roles %}
-					<option value="{{ role }}" {% if utilisateur.role == role %} selected {% endif %}>{{ label }}</option>
-				{% endfor %}
-			</select>
+
+			{% if is_self_edit %}
+				{# Un utilisateur ne peut pas modifier son propre rôle via ce formulaire.
+				   Le contrôleur l'ignore de toute façon, mais on désactive le champ
+				   côté interface pour éviter toute confusion. #}
+				<select id="role" class="form-control" disabled>
+					{% for role, label in roles %}
+						<option value="{{ role }}" {% if utilisateur.role == role %} selected {% endif %}>{{ label }}</option>
+					{% endfor %}
+				</select>
+				<input type="hidden" name="role" value="{{ utilisateur.role }}">
+				<small class="form-text text-muted">
+					Vous ne pouvez pas modifier votre propre rôle. Demandez à un autre administrateur.
+				</small>
+			{% else %}
+				<select name="role" id="role" class="form-control {% if form_errors.role %}is-invalid{% endif %}">
+					{% for role, label in roles %}
+						<option value="{{ role }}" {% if utilisateur.role == role %} selected {% endif %}>{{ label }}</option>
+					{% endfor %}
+				</select>
+				{% if form_errors.role %}<div class="invalid-feedback">{{ form_errors.role }}</div>{% endif %}
+			{% endif %}
 		</div>
 
 		<div class="form-actions">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-			<button type="submit" class="btn btn-primary">Créer l'utilisateur</button>
+			<button type="submit" class="btn btn-primary">
+				{% if is_edit_mode %}Enregistrer{% else %}Créer l'utilisateur{% endif %}
+			</button>
 			<a href="/admin/utilisateurs" class="btn btn-secondary">Annuler</a>
 		</div>
 	</form>

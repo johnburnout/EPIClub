@@ -21,7 +21,8 @@ class UpdateController extends AbstractController
     // --------------------------------------------------------------
     public function index(Request $request): Response
     {
-        $this->deniAccessUnlessGranted('ROLE_ADMIN');
+        // ⚠️ Mise à jour de l'application : réservé au SUPER_ADMIN
+        $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
 
         if (!$this->session->has('csrf_token')) {
             $this->session->set('csrf_token', bin2hex(random_bytes(32)));
@@ -61,13 +62,18 @@ class UpdateController extends AbstractController
     // --------------------------------------------------------------
     public function perform(Request $request): Response
     {
+        // ⚠️ Mise à jour de l'application : réservé au SUPER_ADMIN
+        // Vérification HORS du try pour que l'AccessDeniedException
+        // remonte à la couche de gestion d'erreur (403 propre) au lieu
+        // d'être rattrapée par le catch(\Throwable) du bas et transformée
+        // en message d'erreur générique.
+        $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
+        
         try {
-            $this->deniAccessUnlessGranted('ROLE_ADMIN');
-
             if ($request->getMethod() !== 'POST') {
                 return new RedirectResponse('/admin/update');
             }
-
+            
             $token = $request->request->get('csrf_token');
             $expected = $this->session->get('csrf_token');
             if (!$token || !$expected || !hash_equals((string) $expected, (string) $token)) {
@@ -76,7 +82,7 @@ class UpdateController extends AbstractController
                     'message' => 'Token CSRF invalide. Merci de recharger la page.',
                 ]);
             }
-
+            
             $latest = $this->getLatestRelease();
             if (!$latest) {
                 return $this->render('update_result.twig', [
@@ -84,15 +90,15 @@ class UpdateController extends AbstractController
                     'message' => 'Impossible de récupérer la version distante.',
                 ]);
             }
-
+            
             $zipUrl = $latest['zip_url'];
             $version = $latest['tag'];
-
+            
             $tempZip = self::TEMP_DIR . '/release.zip';
             if (!is_dir(self::TEMP_DIR)) {
                 mkdir(self::TEMP_DIR, 0755, true);
             }
-
+            
             // Télécharger le zip
             $zipContent = $this->downloadUrl($zipUrl);
             if (empty($zipContent)) {
@@ -102,7 +108,7 @@ class UpdateController extends AbstractController
                 ]);
             }
             file_put_contents($tempZip, $zipContent);
-
+            
             // Décompresser
             $zip = new ZipArchive();
             if ($zip->open($tempZip) !== true) {
@@ -123,7 +129,7 @@ class UpdateController extends AbstractController
             }
             $zip->close();
             unlink($tempZip);
-
+            
             // Trouver le dossier source
             $extractedItems = scandir($extractPath);
             $sourceDir = null;
@@ -139,11 +145,11 @@ class UpdateController extends AbstractController
                     'message' => 'Aucun dossier trouvé après extraction.',
                 ]);
             }
-
+            
             // Copier les fichiers (sauf exclus)
             $targetDir = __DIR__ . '/../..';
             $this->copyFiles($sourceDir, $targetDir);
-
+            
             // ------------------------------------------------------------
             // MIGRATIONS DE BASE DE DONNÉES
             // ------------------------------------------------------------
@@ -159,16 +165,16 @@ class UpdateController extends AbstractController
                         \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
                     ]
                 );
-
+                
                 $migrationManager = new \Epiclub\Engine\MigrationManager(
                     $pdo,
                     __DIR__ . '/../../migrations'
                 );
-
+                
                 $applied = $migrationManager->migrate(function ($migrationVersion) {
                     error_log('[UpdateController] Migration appliquée : ' . $migrationVersion);
                 });
-
+                
                 if (!empty($applied)) {
                     error_log(sprintf(
                         '[UpdateController] %d migration(s) appliquée(s).',
@@ -184,32 +190,32 @@ class UpdateController extends AbstractController
                     $e->getFile(),
                     $e->getLine()
                 ));
-
+                
                 return $this->render('update_result.twig', [
                     'success' => false,
                     'message' => 'Les fichiers ont été mis à jour mais les migrations '
-                               . 'de base de données ont échoué. Consultez les logs '
-                               . 'serveur avant de relancer l\'application.',
+                    . 'de base de données ont échoué. Consultez les logs '
+                    . 'serveur avant de relancer l\'application.',
                 ]);
             }
-
+            
             // Nettoyer le dossier extrait
             $this->deleteDirectory($extractPath);
-
+            
             // Mettre à jour le numéro de version
             file_put_contents(self::VERSION_FILE, $version);
-
+            
             // Exécuter Composer (si possible)
             $this->runComposer();
-
+            
             // Nettoyage final
             $this->cleanupTempDir();
-
+            
             return $this->render('update_result.twig', [
                 'success' => true,
                 'message' => 'Mise à jour réussie. Version actuelle : ' . $version,
             ]);
-
+            
         } catch (\Throwable $e) {
             error_log(sprintf(
                 '[UpdateController] Update failed: %s in %s:%d',
@@ -217,7 +223,7 @@ class UpdateController extends AbstractController
                 $e->getFile(),
                 $e->getLine()
             ));
-
+            
             return $this->render('update_result.twig', [
                 'success' => false,
                 'message' => 'Une erreur est survenue lors de la mise à jour. Merci de réessayer ou de contacter un administrateur.',
@@ -230,7 +236,8 @@ class UpdateController extends AbstractController
     // --------------------------------------------------------------
     public function cleanup(Request $request): Response
     {
-        $this->deniAccessUnlessGranted('ROLE_ADMIN');
+        // ⚠️ Nettoyage du dossier de mise à jour : réservé au SUPER_ADMIN
+        $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
 
         if ($request->getMethod() !== 'POST') {
             return new RedirectResponse('/admin/update');

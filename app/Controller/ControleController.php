@@ -28,12 +28,12 @@ class ControleController extends AbstractController
         if ($controle['statut'] === 'cloture') {
             return false;
         }
-        
+
         // L'utilisateur est-il le propriétaire ?
         if ($controle['controleur_id'] == $user['id']) {
             return true;
         }
-        
+
         // Sinon, est-il admin ?
         if ($this->isGranted('ROLE_ADMIN')) {
             $today = date('Y-m-d');
@@ -41,23 +41,23 @@ class ControleController extends AbstractController
             if ($dateDebut >= $today) {
                 return false;
             }
-            
+
             if ($this->isUserOnline($controle['controleur_id'])) {
                 return false;
             }
-            
+
             return true;
         }
-        
+
         return false;
     }
-    
+
     public function list(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_CONTROLLEUR');
-        
+
         $user = $this->session->get('user');
-        
+
         // ✅ Vérifier si l'utilisateur a un contrôle en cours qui est clôturé
         if (!empty($user['controle_en_cours_id'])) {
             $controleManager = new ControleManager();
@@ -70,49 +70,49 @@ class ControleController extends AbstractController
                 $this->session->set('user', $user);
             }
         }
-        
+
         $controleManager = new ControleManager();
         $allControles = $controleManager->findAll();
-        
+
         $statut = $request->query->get('statut');
         $controleur_id = $request->query->get('controleur_id');
         $order_by = $request->query->get('order_by', 'date_debut');
         $order_dir = $request->query->get('order_dir', 'desc');
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 10);
-        
+
         if ($statut === '') $statut = null;
         if ($controleur_id === '') $controleur_id = null;
         if ($page < 1) $page = 1;
         if ($limit < 1) $limit = 10;
-        
+
         if ($statut !== null) {
             $allControles = array_filter($allControles, function($c) use ($statut) {
                 return $c['statut'] == $statut;
             });
         }
-        
+
         if ($controleur_id !== null) {
             $allControles = array_filter($allControles, function($c) use ($controleur_id) {
                 return $c['controleur_id'] == $controleur_id;
             });
         }
-        
+
         $today = date('Y-m-d');
         $ligneManager = new ControleLigneManager();
-        
+
         foreach ($allControles as &$controle) {
             $isOwner = ($controle['controleur_id'] == $user['id']);
             $isAdminEligible = $this->isGranted('ROLE_ADMIN')
             && $controle['statut'] !== 'cloture'
             && substr($controle['date_debut'], 0, 10) < $today
             && !$this->isUserOnline($controle['controleur_id']);
-            
+
             $controle['canEdit'] = $isOwner || $isAdminEligible;
             $controle['isAdminEditable'] = !$isOwner && $isAdminEligible;
             $controle['isOwner'] = $isOwner;
             $controle['isOwnerOnline'] = $this->isUserOnline($controle['controleur_id']);
-            
+
             // --- Vérifier si des équipements sont encore "à contrôler" ---
             if ($controle['statut'] !== 'cloture') {
                 $lignes = $ligneManager->findByControle($controle['id']);
@@ -130,7 +130,7 @@ class ControleController extends AbstractController
             // --- FIN ---
         }
         unset($controle);
-        
+
         usort($allControles, function($a, $b) use ($order_by, $order_dir) {
             $valA = $a[$order_by] ?? '';
             $valB = $b[$order_by] ?? '';
@@ -140,12 +140,12 @@ class ControleController extends AbstractController
                 return strcmp((string)$valB, (string)$valA);
             }
         });
-        
+
         $total = count($allControles);
         $offset = ($page - 1) * $limit;
         $controles = array_slice($allControles, $offset, $limit);
         $totalPages = $limit > 0 ? ceil($total / $limit) : 1;
-        
+
         $baseParams = [
             'statut' => $statut,
             'controleur_id' => $controleur_id,
@@ -159,10 +159,10 @@ class ControleController extends AbstractController
             'next' => '?' . http_build_query(array_merge($baseParams, ['page' => min($totalPages, $page + 1)])),
             'last' => '?' . http_build_query(array_merge($baseParams, ['page' => $totalPages])),
         ];
-        
+
         $utilisateurManager = new UtilisateurManager();
         $controleurs = $utilisateurManager->findAll('nom ASC');
-        
+
         return $this->render('controle_list.twig', [
             'controles' => $controles,
             'controleurs' => $controleurs,
@@ -190,13 +190,13 @@ class ControleController extends AbstractController
     public function create(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_CONTROLLEUR');
-        
+
         $user = $this->session->get('user');
         if (!empty($user['controle_en_cours_id'])) {
             $this->session->getFlashBag()->add('error', 'Vous avez déjà un contrôle en cours. Terminez-le avant d\'en créer un nouveau.');
             return $this->redirectTo('/admin/controles');
         }
-        
+
         $controle = [
             'libelle' => 'Contrôle du ' . date('d/m/Y H:i'),
             'date_debut' => date('Y-m-d H:i:s'),
@@ -208,12 +208,12 @@ class ControleController extends AbstractController
         ];
         $controleManager = new ControleManager();
         $id = $controleManager->save($controle);
-        
+
         $user['controle_en_cours_id'] = $id;
         $utilisateurManager = new UtilisateurManager();
         $utilisateurManager->save($user);
         $this->session->set('user', $user);
-        
+
         $this->session->getFlashBag()->add('success', 'Contrôle créé avec succès.');
         return $this->redirectTo("/admin/controles/edit/$id");
     }
@@ -233,15 +233,20 @@ class ControleController extends AbstractController
     public function edit(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_CONTROLLEUR');
-        
-        $id = $request->get('id');
+
+        $id = $this->getValidId($request);
+        if ($id === null) {
+            // URL modifiée manuellement : redirection silencieuse
+            return $this->redirectTo('/admin/controles');
+        }
+
         $controleManager = new ControleManager();
         $controle = $controleManager->findId($id);
-        
+
         if (!$controle) {
             return $this->redirectTo('/admin/controles');
         }
-        
+
         $user = $this->session->get('user');
         $canEdit = $this->canEdit($controle, $user);
         $readonly = ($controle['statut'] === 'cloture' || !$canEdit);
@@ -260,7 +265,7 @@ class ControleController extends AbstractController
         // ---- 1. Récupération des lignes (équipements déjà ajoutés) ----
         $ligneManager = new ControleLigneManager();
         $allLignes = $ligneManager->findByControle($id);
-        
+
         $equipementManager = new EquipementManager();
         foreach ($allLignes as &$ligne) {
             $equipement = $equipementManager->findId($ligne['equipement_id']);
@@ -275,7 +280,7 @@ class ControleController extends AbstractController
             }
         }
         unset($ligne);
-        
+
         // Déchiffrement si clôturé (sur toutes les lignes)
         if ($readonly && $controle['statut'] === 'cloture') {
             $config = include __DIR__ . '/../../.env.local.php';
@@ -298,7 +303,7 @@ class ControleController extends AbstractController
                 }
             }
             unset($ligne);
-            
+
             // --- Déchiffrement de la remarque générale ---
             if (!empty($controle['hash_remarques'])) {
                 $data = base64_decode($controle['hash_remarques'], true);
@@ -315,7 +320,7 @@ class ControleController extends AbstractController
                 }
             }
         }
-        
+
         // ---- 2. Paramètres pour la liste des lignes ----
         $lignes_page = (int) $request->query->get('lignes_page', 1);
         $lignes_limit = (int) $request->query->get('lignes_limit', 10);
@@ -323,7 +328,7 @@ class ControleController extends AbstractController
         $lignes_order_dir = $request->query->get('lignes_order_dir', 'asc');
         $lignes_statut = $request->query->get('lignes_statut', null);
         $lignes_search = $request->query->get('lignes_search', '');
-        
+
         if ($lignes_statut !== null && $lignes_statut !== '') {
             $allLignes = array_filter($allLignes, function($l) use ($lignes_statut) {
                 return $l['statut'] == $lignes_statut;
@@ -332,11 +337,11 @@ class ControleController extends AbstractController
         if (!empty($lignes_search)) {
             $search = strtolower(trim($lignes_search));
             $allLignes = array_filter($allLignes, function($l) use ($search) {
-                return strpos(strtolower($l['reference']), $search) !== false 
+                return strpos(strtolower($l['reference']), $search) !== false
                     || strpos(strtolower($l['libelle']), $search) !== false;
             });
         }
-        
+
         usort($allLignes, function($a, $b) use ($lignes_order_by, $lignes_order_dir) {
             $valA = $a[$lignes_order_by] ?? '';
             $valB = $b[$lignes_order_by] ?? '';
@@ -346,12 +351,12 @@ class ControleController extends AbstractController
                 return strcmp((string)$valB, (string)$valA);
             }
         });
-        
+
         $lignes_total = count($allLignes);
         $lignes_offset = ($lignes_page - 1) * $lignes_limit;
         $lignes = array_slice($allLignes, $lignes_offset, $lignes_limit);
         $lignes_totalPages = $lignes_limit > 0 ? ceil($lignes_total / $lignes_limit) : 1;
-        
+
         $baseLignesParams = [
             'lignes_statut' => $lignes_statut,
             'lignes_search' => $lignes_search,
@@ -365,7 +370,7 @@ class ControleController extends AbstractController
             'next' => '?' . http_build_query(array_merge($baseLignesParams, ['lignes_page' => min($lignes_totalPages, $lignes_page + 1)])),
             'last' => '?' . http_build_query(array_merge($baseLignesParams, ['lignes_page' => $lignes_totalPages])),
         ];
-        
+
         // ---- 3. Vérifier s'il reste des équipements "à contrôler" (sur toutes les lignes, avant filtrage) ----
         $hasPending = false;
         foreach ($allLignes as $ligne) {
@@ -374,10 +379,10 @@ class ControleController extends AbstractController
                 break;
             }
         }
-        
+
         // ---- 4. Liste des équipements disponibles ----
         $idsDejaAjoutes = array_column($allLignes, 'equipement_id');
-        
+
         $categorie_id = $request->query->get('categorie');
         $filter_epi = $request->query->get('epi');
         $en_service = $request->query->get('en_service');
@@ -387,7 +392,7 @@ class ControleController extends AbstractController
         $order_dir = $request->query->get('order_dir', 'asc');
         $page = (int) $request->query->get('page', 1);
         $limit = (int) $request->query->get('limit', 10);
-        
+
         if ($categorie_id === '') $categorie_id = null;
         if ($filter_epi === '') $filter_epi = null;
         if ($en_service === '') $en_service = null;
@@ -395,10 +400,10 @@ class ControleController extends AbstractController
         if ($dernier_controle === '') $dernier_controle = null;
         if ($page < 1) $page = 1;
         if ($limit < 1) $limit = 10;
-        
+
         $categorieManager = new CategorieManager();
         $emplacementManager = new EmplacementManager();
-        
+
         $tousLesEquipements = $equipementManager->findAll();
         foreach ($tousLesEquipements as $i => $e) {
             if (isset($e['categorie_id'])) {
@@ -408,11 +413,11 @@ class ControleController extends AbstractController
                 $tousLesEquipements[$i]['emplacement'] = $emplacementManager->findId($e['emplacement_id']);
             }
         }
-        
+
         $equipementsDisponibles = array_filter($tousLesEquipements, function($e) use ($idsDejaAjoutes) {
             return !in_array($e['id'], $idsDejaAjoutes);
         });
-        
+
         if ($categorie_id) {
             $equipementsDisponibles = array_filter($equipementsDisponibles, function($e) use ($categorie_id) {
                 return isset($e['categorie_id']) && $e['categorie_id'] == $categorie_id;
@@ -446,7 +451,7 @@ class ControleController extends AbstractController
                 });
             }
         }
-        
+
         if ($dernier_controle !== null) {
             $oneYearAgo = date('Y-m-d', strtotime('-1 year'));
             if ($dernier_controle === 'plus_1_an') {
@@ -459,7 +464,7 @@ class ControleController extends AbstractController
                 });
             }
         }
-        
+
         if ($order_by === 'reference') {
             usort($equipementsDisponibles, function($a, $b) use ($order_dir) {
                 return $order_dir === 'asc' ? strcmp($a['reference'], $b['reference']) : strcmp($b['reference'], $a['reference']);
@@ -475,12 +480,12 @@ class ControleController extends AbstractController
                 return $order_dir === 'asc' ? strcmp($a_cat, $b_cat) : strcmp($b_cat, $a_cat);
             });
         }
-        
+
         $total = count($equipementsDisponibles);
         $offset = ($page - 1) * $limit;
         $equipementsDisponibles = array_slice($equipementsDisponibles, $offset, $limit);
         $totalPages = $limit > 0 ? ceil($total / $limit) : 1;
-        
+
         $baseParams = [
             'categorie' => $categorie_id,
             'epi' => $filter_epi,
@@ -497,10 +502,10 @@ class ControleController extends AbstractController
             'next' => '?' . http_build_query(array_merge($baseParams, ['page' => min($totalPages, $page + 1)])),
             'last' => '?' . http_build_query(array_merge($baseParams, ['page' => $totalPages])),
         ];
-        
+
         $categories = $categorieManager->findAll();
         $emplacements = $emplacementManager->findAll();
-        
+
         return $this->render('controle_edit.twig', [
             'controle' => $controle,
             'lignes' => $lignes,
@@ -554,8 +559,17 @@ class ControleController extends AbstractController
     {
         $this->deniAccessUnlessGranted('ROLE_CONTROLLEUR');
 
-        $controle_id = $request->get('controle_id');
-        $equipement_id = $request->request->get('equipement_id');
+        $controle_id = $this->getValidId($request, 'controle_id');
+        if ($controle_id === null) {
+            // URL modifiée manuellement : redirection silencieuse
+            return $this->redirectTo('/admin/controles');
+        }
+
+        $equipement_id = $this->getValidId($request, 'equipement_id');
+        if ($equipement_id === null) {
+            // Formulaire trafiqué : on revient silencieusement sur le contrôle
+            return $this->redirectTo("/admin/controles/edit/$controle_id");
+        }
 
         $controleManager = new ControleManager();
         $controle = $controleManager->findId($controle_id);
@@ -584,34 +598,40 @@ class ControleController extends AbstractController
     public function updateLigne(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_CONTROLLEUR');
-        $ligne_id = $request->get('id');
+
+        $ligne_id = $this->getValidId($request);
+        if ($ligne_id === null) {
+            // URL modifiée manuellement : redirection silencieuse
+            return $this->redirectTo('/admin/controles');
+        }
+
         $ligneManager = new ControleLigneManager();
         $ligne = $ligneManager->findId($ligne_id);
-        
+
         if (!$ligne) {
             return $this->redirectTo('/admin/controles');
         }
-        
+
         $controleManager = new ControleManager();
         $controle = $controleManager->findId($ligne['controle_id']);
         $user = $this->session->get('user');
-        
+
         if (!$this->canEdit($controle, $user)) {
             $this->session->getFlashBag()->add('error', 'Vous n\'avez pas les droits pour modifier ce contrôle.');
             return $this->redirectTo('/admin/controles');
         }
-        
+
         if ($controle['statut'] === 'cloture') {
             $this->session->getFlashBag()->add('error', 'Ce contrôle est clôturé, vous ne pouvez pas modifier les lignes.');
             return $this->redirectTo("/admin/controles/edit/{$controle['id']}");
         }
-        
+
         if ($request->getMethod() === 'POST') {
             $ligne['remarque'] = $request->request->get('remarque');
             $ligne['date_controle'] = $request->request->get('date_controle');
             $ligne['statut'] = $request->request->get('statut');
             $ligneManager->save($ligne);
-            
+
             // ✅ Mettre à jour le statut de l'équipement : "en contrôle"
             $equipementManager = new EquipementManager();
             $equipement = $equipementManager->findId($ligne['equipement_id']);
@@ -619,14 +639,14 @@ class ControleController extends AbstractController
                 $equipement['controle_en_cours'] = 1;
                 $equipementManager->save($equipement);
             }
-            
+
             return $this->redirectTo("/admin/controles/edit/{$controle['id']}");
         }
-        
+
         if (is_null($ligne['date_controle'])) {
             $ligne['date_controle'] = date('Y-m-d H:i:s');
         }
-        
+
         $equipementManager = new EquipementManager();
         $equipement = $equipementManager->findId($ligne['equipement_id']);
         if ($equipement) {
@@ -634,24 +654,29 @@ class ControleController extends AbstractController
             $ligne['libelle'] = $equipement['libelle'] ?? '';
             $ligne['photo'] = $equipement['photo'] ?? null;
         }
-        
+
         return $this->render('controle_ligne_form.twig', [
             'ligne' => $ligne
         ]);
     }
-    
+
     public function cloturer(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_CONTROLLEUR');
-        
-        $id = $request->get('id');
+
+        $id = $this->getValidId($request);
+        if ($id === null) {
+            // URL modifiée manuellement : redirection silencieuse
+            return $this->redirectTo('/admin/controles');
+        }
+
         $controleManager = new ControleManager();
         $controle = $controleManager->findId($id);
-        
+
         if (!$controle || $controle['statut'] === 'cloture') {
             return $this->redirectTo('/admin/controles');
         }
-        
+
         $user = $this->session->get('user');
         if (!$this->canEdit($controle, $user)) {
             if ($this->isGranted('ROLE_ADMIN') && substr($controle['date_debut'], 0, 10) < date('Y-m-d')) {
@@ -661,10 +686,10 @@ class ControleController extends AbstractController
             }
             return $this->redirectTo('/admin/controles');
         }
-        
+
         $ligneManager = new ControleLigneManager();
         $lignes = $ligneManager->findByControle($id);
-        
+
         // Vérifier si des équipements sont encore "à contrôler"
         foreach ($lignes as $ligne) {
             if ($ligne['statut'] === 'a_controler') {
@@ -672,11 +697,11 @@ class ControleController extends AbstractController
                 return $this->redirectTo("/admin/controles/edit/$id");
             }
         }
-        
+
         $config = include __DIR__ . '/../../.env.local.php';
         $secretKey = isset($config['SECRET_KEY']) ? hex2bin($config['SECRET_KEY']) : null;
         $cipherMethod = $config['CIPHER_METHOD'] ?? 'AES-256-CBC';
-        
+
         // Chiffrement des remarques
         $remarqueGenerale = $controle['hash_remarques'] ?? '';
         if (!empty($remarqueGenerale)) {
@@ -687,7 +712,7 @@ class ControleController extends AbstractController
         } else {
             $hashGlobal = null;
         }
-        
+
         foreach ($lignes as $ligne) {
             if (!is_null($ligne['remarque']) && $ligne['remarque'] !== '') {
                 $ivLength = openssl_cipher_iv_length($cipherMethod);
@@ -697,13 +722,13 @@ class ControleController extends AbstractController
                 $ligneManager->save($ligne);
             }
         }
-        
+
         // Mise à jour du contrôle
         $controle['statut'] = 'cloture';
         $controle['date_fin'] = date('Y-m-d H:i:s');
         $controle['hash_remarques'] = $hashGlobal;
         $controleManager->save($controle);
-        
+
         // ✅ Mettre à jour le statut des équipements
         $equipementManager = new EquipementManager();
         foreach ($lignes as $ligne) {
@@ -726,7 +751,7 @@ class ControleController extends AbstractController
                 $equipementManager->save($equipement);
             }
         }
-        
+
         // Nettoyage de la session
         if ($user['controle_en_cours_id'] == $id) {
             $user['controle_en_cours_id'] = null;
@@ -734,11 +759,11 @@ class ControleController extends AbstractController
             $utilisateurManager->save($user);
             $this->session->set('user', $user);
         }
-        
+
         $this->session->getFlashBag()->add('success', 'Contrôle clôturé avec succès (remarques chiffrées).');
         return $this->redirectTo('/admin/controles');
     }
-    
+
     /**
     * Supprime un contrôle non clôturé.
     * Règles :
@@ -751,25 +776,25 @@ class ControleController extends AbstractController
     public function delete(Request $request): Response
     {
         $this->deniAccessUnlessGranted('ROLE_CONTROLLEUR');
-        
-        $id = (int) $request->get('id');
-        if ($id <= 0) {
-            $this->session->getFlashBag()->add('error', 'Contrôle invalide.');
+
+        $id = $this->getValidId($request);
+        if ($id === null) {
+            // URL modifiée manuellement : redirection silencieuse
             return $this->redirectTo('/admin/controles');
         }
-        
+
         $controleManager = new ControleManager();
         $controle = $controleManager->findId($id);
-        
+
         if (!$controle) {
             $this->session->getFlashBag()->add('error', 'Contrôle non trouvé.');
             return $this->redirectTo('/admin/controles');
         }
-        
+
         $user = $this->session->get('user');
         $isAdmin = $this->isGranted('ROLE_ADMIN');
         $isOwner = $controle['controleur_id'] == $user['id'];
-        
+
         // [SÉCURITÉ] Seuls le propriétaire ou un admin peuvent supprimer
         if (!$isOwner && !$isAdmin) {
             $this->session->getFlashBag()->add(
@@ -778,7 +803,7 @@ class ControleController extends AbstractController
             );
             return $this->redirectTo('/admin/controles');
         }
-        
+
         // [MÉTIER] Refuser la suppression d'un contrôle clôturé
         if ($controle['statut'] === 'cloture') {
             $this->session->getFlashBag()->add(
@@ -787,13 +812,13 @@ class ControleController extends AbstractController
             );
             return $this->redirectTo("/admin/controles/edit/{$id}");
         }
-        
+
         try {
             // [ROBUSTESSE] Remettre controle_en_cours = 0 sur les équipements liés
             $controleLigneManager = new ControleLigneManager();
             $equipementManager = new EquipementManager();
             $lignes = $controleLigneManager->findByControle($id);
-            
+
             foreach ($lignes as $ligne) {
                 $equipement = $equipementManager->findId($ligne['equipement_id']);
                 if ($equipement && !empty($equipement['controle_en_cours'])) {
@@ -801,7 +826,7 @@ class ControleController extends AbstractController
                     $equipementManager->save($equipement);
                 }
             }
-            
+
             // Retirer le contrôle en cours de l'utilisateur s'il y en a un
             if (!empty($user['controle_en_cours_id']) && $user['controle_en_cours_id'] == $id) {
                 $user['controle_en_cours_id'] = null;
@@ -809,11 +834,11 @@ class ControleController extends AbstractController
                 $utilisateurManager->save($user);
                 $this->session->set('user', $user);
             }
-            
+
             // [SÉCURITÉ] La FK ON DELETE CASCADE supprime automatiquement
             // les controle_ligne associées.
             $controleManager->delete($id);
-            
+
             $this->session->getFlashBag()->add('success', "Le contrôle a été supprimé.");
             return $this->redirectTo('/admin/controles');
         } catch (\Throwable $e) {

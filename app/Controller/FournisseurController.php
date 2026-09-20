@@ -6,14 +6,14 @@ use Epiclub\Domain\FournisseurManager;
 use Epiclub\Engine\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\RedirectResponse; // ← IMPORTANT
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class FournisseurController extends AbstractController
 {
     public function list(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
-        
+
         $fournisseurManager = new FournisseurManager();
         $fournisseurs = $fournisseurManager->findAll();
 
@@ -26,15 +26,21 @@ class FournisseurController extends AbstractController
     {
         // Cohérent avec list() : les fiches fournisseurs sont réservées aux admins
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
-        
+
+        $id = $this->getValidId($request);
+        if ($id === null) {
+            // URL modifiée manuellement : redirection silencieuse
+            return new RedirectResponse('/admin/fournisseurs');
+        }
+
         $fournisseurManager = new FournisseurManager();
-        $fournisseur = $fournisseurManager->findId($request->get('id'));
-        
+        $fournisseur = $fournisseurManager->findId($id);
+
         if (!$fournisseur) {
             $this->session->getFlashBag()->add('error', "Le fournisseur demandé n'existe pas.");
             return new RedirectResponse('/admin/fournisseurs');
         }
-        
+
         return $this->render('fournisseur_show.twig', [
             'fournisseur' => $fournisseur
         ]);
@@ -49,28 +55,45 @@ class FournisseurController extends AbstractController
         $fournisseur = [];
         $form_errors = [];
 
-        if ($id = $request->get('id')) {
+        // --- Récupération de l'ID depuis la requête (GET ou POST) ---
+        $id = $this->getValidId($request);
+        if ($id !== null) {
             $fournisseur = $fournisseurManager->findId($id);
+            if (!$fournisseur) {
+                // ID syntaxiquement valide mais inexistant en BDD
+                $this->session->getFlashBag()->add('error', "Le fournisseur demandé n'existe pas.");
+                return new RedirectResponse('/admin/fournisseurs');
+            }
         }
 
         if ($request->getMethod() === 'POST') {
-            /** @todo need validation here */
+            $nom = trim($request->request->get('nom'));
+            $email = trim($request->request->get('email'));
+            $phone = trim($request->request->get('phone'));
+
+            if (empty($nom)) {
+                $form_errors['nom'] = 'Le nom est obligatoire.';
+            }
+
+            // Validation souple : l'email est optionnel mais doit être valide s'il est fourni
+            if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $form_errors['email'] = "L'email n'est pas valide.";
+            }
 
             if (empty($form_errors)) {
                 $fournisseur = array_merge(
                     $fournisseur,
                     [
-                        'nom' => $request->request->get('nom'),
-                        'email' => $request->request->get('email'),
-                        'phone' => $request->request->get('phone'),
+                        'nom' => $nom,
+                        'email' => $email !== '' ? $email : null,
+                        'phone' => $phone !== '' ? $phone : null,
                     ]
                 );
+
                 $fournisseurManager->save($fournisseur);
-                /** @todo flash success */
+                $this->session->getFlashBag()->add('success', "Le fournisseur a été enregistré.");
                 return $this->redirectTo("/admin/fournisseurs");
             }
-
-            /** @todo else error something wrong... */
         }
 
         return $this->render('fournisseur_form.twig', [
@@ -82,37 +105,36 @@ class FournisseurController extends AbstractController
     public function delete(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
-        
+
         // [SÉCURITÉ] Action destructive réservée à POST
         if (!$request->isMethod('POST')) {
             return new RedirectResponse('/admin/fournisseurs');
         }
-        
-        // [ROBUSTESSE] id depuis le corps POST en priorité
-        $id = $request->request->get('id') ?? $request->query->get('id');
-        if (!$id) {
-            $this->session->getFlashBag()->add('error', 'ID fournisseur manquant.');
+
+        $id = $this->getValidId($request);
+        if ($id === null) {
+            // URL modifiée manuellement : redirection silencieuse
             return new RedirectResponse('/admin/fournisseurs');
         }
-        
+
         $fournisseurManager = new FournisseurManager();
         $fournisseur = $fournisseurManager->findId($id);
-        
+
         if (!$fournisseur) {
             $this->session->getFlashBag()->add('error', "Le fournisseur demandé n'existe pas.");
             return new RedirectResponse('/admin/fournisseurs');
         }
-        
+
         // Vérifier si le fournisseur a des acquisitions associées
         if ($fournisseurManager->hasAcquisitions($id)) {
             $this->session->getFlashBag()->add('error', "Impossible de supprimer ce fournisseur car il a des acquisitions associées.");
             return new RedirectResponse('/admin/fournisseurs');
         }
-        
+
         $fournisseurManager->delete($id);
-        
+
         $this->session->getFlashBag()->add('success', "Le fournisseur '{$fournisseur['nom']}' a été supprimé.");
-        
+
         return new RedirectResponse('/admin/fournisseurs');
     }
 }

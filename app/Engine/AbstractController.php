@@ -6,6 +6,7 @@ use Twig\TwigFunction;
 use Epiclub\Engine\Session;
 use Epiclub\Domain\UtilisateurManager;
 use Symfony\Component\Mime\Email;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Epiclub\Exception\AccessDeniedException;
@@ -31,7 +32,7 @@ abstract class AbstractController
         $this->renderer->addFunction(new TwigFunction('app_user', function () {
             return $this->session->get('user');
         }));
-        
+
         $this->updateLastActivity();
     }
 
@@ -65,11 +66,11 @@ abstract class AbstractController
     }
 
     /**
-    * Vérifie que l'utilisateur possède le rôle requis.
-    * Lance une AccessDeniedException si ce n'est pas le cas.
-    *
-    * @throws AccessDeniedException
-    */
+     * Vérifie que l'utilisateur possède le rôle requis.
+     * Lance une AccessDeniedException si ce n'est pas le cas.
+     *
+     * @throws AccessDeniedException
+     */
     public function deniAccessUnlessGranted(string $role): void
     {
         if (!$this->isGranted($role)) {
@@ -83,7 +84,27 @@ abstract class AbstractController
     {
         return new RedirectResponse($route, $status, $headers);
     }
-    
+
+    /**
+     * Récupère un identifiant valide (entier strictement positif) depuis la requête.
+     *
+     * Retourne null si l'ID est absent, vide, non numérique ou <= 0.
+     * L'appelant est invité à rediriger silencieusement dans ce cas,
+     * car cela signifie que l'URL a été modifiée manuellement.
+     *
+     * @param Request $request
+     * @param string  $key     Nom du paramètre (par défaut 'id')
+     * @return int|null
+     */
+    protected function getValidId(Request $request, string $key = 'id'): ?int
+    {
+        $value = $request->get($key);
+        $id = filter_var($value, FILTER_VALIDATE_INT, [
+            'options' => ['min_range' => 1],
+        ]);
+        return $id === false ? null : $id;
+    }
+
     /**
      * ✅ Met à jour uniquement last_activity, sans écraser les autres champs
      */

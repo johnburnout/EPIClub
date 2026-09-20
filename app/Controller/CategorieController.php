@@ -6,14 +6,16 @@ use Epiclub\Domain\CategorieManager;
 use Epiclub\Engine\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\RedirectResponse; // ← AJOUTER CET IMPORT
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class CategorieController extends AbstractController
 {
+    private const IMAGE_DIR = '/../../public/images/';
+
     public function list(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
-        
+
         $categorieManager = new CategorieManager();
         $categories = $categorieManager->findAll();
 
@@ -25,15 +27,21 @@ class CategorieController extends AbstractController
     public function show(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
-        
+
+        $id = $this->getValidId($request);
+        if ($id === null) {
+            // URL modifiée manuellement : redirection silencieuse
+            return new RedirectResponse('/admin/categories');
+        }
+
         $categorieManager = new CategorieManager();
-        $categorie = $categorieManager->findId($request->get('id'));
-        
+        $categorie = $categorieManager->findId($id);
+
         if (!$categorie) {
             $this->session->getFlashBag()->add('error', "La catégorie demandée n'existe pas.");
             return new RedirectResponse('/admin/categories');
         }
-        
+
         return $this->render('categorie_show.twig', [
             'categorie' => $categorie
         ]);
@@ -48,9 +56,15 @@ class CategorieController extends AbstractController
         $categorie = [];
         $form_errors = [];
 
-        if ($id = $request->get('id')) {
-
+        // --- Récupération de l'ID depuis la requête (GET ou POST) ---
+        $id = $this->getValidId($request);
+        if ($id !== null) {
             $categorie = $categorieManager->findId($id);
+            if (!$categorie) {
+                // ID syntaxiquement valide mais inexistant en BDD
+                $this->session->getFlashBag()->add('error', "La catégorie demandée n'existe pas.");
+                return new RedirectResponse('/admin/categories');
+            }
         }
 
         if ($request->getMethod() === 'POST') {
@@ -64,19 +78,33 @@ class CategorieController extends AbstractController
                         'description' => $request->request->get('description'),
                     ]
                 );
+
                 if ($image = $request->files->get('image')) {
                     $originalFilename = pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME);
                     $newFilename = $originalFilename . '-' . uniqid() . '.' . $image->guessExtension();
                     try {
-                        $image->move(__DIR__ . '/../../public/images', $newFilename);
+                        $image->move(__DIR__ . self::IMAGE_DIR, $newFilename);
+
+                        // Supprimer l'ancienne image si on est en mise à jour
+                        if (!empty($categorie['image']) && $categorie['image'] !== $newFilename) {
+                            $oldImagePath = __DIR__ . self::IMAGE_DIR . $categorie['image'];
+                            if (file_exists($oldImagePath)) {
+                                @unlink($oldImagePath);
+                            }
+                        }
+
                         $categorie['image'] = $newFilename;
                     } catch (FileException $e) {
-                        // ... handle exception if something happens during file upload
+                        error_log('[CategorieController] Upload failed: ' . $e->getMessage());
+                        $form_errors['image'] = "Erreur lors du téléversement de l'image.";
                     }
                 }
 
-                $categorieManager->save($categorie);
-                return $this->redirectTo("/admin/categories");
+                if (empty($form_errors)) {
+                    $categorieManager->save($categorie);
+                    $this->session->getFlashBag()->add('success', "La catégorie a été enregistrée.");
+                    return $this->redirectTo("/admin/categories");
+                }
             }
         }
 
@@ -89,38 +117,47 @@ class CategorieController extends AbstractController
     public function delete(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
-        
-        // [SÉCURITÉ] Action destructive réservée à POST (la route est déjà POST-only,
-        // mais on double la vérification côté contrôleur par défense en profondeur).
+
+        // [SÉCURITÉ] Action destructive réservée à POST
         if (!$request->isMethod('POST')) {
             return new RedirectResponse('/admin/categories');
         }
-        
-        // [ROBUSTESSE] id depuis le corps POST en priorité, fallback query
-        // (utile pour les tests ou appels legacy).
-        $id = $request->request->get('id') ?? $request->query->get('id');
-        if (!$id) {
-            $this->session->getFlashBag()->add('error', 'ID catégorie manquant.');
+
+        $id = $this->getValidId($request);
+        if ($id === null) {
+            // URL modifiée manuellement : redirection silencieuse
             return new RedirectResponse('/admin/categories');
         }
-        
+
         $categorieManager = new CategorieManager();
         $categorie = $categorieManager->findId($id);
-        
+
         if (!$categorie) {
             $this->session->getFlashBag()->add('error', "La catégorie demandée n'existe pas.");
             return new RedirectResponse('/admin/categories');
         }
-        
+
         if ($categorieManager->hasEquipements($id)) {
             $this->session->getFlashBag()->add('error', "Impossible de supprimer cette catégorie car elle a des équipements associés.");
             return new RedirectResponse('/admin/categories');
         }
-        
+
+        // [MÉTIER] Hard delete => on supprime aussi le fichier image associé
+        $imageToDelete = null;
+        if (!empty($categorie['image'])) {
+            $imageToDelete = __DIR__ . self::IMAGE_DIR . $categorie['image'];
+        }
+
         $categorieManager->delete($id);
-        
+
+        if ($imageToDelete !== null && file_exists($imageToDelete)) {
+            if (!@unlink($imageToDelete)) {
+                error_log('[CategorieController] Failed to delete image: ' . $imageToDelete);
+            }
+        }
+
         $this->session->getFlashBag()->add('success', "La catégorie '{$categorie['libelle']}' a été supprimée.");
-        
+
         return new RedirectResponse('/admin/categories');
     }
 }

@@ -260,15 +260,14 @@ class EquipementController extends AbstractController
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
         
-        $id = $request->attributes->get('id');
-        
-        if (!$id) {
-            $this->session->getFlashBag()->add('danger', 'Identifiant de l\'équipement manquant.');
+        $id = $this->getValidId($request);
+        if ($id === null) {
+            // URL modifiée manuellement : on redirige silencieusement
             return $this->redirectTo('/equipements');
         }
         
         $equipementManager = new EquipementManager();
-        $equipement = $equipementManager->findId((int)$id);
+        $equipement = $equipementManager->findId($id);
         
         if (!$equipement) {
             $this->session->getFlashBag()->add('danger', 'Équipement non trouvé.');
@@ -285,9 +284,8 @@ class EquipementController extends AbstractController
             $equipement['emplacement'] = $emplacementManager->findId($equipement['emplacement_id']);
         }
         
-        $historiqueControles = $equipementManager->getHistoriqueControles((int)$id);
+        $historiqueControles = $equipementManager->getHistoriqueControles($id);
         
-        // Charger l'acquisition pour la facture
         $acquisition = null;
         if (!empty($equipement['acquisition_id'])) {
             $acquisitionManager = new AcquisitionManager();
@@ -380,9 +378,9 @@ class EquipementController extends AbstractController
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
         
-        $id = (int) $request->get('id');
-        if ($id <= 0) {
-            $this->session->getFlashBag()->add('error', 'ID équipement manquant.');
+        $id = $this->getValidId($request);
+        if ($id === null) {
+            // URL modifiée manuellement : redirection silencieuse
             return $this->redirectTo('/equipements');
         }
         
@@ -412,25 +410,6 @@ class EquipementController extends AbstractController
             return $this->redirectTo("/equipements/equipement-{$id}");
         }
         
-        // [SÉCURITÉ] Refuser si l'équipement est référencé dans un contrôle
-        // (préserve l'historique)
-//      $controleLigneManager = new \Epiclub\Domain\ControleLigneManager();
-//      if ($controleLigneManager->findByEquipement($id)) {
-//          $this->session->getFlashBag()->add(
-//              'error',
-//              "Impossible de supprimer cet équipement : il est référencé dans un ou plusieurs contrôles."
-//          );
-//          return $this->redirectTo("/equipements/equipement-{$id}");
-//      }
-        
-        // Supprimer la photo associée si elle existe
-//      if (!empty($equipement['photo'])) {
-//          $photoPath = $_SERVER['DOCUMENT_ROOT'] . $equipement['photo'];
-//          if (file_exists($photoPath) && !unlink($photoPath)) {
-//              error_log("[EquipementController] Failed to delete photo: $photoPath");
-//          }
-//      }
-        
         $equipementManager->delete($id);
         
         $this->session->getFlashBag()->add('success', "L'équipement '{$equipement['reference']}' a été supprimé.");
@@ -445,20 +424,28 @@ class EquipementController extends AbstractController
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
         
-        $id = $request->attributes->get('id');
-        if (!$id) {
+        // L'ID peut venir des attributs de route OU du path (regex legacy)
+        $id = $this->getValidId($request);
+        if ($id === null) {
             $path = $request->getPathInfo();
-            preg_match('/\/equipements\/equipement-pdf-(\d+)/', $path, $matches);
-            $id = $matches[1] ?? null;
+            if (preg_match('/\/equipements\/equipement-pdf-(\d+)/', $path, $matches)) {
+                $id = filter_var($matches[1], FILTER_VALIDATE_INT, [
+                    'options' => ['min_range' => 1],
+                ]);
+                $id = $id === false ? null : $id;
+            }
         }
-        if (!$id) {
-            throw new \Exception('ID manquant');
+        
+        if ($id === null) {
+            // URL modifiée manuellement : redirection silencieuse
+            return $this->redirectTo('/equipements');
         }
         
         $equipementManager = new EquipementManager();
-        $equipement = $equipementManager->findId((int)$id);
+        $equipement = $equipementManager->findId($id);
         if (!$equipement) {
-            throw new \Exception('Équipement non trouvé pour l\'ID : ' . $id);
+            $this->session->getFlashBag()->add('danger', 'Équipement non trouvé.');
+            return $this->redirectTo('/equipements');
         }
         
         $categorieManager = new CategorieManager();

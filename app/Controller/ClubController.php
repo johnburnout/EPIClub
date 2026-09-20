@@ -19,7 +19,8 @@ class ClubController extends AbstractController
     
     public function show(Request $request)
     {
-        $this->deniAccessUnlessGranted('ROLE_ADMIN');
+        // ⚠️ Réglages du club : réservé au SUPER_ADMIN
+        $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
         
         $clubManager = new ClubManager();
         $club = $clubManager->findParameters();
@@ -50,8 +51,7 @@ class ClubController extends AbstractController
             if (empty($form_errors)) {
                 $clubManager->save($club);
                 
-                // Message flash de succès (à adapter si votre système en utilise)
-                // $this->addFlash('success', 'Les informations du club ont été mises à jour.');
+                $this->session->getFlashBag()->add('success', "Les informations du club ont été mises à jour.");
                 
                 return new RedirectResponse("/admin/club");
             }

@@ -20,7 +20,7 @@
 
 		<div class="mb-3">
 			<label for="username">Pseudo :</label>
-			<input type="text" id="username" name="username" value="{{ utilisateur.username }}" class="form-control" readonly disabled>
+			<input type="text" id="username" value="{{ utilisateur.username }}" class="form-control" readonly disabled>
 			<small class="form-text text-muted">Le pseudo ne peut pas être modifié.</small>
 			<input type="hidden" name="username" value="{{ utilisateur.username }}">
 		</div>
@@ -40,38 +40,63 @@
 
 		<div class="mb-3">
 			<label for="role">Rôle :</label>
-			<select name="role" id="role" class="form-control">
-				{% for role, label in roles %}
-					<option value="{{ role }}" {% if utilisateur.role == role %} selected {% endif %}>{{ label }}</option>
-				{% endfor %}
-			</select>
+
+			{% if is_self is defined and is_self %}
+				{# Un utilisateur ne peut pas modifier son propre rôle via ce formulaire.
+				   Le contrôleur l'ignore de toute façon ; on désactive le champ pour
+				   éviter toute confusion côté interface. #}
+				<select id="role" class="form-control" disabled>
+					{% for role, label in roles %}
+						<option value="{{ role }}" {% if utilisateur.role == role %} selected {% endif %}>{{ label }}</option>
+					{% endfor %}
+				</select>
+				<input type="hidden" name="role" value="{{ utilisateur.role }}">
+				<small class="form-text text-muted">
+					Vous ne pouvez pas modifier votre propre rôle. Demandez à un autre administrateur.
+				</small>
+			{% else %}
+				<select name="role" id="role" class="form-control {% if form_errors.role %}is-invalid{% endif %}">
+					{% for role, label in roles %}
+						<option value="{{ role }}" {% if utilisateur.role == role %} selected {% endif %}>{{ label }}</option>
+					{% endfor %}
+				</select>
+				{% if form_errors.role %}<div class="invalid-feedback">{{ form_errors.role }}</div>{% endif %}
+			{% endif %}
 		</div>
 
 		<div class="form-actions d-flex gap-2">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 			<button type="submit" class="btn btn-primary">Enregistrer</button>
 			<a href="/admin/utilisateurs" class="btn btn-secondary">Retour à la liste</a>
-			
-			<!-- 🔒 Bouton de suppression : masqué pour le super admin -->
-			{% if utilisateur.username != 'admin' %}
+
+			{# Le bouton de suppression utilise l'attribut HTML5 `form` pour cibler
+			   un formulaire séparé (les formulaires ne peuvent pas être imbriqués). #}
+			{% if can_delete is defined and can_delete %}
 				<button type="submit" form="delete-utilisateur-form" class="btn btn-danger ms-auto"
 				        onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.')">
 					🗑️ Supprimer l'utilisateur
 				</button>
-			{% else %}
+			{% elseif is_self is defined and is_self %}
+				<span class="badge bg-info ms-auto p-2">
+					🔒 Vous ne pouvez pas supprimer votre propre compte
+				</span>
+			{% elseif utilisateur.username == 'admin' %}
 				<span class="badge bg-info ms-auto p-2">
 					🔒 Ce compte est protégé
+				</span>
+			{% elseif utilisateur.role == 'ROLE_SUPER_ADMIN' %}
+				<span class="badge bg-warning text-dark ms-auto p-2">
+					🔒 Dernier SUPER_ADMIN : suppression impossible
 				</span>
 			{% endif %}
 		</div>
 	</form>
 
-	{# Formulaire de suppression séparé, hors du formulaire principal #}
-	{# (HTML n'autorise pas les formulaires imbriqués) #}
-	{% if utilisateur.username != 'admin' %}
-	<form id="delete-utilisateur-form" method="post"
-	      action="/admin/utilisateurs/utilisateur_supprimer-{{ utilisateur.id }}"
-	      style="display:none;"></form>
+	{# Formulaire de suppression séparé, ciblé par l'attribut `form` du bouton ci-dessus. #}
+	{% if can_delete is defined and can_delete %}
+		<form id="delete-utilisateur-form" method="post"
+		      action="/admin/utilisateurs/utilisateur_supprimer-{{ utilisateur.id }}"
+		      style="display:none;"></form>
 	{% endif %}
 
 {% endblock %}
