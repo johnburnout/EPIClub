@@ -41,6 +41,7 @@ class QrRedirectController extends AbstractController
     public function redirect(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
+        
         // 1. Récupérer l'ID de l'équipement
         $id = $request->attributes->get('id');
         if (!$id) {
@@ -49,7 +50,6 @@ class QrRedirectController extends AbstractController
             $id = $matches[1] ?? null;
         }
         if (!$id) {
-            $this->addFlash('danger', 'ID d\'équipement manquant');
             header('Location: /equipements');
             exit;
         }
@@ -72,22 +72,17 @@ class QrRedirectController extends AbstractController
         // 4. Vérifier si l'utilisateur a un contrôle en cours
         $controleEnCours = $this->findControleEnCours((int)$id, $user['id']);
         if ($controleEnCours) {
-            // Vérifier si l'équipement est déjà dans une ligne de ce contrôle
             $controleLigne = $this->findControleLigneByEquipement($controleEnCours['id'], (int)$id);
             if ($controleLigne) {
-                // Rediriger vers la page d'édition de la ligne (saisie des remarques)
                 header('Location: /admin/controles/update-ligne/' . $controleLigne['id']);
                 exit;
             }
-            // L'équipement n'est pas encore dans le contrôle : on l'ajoute
             $this->addEquipementToControle((int)$id, $controleEnCours['id']);
-            // Récupérer la nouvelle ligne
             $newLigne = $this->findControleLigneByEquipement($controleEnCours['id'], (int)$id);
             if ($newLigne) {
                 header('Location: /admin/controles/update-ligne/' . $newLigne['id']);
                 exit;
             }
-            // Fallback : rediriger vers l'édition du contrôle
             header('Location: /admin/controles/edit/' . $controleEnCours['id']);
             exit;
         }
@@ -98,14 +93,14 @@ class QrRedirectController extends AbstractController
     }
     
     /**
-     * Page d'aiguillage avec interface (choix)
-     * URL: /qr/choix/{id}
-     */
+    * Page d'aiguillage avec interface (choix)
+    * URL: /qr/choix/{id}
+    */
     public function choicePage(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
-        $id = $request->attributes->get('id');
         
+        $id = $request->attributes->get('id');
         if (!$id) {
             $path = $request->getPathInfo();
             preg_match('/\/qr\/choix\/(\d+)/', $path, $matches);
@@ -113,7 +108,6 @@ class QrRedirectController extends AbstractController
         }
         
         if (!$id) {
-            $this->addFlash('danger', 'ID d\'équipement manquant');
             header('Location: /equipements');
             exit;
         }
@@ -127,8 +121,6 @@ class QrRedirectController extends AbstractController
         }
         
         $user = $this->getCurrentUser();
-        
-        // ✅ Vérifier si l'utilisateur peut créer un contrôle (via la méthode parente)
         $peutCreerControle = $user ? ($this->isGranted('ROLE_CONTROLLEUR') || $this->isGranted('ROLE_ADMIN')) : false;
         
         $controleEnCours = null;
@@ -149,9 +141,9 @@ class QrRedirectController extends AbstractController
     }
     
     /**
-     * Génère et affiche le QR code
-     * URL: /qr/generate/{id}
-     */
+    * Génère et affiche le QR code
+    * URL: /qr/generate/{id}
+    */
     public function generateQr(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
@@ -171,7 +163,6 @@ class QrRedirectController extends AbstractController
         if (!$id) {
             error_log("❌ Aucun ID trouvé");
             http_response_code(404);
-            echo 'ID d\'équipement manquant';
             exit;
         }
         
@@ -182,7 +173,6 @@ class QrRedirectController extends AbstractController
         if (!$equipement) {
             error_log("❌ Équipement non trouvé - ID: " . $id);
             http_response_code(404);
-            echo 'Équipement non trouvé pour l\'ID: ' . $id;
             exit;
         }
         
@@ -196,7 +186,6 @@ class QrRedirectController extends AbstractController
         if (!class_exists('Endroid\QrCode\Builder\Builder')) {
             error_log("❌ Endroid QR Code non trouvé");
             http_response_code(500);
-            echo 'Erreur: Bibliothèque QR Code non installée';
             exit;
         }
         
@@ -220,20 +209,19 @@ class QrRedirectController extends AbstractController
         } catch (\Exception $e) {
             error_log("❌ Erreur: " . $e->getMessage());
             http_response_code(500);
-            echo 'Erreur de génération: ' . $e->getMessage();
             exit;
         }
     }
     
     /**
-     * Télécharge le QR code
-     * URL: /qr/download/{id}
-     */
+    * Télécharge le QR code
+    * URL: /qr/download/{id}
+    */
     public function downloadQr(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
-        $id = $request->attributes->get('id');
         
+        $id = $request->attributes->get('id');
         if (!$id) {
             $path = $request->getPathInfo();
             preg_match('/\/qr\/download\/(\d+)/', $path, $matches);
@@ -242,7 +230,6 @@ class QrRedirectController extends AbstractController
         
         if (!$id) {
             http_response_code(404);
-            echo 'ID d\'équipement manquant';
             exit;
         }
         
@@ -250,7 +237,6 @@ class QrRedirectController extends AbstractController
         
         if (!$equipement) {
             http_response_code(404);
-            echo 'Équipement non trouvé';
             exit;
         }
         
@@ -272,8 +258,8 @@ class QrRedirectController extends AbstractController
             throw new \Exception('Fichier non trouvé');
             
         } catch (\Exception $e) {
+            error_log('[QrRedirectController] Download QR failed: ' . $e->getMessage());
             http_response_code(500);
-            echo 'Erreur: ' . $e->getMessage();
             exit;
         }
     }
@@ -285,8 +271,8 @@ class QrRedirectController extends AbstractController
     public function viewQr(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
-        $filename = $request->attributes->get('filename');
         
+        $filename = $request->attributes->get('filename');
         if (!$filename) {
             $path = $request->getPathInfo();
             preg_match('/\/qr\/view\/([^\/]+)/', $path, $matches);
@@ -295,7 +281,6 @@ class QrRedirectController extends AbstractController
         
         if (!$filename) {
             http_response_code(404);
-            echo 'Nom de fichier manquant';
             exit;
         }
         
@@ -309,21 +294,19 @@ class QrRedirectController extends AbstractController
         }
         
         http_response_code(404);
-        echo 'QR code non trouvé';
         exit;
     }
     
     /**
-     * Génère le QR code d'un équipement et le sauvegarde (API JSON)
-     * URL: /qr/save/{id}
-     */
+    * Génère le QR code d'un équipement et le sauvegarde (API JSON)
+    * URL: /qr/save/{id}
+    */
     public function saveQr(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
         header('Content-Type: application/json');
         
         $id = $request->attributes->get('id');
-        
         if (!$id) {
             $path = $request->getPathInfo();
             preg_match('/\/qr\/save\/(\d+)/', $path, $matches);
@@ -332,7 +315,7 @@ class QrRedirectController extends AbstractController
         
         if (!$id) {
             http_response_code(400);
-            echo json_encode(['error' => 'ID d\'équipement manquant']);
+            echo json_encode(['error' => 'Requête invalide']);
             exit;
         }
         
@@ -340,7 +323,7 @@ class QrRedirectController extends AbstractController
         
         if (!$equipement) {
             http_response_code(404);
-            echo json_encode(['error' => 'Équipement non trouvé']);
+            echo json_encode(['error' => 'Ressource non trouvée']);
             exit;
         }
         
@@ -366,23 +349,23 @@ class QrRedirectController extends AbstractController
             ]);
             exit;
         } catch (\Exception $e) {
+            error_log('[QrRedirectController] Save QR failed: ' . $e->getMessage());
             http_response_code(500);
-            echo json_encode(['error' => $e->getMessage()]);
+            echo json_encode(['error' => 'Erreur serveur']);
             exit;
         }
     }
     
     /**
-     * API pour générer un QR code (retourne l'URL du QR)
-     * URL: /api/qr/generate/{id}
-     */
+    * API pour générer un QR code (retourne l'URL du QR)
+    * URL: /api/qr/generate/{id}
+    */
     public function apiGenerateQr(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
         header('Content-Type: application/json');
         
         $id = $request->attributes->get('id');
-        
         if (!$id) {
             $path = $request->getPathInfo();
             preg_match('/\/api\/qr\/generate\/(\d+)/', $path, $matches);
@@ -391,7 +374,7 @@ class QrRedirectController extends AbstractController
         
         if (!$id) {
             http_response_code(400);
-            echo json_encode(['error' => 'ID d\'équipement manquant']);
+            echo json_encode(['error' => 'Requête invalide']);
             exit;
         }
         
@@ -399,7 +382,7 @@ class QrRedirectController extends AbstractController
         
         if (!$equipement) {
             http_response_code(404);
-            echo json_encode(['error' => 'Équipement non trouvé']);
+            echo json_encode(['error' => 'Ressource non trouvée']);
             exit;
         }
         

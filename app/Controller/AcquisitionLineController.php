@@ -18,9 +18,8 @@ class AcquisitionLineController extends AbstractController
         $acquisitionLigneManager = new AcquisitionLigneManager();
         $categorieManager = new CategorieManager();
 
-        $id = $request->get('id');
-        if (!$id) {
-            $this->session->getFlashBag()->add('error', 'ID de ligne manquant.');
+        $id = $this->getValidId($request);
+        if ($id === null) {
             return new RedirectResponse('/admin/acquisitions');
         }
 
@@ -98,9 +97,8 @@ class AcquisitionLineController extends AbstractController
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
 
-        $id = $request->get('id');
-        if (!$id) {
-            $this->session->getFlashBag()->add('error', 'ID de ligne manquant.');
+        $id = $this->getValidId($request);
+        if ($id === null) {
             return new RedirectResponse('/admin/acquisitions');
         }
 
