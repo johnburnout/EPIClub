@@ -60,9 +60,9 @@ class CategorieManager extends AbstractManager
     public function save(array $categorie)
     {
         if (isset($categorie['id'])) {
-            return $this->_update($categorie);
+            return $this->_patch($categorie);
         }
-        $this->_insert($categorie);
+        $this->_create($categorie);
         return $this->db->lastInsertId('categorie');
     }
 
@@ -81,7 +81,7 @@ class CategorieManager extends AbstractManager
         return $stmt->fetchColumn() > 0;
     }
 
-    private function _insert(array $categorie)
+    private function _create(array $categorie)
     {
         $defaults = [
             'libelle' => '',
@@ -98,7 +98,7 @@ class CategorieManager extends AbstractManager
         return $stmt->execute($filteredCategorie);
     }
     
-    private function _update(array $categorie)
+    private function _patch(array $categorie)
     {
         $defaults = [
             'libelle' => '',

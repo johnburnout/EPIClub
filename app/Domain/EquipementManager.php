@@ -66,10 +66,10 @@ class EquipementManager extends AbstractManager
     public function save(array $equipement)
     {
         if (isset($equipement['id'])) {
-            return $this->_update($equipement);
+            return $this->_patch($equipement);
         }
 
-        $this->_insert($equipement);
+        $this->_create($equipement);
         return $this->db->lastInsertId('club_equipement');
     }
 
@@ -81,7 +81,7 @@ class EquipementManager extends AbstractManager
         return $stmt->fetchColumn() > 0;
     }
 
-    private function _insert(array $equipement)
+    private function _create(array $equipement)
     {
         $equipement['remarques'] = $equipement['remarques'] ?? null;
         $equipement['date_dernier_controle'] = $equipement['date_dernier_controle'] ?? null;
@@ -122,7 +122,7 @@ class EquipementManager extends AbstractManager
         return $stmt->execute($filtered);
     }
     
-    private function _update(array $equipement)
+    private function _patch(array $equipement)
     {
         $allowedFields = [
             'acquisition_id', 'categorie_id', 'reference', 'libelle', 'code', 

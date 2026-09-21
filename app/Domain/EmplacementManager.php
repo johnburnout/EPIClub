@@ -72,10 +72,10 @@ class EmplacementManager extends AbstractManager
     public function save(array $emplacement)
     {
         if (isset($emplacement['id'])) {
-            return $this->_update($emplacement);
+            return $this->_patch($emplacement);
         }
 
-        $this->_insert($emplacement);
+        $this->_create($emplacement);
         return $this->db->lastInsertId('emplacement');
     }
 
@@ -94,14 +94,14 @@ class EmplacementManager extends AbstractManager
         return $stmt->fetchColumn() > 0;
     }
 
-    private function _insert(array $emplacement)
+    private function _create(array $emplacement)
     {
         $sql = "INSERT INTO emplacement (libelle, description, image) VALUES (:libelle, :description, :image)";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($emplacement);
     }
 
-    private function _update(array $emplacement)
+    private function _patch(array $emplacement)
     {
         $sql = "UPDATE emplacement SET libelle=:libelle, description=:description, image=:image WHERE id=:id";
         $stmt = $this->db->prepare($sql);

@@ -20,13 +20,13 @@ class ClubManager extends AbstractManager
     {
         // On s'assure que l'ID est présent pour la mise à jour
         if (isset($club['id'])) {
-            return $this->_update($club);
+            return $this->_patch($club);
         }
-        $this->_insert($club);
+        $this->_create($club);
         return $this->db->lastInsertId('club');
     }
 
-    private function _insert(array $club)
+    private function _create(array $club)
     {
         // On filtre les champs pour l'insertion
         $allowedFields = ['nom', 'activite', 'description', 'email', 'phone'];
@@ -38,7 +38,7 @@ class ClubManager extends AbstractManager
         return $stmt->execute($filteredClub);
     }
 
-    private function _update(array $club)
+    private function _patch(array $club)
     {
         // On filtre les champs pour la mise à jour
         $allowedFields = ['nom', 'activite', 'description', 'email', 'phone'];

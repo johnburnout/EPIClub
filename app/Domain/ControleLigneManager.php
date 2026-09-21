@@ -83,9 +83,9 @@ class ControleLigneManager extends AbstractManager
     public function save(array $ligne)
     {
         if (isset($ligne['id'])) {
-            return $this->_update($ligne);
+            return $this->_patch($ligne);
         }
-        $this->_insert($ligne);
+        $this->_create($ligne);
         return $this->db->lastInsertId('controle_ligne');
     }
 
@@ -96,7 +96,7 @@ class ControleLigneManager extends AbstractManager
         return $stmt->execute(['id' => $id]);
     }
 
-    private function _insert(array $ligne)
+    private function _create(array $ligne)
     {
         $sql = "INSERT INTO controle_ligne (controle_id, equipement_id, remarque, date_controle, statut)
                 VALUES (:controle_id, :equipement_id, :remarque, :date_controle, :statut)";
@@ -104,7 +104,7 @@ class ControleLigneManager extends AbstractManager
         return $stmt->execute($ligne);
     }
 
-    private function _update(array $ligne)
+    private function _patch(array $ligne)
     {
         $allowedFields = ['remarque', 'date_controle', 'statut', 'id'];
         $filteredLigne = array_intersect_key($ligne, array_flip($allowedFields));

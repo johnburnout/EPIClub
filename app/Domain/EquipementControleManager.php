@@ -65,10 +65,10 @@ class EquipementControleManager extends AbstractManager
     public function save(array $controle)
     {
         if (isset($controle['id'])) {
-            return $this->_update($controle);
+            return $this->_patch($controle);
         }
 
-        $this->_insert($controle);
+        $this->_create($controle);
 
         return $this->db->lastInsertId('club_equipement_controle');
     }
@@ -83,7 +83,7 @@ class EquipementControleManager extends AbstractManager
         throw new \Exception("La suppression d'un controle est impossible.", 1);
     }
 
-    private function _insert(array $controle)
+    private function _create(array $controle)
     {
         $sql = "INSERT INTO club_equipement_controle (controleur_id, club_equipement_id, etat, remarques, date_controle)
             VALUES (:controleur_id, :club_equipement_id, :etat, :remarques, :date_controle)";
@@ -92,7 +92,7 @@ class EquipementControleManager extends AbstractManager
         return $stmt->execute($controle);
     }
 
-    private function _update(array $controle)
+    private function _patch(array $controle)
     {
         $sql = "UPDATE club_equipement_controle 
             SET controleur_id=:controleur_id, club_equipement_id=:club_equipement_id, etat=:etat, remarques=:remarques, date_controle=:date_controle

@@ -104,10 +104,10 @@ class AcquisitionManager extends AbstractManager
     public function save(array $acquisition)
     {
         if (isset($acquisition['id'])) {
-            return $this->_update($acquisition);
+            return $this->_patch($acquisition);
         }
         
-        $this->_insert($acquisition);
+        $this->_create($acquisition);
         return (int) $this->db->lastInsertId('acquisition');
     }
     
@@ -118,7 +118,7 @@ class AcquisitionManager extends AbstractManager
         return $stmt->execute(['id' => $id]);
     }
     
-    private function _insert(array $acquisition)
+    private function _create(array $acquisition)
     {
         // ✅ On ne garde que les champs attendus par la requête
         $allowedFields = ['fournisseur_id', 'facture_reference', 'facture_date', 'facture_document', 'saisie_par', 'est_validee'];
@@ -130,7 +130,7 @@ class AcquisitionManager extends AbstractManager
         return $stmt->execute($filteredAcquisition);
     }
     
-    private function _update(array $acquisition)
+    private function _patch(array $acquisition)
     {
         // ✅ On ne garde que les champs attendus par la requête
         $allowedFields = ['fournisseur_id', 'facture_reference', 'facture_date', 'facture_document', 'saisie_par', 'est_validee', 'id'];

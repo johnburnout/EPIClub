@@ -61,10 +61,10 @@ class FournisseurManager extends AbstractManager
     public function save(array $fournisseur)
     {
         if (isset($fournisseur['id'])) {
-            return $this->_update($fournisseur);
+            return $this->_patch($fournisseur);
         }
 
-        $this->_insert($fournisseur);
+        $this->_create($fournisseur);
         return $this->db->lastInsertId('fournisseur');
     }
 
@@ -83,7 +83,7 @@ class FournisseurManager extends AbstractManager
         return $stmt->fetchColumn() > 0;
     }
 
-    private function _insert(array $fournisseur)
+    private function _create(array $fournisseur)
     {
         // ✅ S'assurer que les clés existent
         if (!isset($fournisseur['email'])) {
@@ -98,7 +98,7 @@ class FournisseurManager extends AbstractManager
         return $stmt->execute($fournisseur);
     }
 
-    private function _update(array $fournisseur)
+    private function _patch(array $fournisseur)
     {
         // ✅ S'assurer que les clés existent
         if (!isset($fournisseur['email'])) {

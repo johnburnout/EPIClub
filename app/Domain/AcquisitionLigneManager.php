@@ -66,10 +66,10 @@ class AcquisitionLigneManager extends AbstractManager
     public function save(array $ligne)
     {
         if (isset($ligne['id'])) {
-            return $this->_update($ligne);
+            return $this->_patch($ligne);
         }
 
-        $this->_insert($ligne);
+        $this->_create($ligne);
         return $this->db->lastInsertId('acquisition_ligne');
     }
 
@@ -90,7 +90,7 @@ class AcquisitionLigneManager extends AbstractManager
         return $stmt->execute(['id' => $id]);
     }
 
-    private function _insert(array $ligne)
+    private function _create(array $ligne)
     {
         $sql = "INSERT INTO acquisition_ligne (acquisition_id, reference, designation, categorie_id, nombre, equipements_generes, regrouper_en_lot) 
                 VALUES (:acquisition_id, :reference, :designation, :categorie_id, :nombre, :equipements_generes, :regrouper_en_lot)";
@@ -106,7 +106,7 @@ class AcquisitionLigneManager extends AbstractManager
         ]);
     }
     
-    private function _update(array $ligne)
+    private function _patch(array $ligne)
     {
         // Filtrer les champs pour éviter les erreurs
         $allowedFields = ['acquisition_id', 'reference', 'designation', 'categorie_id', 'nombre', 'equipements_generes', 'regrouper_en_lot', 'id'];

@@ -78,9 +78,9 @@ class UtilisateurManager extends AbstractManager
     public function save(array $utilisateur)
     {
         if (isset($utilisateur['id'])) {
-            return $this->_update($utilisateur);
+            return $this->_patch($utilisateur);
         }
-        $this->_insert($utilisateur);
+        $this->_create($utilisateur);
         return $this->db->lastInsertId('utilisateur');
     }
 
@@ -91,7 +91,7 @@ class UtilisateurManager extends AbstractManager
         return $stmt->execute(['id' => $id]);
     }
 
-    private function _update(array $utilisateur): bool
+    private function _patch(array $utilisateur): bool
     {
         $filtered = array_intersect_key($utilisateur, array_flip(self::ALLOWED_FIELDS));
 
@@ -120,7 +120,7 @@ class UtilisateurManager extends AbstractManager
         return $stmt->execute($filtered);
     }
 
-    private function _insert(array $utilisateur): bool
+    private function _create(array $utilisateur): bool
     {
         $filtered = array_intersect_key($utilisateur, array_flip(self::ALLOWED_FIELDS));
 

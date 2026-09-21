@@ -28,13 +28,13 @@ class ControleManager extends AbstractManager
     public function save(array $controle)
     {
         if (isset($controle['id'])) {
-            return $this->_update($controle);
+            return $this->_patch($controle);
         }
-        $this->_insert($controle);
+        $this->_create($controle);
         return $this->db->lastInsertId('controle');
     }
 
-    private function _insert(array $controle)
+    private function _create(array $controle)
     {
         // S'assurer que les clés existent
         if (!isset($controle['hash_remarques'])) {
@@ -47,7 +47,7 @@ class ControleManager extends AbstractManager
         return $stmt->execute($controle);
     }
 
-    private function _update(array $controle)
+    private function _patch(array $controle)
     {
         // Filtrer les champs pour éviter les erreurs
         $allowedFields = ['libelle', 'date_debut', 'date_fin', 'statut', 'controleur_id', 'hash_remarques', 'id'];
