@@ -341,20 +341,20 @@ $routes->add('qr_save',     new Route('/qr/save/{id}',               ['_controll
 // =====================================================================
 // MISE A JOUR DE L'APPLICATION
 // =====================================================================
-// ⚠️ Réservées à ROLE_SUPER_ADMIN (vérification dans UpdateController)
+// ⚠️ Réservées à ROLE_SUPER_ADMIN (vérification dans AppUpdateController)
 
 $routes->add('admin_update', new Route(
     '/admin/update',
-    ['_controller' => 'Epiclub\\Controller\\UpdateController', 'action' => 'index']
+    ['_controller' => 'Epiclub\\Controller\\AppUpdateController', 'action' => 'index']
 ));
 $routes->add('admin_update_perform', new Route(
     '/admin/update/perform',
-    ['_controller' => 'Epiclub\\Controller\\UpdateController', 'action' => 'perform'],
+    ['_controller' => 'Epiclub\\Controller\\AppUpdateController', 'action' => 'perform'],
     [], [], '', [], ['POST']
 ));
 $routes->add('admin_update_cleanup', new Route(
     '/admin/update/cleanup',
-    ['_controller' => 'Epiclub\\Controller\\UpdateController', 'action' => 'cleanup'],
+    ['_controller' => 'Epiclub\\Controller\\AppUpdateController', 'action' => 'cleanup'],
     [], [], '', [], ['POST']
 ));
 

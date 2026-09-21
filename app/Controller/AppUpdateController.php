@@ -8,7 +8,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use ZipArchive;
 
-class UpdateController extends AbstractController
+class AppUpdateController extends AbstractController
 {
     private const GITHUB_REPO = 'johnburnout/EPIClub';
     private const VERSION_FILE = __DIR__ . '/../../version.txt';
@@ -172,20 +172,20 @@ class UpdateController extends AbstractController
                 );
                 
                 $applied = $migrationManager->migrate(function ($migrationVersion) {
-                    error_log('[UpdateController] Migration appliquée : ' . $migrationVersion);
+                    error_log('[AppUpdateController] Migration appliquée : ' . $migrationVersion);
                 });
                 
                 if (!empty($applied)) {
                     error_log(sprintf(
-                        '[UpdateController] %d migration(s) appliquée(s).',
+                        '[AppUpdateController] %d migration(s) appliquée(s).',
                         count($applied)
                     ));
                 } else {
-                    error_log('[UpdateController] Base déjà à jour.');
+                    error_log('[AppUpdateController] Base déjà à jour.');
                 }
             } catch (\Throwable $e) {
                 error_log(sprintf(
-                    '[UpdateController] Migration failed: %s in %s:%d',
+                    '[AppUpdateController] Migration failed: %s in %s:%d',
                     $e->getMessage(),
                     $e->getFile(),
                     $e->getLine()
@@ -218,7 +218,7 @@ class UpdateController extends AbstractController
             
         } catch (\Throwable $e) {
             error_log(sprintf(
-                '[UpdateController] Update failed: %s in %s:%d',
+                '[AppUpdateController] Update failed: %s in %s:%d',
                 $e->getMessage(),
                 $e->getFile(),
                 $e->getLine()
