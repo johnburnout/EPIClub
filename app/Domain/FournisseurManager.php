@@ -8,15 +8,8 @@ class FournisseurManager extends AbstractManager
 {
     public function findAll($order = '', $limit = -1, $offset = 0)
     {
-        $params = '';
-
-        if ($order) {
-            $params .= " ORDER BY $order";
-        }
-
-        if ($limit > 1) {
-            $params .= " LIMIT $limit, $offset";
-        }
+        $params = $this->buildOrderClause($order)
+                . $this->buildLimitClause($limit, $offset);
 
         $sql = "SELECT * FROM fournisseur $params";
         $stmt = $this->db->prepare($sql);
@@ -85,14 +78,14 @@ class FournisseurManager extends AbstractManager
 
     private function _create(array $fournisseur)
     {
-        // ✅ S'assurer que les clés existent
+        // S'assurer que les clés existent
         if (!isset($fournisseur['email'])) {
             $fournisseur['email'] = null;
         }
         if (!isset($fournisseur['phone'])) {
             $fournisseur['phone'] = null;
         }
-        
+
         $sql = "INSERT INTO fournisseur (nom, email, phone) VALUES (:nom, :email, :phone)";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($fournisseur);
@@ -100,14 +93,14 @@ class FournisseurManager extends AbstractManager
 
     private function _patch(array $fournisseur)
     {
-        // ✅ S'assurer que les clés existent
+        // S'assurer que les clés existent
         if (!isset($fournisseur['email'])) {
             $fournisseur['email'] = null;
         }
         if (!isset($fournisseur['phone'])) {
             $fournisseur['phone'] = null;
         }
-        
+
         $sql = "UPDATE fournisseur SET nom=:nom, email=:email, phone=:phone WHERE id=:id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($fournisseur);

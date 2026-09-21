@@ -8,15 +8,8 @@ class EmplacementManager extends AbstractManager
 {
     public function findAll($order = '', $limit = -1, $offset = 0)
     {
-        $params = '';
-
-        if ($order) {
-            $params .= " ORDER BY $order";
-        }
-
-        if ($limit > 1) {
-            $params .= " LIMIT $limit, $offset";
-        }
+        $params = $this->buildOrderClause($order)
+                . $this->buildLimitClause($limit, $offset);
 
         $sql = "SELECT * FROM emplacement $params";
         $stmt = $this->db->prepare($sql);
@@ -26,22 +19,14 @@ class EmplacementManager extends AbstractManager
 
     public function findId(int $id)
     {
-        error_log("=== EquipementManager::findId ===");
-        error_log("ID recherché: " . $id);
-        error_log("Classe de db: " . get_class($this->db));
-        
-        $sql = "SELECT * FROM club_equipement WHERE id=:id";
-        error_log("SQL: " . $sql);
-        
+        $sql = "SELECT * FROM emplacement WHERE id=:id";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['id' => $id]);
-        
-        if ($equipement = $stmt->fetch()) {
-            error_log("✅ Équipement trouvé: " . $equipement['reference']);
-            return $equipement;
+
+        if ($emplacement = $stmt->fetch()) {
+            return $emplacement;
         }
-        
-        error_log("❌ Aucun équipement trouvé pour ID: " . $id);
+
         return null;
     }
 

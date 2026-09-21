@@ -1,4 +1,5 @@
-<?php 
+<?php
+
 namespace Epiclub\Domain;
 
 use Epiclub\Engine\AbstractManager;
@@ -7,15 +8,8 @@ class CategorieManager extends AbstractManager
 {
     public function findAll($order = '', $limit = -1, $offset = 0)
     {
-        $params = '';
-
-        if ($order) {
-            $params .= " ORDER BY $order";
-        }
-
-        if ($limit > 1) {
-            $params .= " LIMIT $limit, $offset";
-        }
+        $params = $this->buildOrderClause($order)
+                . $this->buildLimitClause($limit, $offset);
 
         $sql = "SELECT * FROM categorie $params";
         $stmt = $this->db->prepare($sql);
@@ -89,15 +83,15 @@ class CategorieManager extends AbstractManager
             'image' => null,
             'est_epi' => 1
         ];
-        
+
         $filteredCategorie = array_intersect_key($categorie, $defaults);
         $filteredCategorie = array_merge($defaults, $filteredCategorie);
-        
+
         $sql = "INSERT INTO categorie (libelle, description, image, est_epi) VALUES (:libelle, :description, :image, :est_epi)";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($filteredCategorie);
     }
-    
+
     private function _patch(array $categorie)
     {
         $defaults = [
@@ -107,10 +101,10 @@ class CategorieManager extends AbstractManager
             'est_epi' => 1,
             'id' => null
         ];
-        
+
         $filteredCategorie = array_intersect_key($categorie, $defaults);
         $filteredCategorie = array_merge($defaults, $filteredCategorie);
-        
+
         $sql = "UPDATE categorie SET libelle=:libelle, description=:description, image=:image, est_epi=:est_epi WHERE id=:id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($filteredCategorie);

@@ -15,13 +15,9 @@ class UtilisateurManager extends AbstractManager
 
     public function findAll($order = '', $limit = -1, $offset = 0)
     {
-        $params = '';
-        if ($order) {
-            $params .= " ORDER BY $order";
-        }
-        if ($limit > 0) {
-            $params .= " LIMIT $offset, $limit";
-        }
+        $params = $this->buildOrderClause($order)
+                . $this->buildLimitClause($limit, $offset);
+
         $sql = "SELECT * FROM utilisateur $params";
         $stmt = $this->db->prepare($sql);
         $stmt->execute();

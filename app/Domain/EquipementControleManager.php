@@ -8,15 +8,8 @@ class EquipementControleManager extends AbstractManager
 {
     public function findAll($order = '', $limit = -1, $offset = 0)
     {
-        $params = '';
-
-        if ($order) {
-            $params .= " ORDER BY $order";
-        }
-
-        if ($limit > 1) {
-            $params .= " LIMIT $limit, $offset";
-        }
+        $params = $this->buildOrderClause($order)
+                . $this->buildLimitClause($limit, $offset);
 
         $sql = "SELECT * FROM club_equipement_controle $params";
         $stmt = $this->db->prepare($sql);
@@ -76,10 +69,6 @@ class EquipementControleManager extends AbstractManager
     /** @deprecated Ne jamais supprimer un controle, en faire un nouveau qui remplace/corrige l'actuel */
     public function delete(int $id)
     {
-        /* $sql = "DELETE club_equipement_controle WHERE id=:id";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute(['id' => $id]); */
-
         throw new \Exception("La suppression d'un controle est impossible.", 1);
     }
 
@@ -94,7 +83,7 @@ class EquipementControleManager extends AbstractManager
 
     private function _patch(array $controle)
     {
-        $sql = "UPDATE club_equipement_controle 
+        $sql = "UPDATE club_equipement_controle
             SET controleur_id=:controleur_id, club_equipement_id=:club_equipement_id, etat=:etat, remarques=:remarques, date_controle=:date_controle
             WHERE id=:id";
         $stmt = $this->db->prepare($sql);

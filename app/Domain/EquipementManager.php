@@ -8,54 +8,47 @@ class EquipementManager extends AbstractManager
 {
     public function findAll($order = '', $limit = -1, $offset = 0)
     {
-        $params = '';
-        
-        if ($order) {
-            $params .= " ORDER BY $order";
-        }
-        
-        if ($limit > 1) {
-            $params .= " LIMIT $limit, $offset";
-        }
-        
+        $params = $this->buildOrderClause($order)
+                . $this->buildLimitClause($limit, $offset);
+
         $sql = "SELECT * FROM club_equipement WHERE deleted_at IS NULL $params";
         $stmt = $this->db->prepare($sql);
         $stmt->execute();
-        
+
         return $stmt->fetchAll();
     }
-    
+
     public function findId(int $id)
     {
         $sql = "SELECT * FROM club_equipement WHERE id=:id AND deleted_at IS NULL";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['id' => $id]);
-        
+
         if ($equipement = $stmt->fetch()) {
             return $equipement;
         }
-        
+
         return null;
     }
-    
+
     public function findOneByCriteria(array $criteria = [])
     {
         $params = 'deleted_at IS NULL';
         foreach ($criteria as $key => $value) {
             $params .= " AND $key=:$key";
         }
-        
+
         $sql = "SELECT * FROM club_equipement WHERE $params";
         $stmt = $this->db->prepare($sql);
         $stmt->execute($criteria);
-        
+
         if ($equipement = $stmt->fetch()) {
             return $equipement;
         }
-        
+
         return null;
     }
-    
+
     public function delete(int $id)
     {
         $sql = "UPDATE club_equipement SET deleted_at = NOW() WHERE id = :id";
@@ -92,51 +85,51 @@ class EquipementManager extends AbstractManager
         $equipement['nombre'] = $equipement['nombre'] ?? 1;
         $equipement['photo'] = $equipement['photo'] ?? null;
         $equipement['est_epi'] = $equipement['est_epi'] ?? 1;
-        
+
         $allowedFields = [
-            'acquisition_id', 'categorie_id', 'reference', 'libelle', 'code', 
-            'statut', 'remarques', 'date_dernier_controle', 'controle_en_cours', 
+            'acquisition_id', 'categorie_id', 'reference', 'libelle', 'code',
+            'statut', 'remarques', 'date_dernier_controle', 'controle_en_cours',
             'emplacement_id', 'date_mise_en_service', 'date_fin_utilisation',
             'nombre', 'photo', 'est_epi'
         ];
-        
+
         $filtered = array_intersect_key($equipement, array_flip($allowedFields));
-        
-        $sql = "INSERT INTO club_equipement 
-        (acquisition_id, categorie_id, reference, libelle, code, statut, remarques, 
-            date_dernier_controle, controle_en_cours, emplacement_id, 
+
+        $sql = "INSERT INTO club_equipement
+        (acquisition_id, categorie_id, reference, libelle, code, statut, remarques,
+            date_dernier_controle, controle_en_cours, emplacement_id,
             date_mise_en_service, date_fin_utilisation, nombre, photo, est_epi)
-        VALUES 
-        (:acquisition_id, :categorie_id, :reference, :libelle, :code, :statut, :remarques, 
-            :date_dernier_controle, :controle_en_cours, :emplacement_id, 
+        VALUES
+        (:acquisition_id, :categorie_id, :reference, :libelle, :code, :statut, :remarques,
+            :date_dernier_controle, :controle_en_cours, :emplacement_id,
             :date_mise_en_service, :date_fin_utilisation, :nombre, :photo, :est_epi)";
-        
+
         $stmt = $this->db->prepare($sql);
-        
+
         foreach ($allowedFields as $field) {
             if (!array_key_exists($field, $filtered)) {
                 $filtered[$field] = null;
             }
         }
-        
+
         return $stmt->execute($filtered);
     }
-    
+
     private function _patch(array $equipement)
     {
         $allowedFields = [
-            'acquisition_id', 'categorie_id', 'reference', 'libelle', 'code', 
-            'statut', 'remarques', 'date_dernier_controle', 'controle_en_cours', 
+            'acquisition_id', 'categorie_id', 'reference', 'libelle', 'code',
+            'statut', 'remarques', 'date_dernier_controle', 'controle_en_cours',
             'emplacement_id', 'id', 'date_mise_en_service', 'date_fin_utilisation',
             'nombre', 'photo', 'est_epi'
         ];
         $filtered = array_intersect_key($equipement, array_flip($allowedFields));
-        
-        $sql = "UPDATE club_equipement 
-                SET acquisition_id=:acquisition_id, categorie_id=:categorie_id, 
-                    reference=:reference, libelle=:libelle, code=:code, 
-                    statut=:statut, remarques=:remarques, 
-                    date_dernier_controle=:date_dernier_controle, 
+
+        $sql = "UPDATE club_equipement
+                SET acquisition_id=:acquisition_id, categorie_id=:categorie_id,
+                    reference=:reference, libelle=:libelle, code=:code,
+                    statut=:statut, remarques=:remarques,
+                    date_dernier_controle=:date_dernier_controle,
                     controle_en_cours=:controle_en_cours,
                     emplacement_id=:emplacement_id,
                     date_mise_en_service=:date_mise_en_service,
@@ -148,15 +141,13 @@ class EquipementManager extends AbstractManager
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($filtered);
     }
-    
-    // app/Domain/EquipementManager.php
-    
+
     /**
-    * Récupère l'historique des contrôles clôturés pour un équipement
-    */
+     * Récupère l'historique des contrôles clôturés pour un équipement
+     */
     public function getHistoriqueControles(int $equipementId): array
     {
-        $sql = "SELECT cl.*, 
+        $sql = "SELECT cl.*,
         c.libelle as controle_libelle,
         c.date_debut as controle_date_debut,
         c.date_fin as controle_date_fin,
@@ -166,20 +157,20 @@ class EquipementManager extends AbstractManager
         FROM controle_ligne cl
         INNER JOIN controle c ON cl.controle_id = c.id
         LEFT JOIN utilisateur u ON c.controleur_id = u.id
-        WHERE cl.equipement_id = :equipement_id 
+        WHERE cl.equipement_id = :equipement_id
         AND c.statut = 'cloture'
         ORDER BY c.date_fin DESC";
-        
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['equipement_id' => $equipementId]);
         $result = $stmt->fetchAll();
-        
+
         // Déchiffrer les remarques si nécessaire
         if (!empty($result)) {
             $config = include __DIR__ . '/../../.env.local.php';
             $secretKey = isset($config['SECRET_KEY']) ? hex2bin($config['SECRET_KEY']) : null;
             $cipherMethod = $config['CIPHER_METHOD'] ?? 'AES-256-CBC';
-            
+
             foreach ($result as &$ligne) {
                 // Déchiffrer la remarque de la ligne si elle existe
                 if (!empty($ligne['remarque'])) {
@@ -198,7 +189,7 @@ class EquipementManager extends AbstractManager
                 }
             }
         }
-        
+
         return $result;
     }
 }

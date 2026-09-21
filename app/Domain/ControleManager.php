@@ -6,12 +6,15 @@ use Epiclub\Engine\AbstractManager;
 
 class ControleManager extends AbstractManager
 {
-    public function findAll($order = 'date_debut DESC')
+    public function findAll($order = 'date_debut DESC', $limit = -1, $offset = 0)
     {
-        $sql = "SELECT c.*, u.prenom, u.nom 
+        $params = $this->buildOrderClause($order)
+                . $this->buildLimitClause($limit, $offset);
+
+        $sql = "SELECT c.*, u.prenom, u.nom
                 FROM controle c
                 LEFT JOIN utilisateur u ON c.controleur_id = u.id
-                ORDER BY $order";
+                $params";
         $stmt = $this->db->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll();
@@ -40,7 +43,7 @@ class ControleManager extends AbstractManager
         if (!isset($controle['hash_remarques'])) {
             $controle['hash_remarques'] = null;
         }
-        
+
         $sql = "INSERT INTO controle (libelle, date_debut, date_fin, statut, controleur_id, cree_par, hash_remarques)
                 VALUES (:libelle, :date_debut, :date_fin, :statut, :controleur_id, :cree_par, :hash_remarques)";
         $stmt = $this->db->prepare($sql);
@@ -52,17 +55,17 @@ class ControleManager extends AbstractManager
         // Filtrer les champs pour éviter les erreurs
         $allowedFields = ['libelle', 'date_debut', 'date_fin', 'statut', 'controleur_id', 'hash_remarques', 'id'];
         $filteredControle = array_intersect_key($controle, array_flip($allowedFields));
-        
+
         $sql = "UPDATE controle SET libelle=:libelle, date_debut=:date_debut, date_fin=:date_fin,
                 statut=:statut, controleur_id=:controleur_id, hash_remarques=:hash_remarques
                 WHERE id=:id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute($filteredControle);
     }
-    
+
     /**
-    * Trouve un contrôle en cours pour un utilisateur
-    */
+     * Trouve un contrôle en cours pour un utilisateur
+     */
     public function findActiveByUser(int $userId): ?array
     {
         $sql = "SELECT * FROM controle WHERE statut = 'ouvert' AND controleur_id = :user_id LIMIT 1";
@@ -71,7 +74,7 @@ class ControleManager extends AbstractManager
         $result = $stmt->fetch();
         return $result ?: null;
     }
-    
+
     public function delete(int $id)
     {
         $sql = "DELETE FROM controle WHERE id=:id";
