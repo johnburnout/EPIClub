@@ -59,6 +59,9 @@ class IndexController extends AbstractController
         // ⚠️ Configuration système (SMTP) : réservée au SUPER_ADMIN
         $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
 
+        // [SÉCURITÉ] Vérification CSRF avant toute modification de .env.local.php
+        $this->validateCsrf($request);
+
         // Récupération des données du formulaire
         $host = (string) $request->request->get('smtp_host', '');
         $port = (string) $request->request->get('smtp_port', '');
@@ -131,6 +134,9 @@ class IndexController extends AbstractController
     {
         // ⚠️ Test de la configuration système : réservé au SUPER_ADMIN
         $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
+
+        // [SÉCURITÉ] Vérification CSRF avant envoi d'email
+        $this->validateCsrf($request);
 
         try {
             // Charger .env.local.php

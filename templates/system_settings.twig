@@ -132,7 +132,8 @@
                     fetch('/test-mail', {
                         method: 'POST',
                         headers: {
-                            'X-Requested-With': 'XMLHttpRequest'
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'X-CSRF-Token': '{{ csrf_token }}'
                         }
                     })
                     .then(response => response.json())
