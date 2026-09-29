@@ -134,6 +134,7 @@
                                 <span class="text-muted small" title="Des équipements sont encore marqués « À contrôler »">⚠️</span>
                             {% else %}
                                 <form method="post" action="/admin/controles/cloturer/{{ controle.id }}" style="display:inline;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                     <button type="submit" class="btn btn-sm btn-success"
                                             onclick="return confirm('Clôturer ce contrôle ?')">
                                         Clôturer
@@ -146,6 +147,7 @@
                         {% endif %}
                         {% if controle.statut != 'cloture' and (isGranted('ROLE_ADMIN') or controle.isOwner) %}
                             <form method="post" action="/admin/controles/supprimer/{{ controle.id }}" style="display:inline;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                 <button type="submit" class="btn btn-sm btn-danger"
                                         onclick="return confirm('⚠️ Supprimer le contrôle « {{ controle.libelle }} » ?\n\nToutes les lignes saisies seront perdues. Cette action est irréversible.');">
                                     🗑️

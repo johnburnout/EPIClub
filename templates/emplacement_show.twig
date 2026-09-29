@@ -5,6 +5,7 @@
 	<hr>
 
 	<form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 		<div class="mb-3">
 			<label for="libelle">Libellé *</label>
 			<input type="text" id="libelle" name="libelle" value="{{ emplacement.libelle }}"

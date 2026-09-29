@@ -24,6 +24,7 @@
 	{% endif %}
 
 	<form method="post" enctype="multipart/form-data">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 		<div class="mb-3">
 			<label for="fournisseur_nom">Fournisseur</label>
 			<input type="text" class="form-control" list="fournisseurs" name="fournisseur_nom" id="fournisseur_nom" value="{{ acquisition.fournisseur.nom }}" required {{ is_readonly }}/>
@@ -214,6 +215,7 @@
 									{% if ligne.equipements_generes == 0 and not acquisition.est_validee %}
 										<a href="/admin/acquisitions/ligne_modification-{{ ligne.id }}" class="btn btn-sm btn-warning">Modifier</a>
 										<form method="post" action="/admin/acquisitions/ligne_supprimer-{{ ligne.id }}" style="display:inline;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 											<button type="submit" class="btn btn-sm btn-danger"
 											        onclick="return confirm('Supprimer cette ligne ?')">
 												Supprimer

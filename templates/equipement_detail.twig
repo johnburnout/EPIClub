@@ -299,6 +299,7 @@
 				{% if isGranted('ROLE_ADMIN') %}
 				{% if equipement.statut == 2 and not equipement.controle_en_cours %}
 				<form method="post" action="/equipements/equipement_supprimer-{{ equipement.id }}" style="display:inline;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 					<button type="submit" class="btn btn-danger"
 						onclick="return confirm('Confirmer la suppression définitive de cet équipement « {{ equipement.reference }} » ?\n\nCette action est irréversible.');">
 						<i class="fas fa-trash"></i> Supprimer
