@@ -191,6 +191,10 @@ class ControleController extends AbstractController
     {
         $this->deniAccessUnlessGranted('ROLE_CONTROLLEUR');
 
+        // [SÉCURITÉ] Vérification CSRF (no-op si GET ; la route /creer devrait
+        // être POST-only, cf. TODO dans routes.php)
+        $this->validateCsrf($request);
+
         $user = $this->session->get('user');
         if (!empty($user['controle_en_cours_id'])) {
             $this->session->getFlashBag()->add('error', 'Vous avez déjà un contrôle en cours. Terminez-le avant d\'en créer un nouveau.');
@@ -254,6 +258,9 @@ class ControleController extends AbstractController
 
         // --- Gestion du POST pour la remarque générale ---
         if ($request->getMethod() === 'POST' && !$readonly) {
+            // [SÉCURITÉ] Vérification CSRF avant enregistrement des remarques
+            $this->validateCsrf($request);
+
             $remarqueGenerale = $request->request->get('remarques_generales', '');
             $controle['hash_remarques'] = $remarqueGenerale;
             $controleManager->save($controle);
@@ -559,6 +566,9 @@ class ControleController extends AbstractController
     {
         $this->deniAccessUnlessGranted('ROLE_CONTROLLEUR');
 
+        // [SÉCURITÉ] Vérification CSRF (route POST-only)
+        $this->validateCsrf($request);
+
         $controle_id = $this->getValidId($request, 'controle_id');
         if ($controle_id === null) {
             // URL modifiée manuellement : redirection silencieuse
@@ -627,6 +637,9 @@ class ControleController extends AbstractController
         }
 
         if ($request->getMethod() === 'POST') {
+            // [SÉCURITÉ] Vérification CSRF avant mise à jour de la ligne
+            $this->validateCsrf($request);
+
             $ligne['remarque'] = $request->request->get('remarque');
             $ligne['date_controle'] = $request->request->get('date_controle');
             $ligne['statut'] = $request->request->get('statut');
@@ -663,6 +676,10 @@ class ControleController extends AbstractController
     public function cloturer(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_CONTROLLEUR');
+
+        // [SÉCURITÉ] Vérification CSRF (route POST-only ; action critique :
+        // chiffre les remarques et met à jour le statut des équipements)
+        $this->validateCsrf($request);
 
         $id = $this->getValidId($request);
         if ($id === null) {
@@ -776,6 +793,9 @@ class ControleController extends AbstractController
     public function delete(Request $request): Response
     {
         $this->deniAccessUnlessGranted('ROLE_CONTROLLEUR');
+
+        // [SÉCURITÉ] Vérification CSRF (route POST-only)
+        $this->validateCsrf($request);
 
         $id = $this->getValidId($request);
         if ($id === null) {
