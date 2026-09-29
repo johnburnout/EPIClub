@@ -10,6 +10,12 @@ use ZipArchive;
 
 class AppUpdateController extends AbstractController
 {
+    // NOTE : ce contrôleur ne délègue PAS à AbstractController::validateCsrf()
+    // car les actions perform() et cleanup() rendent un message gracieux
+    // (update_result.twig ou flash + redirect) plutôt que de propager
+    // une AccessDeniedException. Comportement volontaire pour une opération
+    // SUPER_ADMIN critique : on ne veut pas perdre l'utilisateur sur un 403 brut.
+    // Le contrôle reste strictement équivalent à validateCsrf() (hash_equals).
     private const GITHUB_REPO = 'johnburnout/EPIClub';
     private const VERSION_FILE = __DIR__ . '/../../version.txt';
     private const TEMP_DIR = __DIR__ . '/../../var/tmp/update';
