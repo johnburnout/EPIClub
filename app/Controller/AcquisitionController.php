@@ -36,8 +36,7 @@ class AcquisitionController extends AbstractController
 
     public function create(Request $request): Response
     {
-        // [SÉCURITÉ] Contrôle d'accès manquant
-        $this->deniAccessUnlessGranted('ROLE_USER');
+        $this->deniAccessUnlessGranted('ROLE_ADMIN');
         
         $fournisseurManager = new FournisseurManager();
         $categorieManager = new CategorieManager();
@@ -108,8 +107,7 @@ class AcquisitionController extends AbstractController
 
     public function update(Request $request): Response
     {
-        // [SÉCURITÉ] Contrôle d'accès manquant
-        $this->deniAccessUnlessGranted('ROLE_USER');
+        $this->deniAccessUnlessGranted('ROLE_ADMIN');
         
         $acquisitionManager = new AcquisitionManager();
         $acquisitionLigneManager = new AcquisitionLigneManager();
@@ -379,7 +377,6 @@ class AcquisitionController extends AbstractController
 
     public function show(Request $request): Response
     {
-        // [SÉCURITÉ] Contrôle d'accès manquant
         $this->deniAccessUnlessGranted('ROLE_USER');
 
         $acquisitionManager = new AcquisitionManager();
@@ -456,8 +453,7 @@ class AcquisitionController extends AbstractController
 
     public function serveFile(Request $request): BinaryFileResponse
     {
-        // [SÉCURITÉ] Contrôle d'accès manquant — critique car expose des factures
-        $this->deniAccessUnlessGranted('ROLE_USER');
+        $this->deniAccessUnlessGranted('ROLE_ADMIN');
 
         $path = (string) $request->attributes->get('path');
 
