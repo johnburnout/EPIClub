@@ -464,7 +464,7 @@ class AcquisitionController extends AbstractController
 
         if ($realBase === false
             || $realPath === false
-            || !str_starts_with($realPath, $realBase)
+            || !str_starts_with($realPath, $realBase . DIRECTORY_SEPARATOR)
         ) {
             throw new NotFoundException('Fichier non trouvé');
         }
