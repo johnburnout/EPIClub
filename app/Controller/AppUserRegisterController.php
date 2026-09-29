@@ -37,6 +37,9 @@ class AppUserRegisterController extends AbstractController
         $form_errors = [];
 
         if ($request->getMethod() === 'POST') {
+            // [SÉCURITÉ] Vérification CSRF avant tout traitement
+            $this->validateCsrf($request);
+
             $email = (string) $request->request->get('email', '');
 
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -173,6 +176,12 @@ class AppUserRegisterController extends AbstractController
         $form_errors = [];
 
         if ($request->getMethod() === 'POST') {
+            // [SÉCURITÉ] Vérification CSRF avant tout traitement.
+            // Nota : le token de reset (query/body `token`) a déjà été validé
+            // ci-dessus — ce sont deux choses différentes. Le token métier
+            // prouve l'identité, le CSRF prouve l'origine de la requête.
+            $this->validateCsrf($request);
+
             $password = (string) $request->request->get('password', '');
             $confirmPassword = (string) $request->request->get('confirm_password', '');
 
