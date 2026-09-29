@@ -50,12 +50,20 @@ class AcquisitionController extends AbstractController
             $action = $request->request->get('action');
             
             if ($action === 'create') {
-                $acquisition = $request->request->all();
+                // [SÉCURITÉ] Whitelist des champs — empêche l'injection de clés
+                // arbitraires (id, est_validee, saisie_par, ...) via POST forgé.
+                // Sans ce filtre, un attaquant pouvait écraser des colonnes sensibles
+                // par mass-assignment.
+                $acquisition = [
+                    'facture_reference' => trim((string) $request->request->get('facture_reference', '')),
+                    'facture_date'      => $request->request->get('facture_date'),
+                    'fournisseur_nom'   => trim((string) $request->request->get('fournisseur_nom', '')),
+                ];
                 $acquisition['saisie_par'] = $this->session->get('user')['id'];
                 $acquisition['facture_document'] = null;
                 
                 // [ROBUSTESSE] Vérifier l'unicité de la référence AVANT l'insert
-                $factureReference = trim((string) ($acquisition['facture_reference'] ?? ''));
+                $factureReference = $acquisition['facture_reference'];
                 if ($factureReference === '') {
                     $form_errors['facture_reference'] = 'La référence de facture est obligatoire.';
                 } else {
