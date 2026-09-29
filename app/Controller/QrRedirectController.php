@@ -300,6 +300,16 @@ class QrRedirectController extends AbstractController
     /**
     * Génère le QR code d'un équipement et le sauvegarde (API JSON)
     * URL: /qr/save/{id}
+    *
+    * NOTE SÉCURITÉ :
+    * Cette action est déclenchable en GET (route non restreinte à POST),
+    * mais elle est :
+    *   - réservée aux utilisateurs authentifiés (ROLE_USER)
+    *   - idempotente (le fichier `equipement_{id}.png` est écrasé à chaque appel)
+    *   - sans effet de bord sur les données métier (aucune écriture BDD)
+    * Le risque résiduel est un DoS disque/CPU très limité (N IDs × ~5 Ko).
+    * Choix volontaire de ne pas exiger POST+CSRF pour préserver la simplicité
+    * du fetch JS côté fiche équipement.
     */
     public function saveQr(Request $request)
     {
