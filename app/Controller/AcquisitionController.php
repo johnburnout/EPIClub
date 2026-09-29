@@ -45,6 +45,9 @@ class AcquisitionController extends AbstractController
         $form_errors = [];
         
         if ($request->getMethod() === 'POST') {
+            // [SÉCURITÉ] Vérification CSRF avant tout traitement (y compris upload facture)
+            $this->validateCsrf($request);
+            
             $action = $request->request->get('action');
             
             if ($action === 'create') {
@@ -132,6 +135,9 @@ class AcquisitionController extends AbstractController
         $ligneData = [];
         
         if ($request->getMethod() === 'POST') {
+            // [SÉCURITÉ] Vérification CSRF avant tout traitement (y compris upload facture)
+            $this->validateCsrf($request);
+            
             $action = $request->request->get('action');
             
             // --- Action : Valider ---
@@ -297,6 +303,9 @@ class AcquisitionController extends AbstractController
         // [SÉCURITÉ] Seul un admin peut supprimer une acquisition
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
         
+        // [SÉCURITÉ] Vérification CSRF (avant toute suppression de fichier ou d'enregistrement)
+        $this->validateCsrf($request);
+        
         $id = (int) $request->get('id');
         if ($id <= 0) {
             $this->session->getFlashBag()->add('error', 'Acquisition invalide.');
@@ -398,6 +407,9 @@ class AcquisitionController extends AbstractController
     public function valider(Request $request): Response
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
+
+        // [SÉCURITÉ] Vérification CSRF (avant génération des équipements)
+        $this->validateCsrf($request);
 
         $id = (int) $request->get('id');
         $acquisitionManager = new AcquisitionManager();

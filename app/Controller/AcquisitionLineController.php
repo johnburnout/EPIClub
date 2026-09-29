@@ -40,6 +40,9 @@ class AcquisitionLineController extends AbstractController
         $form_errors = [];
 
         if ($request->getMethod() === 'POST') {
+            // [SÉCURITÉ] Vérification CSRF avant tout traitement
+            $this->validateCsrf($request);
+
             $reference = trim($request->request->get('reference'));
             $designation = trim($request->request->get('designation'));
             $categorie_libelle = trim($request->request->get('categorie_libelle'));
@@ -96,6 +99,9 @@ class AcquisitionLineController extends AbstractController
     public function deleteLine(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
+
+        // [SÉCURITÉ] Vérification CSRF
+        $this->validateCsrf($request);
 
         $id = $this->getValidId($request);
         if ($id === null) {
