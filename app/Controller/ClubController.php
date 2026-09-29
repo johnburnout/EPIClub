@@ -27,6 +27,9 @@ class ClubController extends AbstractController
         $form_errors = [];
         
         if ($request->getMethod() === 'POST') {
+            // [SÉCURITÉ] Vérification CSRF avant tout traitement
+            $this->validateCsrf($request);
+            
             // Récupération des données du formulaire
             $club['nom'] = trim($request->request->get('nom'));
             $club['activite'] = trim($request->request->get('activite'));
