@@ -96,7 +96,8 @@
 	{% if can_delete is defined and can_delete %}
 		<form id="delete-utilisateur-form" method="post"
 		      action="/admin/utilisateurs/utilisateur_supprimer-{{ utilisateur.id }}"
-		      style="display:none;"></form>
+		      style="display:none;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}"></form>
 	{% endif %}
 
 {% endblock %}

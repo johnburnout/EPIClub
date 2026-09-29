@@ -312,7 +312,8 @@ class EquipementController extends AbstractController
         $equipement = [];
         $form_errors = [];
         
-        if ($id = $request->get('id')) {
+        $id = $this->getValidId($request);
+        if ($id !== null) {
             $equipement = $equipementManager->findId($id);
             if ($equipement && isset($equipement['categorie_id'])) {
                 $equipement['categorie'] = $categorieManager->findId($equipement['categorie_id']);
@@ -320,6 +321,9 @@ class EquipementController extends AbstractController
         }
         
         if ($request->getMethod() === 'POST') {
+            // [SÉCURITÉ] Vérification CSRF AVANT tout traitement (y compris upload)
+            $this->validateCsrf($request);
+            
             $emplacement_id = $request->request->get('emplacement_id');
             if ($emplacement_id === '') $emplacement_id = null;
             
@@ -377,6 +381,9 @@ class EquipementController extends AbstractController
     public function delete(Request $request): Response
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
+        
+        // [SÉCURITÉ] Vérification CSRF en premier
+        $this->validateCsrf($request);
         
         $id = $this->getValidId($request);
         if ($id === null) {

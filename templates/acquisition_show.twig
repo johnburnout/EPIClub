@@ -106,6 +106,7 @@
 									{% if ligne.equipements_generes == 0 %}
 									<a href="/admin/acquisitions/ligne_modification-{{ ligne.id }}" class="btn btn-sm btn-warning">Modifier</a>
 									<form method="post" action="/admin/acquisitions/ligne_supprimer-{{ ligne.id }}" style="display:inline;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 										<button type="submit" class="btn btn-sm btn-danger"
 											onclick="return confirm('Supprimer cette ligne ?')">
 											Supprimer
@@ -142,6 +143,7 @@
 		{% if not acquisition.est_validee and acquisition.lignes and acquisition.lignes|length > 0 %}
 			{% if acquisition.facture_document %}
 				<form method="post" action="/admin/acquisitions/valider/{{ acquisition.id }}" style="display: inline;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 					<button type="submit" name="action" value="valider" class="btn btn-success" 
 						onclick="return confirm('⚠️ Valider cette acquisition ? Les équipements seront générés définitivement et vous ne pourrez plus modifier les lignes.')">
 						✅ Valider l'acquisition
@@ -170,6 +172,7 @@
 		<!-- BOUTON SUPPRIMER LE BROUILLON -->
 		{% if isGranted('ROLE_ADMIN') and not acquisition.est_validee %}
 		<form method="post" action="/admin/acquisitions/acquisition_supprimer-{{ acquisition.id }}" style="display:inline;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 			<button type="submit" class="btn btn-danger"
 				onclick="return confirm('⚠️ Supprimer définitivement cette acquisition ({{ acquisition.facture_reference }}) ?\n\nCette action est irréversible.');">
 				🗑️ Supprimer le brouillon

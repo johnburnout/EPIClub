@@ -67,6 +67,9 @@ class FournisseurController extends AbstractController
         }
 
         if ($request->getMethod() === 'POST') {
+            // [SÉCURITÉ] Vérification CSRF avant tout traitement
+            $this->validateCsrf($request);
+
             $nom = trim($request->request->get('nom'));
             $email = trim($request->request->get('email'));
             $phone = trim($request->request->get('phone'));
@@ -110,6 +113,9 @@ class FournisseurController extends AbstractController
         if (!$request->isMethod('POST')) {
             return new RedirectResponse('/admin/fournisseurs');
         }
+
+        // [SÉCURITÉ] Vérification CSRF
+        $this->validateCsrf($request);
 
         $id = $this->getValidId($request);
         if ($id === null) {

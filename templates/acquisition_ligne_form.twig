@@ -5,6 +5,7 @@
 	<hr>
 
 	<form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 		<div class="mb-3">
 			<label for="reference">Référence *</label>
 			<input type="text" class="form-control {% if form_errors.reference %}is-invalid{% endif %}" 

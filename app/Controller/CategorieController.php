@@ -68,6 +68,9 @@ class CategorieController extends AbstractController
         }
 
         if ($request->getMethod() === 'POST') {
+            // [SÉCURITÉ] Vérification CSRF avant tout traitement (y compris upload)
+            $this->validateCsrf($request);
+
             /** @todo Need validation here */
             if (empty($form_errors)) {
                 $categorie = array_merge(
@@ -122,6 +125,9 @@ class CategorieController extends AbstractController
         if (!$request->isMethod('POST')) {
             return new RedirectResponse('/admin/categories');
         }
+
+        // [SÉCURITÉ] Vérification CSRF
+        $this->validateCsrf($request);
 
         $id = $this->getValidId($request);
         if ($id === null) {

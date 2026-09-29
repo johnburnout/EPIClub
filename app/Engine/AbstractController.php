@@ -80,6 +80,46 @@ abstract class AbstractController
         }
     }
 
+    /**
+     * Valide le jeton CSRF pour les requêtes state-changing (POST).
+     *
+     * Tolérant aux méthodes autres que POST : l'appel peut donc être
+     * placé en tête d'une action mixte (affichage du formulaire + POST)
+     * sans casser l'affichage initial.
+     *
+     * Le jeton peut être fourni :
+     *   - dans le corps du formulaire : champ `csrf_token`
+     *   - ou via l'en-tête HTTP       : `X-CSRF-Token` (utile pour fetch/ajax)
+     *
+     * La comparaison est faite en temps constant via hash_equals().
+     *
+     * @throws AccessDeniedException si le jeton est absent ou invalide
+     */
+    protected function validateCsrf(Request $request): void
+    {
+        if (!$request->isMethod('POST')) {
+            return;
+        }
+
+        $submittedToken = $request->request->get('csrf_token')
+            ?? $request->headers->get('X-CSRF-Token');
+
+        $sessionToken = $this->session->get('csrf_token');
+
+        if (!is_string($sessionToken) || $sessionToken === ''
+            || !is_string($submittedToken) || $submittedToken === ''
+            || !hash_equals($sessionToken, $submittedToken)
+        ) {
+            error_log('[validateCsrf] Jeton CSRF absent ou invalide pour '
+                . $request->getPathInfo());
+            $this->session->getFlashBag()->add(
+                'note',
+                'Session expirée ou requête invalide. Veuillez réessayer.'
+            );
+            throw new AccessDeniedException('Jeton CSRF invalide.');
+        }
+    }
+
     public function redirectTo(string $route, int $status = 302, array $headers = []): Response
     {
         return new RedirectResponse($route, $status, $headers);
@@ -99,9 +139,13 @@ abstract class AbstractController
     protected function getValidId(Request $request, string $key = 'id'): ?int
     {
         $value = $request->get($key);
+
+        // filter_var retourne false si non numérique ; int sinon.
+        // Attention : '0' passe la validation, d'où le min_range=1.
         $id = filter_var($value, FILTER_VALIDATE_INT, [
             'options' => ['min_range' => 1],
         ]);
+
         return $id === false ? null : $id;
     }
 

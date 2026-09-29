@@ -41,6 +41,9 @@ class UtilisateurController extends AbstractController
         $form_errors = [];
 
         if ($request->getMethod() === 'POST') {
+            // [SÉCURITÉ] Vérification CSRF avant tout traitement (création de compte)
+            $this->validateCsrf($request);
+
             // Récupération des données
             $utilisateur['nom'] = trim($request->request->get('nom'));
             $utilisateur['prenom'] = trim($request->request->get('prenom'));
@@ -127,6 +130,9 @@ class UtilisateurController extends AbstractController
         $form_errors = [];
         
         if ($request->getMethod() === 'POST') {
+            // [SÉCURITÉ] Vérification CSRF avant tout traitement (mise à jour de compte)
+            $this->validateCsrf($request);
+
             // Récupération des données du formulaire
             $utilisateur['nom'] = trim($request->request->get('nom'));
             $utilisateur['prenom'] = trim($request->request->get('prenom'));
@@ -216,6 +222,9 @@ class UtilisateurController extends AbstractController
     public function delete(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
+
+        // [SÉCURITÉ] Vérification CSRF avant toute suppression
+        $this->validateCsrf($request);
 
         $id = $this->getValidId($request);
         if ($id === null) {

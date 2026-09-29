@@ -6,6 +6,7 @@
 	<hr>
 
 	<form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 		<div class="mb-3">
 			<label for="nom">Nom</label>
 			<input type="text" class="form-control {% if form_errors.nom %} is-invalid{% endif %}" name="nom" id="nom" value="{{ fournisseur.nom }}" required>
