@@ -191,8 +191,13 @@ class ControleController extends AbstractController
     {
         $this->deniAccessUnlessGranted('ROLE_CONTROLLEUR');
 
-        // [SÉCURITÉ] Vérification CSRF (no-op si GET ; la route /creer devrait
-        // être POST-only, cf. TODO dans routes.php)
+        // [SÉCURITÉ] La route est POST-only (cf. routes.php). Garde en
+        // ceinture+bretelles si elle venait à être élargie par erreur.
+        if (!$request->isMethod('POST')) {
+            return $this->redirectTo('/admin/controles');
+        }
+        
+        // [SÉCURITÉ] Vérification CSRF
         $this->validateCsrf($request);
 
         $user = $this->session->get('user');

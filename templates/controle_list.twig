@@ -6,9 +6,12 @@
     {# --- Bouton Créer un contrôle (si pas de contrôle en cours) --- #}
     {% if isGranted('ROLE_CONTROLLEUR') and (user.controle_en_cours_id is null or user.controle_en_cours_id == 0) %}
         <div class="mb-3">
-            <a href="/admin/controles/creer" class="btn btn-success">
-                <i class="fas fa-plus-circle"></i> Créer un contrôle
-            </a>
+            <form method="post" action="/admin/controles/creer" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-plus-circle"></i> Créer un contrôle
+                </button>
+            </form>
         </div>
     {% endif %}
 

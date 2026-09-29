@@ -292,9 +292,13 @@
 					<i class="fas fa-qrcode"></i> QR Code
 				</a>
 				{% if isGranted('ROLE_CONTROLLEUR') %}
-				<a href="/admin/controles/creer?equipement_id={{ equipement.id }}" class="btn btn-success">
-					<i class="fas fa-clipboard-check"></i> Démarrer un contrôle
-				</a>
+				<form method="post" action="/admin/controles/creer" class="d-inline">
+					<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+					<input type="hidden" name="equipement_id" value="{{ equipement.id }}">
+					<button type="submit" class="btn btn-success">
+						<i class="fas fa-clipboard-check"></i> Démarrer un contrôle
+					</button>
+				</form>
 				{% endif %}
 				{% if isGranted('ROLE_ADMIN') %}
 				{% if equipement.statut == 2 and not equipement.controle_en_cours %}

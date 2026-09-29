@@ -123,7 +123,8 @@ $routes->add('controle_edit', new Route(
 ));
 $routes->add('controle_creer', new Route(
     '/admin/controles/creer',
-    ['_controller' => 'Epiclub\\Controller\\ControleController', 'action' => 'create']
+    ['_controller' => 'Epiclub\\Controller\\ControleController', 'action' => 'create'],
+    [], [], '', [], ['POST']
 ));
 $routes->add('controle_add_equipement', new Route(
     '/admin/controles/add-equipement/{controle_id}',
