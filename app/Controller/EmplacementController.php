@@ -65,6 +65,9 @@ class EmplacementController extends AbstractController
         }
         
         if ($request->getMethod() === 'POST') {
+            // [SÉCURITÉ] Vérification CSRF avant tout traitement
+            $this->validateCsrf($request);
+            
             $libelle = trim($request->request->get('libelle'));
             $description = trim($request->request->get('description'));
             // Champ « Image (URL) » : simple chaîne, aucun fichier téléversé
@@ -117,6 +120,9 @@ class EmplacementController extends AbstractController
         if (!$request->isMethod('POST')) {
             return $this->redirectTo('/admin/emplacements');
         }
+
+        // [SÉCURITÉ] Vérification CSRF
+        $this->validateCsrf($request);
 
         $id = $this->getValidId($request);
         if ($id === null) {
