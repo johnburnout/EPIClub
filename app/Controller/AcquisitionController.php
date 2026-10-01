@@ -10,25 +10,26 @@ use Epiclub\Domain\FournisseurManager;
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\CategorieManager;
 use Epiclub\Engine\AbstractController;
+use Epiclub\Exception\DuplicateReferenceException;
+use Epiclub\Exception\NotFoundException;
 use Epiclub\Process\AcquisitionProcess;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Epiclub\Exception\NotFoundException;
 
 class AcquisitionController extends AbstractController
 {
     public function list(Request $request): Response
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
-        
+
         $acquisitionManager = new AcquisitionManager();
         $acquisitions = $acquisitionManager->findAll();
-        
+
         // Toutes les acquisitions (brouillons + validées).
         // Les brouillons ne sont pas cachés : ils sont accessibles pour
         // reprendre la saisie ou valider.
-        
+
         return $this->render('acquisition_list.twig', [
             'acquisitions' => $acquisitions,
         ]);
@@ -37,74 +38,85 @@ class AcquisitionController extends AbstractController
     public function create(Request $request): Response
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
-        
+
         $fournisseurManager = new FournisseurManager();
         $categorieManager = new CategorieManager();
         $acquisition = [];
         $form_errors = [];
-        
+
         if ($request->getMethod() === 'POST') {
-            // [SÉCURITÉ] Vérification CSRF avant tout traitement (y compris upload facture)
-            $this->validateCsrf($request);
-            
-            $action = $request->request->get('action');
-            
-            if ($action === 'create') {
-                // [SÉCURITÉ] Whitelist des champs — empêche l'injection de clés
-                // arbitraires (id, est_validee, saisie_par, ...) via POST forgé.
-                // Sans ce filtre, un attaquant pouvait écraser des colonnes sensibles
-                // par mass-assignment.
-                $acquisition = [
-                    'facture_reference' => trim((string) $request->request->get('facture_reference', '')),
-                    'facture_date'      => $request->request->get('facture_date'),
-                    'fournisseur_nom'   => trim((string) $request->request->get('fournisseur_nom', '')),
-                ];
-                $acquisition['saisie_par'] = $this->session->get('user')['id'];
-                $acquisition['facture_document'] = null;
-                
-                // [ROBUSTESSE] Vérifier l'unicité de la référence AVANT l'insert
-                $factureReference = $acquisition['facture_reference'];
-                if ($factureReference === '') {
-                    $form_errors['facture_reference'] = 'La référence de facture est obligatoire.';
-                } else {
-                    $acquisitionManager = new AcquisitionManager();
-                    if ($acquisitionManager->findOneByCriteria(['facture_reference' => $factureReference])) {
-                        $form_errors['facture_reference'] = 'Cette référence de facture existe déjà. Merci d\'en choisir une autre.';
-                    }
-                }
-                
-                // Téléchargement de la facture (seulement si pas d'erreur bloquante)
-                if (empty($form_errors)) {
-                    $factureDocument = $this->uploadFacture($_FILES['facture_document'] ?? null);
-                    if ($factureDocument === false) {
-                        $form_errors['facture_document'] = 'Erreur lors du téléchargement du fichier. Formats acceptés : PDF, JPG, PNG (max 10 Mo).';
-                    } elseif ($factureDocument !== null) {
-                        $acquisition['facture_document'] = $factureDocument;
-                    }
-                }
-                
-                if (empty($form_errors)) {
-                    $acquisitionProcess = new AcquisitionProcess();
-                    try {
-                        if ($id = $acquisitionProcess->acquisition_process($acquisition)) {
-                            $acquisition['id'] = $id;
-                            $this->session->getFlashBag()->add('success', '✅ Acquisition créée avec succès. Vous pouvez maintenant ajouter des lignes.');
-                            return $this->redirectTo("/admin/acquisitions/acquisition_modification-$id");
+            // [ROBUSTESSE] Détection d'un POST tronqué par post_max_size.
+            // Si le fichier dépasse post_max_size, PHP vide $_POST et $_FILES
+            // AVANT d'appeler le contrôleur → le CSRF semble "manquant" alors
+            // que la vraie cause est un fichier trop gros. On traite ce cas
+            // en priorité pour afficher un message utile.
+            if ($this->isPostTruncated($request)) {
+                $form_errors['facture_document'] = sprintf(
+                    'Le fichier est trop volumineux pour être traité par le serveur (limite PHP : %s). '
+                    . 'Réduisez la taille du fichier ou augmentez post_max_size.',
+                    ini_get('post_max_size')
+                );
+            } else {
+                // [SÉCURITÉ] Vérification CSRF avant tout traitement (y compris upload facture)
+                $this->validateCsrf($request);
+
+                $action = $request->request->get('action');
+
+                if ($action === 'create') {
+                    // [SÉCURITÉ] Whitelist des champs — empêche l'injection de clés
+                    // arbitraires (id, est_validee, saisie_par, ...) via POST forgé.
+                    $acquisition = [
+                        'facture_reference' => trim((string) $request->request->get('facture_reference', '')),
+                        'facture_date'      => $request->request->get('facture_date'),
+                        'fournisseur_nom'   => trim((string) $request->request->get('fournisseur_nom', '')),
+                    ];
+                    $acquisition['saisie_par'] = $this->session->get('user')['id'];
+                    $acquisition['facture_document'] = null;
+
+                    // [ROBUSTESSE] Vérifier l'unicité de la référence AVANT l'insert
+                    $factureReference = $acquisition['facture_reference'];
+                    if ($factureReference === '') {
+                        $form_errors['facture_reference'] = 'La référence de facture est obligatoire.';
+                    } else {
+                        $acquisitionManager = new AcquisitionManager();
+                        if ($acquisitionManager->findOneByCriteria(['facture_reference' => $factureReference])) {
+                            $form_errors['facture_reference'] = 'Cette référence de facture existe déjà. Merci d\'en choisir une autre.';
                         }
-                        $form_errors['general'] = 'Erreur lors de la création de l\'acquisition.';
-                    } catch (\Throwable $e) {
-                        error_log(sprintf(
-                            '[AcquisitionController] Create failed: %s in %s:%d',
-                            $e->getMessage(),
-                            $e->getFile(),
-                            $e->getLine()
-                        ));
-                        $form_errors['general'] = 'Une erreur est survenue lors de la création. Merci de réessayer.';
+                    }
+
+                    // Téléchargement de la facture (seulement si pas d'erreur bloquante)
+                    if (empty($form_errors)) {
+                        $factureDocument = $this->uploadFacture($_FILES['facture_document'] ?? null);
+                        if ($factureDocument === false) {
+                            $form_errors['facture_document'] = 'Erreur lors du téléchargement du fichier. Formats acceptés : PDF, JPG, PNG (max 10 Mo).';
+                        } elseif ($factureDocument !== null) {
+                            $acquisition['facture_document'] = $factureDocument;
+                        }
+                    }
+
+                    if (empty($form_errors)) {
+                        $acquisitionProcess = new AcquisitionProcess();
+                        try {
+                            if ($id = $acquisitionProcess->acquisition_process($acquisition)) {
+                                $acquisition['id'] = $id;
+                                $this->session->getFlashBag()->add('success', '✅ Acquisition créée avec succès. Vous pouvez maintenant ajouter des lignes.');
+                                return $this->redirectTo("/admin/acquisitions/acquisition_modification-$id");
+                            }
+                            $form_errors['general'] = 'Erreur lors de la création de l\'acquisition.';
+                        } catch (\Throwable $e) {
+                            error_log(sprintf(
+                                '[AcquisitionController] Create failed: %s in %s:%d',
+                                $e->getMessage(),
+                                $e->getFile(),
+                                $e->getLine()
+                            ));
+                            $form_errors['general'] = 'Une erreur est survenue lors de la création. Merci de réessayer.';
+                        }
                     }
                 }
             }
         }
-        
+
         return $this->render('acquisition_form.twig', [
             'acquisition' => $acquisition,
             'fournisseurs' => $fournisseurManager->findAll(),
@@ -116,184 +128,198 @@ class AcquisitionController extends AbstractController
     public function update(Request $request): Response
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
-        
+
         $acquisitionManager = new AcquisitionManager();
         $acquisitionLigneManager = new AcquisitionLigneManager();
         $fournisseurManager = new FournisseurManager();
         $categorieManager = new CategorieManager();
         $equipementManager = new EquipementManager();
-        
+
         // [ROBUSTESSE] Cast explicite de l'id
         $id = (int) $request->get('id');
         if ($id <= 0) {
             $this->session->getFlashBag()->add('error', 'Acquisition invalide.');
             return $this->redirectTo('/admin/acquisitions');
         }
-        
+
         $acquisition = $acquisitionManager->findId($id);
         if (!$acquisition) {
             $this->session->getFlashBag()->add('error', 'Acquisition non trouvée.');
             return $this->redirectTo('/admin/acquisitions');
         }
-        
+
         $acquisition['lignes'] = $acquisitionLigneManager->findByAcquisition($acquisition['id']);
         $form_errors = [];
         $ligneData = [];
-        
+
         if ($request->getMethod() === 'POST') {
-            // [SÉCURITÉ] Vérification CSRF avant tout traitement (y compris upload facture)
-            $this->validateCsrf($request);
-            
-            $action = $request->request->get('action');
-            
-            // --- Action : Valider ---
-            if ($action === 'valider') {
-                if (empty($acquisition['facture_document'])) {
-                    $this->session->getFlashBag()->add('error', '❌ Impossible de valider : veuillez d\'abord télécharger la facture.');
-                    return $this->redirectTo("/admin/acquisitions/acquisition_modification-{$acquisition['id']}");
-                }
-                
-                $acquisitionProcess = new AcquisitionProcess();
-                try {
-                    $acquisitionProcess->validerAcquisition($acquisition['id']);
-                    $acquisition['est_validee'] = 1;
-                    $acquisitionManager->save($acquisition);
-                    $this->session->getFlashBag()->add('success', '✅ Acquisition validée ! Les équipements ont été générés.');
-                    return $this->redirectTo("/admin/acquisitions/acquisition-{$acquisition['id']}");
-                } catch (\Throwable $e) {
-                    // [SÉCURITÉ] Ne pas exposer $e->getMessage() au client
-                    error_log(sprintf(
-                        '[AcquisitionController] Validation failed (action=valider) for acquisition id=%s: %s',
-                        $acquisition['id'],
-                        $e->getMessage()
-                    ));
-                    $this->session->getFlashBag()->add(
-                        'error',
-                        'Une erreur est survenue lors de la validation. Merci de réessayer ou de contacter un administrateur.'
-                    );
-                    return $this->redirectTo("/admin/acquisitions/acquisition_modification-{$acquisition['id']}");
-                }
-            }
-            
-            // --- Action : Mise à jour de l'acquisition ---
-            if ($action === 'update') {
-                $fournisseurNom = trim((string) $request->request->get('fournisseur_nom', ''));
-                $factureReference = trim((string) $request->request->get('facture_reference', ''));
-                $factureDate = $request->request->get('facture_date');
-                
-                // [ROBUSTESSE] Vérifier l'unicité de la référence AVANT l'update
-                if ($factureReference === '') {
-                    $form_errors['facture_reference'] = 'La référence de facture est obligatoire.';
-                } else {
-                    $existing = $acquisitionManager->findOneByCriteria(['facture_reference' => $factureReference]);
-                    if ($existing && (int) $existing['id'] !== (int) $acquisition['id']) {
-                        $form_errors['facture_reference'] = 'Cette référence de facture est déjà utilisée par une autre acquisition.';
-                    }
-                }
-                
-                // Gestion du téléchargement du PDF (seulement si pas d'erreur bloquante)
-                if (empty($form_errors['facture_reference']) && isset($_FILES['facture_document']) && $_FILES['facture_document']['error'] !== UPLOAD_ERR_NO_FILE) {
-                    $factureDocument = $this->uploadFacture($_FILES['facture_document']);
-                    if ($factureDocument === false) {
-                        $form_errors['facture_document'] = 'Erreur lors du téléchargement du fichier. Formats acceptés : PDF, JPG, PNG (max 10 Mo).';
-                    } else {
-                        // [SÉCURITÉ] Ne plus masquer les erreurs avec @unlink
-                        if (!empty($acquisition['facture_document'])) {
-                            $oldFilePath = $this->getUploadsDir() . $acquisition['facture_document'];
-                            if (file_exists($oldFilePath) && !unlink($oldFilePath)) {
-                                error_log("[AcquisitionController] Failed to delete old facture: $oldFilePath");
-                            }
-                        }
-                        $acquisition['facture_document'] = $factureDocument;
-                    }
-                }
-                
-                // [ROBUSTESSE] Ne mettre à jour le fournisseur que si pas d'erreur
-                if (empty($form_errors)) {
-                    $fournisseur = $fournisseurManager->findOneByCriteria(['nom' => $fournisseurNom]);
-                    if ($fournisseur) {
-                        $fournisseurId = $fournisseur['id'];
-                    } else {
-                        $fournisseurId = $fournisseurManager->save(['nom' => $fournisseurNom]);
-                    }
-                    
-                    $acquisition['fournisseur_id'] = $fournisseurId;
-                    $acquisition['facture_reference'] = $factureReference;
-                    $acquisition['facture_date'] = $factureDate;
-                    
-                    try {
-                        $acquisitionManager->save($acquisition);
-                        $this->session->getFlashBag()->add('success', '✅ Acquisition mise à jour avec succès.');
+            // [ROBUSTESSE] Détection d'un POST tronqué par post_max_size (cf. create()).
+            if ($this->isPostTruncated($request)) {
+                $form_errors['facture_document'] = sprintf(
+                    'Le fichier est trop volumineux pour être traité par le serveur (limite PHP : %s). '
+                    . 'Réduisez la taille du fichier ou augmentez post_max_size.',
+                    ini_get('post_max_size')
+                );
+            } else {
+                // [SÉCURITÉ] Vérification CSRF avant tout traitement (y compris upload facture)
+                $this->validateCsrf($request);
+
+                $action = $request->request->get('action');
+
+                // --- Action : Valider ---
+                if ($action === 'valider') {
+                    if (empty($acquisition['facture_document'])) {
+                        $this->session->getFlashBag()->add('error', '❌ Impossible de valider : veuillez d\'abord télécharger la facture.');
                         return $this->redirectTo("/admin/acquisitions/acquisition_modification-{$acquisition['id']}");
+                    }
+
+                    $acquisitionProcess = new AcquisitionProcess();
+                    try {
+                        $acquisitionProcess->validerAcquisition($acquisition['id']);
+                        $acquisition['est_validee'] = 1;
+                        $acquisitionManager->save($acquisition);
+                        $this->session->getFlashBag()->add('success', '✅ Acquisition validée ! Les équipements ont été générés.');
+                        return $this->redirectTo("/admin/acquisitions/acquisition-{$acquisition['id']}");
                     } catch (\Throwable $e) {
-                        // [SÉCURITÉ] Log serveur, message générique au client
+                        // [SÉCURITÉ] Ne pas exposer $e->getMessage() au client
                         error_log(sprintf(
-                            '[AcquisitionController] Update failed for acquisition id=%s: %s in %s:%d',
+                            '[AcquisitionController] Validation failed (action=valider) for acquisition id=%s: %s',
                             $acquisition['id'],
-                            $e->getMessage(),
-                            $e->getFile(),
-                            $e->getLine()
+                            $e->getMessage()
                         ));
-                        $form_errors['general'] = 'Une erreur est survenue lors de la mise à jour. Merci de réessayer.';
+                        $this->session->getFlashBag()->add(
+                            'error',
+                            'Une erreur est survenue lors de la validation. Merci de réessayer ou de contacter un administrateur.'
+                        );
+                        return $this->redirectTo("/admin/acquisitions/acquisition_modification-{$acquisition['id']}");
                     }
                 }
-            }
-            
-            // --- Action : Ajout d'une ligne ---
-            if ($action === 'add_ligne') {
-                $ligne = $request->request->all()['ligne'] ?? [];
-                $ligneData = $ligne;
-                
-                if (!empty($ligne) && !empty($ligne['reference'])) {
-                    $ligne['regrouper_en_lot'] = isset($ligne['regrouper_en_lot']) ? 1 : 0;
-                    
-                    $reference = $ligne['reference'] ?? '';
-                    
-                    if (empty($reference)) {
-                        $form_errors['ligne_reference'] = 'La référence est obligatoire.';
-                    } elseif ($acquisitionLigneManager->findByReference($reference)) {
-                        $form_errors['ligne_reference'] = 'Cette référence existe déjà. Veuillez en saisir une autre.';
+
+                // --- Action : Mise à jour de l'acquisition ---
+                if ($action === 'update') {
+                    $fournisseurNom = trim((string) $request->request->get('fournisseur_nom', ''));
+                    $factureReference = trim((string) $request->request->get('facture_reference', ''));
+                    $factureDate = $request->request->get('facture_date');
+
+                    // [ROBUSTESSE] Vérifier l'unicité de la référence AVANT l'update
+                    if ($factureReference === '') {
+                        $form_errors['facture_reference'] = 'La référence de facture est obligatoire.';
+                    } else {
+                        $existing = $acquisitionManager->findOneByCriteria(['facture_reference' => $factureReference]);
+                        if ($existing && (int) $existing['id'] !== (int) $acquisition['id']) {
+                            $form_errors['facture_reference'] = 'Cette référence de facture est déjà utilisée par une autre acquisition.';
+                        }
                     }
-                    
-                    if (empty($ligne['designation'] ?? '')) {
-                        $form_errors['ligne_designation'] = 'Le libellé est obligatoire.';
+
+                    // Gestion du téléchargement du PDF (seulement si pas d'erreur bloquante)
+                    if (empty($form_errors['facture_reference']) && isset($_FILES['facture_document']) && $_FILES['facture_document']['error'] !== UPLOAD_ERR_NO_FILE) {
+                        $factureDocument = $this->uploadFacture($_FILES['facture_document']);
+                        if ($factureDocument === false) {
+                            $form_errors['facture_document'] = 'Erreur lors du téléchargement du fichier. Formats acceptés : PDF, JPG, PNG (max 10 Mo).';
+                        } else {
+                            // [SÉCURITÉ] Ne plus masquer les erreurs avec @unlink
+                            if (!empty($acquisition['facture_document'])) {
+                                $oldFilePath = $this->getUploadsDir() . $acquisition['facture_document'];
+                                if (file_exists($oldFilePath) && !unlink($oldFilePath)) {
+                                    error_log("[AcquisitionController] Failed to delete old facture: $oldFilePath");
+                                }
+                            }
+                            $acquisition['facture_document'] = $factureDocument;
+                        }
                     }
-                    if (empty($ligne['categorie_libelle'] ?? '')) {
-                        $form_errors['ligne_categorie'] = 'La catégorie est obligatoire.';
-                    }
-                    if (empty($ligne['nombre'] ?? 0) || $ligne['nombre'] < 1) {
-                        $form_errors['ligne_nombre'] = 'Le nombre doit être supérieur à 0.';
-                    }
-                    
+
+                    // [ROBUSTESSE] Ne mettre à jour le fournisseur que si pas d'erreur
                     if (empty($form_errors)) {
+                        $fournisseur = $fournisseurManager->findOneByCriteria(['nom' => $fournisseurNom]);
+                        if ($fournisseur) {
+                            $fournisseurId = $fournisseur['id'];
+                        } else {
+                            $fournisseurId = $fournisseurManager->save(['nom' => $fournisseurNom]);
+                        }
+
+                        $acquisition['fournisseur_id'] = $fournisseurId;
+                        $acquisition['facture_reference'] = $factureReference;
+                        $acquisition['facture_date'] = $factureDate;
+
                         try {
-                            $acquisitionProcess = new AcquisitionProcess();
-                            $ligne['categorie_id'] = $acquisitionProcess->categorie_process($ligne);
-                            $ligne['acquisition_id'] = $acquisition['id'];
-                            $ligne['equipements_generes'] = 0;
-                            
-                            $acquisitionLigneManager->save($ligne);
-                            $this->session->getFlashBag()->add('success', '✅ Ligne ajoutée avec succès.');
+                            $acquisitionManager->save($acquisition);
+                            $this->session->getFlashBag()->add('success', '✅ Acquisition mise à jour avec succès.');
                             return $this->redirectTo("/admin/acquisitions/acquisition_modification-{$acquisition['id']}");
                         } catch (\Throwable $e) {
+                            // [SÉCURITÉ] Log serveur, message générique au client
                             error_log(sprintf(
-                                '[AcquisitionController] Add ligne failed for acquisition id=%s: %s in %s:%d',
+                                '[AcquisitionController] Update failed for acquisition id=%s: %s in %s:%d',
                                 $acquisition['id'],
                                 $e->getMessage(),
                                 $e->getFile(),
                                 $e->getLine()
                             ));
-                            $form_errors['ligne_general'] = 'Une erreur est survenue lors de l\'ajout de la ligne.';
+                            $form_errors['general'] = 'Une erreur est survenue lors de la mise à jour. Merci de réessayer.';
                         }
                     }
-                } else {
-                    $form_errors['ligne_reference'] = 'Veuillez remplir les champs de la ligne.';
+                }
+
+                // --- Action : Ajout d'une ligne ---
+                if ($action === 'add_ligne') {
+                    $ligne = $request->request->all()['ligne'] ?? [];
+                    $ligneData = $ligne;
+
+                    if (!empty($ligne) && !empty($ligne['reference'])) {
+                        $ligne['regrouper_en_lot'] = isset($ligne['regrouper_en_lot']) ? 1 : 0;
+
+                        $reference = $ligne['reference'] ?? '';
+
+                        if (empty($reference)) {
+                            $form_errors['ligne_reference'] = 'La référence est obligatoire.';
+                        } elseif ($acquisitionLigneManager->findByReference($reference)) {
+                            $form_errors['ligne_reference'] = 'Cette référence existe déjà. Veuillez en saisir une autre.';
+                        }
+
+                        if (empty($ligne['designation'] ?? '')) {
+                            $form_errors['ligne_designation'] = 'Le libellé est obligatoire.';
+                        }
+                        if (empty($ligne['categorie_libelle'] ?? '')) {
+                            $form_errors['ligne_categorie'] = 'La catégorie est obligatoire.';
+                        }
+                        if (empty($ligne['nombre'] ?? 0) || $ligne['nombre'] < 1) {
+                            $form_errors['ligne_nombre'] = 'Le nombre doit être supérieur à 0.';
+                        }
+
+                        if (empty($form_errors)) {
+                            try {
+                                $acquisitionProcess = new AcquisitionProcess();
+                                $ligne['categorie_id'] = $acquisitionProcess->categorie_process($ligne);
+                                $ligne['acquisition_id'] = $acquisition['id'];
+                                $ligne['equipements_generes'] = 0;
+
+                                $acquisitionLigneManager->save($ligne);
+                                $this->session->getFlashBag()->add('success', '✅ Ligne ajoutée avec succès.');
+                                return $this->redirectTo("/admin/acquisitions/acquisition_modification-{$acquisition['id']}");
+                            } catch (DuplicateReferenceException $e) {
+                                // [ROBUSTESSE] Race condition : la pré-vérification
+                                // findByReference() a passé, mais la contrainte UNIQUE
+                                // a rejeté l'INSERT. On affiche l'erreur sur le bon champ.
+                                $form_errors['ligne_reference'] = 'Cette référence existe déjà. Veuillez en saisir une autre.';
+                            } catch (\Throwable $e) {
+                                error_log(sprintf(
+                                    '[AcquisitionController] Add ligne failed for acquisition id=%s: %s in %s:%d',
+                                    $acquisition['id'],
+                                    $e->getMessage(),
+                                    $e->getFile(),
+                                    $e->getLine()
+                                ));
+                                $form_errors['ligne_general'] = 'Une erreur est survenue lors de l\'ajout de la ligne.';
+                            }
+                        }
+                    } else {
+                        $form_errors['ligne_reference'] = 'Veuillez remplir les champs de la ligne.';
+                    }
                 }
             }
         }
-        
+
         $equipements = $equipementManager->findAll();
-        
+
         return $this->render('acquisition_form.twig', [
             'acquisition' => $acquisition,
             'fournisseurs' => $fournisseurManager->findAll(),
@@ -303,29 +329,29 @@ class AcquisitionController extends AbstractController
             'ligne_data' => $ligneData ?? [],
         ]);
     }
-    
+
     public function delete(Request $request): Response
     {
         // [SÉCURITÉ] Seul un admin peut supprimer une acquisition
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
-        
+
         // [SÉCURITÉ] Vérification CSRF (avant toute suppression de fichier ou d'enregistrement)
         $this->validateCsrf($request);
-        
+
         $id = (int) $request->get('id');
         if ($id <= 0) {
             $this->session->getFlashBag()->add('error', 'Acquisition invalide.');
             return $this->redirectTo('/admin/acquisitions');
         }
-        
+
         $acquisitionManager = new AcquisitionManager();
         $acquisition = $acquisitionManager->findId($id);
-        
+
         if (!$acquisition) {
             $this->session->getFlashBag()->add('error', 'Acquisition non trouvée.');
             return $this->redirectTo('/admin/acquisitions');
         }
-        
+
         // [MÉTIER] Seuls les brouillons peuvent être supprimés
         if ($acquisition['est_validee']) {
             $this->session->getFlashBag()->add(
@@ -334,7 +360,7 @@ class AcquisitionController extends AbstractController
             );
             return $this->redirectTo("/admin/acquisitions/acquisition-{$id}");
         }
-        
+
         // [SÉCURITÉ] Refuser si une ligne a déjà généré des équipements
         $acquisitionLigneManager = new AcquisitionLigneManager();
         $lignes = $acquisitionLigneManager->findByAcquisition($id);
@@ -347,13 +373,13 @@ class AcquisitionController extends AbstractController
                 return $this->redirectTo("/admin/acquisitions/acquisition_modification-{$id}");
             }
         }
-        
+
         try {
             // [SÉCURITÉ] Supprimer d'abord les lignes (pas de FK ON DELETE CASCADE déclarée)
             foreach ($lignes as $ligne) {
                 $acquisitionLigneManager->delete($ligne['id']);
             }
-            
+
             // Supprimer la facture associée si elle existe
             if (!empty($acquisition['facture_document'])) {
                 $facturePath = $this->getUploadsDir() . $acquisition['facture_document'];
@@ -361,10 +387,10 @@ class AcquisitionController extends AbstractController
                     error_log("[AcquisitionController] Failed to delete facture: $facturePath");
                 }
             }
-            
+
             // Puis l'acquisition
             $acquisitionManager->delete($id);
-            
+
             $this->session->getFlashBag()->add('success', "L'acquisition #{$id} a été supprimée.");
             return $this->redirectTo('/admin/acquisitions');
         } catch (\Throwable $e) {
@@ -495,6 +521,20 @@ class AcquisitionController extends AbstractController
         return dirname(__DIR__, 2) . '/_storage/uploads/';
     }
 
+    /**
+     * [ROBUSTESSE] Calcule la taille max réellement acceptée pour un upload :
+     *   min(post_max_size, upload_max_filesize, 10 Mo métier)
+     */
+    private function getMaxUploadBytes(): int
+    {
+        $postMax   = $this->parseIniSize(ini_get('post_max_size'));
+        $uploadMax = $this->parseIniSize(ini_get('upload_max_filesize'));
+        $business  = 10 * 1024 * 1024;
+
+        $limits = array_filter([$postMax, $uploadMax, $business], fn($v) => $v > 0);
+        return $limits ? min($limits) : $business;
+    }
+
     private function uploadFacture(?array $file)
     {
         // Aucun fichier téléchargé
@@ -508,9 +548,14 @@ class AcquisitionController extends AbstractController
             return false;
         }
 
-        // Taille maximum : 10 Mo
-        if ($file['size'] > 10 * 1024 * 1024) {
-            $this->session->getFlashBag()->add('error', 'Le fichier dépasse la taille maximum autorisée (10 Mo).');
+        // [ROBUSTESSE] Limite dynamique : la plus basse entre la contrainte PHP
+        // et la limite métier (10 Mo). Le message d'erreur reflète la vraie limite.
+        $maxBytes = $this->getMaxUploadBytes();
+        if ($file['size'] > $maxBytes) {
+            $this->session->getFlashBag()->add(
+                'error',
+                'Le fichier dépasse la taille maximum autorisée (' . round($maxBytes / 1024 / 1024) . ' Mo).'
+            );
             return false;
         }
 

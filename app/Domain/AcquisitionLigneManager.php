@@ -3,6 +3,7 @@
 namespace Epiclub\Domain;
 
 use Epiclub\Engine\AbstractManager;
+use Epiclub\Exception\DuplicateReferenceException;
 
 class AcquisitionLigneManager extends AbstractManager
 {
@@ -40,29 +41,33 @@ class AcquisitionLigneManager extends AbstractManager
     }
 
     /**
-    * Vérifie si une référence existe déjà dans la table acquisition_ligne
-    * 
-    * @param string $reference La référence à vérifier
-    * @param int|null $excludeId ID à exclure (pour les modifications)
-    * @return mixed Le résultat de la requête ou null si non trouvé
-    * 
-    * @uses AcquisitionController::update() pour vérifier l'unicité des références
-    */
+     * Vérifie si une référence existe déjà dans la table acquisition_ligne
+     *
+     * @param string   $reference La référence à vérifier
+     * @param int|null $excludeId ID à exclure (pour les modifications)
+     * @return mixed Le résultat de la requête ou null si non trouvé
+     *
+     * @uses AcquisitionController::update() pour vérifier l'unicité des références
+     * @uses AcquisitionLineController::modifyLine() avec $excludeId
+     */
     public function findByReference(string $reference, ?int $excludeId = null)
     {
         $sql = "SELECT * FROM acquisition_ligne WHERE reference = :reference";
         $params = ['reference' => $reference];
-        
+
         if ($excludeId !== null) {
             $sql .= " AND id != :id";
             $params['id'] = $excludeId;
         }
-        
+
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetch();
     }
 
+    /**
+     * @throws DuplicateReferenceException si la référence est déjà utilisée
+     */
     public function save(array $ligne)
     {
         if (isset($ligne['id'])) {
@@ -84,40 +89,79 @@ class AcquisitionLigneManager extends AbstractManager
                 return false; // ou lancer une exception
             }
         }
-        
+
         $sql = "DELETE FROM acquisition_ligne WHERE id=:id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['id' => $id]);
     }
 
+    /**
+     * @throws DuplicateReferenceException
+     */
     private function _create(array $ligne)
     {
-        $sql = "INSERT INTO acquisition_ligne (acquisition_id, reference, designation, categorie_id, nombre, equipements_generes, regrouper_en_lot) 
+        $sql = "INSERT INTO acquisition_ligne (acquisition_id, reference, designation, categorie_id, nombre, equipements_generes, regrouper_en_lot)
                 VALUES (:acquisition_id, :reference, :designation, :categorie_id, :nombre, :equipements_generes, :regrouper_en_lot)";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute([
-            'acquisition_id' => $ligne['acquisition_id'],
-            'reference' => $ligne['reference'],
-            'designation' => $ligne['designation'],
-            'categorie_id' => $ligne['categorie_id'],
-            'nombre' => $ligne['nombre'],
-            'equipements_generes' => 0,
-            'regrouper_en_lot' => isset($ligne['regrouper_en_lot']) ? $ligne['regrouper_en_lot'] : 0
-        ]);
+        try {
+            return $stmt->execute([
+                'acquisition_id'     => $ligne['acquisition_id'],
+                'reference'          => $ligne['reference'],
+                'designation'        => $ligne['designation'],
+                'categorie_id'       => $ligne['categorie_id'],
+                'nombre'             => $ligne['nombre'],
+                'equipements_generes' => 0,
+                'regrouper_en_lot'   => isset($ligne['regrouper_en_lot']) ? $ligne['regrouper_en_lot'] : 0,
+            ]);
+        } catch (\PDOException $e) {
+            // [ROBUSTESSE] La contrainte UNIQUE sur `reference` protège
+            // contre la race condition entre findByReference() et l'INSERT.
+            if ($this->isDuplicateKey($e)) {
+                throw new DuplicateReferenceException(
+                    sprintf("La référence '%s' existe déjà.", $ligne['reference']),
+                    0,
+                    $e
+                );
+            }
+            throw $e;
+        }
     }
-    
+
+    /**
+     * @throws DuplicateReferenceException
+     */
     private function _patch(array $ligne)
     {
         // Filtrer les champs pour éviter les erreurs
         $allowedFields = ['acquisition_id', 'reference', 'designation', 'categorie_id', 'nombre', 'equipements_generes', 'regrouper_en_lot', 'id'];
         $filteredLigne = array_intersect_key($ligne, array_flip($allowedFields));
-        
-        $sql = "UPDATE acquisition_ligne 
-                SET acquisition_id=:acquisition_id, reference=:reference, designation=:designation, 
+
+        $sql = "UPDATE acquisition_ligne
+                SET acquisition_id=:acquisition_id, reference=:reference, designation=:designation,
                     categorie_id=:categorie_id, nombre=:nombre, equipements_generes=:equipements_generes,
                     regrouper_en_lot=:regrouper_en_lot
                 WHERE id=:id";
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute($filteredLigne);
+        try {
+            return $stmt->execute($filteredLigne);
+        } catch (\PDOException $e) {
+            if ($this->isDuplicateKey($e)) {
+                throw new DuplicateReferenceException(
+                    sprintf("La référence '%s' est déjà utilisée par une autre ligne.", $ligne['reference'] ?? ''),
+                    0,
+                    $e
+                );
+            }
+            throw $e;
+        }
+    }
+
+    /**
+     * Détecte une violation de contrainte UNIQUE MySQL (erreur 1062).
+     */
+    private function isDuplicateKey(\PDOException $e): bool
+    {
+        return $e->getCode() === '23000'
+            && (int) ($e->errorInfo[1] ?? 0) === 1062;
     }
 }

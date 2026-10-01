@@ -6,6 +6,7 @@ use Epiclub\Domain\AcquisitionLigneManager;
 use Epiclub\Domain\AcquisitionManager;
 use Epiclub\Domain\CategorieManager;
 use Epiclub\Engine\AbstractController;
+use Epiclub\Exception\DuplicateReferenceException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
@@ -79,8 +80,28 @@ class AcquisitionLineController extends AbstractController
                 $ligne['regrouper_en_lot'] = $regrouper_en_lot;
                 // equipements_generes est conservé (0 si non généré)
 
-                $acquisitionLigneManager->save($ligne);
+                try {
+                    $acquisitionLigneManager->save($ligne);
+                } catch (DuplicateReferenceException $e) {
+                    // [ROBUSTESSE] Course condition : la pré-vérification
+                    // findByReference() a passé mais la contrainte UNIQUE
+                    // a rejeté l'UPDATE. On ré-affiche le formulaire.
+                    $form_errors['reference'] = 'Cette référence existe déjà.';
+                } catch (\Throwable $e) {
+                    // [SÉCURITÉ] Log serveur, message générique au client
+                    error_log(sprintf(
+                        '[AcquisitionLineController] modifyLine failed for ligne id=%s: %s in %s:%d',
+                        $id,
+                        $e->getMessage(),
+                        $e->getFile(),
+                        $e->getLine()
+                    ));
+                    $form_errors['general'] = 'Une erreur est survenue lors de la modification. Merci de réessayer.';
+                }
+            }
 
+            // Redirection uniquement si aucune erreur n'a été levée
+            if (empty($form_errors)) {
                 $this->session->getFlashBag()->add('success', 'Ligne modifiée avec succès.');
                 return new RedirectResponse("/admin/acquisitions/acquisition_modification-{$ligne['acquisition_id']}");
             }
@@ -129,7 +150,19 @@ class AcquisitionLineController extends AbstractController
             return new RedirectResponse("/admin/acquisitions/acquisition_modification-{$ligne['acquisition_id']}");
         }
 
-        $acquisitionLigneManager->delete($id);
+        try {
+            $acquisitionLigneManager->delete($id);
+        } catch (\Throwable $e) {
+            error_log(sprintf(
+                '[AcquisitionLineController] deleteLine failed for ligne id=%s: %s in %s:%d',
+                $id,
+                $e->getMessage(),
+                $e->getFile(),
+                $e->getLine()
+            ));
+            $this->session->getFlashBag()->add('error', 'Une erreur est survenue lors de la suppression. Merci de réessayer.');
+            return new RedirectResponse("/admin/acquisitions/acquisition_modification-{$ligne['acquisition_id']}");
+        }
 
         $this->session->getFlashBag()->add('success', 'Ligne supprimée avec succès.');
         return new RedirectResponse("/admin/acquisitions/acquisition_modification-{$ligne['acquisition_id']}");

@@ -160,4 +160,35 @@ abstract class AbstractController
             $manager->updateLastActivity($user['id']);
         }
     }
+    
+    /**
+    * Détecte si PHP a tronqué le POST parce que post_max_size a été dépassé.
+    * Dans ce cas, $_POST et $_FILES sont vides et le CSRF est indétectable.
+    */
+    protected function isPostTruncated(Request $request): bool
+    {
+        if ($request->getMethod() !== 'POST') {
+            return false;
+        }
+        $contentLength = (int) ($_SERVER['CONTENT_LENGTH'] ?? 0);
+        if ($contentLength <= 0) {
+            return false;
+        }
+        $postMaxSize = $this->parseIniSize(ini_get('post_max_size'));
+        return $contentLength > $postMaxSize;
+    }
+    
+    protected function parseIniSize(string $value): int
+    {
+        $value = trim($value);
+        if ($value === '') return 0;
+        $unit = strtolower($value[strlen($value) - 1]);
+        $num = (int) $value;
+        return match ($unit) {
+            'g' => $num * 1024 * 1024 * 1024,
+            'm' => $num * 1024 * 1024,
+            'k' => $num * 1024,
+            default => (int) $value,
+        };
+    }
 }

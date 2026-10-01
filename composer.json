@@ -5,6 +5,10 @@
     "require": {
         "php": ">=8.4",
         "ext-gd": "*",
+        "ext-fileinfo": "*",
+        "ext-pdo": "*",
+        "ext-pdo_mysql": "*",
+        "ext-zip": "*",
         "symfony/http-foundation": "^7.3",
         "twig/twig": "^3.21",
         "symfony/routing": "^7.3",
