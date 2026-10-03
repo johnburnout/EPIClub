@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Epiclub\Exception\AccessDeniedException;
+use Epiclub\Engine\CsrfValidator;
 
 abstract class AbstractController
 {
@@ -81,43 +82,17 @@ abstract class AbstractController
     }
 
     /**
-     * Valide le jeton CSRF pour les requêtes state-changing (POST).
-     *
-     * Tolérant aux méthodes autres que POST : l'appel peut donc être
-     * placé en tête d'une action mixte (affichage du formulaire + POST)
-     * sans casser l'affichage initial.
-     *
-     * Le jeton peut être fourni :
-     *   - dans le corps du formulaire : champ `csrf_token`
-     *   - ou via l'en-tête HTTP       : `X-CSRF-Token` (utile pour fetch/ajax)
-     *
-     * La comparaison est faite en temps constant via hash_equals().
-     *
-     * @throws AccessDeniedException si le jeton est absent ou invalide
-     */
+    * Valide le jeton CSRF pour les requêtes state-changing (POST).
+    *
+    * Délègue à CsrfValidator (extrait en Vague 5 pour testabilité unitaire).
+    * La méthode reste protected sur le contrôleur pour ne rien changer aux
+    * appels existants (create, update, delete, valider, …).
+    *
+    * @throws AccessDeniedException si le jeton est absent ou invalide
+    */
     protected function validateCsrf(Request $request): void
     {
-        if (!$request->isMethod('POST')) {
-            return;
-        }
-
-        $submittedToken = $request->request->get('csrf_token')
-            ?? $request->headers->get('X-CSRF-Token');
-
-        $sessionToken = $this->session->get('csrf_token');
-
-        if (!is_string($sessionToken) || $sessionToken === ''
-            || !is_string($submittedToken) || $submittedToken === ''
-            || !hash_equals($sessionToken, $submittedToken)
-        ) {
-            error_log('[validateCsrf] Jeton CSRF absent ou invalide pour '
-                . $request->getPathInfo());
-            $this->session->getFlashBag()->add(
-                'note',
-                'Session expirée ou requête invalide. Veuillez réessayer.'
-            );
-            throw new AccessDeniedException('Jeton CSRF invalide.');
-        }
+        (new CsrfValidator($this->session))->validate($request);
     }
 
     public function redirectTo(string $route, int $status = 302, array $headers = []): Response
