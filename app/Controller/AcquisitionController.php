@@ -261,13 +261,24 @@ class AcquisitionController extends AbstractController
 
                 // --- Action : Ajout d'une ligne ---
                 if ($action === 'add_ligne') {
-                    $ligne = $request->request->all()['ligne'] ?? [];
+                    // [SÉCURITÉ] Whitelist des champs — empêche l'injection de clés
+                    // arbitraires (id, acquisition_id, equipements_generes) via POST forgé.
+                    // Sans ce filtre, un attaquant pouvait écraser des colonnes sensibles
+                    // par mass-assignment.
+                    $raw = $request->request->all('ligne');
+                    $raw = is_array($raw) ? $raw : [];
+
+                    $ligne = [
+                        'reference'         => trim((string) ($raw['reference'] ?? '')),
+                        'designation'       => trim((string) ($raw['designation'] ?? '')),
+                        'categorie_libelle' => trim((string) ($raw['categorie_libelle'] ?? '')),
+                        'nombre'            => (int) ($raw['nombre'] ?? 0),
+                        'regrouper_en_lot'  => isset($raw['regrouper_en_lot']) ? 1 : 0,
+                    ];
                     $ligneData = $ligne;
 
-                    if (!empty($ligne) && !empty($ligne['reference'])) {
-                        $ligne['regrouper_en_lot'] = isset($ligne['regrouper_en_lot']) ? 1 : 0;
-
-                        $reference = $ligne['reference'] ?? '';
+                    if (!empty($ligne['reference'])) {
+                        $reference = $ligne['reference'];
 
                         if (empty($reference)) {
                             $form_errors['ligne_reference'] = 'La référence est obligatoire.';
@@ -275,13 +286,13 @@ class AcquisitionController extends AbstractController
                             $form_errors['ligne_reference'] = 'Cette référence existe déjà. Veuillez en saisir une autre.';
                         }
 
-                        if (empty($ligne['designation'] ?? '')) {
+                        if (empty($ligne['designation'])) {
                             $form_errors['ligne_designation'] = 'Le libellé est obligatoire.';
                         }
-                        if (empty($ligne['categorie_libelle'] ?? '')) {
+                        if (empty($ligne['categorie_libelle'])) {
                             $form_errors['ligne_categorie'] = 'La catégorie est obligatoire.';
                         }
-                        if (empty($ligne['nombre'] ?? 0) || $ligne['nombre'] < 1) {
+                        if ($ligne['nombre'] < 1) {
                             $form_errors['ligne_nombre'] = 'Le nombre doit être supérieur à 0.';
                         }
 
