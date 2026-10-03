@@ -10,6 +10,15 @@
 	<form method="post" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 		
+		{# Erreurs générales #}
+		{% if form_errors is defined and form_errors %}
+			{% for key, message in form_errors %}
+				<div class="alert alert-danger">
+					<i class="fas fa-exclamation-triangle"></i> {{ message }}
+				</div>
+			{% endfor %}
+		{% endif %}
+		
 		<!-- Catégorie (lecture seule) -->
 		<div class="mb-3">
 			<label for="categorie">Catégorie</label>
@@ -126,7 +135,14 @@
 		{# ⬇️ NOUVEAU CHAMP : PHOTO #}
 		<div class="mb-3">
 			<label for="photo">Photo de l'équipement</label>
-			<input type="file" class="form-control" name="photo" id="photo" accept="image/*">
+			<input type="file" 
+				class="form-control {% if form_errors.photo is defined and form_errors.photo %}is-invalid{% endif %}" 
+				name="photo" 
+				id="photo" 
+				accept="image/*">
+			{% if form_errors.photo is defined and form_errors.photo %}
+				<div class="invalid-feedback d-block">{{ form_errors.photo }}</div>
+			{% endif %}
 
 			{# Afficher un aperçu si une photo existe déjà #}
 			{% if equipement.photo is defined and equipement.photo is not empty %}

@@ -17,6 +17,11 @@
 			<i class="fas fa-exclamation-triangle"></i> {{ form_errors.general }}
 		</div>
 	{% endif %}
+	{% if form_errors.facture_document %}
+	<div class="alert alert-danger">
+		<i class="fas fa-exclamation-triangle"></i> {{ form_errors.facture_document }}
+	</div>
+	{% endif %}
 	{% if form_errors.ligne_general %}
 		<div class="alert alert-danger">
 			<i class="fas fa-exclamation-triangle"></i> {{ form_errors.ligne_general }}
