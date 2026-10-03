@@ -11,19 +11,17 @@ use Epiclub\Domain\FournisseurManager;
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\CategorieManager;
 use Epiclub\Engine\AbstractController;
+use Epiclub\Engine\FactureUploader; 
 use Epiclub\Exception\DuplicateReferenceException;
+use Epiclub\Exception\FactureUploadException;
 use Epiclub\Exception\NotFoundException;
 use Epiclub\Process\AcquisitionProcess;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class AcquisitionController extends AbstractController
 {
-    /** Dernier message d'erreur d'upload, à afficher via $form_errors. */
-    private ?string $lastUploadError = null;
-
     /**
      * Instancie le validator (issue #34).
      *
@@ -205,12 +203,14 @@ class AcquisitionController extends AbstractController
 
         // Téléchargement de la facture (seulement si pas d'erreur bloquante)
         if (empty($form_errors)) {
-            $factureDocument = $this->uploadFacture($request->files->get('facture_document'));
-            if ($factureDocument === false) {
-                $form_errors['facture_document'] = $this->lastUploadError
-                ?? 'Erreur lors du téléchargement du fichier.';
-            } elseif ($factureDocument !== null) {
-                $acquisition['facture_document'] = $factureDocument;
+            try {
+                $factureDocument = $this->factureUploader()
+                ->upload($request->files->get('facture_document'));
+                if ($factureDocument !== null) {
+                    $acquisition['facture_document'] = $factureDocument;
+                }
+            } catch (FactureUploadException $e) {
+                $form_errors['facture_document'] = $e->getMessage();
             }
         }
 
@@ -355,19 +355,18 @@ class AcquisitionController extends AbstractController
         // Gestion du téléchargement du PDF (seulement si pas d'erreur bloquante)
         $uploadedFacture = $request->files->get('facture_document');
         if (empty($form_errors['facture_reference']) && $uploadedFacture !== null) {
-            $factureDocument = $this->uploadFacture($uploadedFacture);
-            if ($factureDocument === false) {
-                $form_errors['facture_document'] = $this->lastUploadError
-                ?? 'Erreur lors du téléchargement du fichier.';
-            } else {
-                // [SÉCURITÉ] Ne plus masquer les erreurs avec @unlink
+            $uploader = $this->factureUploader();
+            try {
+                $newFacture = $uploader->upload($uploadedFacture);
+                
+                // Supprimer l'ancienne facture (best-effort)
                 if (!empty($acquisition['facture_document'])) {
-                    $oldFilePath = $this->getUploadsDir() . $acquisition['facture_document'];
-                    if (file_exists($oldFilePath) && !unlink($oldFilePath)) {
-                        error_log("[AcquisitionController] Failed to delete old facture: $oldFilePath");
-                    }
+                    $uploader->delete($acquisition['facture_document']);
                 }
-                $acquisition['facture_document'] = $factureDocument;
+                
+                $acquisition['facture_document'] = $newFacture;
+            } catch (FactureUploadException $e) {
+                $form_errors['facture_document'] = $e->getMessage();
             }
         }
 
@@ -539,12 +538,9 @@ class AcquisitionController extends AbstractController
                 $acquisitionLigneManager->delete($ligne['id']);
             }
 
-            // Supprimer la facture associée si elle existe
+            // Supprimer la facture associée si elle existe (best-effort)
             if (!empty($acquisition['facture_document'])) {
-                $facturePath = $this->getUploadsDir() . $acquisition['facture_document'];
-                if (file_exists($facturePath) && !unlink($facturePath)) {
-                    error_log("[AcquisitionController] Failed to delete facture: $facturePath");
-                }
+                $this->factureUploader()->delete($acquisition['facture_document']);
             }
 
             // Puis l'acquisition
@@ -654,79 +650,15 @@ class AcquisitionController extends AbstractController
     {
         return dirname(__DIR__, 2) . '/_storage/uploads/';
     }
-
+    
     /**
-     * [ROBUSTESSE] Calcule la taille max réellement acceptée pour un upload :
-     *   min(post_max_size, upload_max_filesize, 10 Mo métier)
-     */
-    private function getMaxUploadBytes(): int
+    * Instancie le service d'upload.
+    *
+    * Le chemin est résolu à la construction (issue #40, D1-a) :
+    * le service ne connaît pas la structure du projet.
+    */
+    private function factureUploader(): FactureUploader
     {
-        $postMax   = $this->parseIniSize(ini_get('post_max_size'));
-        $uploadMax = $this->parseIniSize(ini_get('upload_max_filesize'));
-        $business  = 10 * 1024 * 1024;
-
-        $limits = array_filter([$postMax, $uploadMax, $business], fn($v) => $v > 0);
-        return $limits ? min($limits) : $business;
-    }
-
-    /**
-     * [ROBUSTESSE] Upload d'une facture via Symfony UploadedFile.
-     *
-     * @return string|null  Chemin relatif ('factures/xxx.pdf') en cas de succès,
-     *                      null si aucun fichier, false en cas d'erreur.
-     */
-    private function uploadFacture(?UploadedFile $file): string|false|null
-    {
-        $this->lastUploadError = null;
-
-        if ($file === null) {
-            return null;
-        }
-
-        if (!$file->isValid()) {
-            $this->lastUploadError = 'Erreur de téléchargement : ' . $file->getErrorMessage();
-            return false;
-        }
-
-        $maxBytes = $this->getMaxUploadBytes();
-        if ($file->getSize() > $maxBytes) {
-            $this->lastUploadError = 'Le fichier dépasse la taille maximum autorisée (' . round($maxBytes / 1024 / 1024) . ' Mo).';
-            return false;
-        }
-
-        $mimeType = $file->getMimeType();
-        $allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
-        if (!in_array($mimeType, $allowedTypes, true)) {
-            $this->lastUploadError = 'Type de fichier non autorisé. Formats acceptés : PDF, JPG, PNG.';
-            return false;
-        }
-
-        $uploadDir = $this->getUploadsDir() . 'factures/';
-
-        if (!is_dir($uploadDir)) {
-            if (!mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
-                $this->lastUploadError = 'Impossible de créer le dossier de téléchargement.';
-                return false;
-            }
-        }
-
-        if (!is_writable($uploadDir)) {
-            $this->lastUploadError = 'Le dossier de téléchargement n\'est pas accessible en écriture.';
-            return false;
-        }
-
-        $extension = $file->guessExtension() ?: 'bin';
-        $extension = preg_replace('/[^a-zA-Z0-9]/', '', $extension) ?: 'bin';
-        $filename = 'facture_' . bin2hex(random_bytes(8)) . '.' . $extension;
-
-        try {
-            $file->move($uploadDir, $filename);
-        } catch (\Throwable $e) {
-            error_log('[AcquisitionController] move failed: ' . $e->getMessage());
-            $this->lastUploadError = 'Erreur lors de l\'enregistrement du fichier.';
-            return false;
-        }
-
-        return 'factures/' . $filename;
+        return new FactureUploader($this->getUploadsDir());
     }
 }

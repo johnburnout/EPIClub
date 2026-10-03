@@ -10,6 +10,25 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [0.17.11] — 2026-10-03
+
+### Changed
+
+- **FactureUploader** : extraction du service d'upload de factures
+(`AcquisitionController::uploadFacture()` et helpers associés) vers
+`Epiclub\Engine\FactureUploader` (issue #40, Étape A).
+- Le chemin d'uploads est injecté au constructeur.
+- Les erreurs remontent via `FactureUploadException` (codes
+`TOO_LARGE`, `BAD_MIME`, `IO_ERROR`, `INVALID`) au lieu de
+`$lastUploadError` (état mutable local).
+- `delete()` centralise la suppression best-effort des fichiers.
+- Aucun changement de comportement observable côté utilisateur.
+
+### Tests
+
+- Unit : 28 → 38 tests (+10 sur `FactureUploader`), 80 assertions.
+- Integration : 88 tests (inchangés).
+
 ## [0.17.10] — 2026-10-03
 
 ### Security
