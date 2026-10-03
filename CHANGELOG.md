@@ -10,6 +10,19 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [0.17.10] — 2026-10-03
+
+### Security
+
+- **CSRF** : extraction de `AbstractController::validateCsrf()` vers
+`Epiclub\Engine\CsrfValidator`, couverte par 9 tests unitaires.
+Toute suppression accidentelle du `throw` (régression 0361ec6) fera
+désormais échouer les tests. Aucun changement de comportement.
+
+### Tests
+
+- Unit : 19 → 28 tests (+9), 62 assertions.
+
 ## [0.17.9] — 2026-10-03
 
 ### Changed
