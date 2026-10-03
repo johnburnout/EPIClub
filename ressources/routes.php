@@ -380,3 +380,6 @@ $routes->add('guide_utilisateur', new Route(
     '/guide',
     ['_controller' => 'Epiclub\\Controller\\GuideController', 'action' => 'index']
 ));
+    
+    
+return $routes;

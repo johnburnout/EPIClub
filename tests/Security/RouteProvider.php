@@ -3,7 +3,7 @@
 
 declare(strict_types=1);
 
-namespace Tests\Security;
+namespace Epiclub\Tests\Security;   // ← AJOUT du préfixe Epiclub\
 
 use Symfony\Component\Routing\RouteCollection;
 
@@ -12,7 +12,7 @@ class RouteProvider
     private static function loadRoutes(): RouteCollection
     {
         // ⚠️ À AJUSTER selon l'emplacement réel de routes.php
-        return require __DIR__ . '/../../config/routes.php';
+        return require __DIR__ . '/../../ressources/routes.php';
     }
 
     private static function publicPatterns(): array

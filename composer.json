@@ -20,9 +20,17 @@
         "phpoffice/phpspreadsheet": "^5.9",
         "erusev/parsedown": "^1.8"
     },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5"
+    },
     "autoload": {
         "psr-4": {
             "Epiclub\\": "app/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Epiclub\\Tests\\": "tests/"
         }
     }
 }

@@ -3,11 +3,13 @@
 
 declare(strict_types=1);
 
-namespace Tests\Security;
+namespace Epiclub\Tests\Security;   // ← AJOUT du préfixe Epiclub\
 
 use PHPUnit\Framework\TestCase;
+use Epiclub\Tests\Security\RouteProvider;   // ← import explicite
+use PHPUnit\Framework\Attributes\DataProvider;
 
-class AccessControlTest extends TestCase
+final class AccessControlTest extends TestCase
 {
     private string $baseUrl;
 
@@ -20,8 +22,9 @@ class AccessControlTest extends TestCase
      * Toute route protégée doit rediriger un anonyme vers /se_connecter
      * ou renvoyer 401/403.
      *
-     * @dataProvider \Tests\Security\RouteProvider::protectedRoutesProvider
      */
+    
+    #[DataProvider('Epiclub\Tests\Security\RouteProvider::protectedRoutesProvider')]
     public function test_anonymous_is_redirected_to_login(string $concretePath, string $originalPath): void
     {
         $response = $this->requestWithoutAuth($concretePath);
@@ -152,8 +155,8 @@ class AccessControlTest extends TestCase
      * Vérifie que les routes destructives refusent un GET (405 Method Not Allowed).
      * Ces routes sont déclarées en POST uniquement dans routes.php.
      *
-     * @dataProvider \Tests\Security\RouteProvider::destructiveRoutesProvider
      */
+    #[DataProvider('Epiclub\Tests\Security\RouteProvider::destructiveRoutesProvider')]
     public function test_destructive_routes_reject_get(string $concretePath, string $originalPath): void
     {
         $response = $this->requestWithoutAuth($concretePath);

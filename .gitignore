@@ -30,3 +30,7 @@ var/
 #setup/
 _setup/
 arborescence.txt
+
+# PHPUnit
+.phpunit.cache/
+.phpunit.result.cache
