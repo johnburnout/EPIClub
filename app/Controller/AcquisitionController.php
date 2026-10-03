@@ -6,6 +6,7 @@ namespace Epiclub\Controller;
 
 use Epiclub\Domain\AcquisitionLigneManager;
 use Epiclub\Domain\AcquisitionManager;
+use Epiclub\Domain\AcquisitionValidator;
 use Epiclub\Domain\FournisseurManager;
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\CategorieManager;
@@ -22,7 +23,77 @@ class AcquisitionController extends AbstractController
 {
     /** Dernier message d'erreur d'upload, à afficher via $form_errors. */
     private ?string $lastUploadError = null;
+
+    /**
+    * Instancie le validator (issue #34).
+    *
+    * Pas de cache : le constructeur ne fait aucune I/O, l'instanciation
+    * est triviale et évite tout état persistant entre appels.
+    */
+    private function validator(): AcquisitionValidator
+    {
+        return new AcquisitionValidator(
+            new AcquisitionLigneManager(),
+            new AcquisitionManager(),
+            new AcquisitionProcess(),
+        );
+    }
+
+    /**
+     * Construit une RedirectResponse à partir du struct retourné par
+     * AcquisitionValidator::performValidation(), et stocke le flash.
+     *
+     * @param array{route:string,type:'success'|'error',message:string,critical:bool} $result
+     */
+    private function redirectFromValidationResult(array $result): Response
+    {
+        $this->session->getFlashBag()->add($result['type'], $result['message']);
+        return $this->redirectTo($result['route']);
+    }
     
+    /**
+    * [REFACTOR #34] Façade respectant le contrat de l'issue :
+    * performValidation(array $acquisition): ?Response
+    *
+    * Délègue au validator, puis convertit le struct en RedirectResponse
+    * (avec flash). Centralise la construction des routes de redirection.
+    *
+    * @param array $acquisition Acquisition complète (avec 'id').
+    */
+    private function performValidation(array $acquisition): Response
+    {
+        return $this->redirectFromValidationResult(
+            $this->validator()->performValidation(
+                $acquisition,
+            successRoute: "/admin/acquisitions/acquisition-{$acquisition['id']}",
+            failureRoute: "/admin/acquisitions/acquisition_modification-{$acquisition['id']}",
+            )
+        );
+    }
+
+    /**
+     * Remap les clés d'erreur de validateLigne() (reference, designation,
+     * categorie_libelle, nombre) vers les clés attendues par
+     * acquisition_form.twig (ligne_reference, ligne_designation, ...).
+     *
+     * @param array<string,string> $errors
+     * @return array<string,string>
+     */
+    private function prefixLigneErrors(array $errors): array
+    {
+        $map = [
+            'reference'         => 'ligne_reference',
+            'designation'       => 'ligne_designation',
+            'categorie_libelle' => 'ligne_categorie',   // ← template attend ligne_categorie
+            'nombre'            => 'ligne_nombre',
+        ];
+        $out = [];
+        foreach ($errors as $field => $msg) {
+            $out[$map[$field] ?? ('ligne_' . $field)] = $msg;
+        }
+        return $out;
+    }
+
     public function list(Request $request): Response
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
@@ -172,32 +243,9 @@ class AcquisitionController extends AbstractController
                 $action = $request->request->get('action');
 
                 // --- Action : Valider ---
+                // [REFACTOR #34] Bloc extrait vers AcquisitionValidator::performValidation()
                 if ($action === 'valider') {
-                    if (empty($acquisition['facture_document'])) {
-                        $this->session->getFlashBag()->add('error', '❌ Impossible de valider : veuillez d\'abord télécharger la facture.');
-                        return $this->redirectTo("/admin/acquisitions/acquisition_modification-{$acquisition['id']}");
-                    }
-
-                    $acquisitionProcess = new AcquisitionProcess();
-                    try {
-                        $acquisitionProcess->validerAcquisition($acquisition['id']);
-                        $acquisition['est_validee'] = 1;
-                        $acquisitionManager->save($acquisition);
-                        $this->session->getFlashBag()->add('success', '✅ Acquisition validée ! Les équipements ont été générés.');
-                        return $this->redirectTo("/admin/acquisitions/acquisition-{$acquisition['id']}");
-                    } catch (\Throwable $e) {
-                        // [SÉCURITÉ] Ne pas exposer $e->getMessage() au client
-                        error_log(sprintf(
-                            '[AcquisitionController] Validation failed (action=valider) for acquisition id=%s: %s',
-                            $acquisition['id'],
-                            $e->getMessage()
-                        ));
-                        $this->session->getFlashBag()->add(
-                            'error',
-                            'Une erreur est survenue lors de la validation. Merci de réessayer ou de contacter un administrateur.'
-                        );
-                        return $this->redirectTo("/admin/acquisitions/acquisition_modification-{$acquisition['id']}");
-                    }
+                    return $this->performValidation($acquisition);
                 }
 
                 // --- Action : Mise à jour de l'acquisition ---
@@ -267,6 +315,7 @@ class AcquisitionController extends AbstractController
                 }
 
                 // --- Action : Ajout d'une ligne ---
+                // [REFACTOR #34] Validation extraite vers AcquisitionValidator::validateLigne()
                 if ($action === 'add_ligne') {
                     // [SÉCURITÉ] Whitelist des champs — empêche l'injection de clés
                     // arbitraires (id, acquisition_id, equipements_generes) via POST forgé.
@@ -284,24 +333,17 @@ class AcquisitionController extends AbstractController
                     ];
                     $ligneData = $ligne;
 
-                    if (!empty($ligne['reference'])) {
-                        $reference = $ligne['reference'];
-
-                        if (empty($reference)) {
-                            $form_errors['ligne_reference'] = 'La référence est obligatoire.';
-                        } elseif ($acquisitionLigneManager->findByReference($reference)) {
-                            $form_errors['ligne_reference'] = 'Cette référence existe déjà. Veuillez en saisir une autre.';
-                        }
-
-                        if (empty($ligne['designation'])) {
-                            $form_errors['ligne_designation'] = 'Le libellé est obligatoire.';
-                        }
-                        if (empty($ligne['categorie_libelle'])) {
-                            $form_errors['ligne_categorie'] = 'La catégorie est obligatoire.';
-                        }
-                        if ($ligne['nombre'] < 1) {
-                            $form_errors['ligne_nombre'] = 'Le nombre doit être supérieur à 0.';
-                        }
+                    if ($ligne['reference'] === '') {
+                        $form_errors['ligne_reference'] = 'Veuillez remplir les champs de la ligne.';
+                    } else {
+                        // Validation centralisée, puis remap des clés courtes
+                        // (reference, designation…) vers les clés attendues par
+                        // acquisition_form.twig (ligne_reference, ligne_designation…).
+                        $lineErrors = $this->validator()->validateLigne($ligne);
+                        $form_errors = array_merge(
+                            $form_errors,
+                            $this->prefixLigneErrors($lineErrors)
+                        );
 
                         if (empty($form_errors)) {
                             try {
@@ -329,8 +371,6 @@ class AcquisitionController extends AbstractController
                                 $form_errors['ligne_general'] = 'Une erreur est survenue lors de l\'ajout de la ligne.';
                             }
                         }
-                    } else {
-                        $form_errors['ligne_reference'] = 'Veuillez remplir les champs de la ligne.';
                     }
                 }
             }
@@ -474,33 +514,8 @@ class AcquisitionController extends AbstractController
             return $this->redirectTo("/admin/acquisitions/acquisition-{$id}");
         }
 
-        if (empty($acquisition['facture_document'])) {
-            $this->session->getFlashBag()->add('error', '❌ Impossible de valider : veuillez d\'abord télécharger la facture.');
-            return $this->redirectTo("/admin/acquisitions/acquisition_modification-{$id}");
-        }
-
-        try {
-            $acquisitionProcess = new AcquisitionProcess();
-            $acquisitionProcess->validerAcquisition($id);
-
-            $acquisition['est_validee'] = 1;
-            $acquisitionManager->save($acquisition);
-
-            $this->session->getFlashBag()->add('success', '✅ Acquisition validée avec succès ! Les équipements ont été générés.');
-        } catch (\Throwable $e) {
-            // [SÉCURITÉ] Ne pas exposer $e->getMessage() au client
-            error_log(sprintf(
-                '[AcquisitionController] Validation failed (action=valider direct) for acquisition id=%s: %s',
-                $id,
-                $e->getMessage()
-            ));
-            $this->session->getFlashBag()->add(
-                'error',
-                'Une erreur est survenue lors de la validation. Merci de réessayer ou de contacter un administrateur.'
-            );
-        }
-
-        return $this->redirectTo("/admin/acquisitions/acquisition-{$id}");
+        // [REFACTOR #34] Bloc extrait vers AcquisitionValidator::performValidation()
+        return $this->performValidation($acquisition);        
     }
 
     public function serveFile(Request $request): BinaryFileResponse
@@ -562,47 +577,47 @@ class AcquisitionController extends AbstractController
     private function uploadFacture(?UploadedFile $file): string|false|null
     {
         $this->lastUploadError = null;
-        
+
         if ($file === null) {
             return null;
         }
-        
+
         if (!$file->isValid()) {
             $this->lastUploadError = 'Erreur de téléchargement : ' . $file->getErrorMessage();
             return false;
         }
-        
+
         $maxBytes = $this->getMaxUploadBytes();
         if ($file->getSize() > $maxBytes) {
             $this->lastUploadError = 'Le fichier dépasse la taille maximum autorisée (' . round($maxBytes / 1024 / 1024) . ' Mo).';
             return false;
         }
-        
+
         $mimeType = $file->getMimeType();
         $allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
         if (!in_array($mimeType, $allowedTypes, true)) {
             $this->lastUploadError = 'Type de fichier non autorisé. Formats acceptés : PDF, JPG, PNG.';
             return false;
         }
-        
+
         $uploadDir = $this->getUploadsDir() . 'factures/';
-        
+
         if (!is_dir($uploadDir)) {
             if (!mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
                 $this->lastUploadError = 'Impossible de créer le dossier de téléchargement.';
                 return false;
             }
         }
-        
+
         if (!is_writable($uploadDir)) {
             $this->lastUploadError = 'Le dossier de téléchargement n\'est pas accessible en écriture.';
             return false;
         }
-        
+
         $extension = $file->guessExtension() ?: 'bin';
         $extension = preg_replace('/[^a-zA-Z0-9]/', '', $extension) ?: 'bin';
         $filename = 'facture_' . bin2hex(random_bytes(8)) . '.' . $extension;
-        
+
         try {
             $file->move($uploadDir, $filename);
         } catch (\Throwable $e) {
@@ -610,7 +625,7 @@ class AcquisitionController extends AbstractController
             $this->lastUploadError = 'Erreur lors de l\'enregistrement du fichier.';
             return false;
         }
-        
+
         return 'factures/' . $filename;
     }
 }

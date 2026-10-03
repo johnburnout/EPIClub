@@ -1,17 +1,38 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Epiclub\Controller;
 
 use Epiclub\Domain\AcquisitionLigneManager;
 use Epiclub\Domain\AcquisitionManager;
+use Epiclub\Domain\AcquisitionValidator;
 use Epiclub\Domain\CategorieManager;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Exception\DuplicateReferenceException;
+use Epiclub\Process\AcquisitionProcess;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class AcquisitionLineController extends AbstractController
 {
+    /**
+     * Instancie le validator (issue #34).
+     *
+     * Pas de cache : le constructeur ne fait aucune I/O, l'instanciation
+     * est triviale et évite tout état persistant entre appels.
+     */
+    private function validator(
+        AcquisitionLigneManager $ligneManager,
+        AcquisitionManager $acquisitionManager,
+    ): AcquisitionValidator {
+        return new AcquisitionValidator(
+            $ligneManager,
+            $acquisitionManager,
+            new AcquisitionProcess(),
+        );
+    }
+
     public function modifyLine(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
@@ -44,46 +65,40 @@ class AcquisitionLineController extends AbstractController
             // [SÉCURITÉ] Vérification CSRF avant tout traitement
             $this->validateCsrf($request);
 
-            $reference = trim($request->request->get('reference'));
-            $designation = trim($request->request->get('designation'));
-            $categorie_libelle = trim($request->request->get('categorie_libelle'));
-            $nombre = (int) $request->request->get('nombre');
+            $ligneData = [
+                'reference'         => trim((string) $request->request->get('reference')),
+                'designation'       => trim((string) $request->request->get('designation')),
+                'categorie_libelle' => trim((string) $request->request->get('categorie_libelle')),
+                'nombre'            => (int) $request->request->get('nombre'),
+            ];
             $regrouper_en_lot = $request->request->has('regrouper_en_lot') ? 1 : 0;
 
-            // Validations
-            if (empty($reference)) {
-                $form_errors['reference'] = 'La référence est obligatoire.';
-            } elseif ($acquisitionLigneManager->findByReference($reference, $id)) {
-                $form_errors['reference'] = 'Cette référence existe déjà.';
-            }
-
-            if (empty($designation)) {
-                $form_errors['designation'] = 'Le libellé est obligatoire.';
-            }
-            if (empty($categorie_libelle)) {
-                $form_errors['categorie_libelle'] = 'La catégorie est obligatoire.';
-            }
-            if ($nombre < 1) {
-                $form_errors['nombre'] = 'Le nombre doit être supérieur à 0.';
-            }
+            // [REFACTOR #34] Validation centralisée (excludeId = $id :
+            // on s'exclut soi-même du test d'unicité).
+            // Pas de remap : acquisition_ligne_form.twig attend déjà
+            // les clés courtes (reference, designation, categorie_libelle, nombre).
+            $form_errors = $this->validator($acquisitionLigneManager, $acquisitionManager)
+                ->validateLigne($ligneData, $id);
 
             if (empty($form_errors)) {
                 // Traiter la catégorie
-                $acquisitionProcess = new \Epiclub\Process\AcquisitionProcess();
-                $categorie_id = $acquisitionProcess->categorie_process(['categorie_libelle' => $categorie_libelle]);
+                $acquisitionProcess = new AcquisitionProcess();
+                $categorie_id = $acquisitionProcess->categorie_process([
+                    'categorie_libelle' => $ligneData['categorie_libelle'],
+                ]);
 
                 // Mettre à jour la ligne
-                $ligne['reference'] = $reference;
-                $ligne['designation'] = $designation;
-                $ligne['categorie_id'] = $categorie_id;
-                $ligne['nombre'] = $nombre;
+                $ligne['reference']        = $ligneData['reference'];
+                $ligne['designation']      = $ligneData['designation'];
+                $ligne['categorie_id']     = $categorie_id;
+                $ligne['nombre']           = $ligneData['nombre'];
                 $ligne['regrouper_en_lot'] = $regrouper_en_lot;
                 // equipements_generes est conservé (0 si non généré)
 
                 try {
                     $acquisitionLigneManager->save($ligne);
                 } catch (DuplicateReferenceException $e) {
-                    // [ROBUSTESSE] Course condition : la pré-vérification
+                    // [ROBUSTESSE] Race condition : la pré-vérification
                     // findByReference() a passé mais la contrainte UNIQUE
                     // a rejeté l'UPDATE. On ré-affiche le formulaire.
                     $form_errors['reference'] = 'Cette référence existe déjà.';
