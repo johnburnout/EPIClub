@@ -25,11 +25,11 @@ class AcquisitionController extends AbstractController
     private ?string $lastUploadError = null;
 
     /**
-    * Instancie le validator (issue #34).
-    *
-    * Pas de cache : le constructeur ne fait aucune I/O, l'instanciation
-    * est triviale et évite tout état persistant entre appels.
-    */
+     * Instancie le validator (issue #34).
+     *
+     * Pas de cache : le constructeur ne fait aucune I/O, l'instanciation
+     * est triviale et évite tout état persistant entre appels.
+     */
     private function validator(): AcquisitionValidator
     {
         return new AcquisitionValidator(
@@ -50,23 +50,23 @@ class AcquisitionController extends AbstractController
         $this->session->getFlashBag()->add($result['type'], $result['message']);
         return $this->redirectTo($result['route']);
     }
-    
+
     /**
-    * [REFACTOR #34] Façade respectant le contrat de l'issue :
-    * performValidation(array $acquisition): ?Response
-    *
-    * Délègue au validator, puis convertit le struct en RedirectResponse
-    * (avec flash). Centralise la construction des routes de redirection.
-    *
-    * @param array $acquisition Acquisition complète (avec 'id').
-    */
+     * [REFACTOR #34] Façade respectant le contrat de l'issue :
+     * performValidation(array $acquisition): ?Response
+     *
+     * Délègue au validator, puis convertit le struct en RedirectResponse
+     * (avec flash). Centralise la construction des routes de redirection.
+     *
+     * @param array $acquisition Acquisition complète (avec 'id').
+     */
     private function performValidation(array $acquisition): Response
     {
         return $this->redirectFromValidationResult(
             $this->validator()->performValidation(
                 $acquisition,
-            successRoute: "/admin/acquisitions/acquisition-{$acquisition['id']}",
-            failureRoute: "/admin/acquisitions/acquisition_modification-{$acquisition['id']}",
+                successRoute: "/admin/acquisitions/acquisition-{$acquisition['id']}",
+                failureRoute: "/admin/acquisitions/acquisition_modification-{$acquisition['id']}",
             )
         );
     }
@@ -515,7 +515,7 @@ class AcquisitionController extends AbstractController
         }
 
         // [REFACTOR #34] Bloc extrait vers AcquisitionValidator::performValidation()
-        return $this->performValidation($acquisition);        
+        return $this->performValidation($acquisition);
     }
 
     public function serveFile(Request $request): BinaryFileResponse
@@ -569,11 +569,11 @@ class AcquisitionController extends AbstractController
     }
 
     /**
-    * [ROBUSTESSE] Upload d'une facture via Symfony UploadedFile.
-    *
-    * @return string|null  Chemin relatif ('factures/xxx.pdf') en cas de succès,
-    *                      null si aucun fichier, false en cas d'erreur.
-    */
+     * [ROBUSTESSE] Upload d'une facture via Symfony UploadedFile.
+     *
+     * @return string|null  Chemin relatif ('factures/xxx.pdf') en cas de succès,
+     *                      null si aucun fichier, false en cas d'erreur.
+     */
     private function uploadFacture(?UploadedFile $file): string|false|null
     {
         $this->lastUploadError = null;
