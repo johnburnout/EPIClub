@@ -10,6 +10,17 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [0.17.12] — 2026-10-03
+
+### Changed
+
+- **AcquisitionController** : extraction de `handleDeleteAction()` depuis
+`delete()` (Vague 6), en symétrie avec les handlers extraits dans les
+vagues 3 et 4. Le handler retourne toujours une `Response` (pas de
+rendu de formulaire en cas d'erreur sur cette action).
+`delete()` public ne fait plus que le pré-vol (permissions, CSRF,
+existence) puis délègue. Aucun changement de comportement.
+
 ## [0.17.11] — 2026-10-03
 
 ### Changed
