@@ -8,12 +8,6 @@ use PDO;
 
 /**
  * Helpers pour préparer et nettoyer une base de données de test.
- *
- * Schéma réel EPIClub :
- *   - acquisition         (singulier, table principale)
- *   - acquisition_ligne   (singulier, lignes filles)
- *
- * Aucune autre table ne référence acquisition_id.
  */
 final class DatabaseFixture
 {
@@ -21,11 +15,6 @@ final class DatabaseFixture
     {
     }
 
-    /**
-     * Crée une acquisition brouillon (sans facture).
-     *
-     * @return int ID de l'acquisition
-     */
     public function createDraftAcquisition(
         string $reference = 'TEST-DRAFT',
         ?string $factureDocument = null,
@@ -44,9 +33,6 @@ final class DatabaseFixture
         return (int) $this->pdo->lastInsertId();
     }
 
-    /**
-     * Crée une acquisition validée (avec facture).
-     */
     public function createValidatedAcquisition(
         string $reference = 'TEST-VALIDATED',
         string $factureDocument = 'factures/test.pdf',
@@ -65,9 +51,6 @@ final class DatabaseFixture
         return (int) $this->pdo->lastInsertId();
     }
 
-    /**
-     * Crée une ligne d'acquisition.
-     */
     public function createLigne(
         int $acquisitionId,
         string $reference = 'TEST-LIGNE',
@@ -93,16 +76,16 @@ final class DatabaseFixture
 
     /**
      * Supprime une acquisition et ses dépendances.
-     *
-     * Ordre : lignes → acquisition
-     * (aucune autre table ne référence acquisition_id).
      */
     public function deleteAcquisition(int $id): void
     {
-        // Supprimer les lignes filles d'abord
+        // 1. Équipements générés
+        $this->pdo->prepare("DELETE FROM club_equipement WHERE acquisition_id = ?")->execute([$id]);
+
+        // 2. Lignes d'acquisition
         $this->pdo->prepare("DELETE FROM acquisition_ligne WHERE acquisition_id = ?")->execute([$id]);
 
-        // Puis l'acquisition
+        // 3. Acquisition
         $this->pdo->prepare("DELETE FROM acquisition WHERE id = ?")->execute([$id]);
     }
 
@@ -119,5 +102,12 @@ final class DatabaseFixture
         foreach ($ids as $id) {
             $this->deleteAcquisition((int) $id);
         }
+
+        // Nettoyer aussi les équipements orphelins
+        $this->pdo->exec(
+            "DELETE ce FROM club_equipement ce
+             LEFT JOIN acquisition a ON a.id = ce.acquisition_id
+             WHERE a.id IS NULL"
+        );
     }
 }

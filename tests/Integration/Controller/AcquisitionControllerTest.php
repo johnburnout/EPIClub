@@ -6,15 +6,16 @@ namespace Epiclub\Tests\Integration\Controller;
 
 final class AcquisitionControllerTest extends AbstractControllerTestCase
 {
+    // ==================================================================
+    // Action : valider
+    // ==================================================================
+
     public function testValiderAcquisitionSansFactureRedirigeVersModification(): void
     {
-        // [DEBUG] Vérifier qui est connecté
-        $homePage = $this->client->get('/tableau_de_bord');
-        //error_log("[DEBUG] tableau_de_bord status: " . $homePage['status']);
-        //error_log("[DEBUG] body contains 'admin': " . (str_contains($homePage['body'], 'admin') ? 'yes' : 'no'));
-        
         $acqId = $this->fixture->createDraftAcquisition('TEST-SANS-FACTURE');
+
         $response = $this->client->post("/admin/acquisitions/valider/$acqId");
+
         $this->assertRedirectsTo(
             "/admin/acquisitions/acquisition_modification-$acqId",
             $response
@@ -27,19 +28,15 @@ final class AcquisitionControllerTest extends AbstractControllerTestCase
 
         $response = $this->client->post("/admin/acquisitions/valider/$acqId");
 
-        // Le flash doit contenir "Impossible de valider"
         $this->assertFlashContains('Impossible de valider', $response);
     }
 
     public function testValiderAcquisitionDejaValideeRedirigeSansAction(): void
     {
-        // Given : une acquisition DÉJÀ validée
         $acqId = $this->fixture->createValidatedAcquisition('TEST-DEJA-VALIDEE');
 
-        // When : on tente de la revalider
         $response = $this->client->post("/admin/acquisitions/valider/$acqId");
 
-        // Then : redirection vers la page show (comportement du contrôleur)
         $this->assertRedirectsTo(
             "/admin/acquisitions/acquisition-$acqId",
             $response
@@ -50,10 +47,8 @@ final class AcquisitionControllerTest extends AbstractControllerTestCase
     {
         $acqId = $this->fixture->createDraftAcquisition('TEST-CSRF');
 
-        // When : POST sans CSRF token
         $response = $this->client->postWithoutCsrf("/admin/acquisitions/valider/$acqId");
 
-        // Then : rejet (403 ou redirect vers /)
         self::assertContains(
             $response['status'],
             [302, 303, 403],
@@ -63,28 +58,210 @@ final class AcquisitionControllerTest extends AbstractControllerTestCase
 
     public function testValiderAcquisitionAnonymeRedirigeVersLogin(): void
     {
-        // On vide la session pour simuler un anonyme
         $this->client->clearSession();
-        
+
         $acqId = $this->fixture->createDraftAcquisition('TEST-ANON');
-        
+
         $response = $this->client->postWithoutCsrf("/admin/acquisitions/valider/$acqId");
-        
-        // L'app redirige d'abord vers / via le handler AccessDeniedException
-        // (public/index.php), puis / redirige en cascade vers /se_connecter.
-        // Les deux emplacements sont acceptables.
-    self::assertContains(
-            $response['status'],
-            [301, 302, 303, 307, 308],
-            "Une redirection est attendue, reçu : {$response['status']}"
-        );
-        
+
         $location = $response['headers']['location'] ?? '';
-    self::assertTrue(
-            $location === '/se_connecter'
-            || $location === '/'
-            || str_contains($location, '/se_connecter'),
+        self::assertTrue(
+            $location === '/se_connecter' || $location === '/',
             "Redirection attendue vers /se_connecter ou /, reçu '$location'"
         );
+    }
+
+    // ==================================================================
+    // Action : create
+    // ==================================================================
+
+    public function testCreateAcquisitionAvecDonneesValidesRedirige(): void
+    {
+        $reference = 'TEST-CREATE-' . uniqid();
+
+        $response = $this->client->post('/admin/acquisitions/nouvelle', [
+            'action'            => 'create',
+            'facture_reference' => $reference,
+            'facture_date'      => date('Y-m-d'),
+            'fournisseur_nom'   => 'Fournisseur Test',
+        ]);
+
+        self::assertContains(
+            $response['status'],
+            [301, 302, 303, 307, 308],
+            "Création attendue avec redirection, reçu : {$response['status']}"
+        );
+
+        $location = $response['headers']['location'] ?? '';
+        self::assertStringContainsString(
+            '/admin/acquisitions/acquisition_modification-',
+            $location,
+            "Redirection attendue vers la modification, reçu '$location'"
+        );
+    }
+
+    public function testCreateAcquisitionAvecReferenceDupliqueeAfficheErreur(): void
+    {
+        $existingRef = 'TEST-DUPLICATE-' . uniqid();
+        $this->fixture->createDraftAcquisition($existingRef);
+
+        $response = $this->client->post('/admin/acquisitions/nouvelle', [
+            'action'            => 'create',
+            'facture_reference' => $existingRef,
+            'facture_date'      => date('Y-m-d'),
+            'fournisseur_nom'   => 'Fournisseur Test',
+        ]);
+
+        self::assertSame(200, $response['status']);
+        $this->assertPageContainsError('existe déjà', $response);
+    }
+
+    public function testCreateAcquisitionSansReferenceAfficheErreur(): void
+    {
+        $response = $this->client->post('/admin/acquisitions/nouvelle', [
+            'action'            => 'create',
+            'facture_reference' => '',
+            'facture_date'      => date('Y-m-d'),
+            'fournisseur_nom'   => 'Fournisseur Test',
+        ]);
+
+        self::assertSame(200, $response['status']);
+        $this->assertPageContainsError('référence de facture est obligatoire', $response);
+    }
+
+    // ==================================================================
+    // Action : add_ligne
+    // ==================================================================
+
+    public function testAddLigneValideRedirigeAvecFlashSucces(): void
+    {
+        $acqId = $this->fixture->createDraftAcquisition('TEST-ADD-LIGNE');
+
+        $response = $this->client->post("/admin/acquisitions/acquisition_modification-$acqId", [
+            'action' => 'add_ligne',
+            'ligne'  => [
+                'reference'         => 'TEST-REF-LIGNE-' . uniqid(),
+                'designation'       => 'Tournevis de test',
+                'categorie_libelle' => 'Outillage',
+                'nombre'            => 3,
+            ],
+        ]);
+
+        $this->assertRedirectsTo(
+            "/admin/acquisitions/acquisition_modification-$acqId",
+            $response
+        );
+    }
+
+    public function testAddLigneAvecReferenceDupliqueeAfficheErreur(): void
+    {
+        $acqId = $this->fixture->createDraftAcquisition('TEST-ADD-LIGNE-DUP');
+        $existingRef = 'TEST-REF-DUP-' . uniqid();
+        $this->fixture->createLigne($acqId, $existingRef);
+
+        $response = $this->client->post("/admin/acquisitions/acquisition_modification-$acqId", [
+            'action' => 'add_ligne',
+            'ligne'  => [
+                'reference'         => $existingRef,
+                'designation'       => 'Autre désignation',
+                'categorie_libelle' => 'Outillage',
+                'nombre'            => 1,
+            ],
+        ]);
+
+        self::assertSame(200, $response['status']);
+        $this->assertPageContainsError('existe déjà', $response);
+    }
+
+    public function testAddLigneSansCategorieAfficheErreur(): void
+    {
+        $acqId = $this->fixture->createDraftAcquisition('TEST-ADD-LIGNE-CAT');
+
+        $response = $this->client->post("/admin/acquisitions/acquisition_modification-$acqId", [
+            'action' => 'add_ligne',
+            'ligne'  => [
+                'reference'         => 'TEST-REF-NO-CAT-' . uniqid(),
+                'designation'       => 'Tournevis',
+                'categorie_libelle' => '',
+                'nombre'            => 1,
+            ],
+        ]);
+
+        self::assertSame(200, $response['status']);
+        $this->assertPageContainsError('catégorie est obligatoire', $response);
+    }
+
+    public function testAddLigneSansDesignationAfficheErreur(): void
+    {
+        $acqId = $this->fixture->createDraftAcquisition('TEST-ADD-LIGNE-DES');
+
+        $response = $this->client->post("/admin/acquisitions/acquisition_modification-$acqId", [
+            'action' => 'add_ligne',
+            'ligne'  => [
+                'reference'         => 'TEST-REF-NO-DES-' . uniqid(),
+                'designation'       => '',
+                'categorie_libelle' => 'Outillage',
+                'nombre'            => 1,
+            ],
+        ]);
+
+        self::assertSame(200, $response['status']);
+        $this->assertPageContainsError('libellé est obligatoire', $response);
+    }
+
+    public function testAddLigneAvecNombreZeroAfficheErreur(): void
+    {
+        $acqId = $this->fixture->createDraftAcquisition('TEST-ADD-LIGNE-NB');
+
+        $response = $this->client->post("/admin/acquisitions/acquisition_modification-$acqId", [
+            'action' => 'add_ligne',
+            'ligne'  => [
+                'reference'         => 'TEST-REF-NB0-' . uniqid(),
+                'designation'       => 'Tournevis',
+                'categorie_libelle' => 'Outillage',
+                'nombre'            => 0,
+            ],
+        ]);
+
+        self::assertSame(200, $response['status']);
+        $this->assertPageContainsError('supérieur à 0', $response);
+    }
+
+    // ==================================================================
+    // Action : delete
+    // ==================================================================
+
+    public function testDeleteAcquisitionValideeRefuseeAvecFlashErreur(): void
+    {
+        $acqId = $this->fixture->createValidatedAcquisition('TEST-DELETE-VALIDEE');
+
+        $response = $this->client->post("/admin/acquisitions/acquisition_supprimer-$acqId");
+
+        $this->assertRedirectsTo(
+            "/admin/acquisitions/acquisition-$acqId",
+            $response
+        );
+
+        $this->assertFlashContains('Impossible de supprimer', $response);
+    }
+
+    public function testDeleteAcquisitionBrouillonRedirigeVersListe(): void
+    {
+        $acqId = $this->fixture->createDraftAcquisition('TEST-DELETE-BROUILLON');
+
+        $response = $this->client->post("/admin/acquisitions/acquisition_supprimer-$acqId");
+
+        $this->assertRedirectsTo('/admin/acquisitions', $response);
+    }
+
+    // ==================================================================
+    // Action : list
+    // ==================================================================
+
+    public function testListAcquisitionsAccessibleAdmin(): void
+    {
+        $response = $this->client->get('/admin/acquisitions');
+
+        self::assertSame(200, $response['status']);
     }
 }

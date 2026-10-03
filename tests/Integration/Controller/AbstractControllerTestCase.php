@@ -10,12 +10,6 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Classe de base pour les tests d'intégration des contrôleurs.
- *
- * Fournit :
- * - Un client HTTP avec session + CSRF
- * - Une fixture BDD
- * - Un login admin par défaut
- * - Des assertions HTTP utiles
  */
 abstract class AbstractControllerTestCase extends TestCase
 {
@@ -27,13 +21,11 @@ abstract class AbstractControllerTestCase extends TestCase
         $baseUrl = getenv('BASE_URL') ?: 'http://localhost:8000';
         $this->client = new HttpTestClient($baseUrl);
 
-        // 1. Initialiser la fixture EN PREMIER (avant tout skip possible)
+        // Initialiser la fixture EN PREMIER
         $this->fixture = new DatabaseFixture($this->createPdo());
-
-        // 2. Nettoyer les données de test résiduelles
         $this->fixture->cleanupTestData();
 
-        // 3. Vérifier que le serveur HTTP est accessible
+        // Vérifier que le serveur HTTP est accessible
         try {
             $response = $this->client->get('/');
             if ($response['status'] === 0) {
@@ -43,14 +35,14 @@ abstract class AbstractControllerTestCase extends TestCase
         } catch (\RuntimeException $e) {
             self::markTestSkipped(
                 "Serveur HTTP non accessible sur $baseUrl. "
-                . 'Lancez "php -S localhost:8080 -t public" avant les tests. '
+                . 'Lancez "php -S localhost:8000 -t public" avant les tests. '
                 . 'Erreur : ' . $e->getMessage()
             );
             return;
         }
 
-        // 4. Login admin
-        $this->client->loginAsAdmin();
+        // Login admin (username 'admin', mot de passe 'adminadmin')
+        $this->client->loginAsAdmin('admin', 'adminadmin');
     }
 
     protected function tearDown(): void
@@ -60,9 +52,6 @@ abstract class AbstractControllerTestCase extends TestCase
         }
     }
 
-    /**
-     * Connexion PDO à la base de test.
-     */
     private function createPdo(): \PDO
     {
         $envFile = dirname(__DIR__, 3) . '/.env.local.php';
@@ -113,23 +102,23 @@ abstract class AbstractControllerTestCase extends TestCase
 
     /**
      * Assertion : la page suivante contient un message (flash).
-     *
-     * ⚠️ Le flash est stocké en session et consommé au prochain GET.
-     * Ce helper suit la redirection et vérifie le contenu de la page suivante.
      */
     protected function assertFlashContains(string $expectedSubstring, array $redirectResponse): void
     {
         $redirectPath = $redirectResponse['headers']['location'] ?? '/';
         $nextPage = $this->client->get($redirectPath);
 
+        // Décoder les entités HTML
+        $body = html_entity_decode($nextPage['body'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
         self::assertStringContainsString(
             $expectedSubstring,
-            $nextPage['body'],
+            $body,
             sprintf(
                 "Le message '%s' n'apparaît pas dans la page %s. Body: %s",
                 $expectedSubstring,
                 $redirectPath,
-                substr(strip_tags($nextPage['body']), 0, 500)
+                substr(strip_tags($body), 0, 500)
             )
         );
     }
@@ -145,10 +134,17 @@ abstract class AbstractControllerTestCase extends TestCase
             "La page devrait être rendue (200) avec l'erreur, reçu : {$response['status']}"
         );
 
+        // Décoder les entités HTML (&#039; → ')
+        $body = html_entity_decode($response['body'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
         self::assertStringContainsString(
             $errorMessage,
-            $response['body'],
-            "L'erreur '$errorMessage' n'apparaît pas dans la page."
+            $body,
+            sprintf(
+                "L'erreur '%s' n'apparaît pas dans la page. Body: %s",
+                $errorMessage,
+                substr(strip_tags($body), 0, 500)
+            )
         );
     }
 }
