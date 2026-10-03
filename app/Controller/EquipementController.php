@@ -360,8 +360,11 @@ class EquipementController extends AbstractController
                 ];
                 
                 if ($photoPath !== null) {
-                    if (!empty($equipement['photo']) && file_exists($_SERVER['DOCUMENT_ROOT'] . $equipement['photo'])) {
-                        unlink($_SERVER['DOCUMENT_ROOT'] . $equipement['photo']);
+                    if (!empty($equipement['photo'])) {
+                        $oldPhotoPath = $this->getPublicPath($equipement['photo']);
+                        if (file_exists($oldPhotoPath)) {
+                            unlink($oldPhotoPath);
+                        }
                     }
                     $equipementData['photo'] = $photoPath;
                 }
@@ -479,7 +482,7 @@ class EquipementController extends AbstractController
         
         $photoBase64 = null;
         if (!empty($equipement['photo'])) {
-            $photoPath = $_SERVER['DOCUMENT_ROOT'] . $equipement['photo'];
+            $photoPath = $this->getPublicPath($equipement['photo']);
             if (file_exists($photoPath)) {
                 $imageData = file_get_contents($photoPath);
                 $mime = mime_content_type($photoPath);
@@ -727,7 +730,7 @@ HTML;
             // 1. Photo en base64 – 3cm x 3cm
             $photoHtml = '';
             if (!empty($e['photo'])) {
-                $photoPath = $_SERVER['DOCUMENT_ROOT'] . $e['photo'];
+                $photoPath = $this->getPublicPath($e['photo']);
                 if (file_exists($photoPath)) {
                     $imageData = file_get_contents($photoPath);
                     $mime = mime_content_type($photoPath);
@@ -853,7 +856,7 @@ HTML;
             // --- Photo (colonne D) ---
             $photoPath = null;
             if (!empty($e['photo'])) {
-                $fullPath = $_SERVER['DOCUMENT_ROOT'] . $e['photo'];
+                $fullPath = $this->getPublicPath($e['photo']);
                 if (file_exists($fullPath)) {
                     $photoPath = $fullPath;
                 }
@@ -1063,9 +1066,9 @@ HTML;
         }
         imagecopyresampled($resizedImage, $image, 0, 0, 0, 0, $newWidth, $newHeight, $originalWidth, $originalHeight);
 
-        $uploadDir = $_SERVER['DOCUMENT_ROOT'] . self::UPLOAD_DIR;
+        $uploadDir = $this->getPublicPath(self::UPLOAD_DIR);
         if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0777, true);
+            mkdir($uploadDir, 0775, true);
         }
 
         $filename = uniqid() . '.webp';

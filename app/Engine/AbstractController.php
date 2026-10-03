@@ -191,4 +191,27 @@ abstract class AbstractController
             default => (int) $value,
         };
     }
+    
+    /**
+    * [ROBUSTESSE] Retourne le chemin absolu vers le répertoire public/.
+    *
+    * Le chemin est configurable via .env.local.php (clé PUBLIC_PATH) pour
+    * permettre un déploiement où public/ n'est pas dans le même dossier
+    * que app/ (layouts exotiques, symlinks, etc.). Par défaut, on suppose
+    * la structure standard : {projet}/public/.
+    *
+    * @param string $subpath Sous-chemin relatif à concaténer (ex. 'images/equipements/')
+    * @return string Chemin absolu, sans slash final
+    */
+    protected function getPublicPath(string $subpath = ''): string
+    {
+        $base = $_ENV['PUBLIC_PATH']
+        ?? $_SERVER['PUBLIC_PATH']
+        ?? dirname(__DIR__, 2) . '/public';
+        
+        $base = rtrim($base, '/');
+        $subpath = ltrim($subpath, '/');
+        
+        return $subpath === '' ? $base : $base . '/' . $subpath;
+    }
 }
