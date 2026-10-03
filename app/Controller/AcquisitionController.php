@@ -492,24 +492,49 @@ class AcquisitionController extends AbstractController
     {
         // [SÉCURITÉ] Seul un admin peut supprimer une acquisition
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
-
-        // [SÉCURITÉ] Vérification CSRF (avant toute suppression de fichier ou d'enregistrement)
+        
+        // [SÉCURITÉ] Vérification CSRF (avant toute suppression de fichier ou d'enregistrement).
+        // Reste hors du handler pour conserver son throw protecteur.
         $this->validateCsrf($request);
-
+        
+        // [ROBUSTESSE] Cast explicite de l'id
         $id = (int) $request->get('id');
         if ($id <= 0) {
             $this->session->getFlashBag()->add('error', 'Acquisition invalide.');
             return $this->redirectTo('/admin/acquisitions');
         }
-
+        
         $acquisitionManager = new AcquisitionManager();
         $acquisition = $acquisitionManager->findId($id);
-
         if (!$acquisition) {
             $this->session->getFlashBag()->add('error', 'Acquisition non trouvée.');
             return $this->redirectTo('/admin/acquisitions');
         }
-
+        
+        // [REFACTOR VAGUE 6] Logique de suppression extraite dans un handler
+        // dédié, en symétrie avec create() / update().
+        // Convention adaptée : ce handler retourne toujours une Response
+        // (jamais null — pas de rendu de formulaire en cas d'erreur).
+        return $this->handleDeleteAction($acquisition);
+    }
+    
+    /**
+    * [REFACTOR VAGUE 6] Handler de l'action 'delete'.
+    *
+    * Extrait de delete() pour symétrie avec handleCreateAction() /
+    * handleUpdateAction() / handleAddLigneAction().
+    *
+    * Contrairement aux autres handlers, celui-ci retourne toujours une
+    * Response : il n'y a pas de "rendu de formulaire en cas d'erreur",
+    * toutes les branches redirigent avec un flash.
+    *
+    * @param array $acquisition  Acquisition chargée (avec 'id',
+    *                            'est_validee', 'facture_document').
+    */
+    private function handleDeleteAction(array $acquisition): Response
+    {
+        $id = (int) $acquisition['id'];
+        
         // [MÉTIER] Seuls les brouillons peuvent être supprimés
         if ($acquisition['est_validee']) {
             $this->session->getFlashBag()->add(
@@ -518,7 +543,7 @@ class AcquisitionController extends AbstractController
             );
             return $this->redirectTo("/admin/acquisitions/acquisition-{$id}");
         }
-
+        
         // [SÉCURITÉ] Refuser si une ligne a déjà généré des équipements
         $acquisitionLigneManager = new AcquisitionLigneManager();
         $lignes = $acquisitionLigneManager->findByAcquisition($id);
@@ -531,21 +556,22 @@ class AcquisitionController extends AbstractController
                 return $this->redirectTo("/admin/acquisitions/acquisition_modification-{$id}");
             }
         }
-
+        
         try {
             // [SÉCURITÉ] Supprimer d'abord les lignes (pas de FK ON DELETE CASCADE déclarée)
             foreach ($lignes as $ligne) {
                 $acquisitionLigneManager->delete($ligne['id']);
             }
-
+            
             // Supprimer la facture associée si elle existe (best-effort)
             if (!empty($acquisition['facture_document'])) {
                 $this->factureUploader()->delete($acquisition['facture_document']);
             }
-
+            
             // Puis l'acquisition
+            $acquisitionManager = new AcquisitionManager();
             $acquisitionManager->delete($id);
-
+            
             $this->session->getFlashBag()->add('success', "L'acquisition #{$id} a été supprimée.");
             return $this->redirectTo('/admin/acquisitions');
         } catch (\Throwable $e) {
