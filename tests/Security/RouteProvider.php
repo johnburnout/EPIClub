@@ -3,15 +3,15 @@
 
 declare(strict_types=1);
 
-namespace Epiclub\Tests\Security;   // ← AJOUT du préfixe Epiclub\
+namespace Epiclub\Tests\Security;
 
 use Symfony\Component\Routing\RouteCollection;
+use Symfony\Component\Routing\Route;
 
 class RouteProvider
 {
     private static function loadRoutes(): RouteCollection
     {
-        // ⚠️ À AJUSTER selon l'emplacement réel de routes.php
         return require __DIR__ . '/../../ressources/routes.php';
     }
 
@@ -47,6 +47,27 @@ class RouteProvider
     }
 
     /**
+     * Route accessible en GET (méthode par défaut ou GET explicite).
+     */
+    private static function isGetAccessible(Route $route): bool
+    {
+        $methods = $route->getMethods();
+
+        // Pas de méthodes déclarées → GET autorisé par défaut
+        if (empty($methods)) {
+            return true;
+        }
+
+        return in_array('GET', $methods, true);
+    }
+
+    /**
+     * Routes protégées accessibles en GET (utilisées pour le test
+     * "un anonyme doit être redirigé vers le login").
+     *
+     * Les routes POST-only en sont exclues : elles sont testées par
+     * destructiveRoutesProvider() qui attend un 405 en GET.
+     *
      * @return array<string, array{0:string,1:string}>
      */
     public static function protectedRoutesProvider(): array
@@ -56,9 +77,15 @@ class RouteProvider
 
         foreach ($routes as $name => $route) {
             $path = $route->getPath();
+
             if (self::isPublic($path)) {
                 continue;
             }
+
+            if (!self::isGetAccessible($route)) {
+                continue;
+            }
+
             $provider[$name] = [self::concretize($path), $path];
         }
 
@@ -91,13 +118,14 @@ class RouteProvider
         ];
 
         $routes = self::loadRoutes();
+        $allRoutes = $routes->all();
         $provider = [];
 
         foreach ($destructiveRouteNames as $name) {
-            if (!$routes->has($name)) {
+            if (!isset($allRoutes[$name])) {
                 continue;
             }
-            $route = $routes->get($name);
+            $route = $allRoutes[$name];
             $path = $route->getPath();
             $provider[$name] = [self::concretize($path), $path];
         }
