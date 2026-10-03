@@ -11,6 +11,7 @@ use Epiclub\Enum\EquipementStatuts;
 use Epiclub\Engine\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Epiclub\Engine\QrCodeGenerator;
@@ -334,11 +335,17 @@ class EquipementController extends AbstractController
             if ($date_fin_utilisation === '') $date_fin_utilisation = null;
             
             $photoPath = null;
-            if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
+            $uploadedPhoto = $request->files->get('photo');
+            if ($uploadedPhoto !== null && $uploadedPhoto->isValid()) {
                 try {
-                    $photoPath = $this->resizeAndSaveImage($_FILES['photo']);
+                    $photoPath = $this->resizeAndSaveImage($uploadedPhoto);
                 } catch (\Exception $e) {
-                    $form_errors[] = 'Erreur lors du traitement de l\'image : ' . $e->getMessage();
+                    // [ROBUSTESSE] Clé nommée pour cibler le champ photo dans le template.
+                    // On ne remonte pas $e->getMessage() tel quel : il peut contenir
+                    // des chemins serveur. On garde le message court.
+                    error_log('[EquipementController] Photo processing failed: ' . $e->getMessage());
+                    $form_errors['photo'] = 'Erreur lors du traitement de l\'image. '
+                    . 'Vérifiez que le fichier est bien une image (JPEG, PNG, WebP, GIF).';
                 }
             }
             
@@ -1024,17 +1031,17 @@ HTML;
     /**
      * Redimensionne et sauvegarde une image
      */
-    private function resizeAndSaveImage(array $file): string
+    private function resizeAndSaveImage(UploadedFile $file): string
     {
-        $finfo = finfo_open(FILEINFO_MIME_TYPE);
-        $mimeType = finfo_file($finfo, $file['tmp_name']);
-        finfo_close($finfo);
+        // [ROBUSTESSE] getMimeType() utilise finfo côté serveur (non spoofable)
+        $mimeType = $file->getMimeType();
         $allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
         if (!in_array($mimeType, $allowedTypes, true)) {
             throw new \Exception("Type de fichier non autorisé. Seuls JPEG, PNG, WebP et GIF sont acceptés.");
         }
-
-        $image = imagecreatefromstring(file_get_contents($file['tmp_name']));
+        
+        // [ROBUSTESSE] getPathname() pointe sur le fichier temporaire uploadé
+        $image = imagecreatefromstring(file_get_contents($file->getPathname()));
         if ($image === false) {
             throw new \Exception("Impossible de décoder l'image. Fichier corrompu ou format non supporté.");
         }

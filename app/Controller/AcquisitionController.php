@@ -15,10 +15,14 @@ use Epiclub\Exception\NotFoundException;
 use Epiclub\Process\AcquisitionProcess;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class AcquisitionController extends AbstractController
 {
+    /** Dernier message d'erreur d'upload, à afficher via $form_errors. */
+    private ?string $lastUploadError = null;
+    
     public function list(Request $request): Response
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
@@ -86,9 +90,10 @@ class AcquisitionController extends AbstractController
 
                     // Téléchargement de la facture (seulement si pas d'erreur bloquante)
                     if (empty($form_errors)) {
-                        $factureDocument = $this->uploadFacture($_FILES['facture_document'] ?? null);
+                        $factureDocument = $this->uploadFacture($request->files->get('facture_document'));
                         if ($factureDocument === false) {
-                            $form_errors['facture_document'] = 'Erreur lors du téléchargement du fichier. Formats acceptés : PDF, JPG, PNG (max 10 Mo).';
+                            $form_errors['facture_document'] = $this->lastUploadError
+                            ?? 'Erreur lors du téléchargement du fichier.';
                         } elseif ($factureDocument !== null) {
                             $acquisition['facture_document'] = $factureDocument;
                         }
@@ -212,10 +217,12 @@ class AcquisitionController extends AbstractController
                     }
 
                     // Gestion du téléchargement du PDF (seulement si pas d'erreur bloquante)
-                    if (empty($form_errors['facture_reference']) && isset($_FILES['facture_document']) && $_FILES['facture_document']['error'] !== UPLOAD_ERR_NO_FILE) {
-                        $factureDocument = $this->uploadFacture($_FILES['facture_document']);
+                    $uploadedFacture = $request->files->get('facture_document');
+                    if (empty($form_errors['facture_reference']) && $uploadedFacture !== null) {
+                        $factureDocument = $this->uploadFacture($uploadedFacture);
                         if ($factureDocument === false) {
-                            $form_errors['facture_document'] = 'Erreur lors du téléchargement du fichier. Formats acceptés : PDF, JPG, PNG (max 10 Mo).';
+                            $form_errors['facture_document'] = $this->lastUploadError
+                            ?? 'Erreur lors du téléchargement du fichier.';
                         } else {
                             // [SÉCURITÉ] Ne plus masquer les erreurs avec @unlink
                             if (!empty($acquisition['facture_document'])) {
@@ -546,76 +553,64 @@ class AcquisitionController extends AbstractController
         return $limits ? min($limits) : $business;
     }
 
-    private function uploadFacture(?array $file)
+    /**
+    * [ROBUSTESSE] Upload d'une facture via Symfony UploadedFile.
+    *
+    * @return string|null  Chemin relatif ('factures/xxx.pdf') en cas de succès,
+    *                      null si aucun fichier, false en cas d'erreur.
+    */
+    private function uploadFacture(?UploadedFile $file): string|false|null
     {
-        // Aucun fichier téléchargé
-        if (!$file || $file['error'] === UPLOAD_ERR_NO_FILE) {
+        $this->lastUploadError = null;
+        
+        if ($file === null) {
             return null;
         }
-
-        // Erreur de téléchargement
-        if ($file['error'] !== UPLOAD_ERR_OK) {
-            $this->session->getFlashBag()->add('error', 'Erreur de téléchargement : code ' . $file['error']);
+        
+        if (!$file->isValid()) {
+            $this->lastUploadError = 'Erreur de téléchargement : ' . $file->getErrorMessage();
             return false;
         }
-
-        // [ROBUSTESSE] Limite dynamique : la plus basse entre la contrainte PHP
-        // et la limite métier (10 Mo). Le message d'erreur reflète la vraie limite.
+        
         $maxBytes = $this->getMaxUploadBytes();
-        if ($file['size'] > $maxBytes) {
-            $this->session->getFlashBag()->add(
-                'error',
-                'Le fichier dépasse la taille maximum autorisée (' . round($maxBytes / 1024 / 1024) . ' Mo).'
-            );
+        if ($file->getSize() > $maxBytes) {
+            $this->lastUploadError = 'Le fichier dépasse la taille maximum autorisée (' . round($maxBytes / 1024 / 1024) . ' Mo).';
             return false;
         }
-
-        // Vérification du type MIME
-        $finfo = new \finfo(FILEINFO_MIME_TYPE);
-        $mimeType = $finfo->file($file['tmp_name']);
-
-        // [SÉCURITÉ] Formats réduits — retirer msword/docx si non nécessaires (macros)
-        $allowedTypes = [
-            'application/pdf',
-            'image/jpeg',
-            'image/png',
-        ];
-
+        
+        $mimeType = $file->getMimeType();
+        $allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
         if (!in_array($mimeType, $allowedTypes, true)) {
-            $this->session->getFlashBag()->add('error', 'Type de fichier non autorisé. Formats acceptés : PDF, JPG, PNG.');
+            $this->lastUploadError = 'Type de fichier non autorisé. Formats acceptés : PDF, JPG, PNG.';
             return false;
         }
-
+        
         $uploadDir = $this->getUploadsDir() . 'factures/';
-
-        // Créer le dossier s'il n'existe pas
+        
         if (!is_dir($uploadDir)) {
             if (!mkdir($uploadDir, 0755, true) && !is_dir($uploadDir)) {
-                $this->session->getFlashBag()->add('error', 'Impossible de créer le dossier de téléchargement.');
+                $this->lastUploadError = 'Impossible de créer le dossier de téléchargement.';
                 return false;
             }
         }
-
-        // Vérifier les permissions
+        
         if (!is_writable($uploadDir)) {
-            $this->session->getFlashBag()->add('error', 'Le dossier de téléchargement n\'est pas accessible en écriture.');
+            $this->lastUploadError = 'Le dossier de téléchargement n\'est pas accessible en écriture.';
             return false;
         }
-
-        // [SÉCURITÉ] Nom imprévisible (random_bytes au lieu d'uniqid)
-        $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
+        
+        $extension = $file->guessExtension() ?: 'bin';
         $extension = preg_replace('/[^a-zA-Z0-9]/', '', $extension) ?: 'bin';
         $filename = 'facture_' . bin2hex(random_bytes(8)) . '.' . $extension;
-        $filepath = $uploadDir . $filename;
-
-        // Déplacer le fichier
-        if (!move_uploaded_file($file['tmp_name'], $filepath)) {
-            $error = error_get_last();
-            error_log('[AcquisitionController] move_uploaded_file failed: ' . ($error['message'] ?? 'unknown'));
-            $this->session->getFlashBag()->add('error', 'Erreur lors de l\'enregistrement du fichier.');
+        
+        try {
+            $file->move($uploadDir, $filename);
+        } catch (\Throwable $e) {
+            error_log('[AcquisitionController] move failed: ' . $e->getMessage());
+            $this->lastUploadError = 'Erreur lors de l\'enregistrement du fichier.';
             return false;
         }
-
+        
         return 'factures/' . $filename;
     }
 }
