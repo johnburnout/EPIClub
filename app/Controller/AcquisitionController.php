@@ -298,15 +298,28 @@ class AcquisitionController extends AbstractController
                 // Convention actuelle : un handler retourne ?Response :
                 //   - Response : redirection immédiate (succès ou refus métier)
                 //   - null     : on continue vers le rendu du formulaire (erreurs)
-                $response = match ($action) {
-                    'valider'   => $this->performValidation($acquisition),
-                    'update'    => $this->handleUpdateAction($request, $acquisition, $form_errors),
-                    'add_ligne' => $this->handleAddLigneAction($request, $acquisition, $form_errors, $ligneData),
+                // [REFACTOR VAGUE 7] Dispatch vers des handlers qui retournent
+                // un HandlerResult (plus de mutation par référence).
+                // Cas spécial 'valider' : performValidation() retourne directement
+                // une Response, on la traite hors du match DTO.
+                if ($action === 'valider') {
+                    return $this->performValidation($acquisition);
+                }
+                
+                $result = match ($action) {
+                    'update'    => $this->handleUpdateAction($request, $acquisition),
+                    'add_ligne' => $this->handleAddLigneAction($request, $acquisition),
                     default     => null,
                 };
                 
-                if ($response !== null) {
-                    return $response;
+                if ($result !== null) {
+                    if ($result->isRedirect()) {
+                        return $result->response;
+                    }
+                    // Rendu du formulaire avec la saisie et les erreurs remontées
+                    $acquisition = $result->acquisition;
+                    $form_errors = $result->formErrors;
+                    $ligneData = $result->ligneData;
                 }
             }
         }
@@ -324,45 +337,46 @@ class AcquisitionController extends AbstractController
     }
 
     /**
-     * [REFACTOR VAGUE 3] Handler de l'action 'update'.
-     *
-     * Extrait de update() pour isoler la logique de mise à jour de l'acquisition
-     * (fournisseur, référence facture, date, upload PDF).
-     *
-     * @param array $acquisition  Muté par référence : fournisseur_id,
-     *                            facture_reference, facture_date,
-     *                            facture_document (afin que le template
-     *                            réaffiche les valeurs saisies en cas d'erreur).
-     * @param array $form_errors  Rempli par référence en cas d'erreur.
-     *
-     * @return Response|null  RedirectResponse en cas de succès, null si on doit
-     *                        réafficher le formulaire avec les erreurs.
-     */
-    private function handleUpdateAction(
+    * [REFACTOR VAGUE 3 → 7] Handler de l'action 'update'.
+    *
+    * Extrait de update() pour isoler la logique de mise à jour de l'acquisition
+    * (fournisseur, référence facture, date, upload PDF).
+    *
+    * [VAGUE 7] Retourne un HandlerResult au lieu de muter par référence :
+    *   - response    : RedirectResponse en cas de succès, null sinon
+    *   - acquisition : remontée en cas d'erreur (avec fournisseur_id,
+    *                   facture_reference, facture_date, facture_document
+    *                   mis à jour pour réaffichage)
+    *   - formErrors  : erreurs indexées par champ
+    *
+    * @param array $acquisition  Acquisition chargée (avec 'id', 'facture_document').
+    */
+    protected function handleUpdateAction(
         Request $request,
-        array &$acquisition,
-        array &$form_errors,
-    ): ?Response {
+        array $acquisition,
+    ): HandlerResult {
         $acquisitionManager = new AcquisitionManager();
         $fournisseurManager = new FournisseurManager();
-
+        
         $fournisseurNom = trim((string) $request->request->get('fournisseur_nom', ''));
         $factureReference = trim((string) $request->request->get('facture_reference', ''));
         $factureDate = $request->request->get('facture_date');
-
+        
+        $formErrors = [];
+        
         // [ROBUSTESSE] Vérifier l'unicité de la référence AVANT l'update
         if ($factureReference === '') {
-            $form_errors['facture_reference'] = 'La référence de facture est obligatoire.';
+            $formErrors['facture_reference'] = 'La référence de facture est obligatoire.';
         } else {
             $existing = $acquisitionManager->findOneByCriteria(['facture_reference' => $factureReference]);
             if ($existing && (int) $existing['id'] !== (int) $acquisition['id']) {
-                $form_errors['facture_reference'] = 'Cette référence de facture est déjà utilisée par une autre acquisition.';
+                $formErrors['facture_reference'] = 'Cette référence de facture est déjà utilisée par une autre acquisition.';
             }
         }
-
+        
         // Gestion du téléchargement du PDF (seulement si pas d'erreur bloquante)
         $uploadedFacture = $request->files->get('facture_document');
-        if (empty($form_errors['facture_reference']) && $uploadedFacture !== null) {
+        if (empty($formErrors['facture_reference']) && $uploadedFacture !== null) {
             $uploader = $this->factureUploader();
             try {
                 $newFacture = $uploader->upload($uploadedFacture);
@@ -374,30 +388,34 @@ class AcquisitionController extends AbstractController
                 
                 $acquisition['facture_document'] = $newFacture;
             } catch (FactureUploadException $e) {
-                $form_errors['facture_document'] = $e->getMessage();
+                $formErrors['facture_document'] = $e->getMessage();
             }
         }
-
-        // [ROBUSTESSE] Ne mettre à jour le fournisseur que si pas d'erreur
-        if (!empty($form_errors)) {
-            return null;
+        
+        // [ROBUSTESSE] Ne mettre à jour le fournisseur que si pas d'erreur.
+        // [VAGUE 7] On remonte $acquisition modifié (facture_document
+        // éventuellement mis à jour) pour que le template réaffiche la saisie.
+        if (!empty($formErrors)) {
+            return new HandlerResult(null, $acquisition, $formErrors);
         }
-
+        
         $fournisseur = $fournisseurManager->findOneByCriteria(['nom' => $fournisseurNom]);
         if ($fournisseur) {
             $fournisseurId = $fournisseur['id'];
         } else {
             $fournisseurId = $fournisseurManager->save(['nom' => $fournisseurNom]);
         }
-
+        
         $acquisition['fournisseur_id'] = $fournisseurId;
         $acquisition['facture_reference'] = $factureReference;
         $acquisition['facture_date'] = $factureDate;
-
+        
         try {
             $acquisitionManager->save($acquisition);
             $this->session->getFlashBag()->add('success', '✅ Acquisition mise à jour avec succès.');
-            return $this->redirectTo("/admin/acquisitions/acquisition_modification-{$acquisition['id']}");
+            return new HandlerResult(
+                $this->redirectTo("/admin/acquisitions/acquisition_modification-{$acquisition['id']}")
+            );
         } catch (\Throwable $e) {
             // [SÉCURITÉ] Log serveur, message générique au client
             error_log(sprintf(
@@ -407,40 +425,36 @@ class AcquisitionController extends AbstractController
                 $e->getFile(),
                 $e->getLine()
             ));
-            $form_errors['general'] = 'Une erreur est survenue lors de la mise à jour. Merci de réessayer.';
-            return null;
+            $formErrors['general'] = 'Une erreur est survenue lors de la mise à jour. Merci de réessayer.';
+            return new HandlerResult(null, $acquisition, $formErrors);
         }
     }
 
     /**
-     * [REFACTOR VAGUE 3] Handler de l'action 'add_ligne'.
-     *
-     * Extrait de update() pour isoler l'ajout d'une ligne d'acquisition
-     * (whitelist, validation, catégorie, save).
-     *
-     * @param array $acquisition  Non muté (lecture seule de l'id).
-     * @param array $form_errors  Rempli par référence en cas d'erreur.
-     * @param array $ligneData    Rempli par référence : permet au template de
-     *                            réafficher les valeurs saisies en cas d'erreur.
-     *
-     * @return Response|null  RedirectResponse en cas de succès, null si on doit
-     *                        réafficher le formulaire avec les erreurs.
-     */
-    private function handleAddLigneAction(
+    * [REFACTOR VAGUE 3 → 7] Handler de l'action 'add_ligne'.
+    *
+    * Extrait de update() pour isoler l'ajout d'une ligne d'acquisition
+    * (whitelist, validation, catégorie, save).
+    *
+    * [VAGUE 7] Retourne un HandlerResult :
+    *   - response    : RedirectResponse en cas de succès, null sinon
+    *   - acquisition : non modifié (lecture seule de l'id)
+    *   - formErrors  : erreurs indexées par champ
+    *   - ligneData   : données de ligne saisies (pour réaffichage en cas d'erreur)
+    *
+    * @param array $acquisition  Acquisition chargée (avec 'id').
+    */
+    protected function handleAddLigneAction(
         Request $request,
         array $acquisition,
-        array &$form_errors,
-        array &$ligneData,
-    ): ?Response {
+    ): HandlerResult {
         $acquisitionLigneManager = new AcquisitionLigneManager();
-
+        
         // [SÉCURITÉ] Whitelist des champs — empêche l'injection de clés
         // arbitraires (id, acquisition_id, equipements_generes) via POST forgé.
-        // Sans ce filtre, un attaquant pouvait écraser des colonnes sensibles
-        // par mass-assignment.
         $raw = $request->request->all('ligne');
         $raw = is_array($raw) ? $raw : [];
-
+        
         $ligne = [
             'reference'         => trim((string) ($raw['reference'] ?? '')),
             'designation'       => trim((string) ($raw['designation'] ?? '')),
@@ -449,40 +463,43 @@ class AcquisitionController extends AbstractController
             'regrouper_en_lot'  => isset($raw['regrouper_en_lot']) ? 1 : 0,
         ];
         $ligneData = $ligne;
-
+        $formErrors = [];
+        
         if ($ligne['reference'] === '') {
-            $form_errors['ligne_reference'] = 'Veuillez remplir les champs de la ligne.';
-            return null;
+            $formErrors['ligne_reference'] = 'Veuillez remplir les champs de la ligne.';
+            return new HandlerResult(null, $acquisition, $formErrors, $ligneData);
         }
-
+        
         // Validation centralisée, puis remap des clés courtes
         // (reference, designation…) vers les clés attendues par
         // acquisition_form.twig (ligne_reference, ligne_designation…).
         $lineErrors = $this->validator()->validateLigne($ligne);
-        $form_errors = array_merge(
-            $form_errors,
+        $formErrors = array_merge(
+            $formErrors,
             $this->prefixLigneErrors($lineErrors)
         );
-
-        if (!empty($form_errors)) {
-            return null;
+        
+        if (!empty($formErrors)) {
+            return new HandlerResult(null, $acquisition, $formErrors, $ligneData);
         }
-
+        
         try {
             $acquisitionProcess = new AcquisitionProcess();
             $ligne['categorie_id'] = $acquisitionProcess->categorie_process($ligne);
             $ligne['acquisition_id'] = $acquisition['id'];
             $ligne['equipements_generes'] = 0;
-
+            
             $acquisitionLigneManager->save($ligne);
             $this->session->getFlashBag()->add('success', '✅ Ligne ajoutée avec succès.');
-            return $this->redirectTo("/admin/acquisitions/acquisition_modification-{$acquisition['id']}");
+            return new HandlerResult(
+                $this->redirectTo("/admin/acquisitions/acquisition_modification-{$acquisition['id']}")
+            );
         } catch (DuplicateReferenceException $e) {
             // [ROBUSTESSE] Race condition : la pré-vérification
             // findByReference() a passé, mais la contrainte UNIQUE
             // a rejeté l'INSERT. On affiche l'erreur sur le bon champ.
-            $form_errors['ligne_reference'] = 'Cette référence existe déjà. Veuillez en saisir une autre.';
-            return null;
+            $formErrors['ligne_reference'] = 'Cette référence existe déjà. Veuillez en saisir une autre.';
+            return new HandlerResult(null, $acquisition, $formErrors, $ligneData);
         } catch (\Throwable $e) {
             error_log(sprintf(
                 '[AcquisitionController] Add ligne failed for acquisition id=%s: %s in %s:%d',
@@ -491,8 +508,8 @@ class AcquisitionController extends AbstractController
                 $e->getFile(),
                 $e->getLine()
             ));
-            $form_errors['ligne_general'] = 'Une erreur est survenue lors de l\'ajout de la ligne.';
-            return null;
+            $formErrors['ligne_general'] = 'Une erreur est survenue lors de l\'ajout de la ligne.';
+            return new HandlerResult(null, $acquisition, $formErrors, $ligneData);
         }
     }
 
