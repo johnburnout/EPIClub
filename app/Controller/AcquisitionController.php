@@ -536,27 +536,31 @@ class AcquisitionController extends AbstractController
             return $this->redirectTo('/admin/acquisitions');
         }
         
-        // [REFACTOR VAGUE 6] Logique de suppression extraite dans un handler
-        // dédié, en symétrie avec create() / update().
-        // Convention adaptée : ce handler retourne toujours une Response
-        // (jamais null — pas de rendu de formulaire en cas d'erreur).
-        return $this->handleDeleteAction($acquisition);
+        // [REFACTOR VAGUE 7] Le handler retourne un HandlerResult.
+        // Par contrat, response est TOUJOURS non-null : on retourne
+        // directement la Response.
+        $result = $this->handleDeleteAction($acquisition);
+        return $result->response;
     }
     
     /**
-    * [REFACTOR VAGUE 6] Handler de l'action 'delete'.
+    * [REFACTOR VAGUE 6 → 7] Handler de l'action 'delete'.
     *
     * Extrait de delete() pour symétrie avec handleCreateAction() /
     * handleUpdateAction() / handleAddLigneAction().
     *
-    * Contrairement aux autres handlers, celui-ci retourne toujours une
-    * Response : il n'y a pas de "rendu de formulaire en cas d'erreur",
-    * toutes les branches redirigent avec un flash.
+    * [VAGUE 7] Retourne un HandlerResult :
+    *   - response    : TOUJOURS non-null (RedirectResponse)
+    *                   → pas de rendu de formulaire en cas d'erreur,
+    *                     toutes les branches redirigent avec un flash.
+    *   - acquisition : vide (non utilisé)
+    *   - formErrors  : vide (non utilisé)
+    *   - ligneData   : vide (non utilisé)
     *
     * @param array $acquisition  Acquisition chargée (avec 'id',
     *                            'est_validee', 'facture_document').
     */
-    private function handleDeleteAction(array $acquisition): Response
+    protected function handleDeleteAction(array $acquisition): HandlerResult
     {
         $id = (int) $acquisition['id'];
         
@@ -566,7 +570,9 @@ class AcquisitionController extends AbstractController
                 'error',
                 "Impossible de supprimer une acquisition validée. Elle contient des équipements générés."
             );
-            return $this->redirectTo("/admin/acquisitions/acquisition-{$id}");
+            return new HandlerResult(
+                $this->redirectTo("/admin/acquisitions/acquisition-{$id}")
+            );
         }
         
         // [SÉCURITÉ] Refuser si une ligne a déjà généré des équipements
@@ -578,7 +584,9 @@ class AcquisitionController extends AbstractController
                     'error',
                     "Impossible de supprimer cette acquisition : certaines lignes ont généré des équipements."
                 );
-                return $this->redirectTo("/admin/acquisitions/acquisition_modification-{$id}");
+                return new HandlerResult(
+                    $this->redirectTo("/admin/acquisitions/acquisition_modification-{$id}")
+                );
             }
         }
         
@@ -598,7 +606,7 @@ class AcquisitionController extends AbstractController
             $acquisitionManager->delete($id);
             
             $this->session->getFlashBag()->add('success', "L'acquisition #{$id} a été supprimée.");
-            return $this->redirectTo('/admin/acquisitions');
+            return new HandlerResult($this->redirectTo('/admin/acquisitions'));
         } catch (\Throwable $e) {
             error_log(sprintf(
                 '[AcquisitionController] Delete failed for acquisition id=%s: %s in %s:%d',
@@ -611,7 +619,9 @@ class AcquisitionController extends AbstractController
                 'error',
                 'Une erreur est survenue lors de la suppression. Merci de réessayer.'
             );
-            return $this->redirectTo("/admin/acquisitions/acquisition-{$id}");
+            return new HandlerResult(
+                $this->redirectTo("/admin/acquisitions/acquisition-{$id}")
+            );
         }
     }
 
