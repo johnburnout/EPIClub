@@ -13,6 +13,7 @@ use Epiclub\Domain\CategorieManager;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\FactureUploader; 
 use Epiclub\Engine\HandlerResult;
+use Epiclub\Engine\FactureUploaderInterface;
 use Epiclub\Exception\DuplicateReferenceException;
 use Epiclub\Exception\FactureUploadException;
 use Epiclub\Exception\NotFoundException;
@@ -713,12 +714,13 @@ class AcquisitionController extends AbstractController
     }
     
     /**
-    * Instancie le service d'upload.
+    * [REFACTOR VAGUE 8] Retourne FactureUploaderInterface (au lieu de
+    * la classe concrète) pour permettre la surcharge/mock dans les tests.
     *
     * Le chemin est résolu à la construction (issue #40, D1-a) :
     * le service ne connaît pas la structure du projet.
     */
-    protected function factureUploader(): FactureUploader
+    protected function factureUploader(): FactureUploaderInterface
     {
         return new FactureUploader($this->getUploadsDir());
     }

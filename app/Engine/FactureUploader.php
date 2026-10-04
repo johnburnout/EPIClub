@@ -19,7 +19,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
  * Le répertoire d'uploads est injecté au constructeur : le service
  * ne connaît pas la structure du projet.
  */
-final class FactureUploader
+final class FactureUploader implements FactureUploaderInterface
 {
     /**
      * Taille max métier, indépendante de la config PHP.

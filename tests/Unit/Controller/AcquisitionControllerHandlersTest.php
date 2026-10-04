@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Epiclub\Tests\Unit\Controller;
 
 use Epiclub\Engine\FactureUploader;
+use Epiclub\Engine\FactureUploaderInterface;
 use Epiclub\Engine\Session;
 use Epiclub\Tests\Unit\Controller\Support\TestableAcquisitionController;
 use PHPUnit\Framework\TestCase;
@@ -14,19 +15,13 @@ use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 /**
  * Tests unitaires des handlers d'AcquisitionController (Vague 7).
  *
- * Vérifie que les handlers retournent un HandlerResult avec :
- *  - response    : RedirectResponse en cas de succès, null sinon
- *  - acquisition : remontée en cas d'erreur (pour réaffichage)
- *  - formErrors  : erreurs indexées par champ
- *
  * ⚠️ Périmètre : seuls les scénarios qui échouent AVANT tout appel BDD
  * sont testés ici (référence vide, whitelist). Les scénarios nominaux
- * et les erreurs BDD (référence dupliquée, échec save) restent couverts
- * par la suite Integration (AcquisitionControllerTest).
+ * et les erreurs BDD restent couverts par la suite Integration.
  *
- * ⚠️ FactureUploader est final → non mockable. On utilise une vraie
- * instance avec un répertoire temporaire, et on vérifie l'absence
- * d'effet de bord (pas de dossier factures/ créé).
+ * ⚠️ FactureUploader est final → non mockable directement, mais depuis
+ * la Vague 8 il implémente FactureUploaderInterface (mockable). On
+ * utilise l'interface mockée dans les tests où c'est utile.
  */
 final class AcquisitionControllerHandlersTest extends TestCase
 {
@@ -76,17 +71,15 @@ final class AcquisitionControllerHandlersTest extends TestCase
             'facture_reference' => '',
             'facture_date'      => '2025-01-15',
             'fournisseur_nom'   => 'Fournisseur Test',
-            'id'                => '999',           // ← tentative d'injection
-            'est_validee'       => '1',             // ← tentative d'injection
+            'id'                => '999',
+            'est_validee'       => '1',
         ]);
 
         $result = $controller->callHandleCreateAction($request, []);
 
-        // La whitelist doit avoir ignoré id et est_validee
         self::assertArrayNotHasKey('id', $result->acquisition);
         self::assertArrayNotHasKey('est_validee', $result->acquisition);
 
-        // Mais les champs légitimes doivent être présents
         self::assertSame('', $result->acquisition['facture_reference']);
         self::assertSame('2025-01-15', $result->acquisition['facture_date']);
         self::assertSame('Fournisseur Test', $result->acquisition['fournisseur_nom']);
@@ -94,19 +87,12 @@ final class AcquisitionControllerHandlersTest extends TestCase
         self::assertNull($result->acquisition['facture_document']);
     }
 
-    /**
-     * [VAGUE 7] Vérifie que l'upload n'est PAS tenté quand une erreur
-     * bloquante (référence vide) court-circuite le handler.
-     *
-     * Preuve par effet de bord : si upload() était appelé, il créerait
-     * le sous-dossier factures/ dans le répertoire temporaire.
-     */
     public function testHandleCreateActionSkipsUploadWhenReferenceEmpty(): void
     {
         $controller = $this->makeController();
         $request = $this->makePostRequest([
             'action'            => 'create',
-            'facture_reference' => '',   // ← erreur bloquante
+            'facture_reference' => '',
             'facture_date'      => '2025-01-15',
             'fournisseur_nom'   => 'Fournisseur Test',
         ]);
@@ -116,8 +102,30 @@ final class AcquisitionControllerHandlersTest extends TestCase
         self::assertNull($result->response);
         self::assertArrayHasKey('facture_reference', $result->formErrors);
         self::assertArrayNotHasKey('facture_document', $result->formErrors);
-        // Preuve : upload() n'a pas été appelé, donc factures/ n'existe pas
         self::assertDirectoryDoesNotExist($this->tmpUploadDir . '/factures');
+    }
+
+    // ==================================================================
+    // handleDeleteAction — cas sans BDD
+    // ==================================================================
+
+    public function testHandleDeleteActionReturnsRedirectOnValidatedAcquisition(): void
+    {
+        $controller = $this->makeController();
+        $acquisition = [
+            'id'               => 42,
+            'est_validee'      => 1,
+            'facture_document' => null,
+        ];
+
+        $result = $controller->callHandleDeleteAction($acquisition);
+
+        self::assertNotNull($result->response);
+        self::assertTrue($result->isRedirect());
+        self::assertSame(
+            '/admin/acquisitions/acquisition-42',
+            $result->response->headers->get('Location')
+        );
     }
 
     // ==================================================================
@@ -126,12 +134,9 @@ final class AcquisitionControllerHandlersTest extends TestCase
 
     private function makeController(): TestableAcquisitionController
     {
-        // ⚠️ Session ici = Epiclub\Engine\Session (extends Symfony Session).
-        // Elle hérite du constructeur parent → attend un SessionStorageInterface.
         $session = new Session(new MockArraySessionStorage());
         $session->set('user', ['id' => 42, 'username' => 'admin']);
 
-        // Pas de validator injecté : handleCreateAction ne l'utilise pas.
         return new TestableAcquisitionController(
             $session,
             new FactureUploader($this->tmpUploadDir),
