@@ -10,6 +10,67 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [0.17.15] — 2026-10-04
+
+### Changed
+
+- **FactureUploader** : introduction de
+`Epiclub\Engine\FactureUploaderInterface` (Vague 8 du chantier
+« injection de dépendances »).
+- `FactureUploader` implémente désormais cette interface
+(la classe reste `final`).
+- `AcquisitionController::factureUploader()` retourne l'interface
+au lieu de la classe concrète.
+- Objectif : rendre le service **mockable** en test unitaire.
+Les tests peuvent simuler les cas d'erreur (`BAD_MIME`,
+`TOO_LARGE`, `IO_ERROR`, `INVALID`) sans dépendre du système
+de fichiers.
+
+- **AcquisitionValidator** : introduction de
+`Epiclub\Domain\AcquisitionValidatorInterface`.
+- `AcquisitionValidator` implémente cette interface
+(la classe reste `final`).
+- `AcquisitionController::validator()` retourne l'interface.
+- Objectif : découpler les handlers du validator concret, et
+permettre des tests Unit **sans BDD** ni dépendance à
+`AcquisitionLigneManager` / `AcquisitionManager` /
+`AcquisitionProcess`.
+
+- Aucun changement de comportement observable : routes, templates,
+flux HTTP et logique métier inchangés.
+
+### Added
+
+- `app/Engine/FactureUploaderInterface.php` : contrat du service
+d'upload (méthodes `upload()`, `delete()`).
+- `app/Domain/AcquisitionValidatorInterface.php` : contrat du
+validator (méthodes `validateLigne()`, `performValidation()`).
+- `tests/Unit/Controller/AcquisitionControllerHandlersTest.php` :
+2 nouveaux tests sur `handleAddLigneAction` avec un mock
+`AcquisitionValidatorInterface` :
+- `testHandleAddLigneActionReturnsValidationErrorsFromValidator`
+(erreurs remontées + `ligneData` préservée)
+- `testHandleAddLigneActionReturnsLigneDataOnEmptyReference`
+(court-circuit avant appel validator)
+
+### Tests
+
+- Unit : 53 → 55 tests (+2), 125 assertions.
+- Integration : 88 tests (inchangés), 164 assertions.
+- **Total : 143 tests verts** (55 Unit + 88 Integration).
+
+### Notes
+
+- L'objectif complet de la Vague 8 (tests Unit exhaustifs des
+cas d'erreur upload) est **partiellement atteint** : les
+interfaces sont en place, mais les handlers appellent encore
+`new AcquisitionManager()` / `new FournisseurManager()` en dur,
+ce qui empêche de tester les chemins qui traversent la BDD.
+- Une **Vague 9** est prévue pour introduire l'injection de
+dépendances complète (factories `protected` pour
+`AcquisitionManager`, `FournisseurManager`, etc.), débloquant
+ainsi les tests Unit exhaustifs.
+
 ## [0.17.14] — 2026-10-04
 
 ### Changed
