@@ -27,7 +27,7 @@ final class TestableAcquisitionController extends AcquisitionController
         private readonly FactureUploaderInterface $uploader,
         private readonly AcquisitionValidatorInterface $validator,
     ) {
-    parent::__construct($session);
+        parent::__construct($session);
     }
     
     protected function validator(): AcquisitionValidatorInterface
