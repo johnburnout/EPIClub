@@ -10,6 +10,7 @@ use Epiclub\Domain\AcquisitionValidator;
 use Epiclub\Domain\FournisseurManager;
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\CategorieManager;
+use Epiclub\Domain\AcquisitionValidatorInterface;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\FactureUploader; 
 use Epiclub\Engine\HandlerResult;
@@ -25,12 +26,10 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 class AcquisitionController extends AbstractController
 {
     /**
-     * Instancie le validator (issue #34).
-     *
-     * Pas de cache : le constructeur ne fait aucune I/O, l'instanciation
-     * est triviale et évite tout état persistant entre appels.
-     */
-    protected function validator(): AcquisitionValidator
+    * [REFACTOR VAGUE 8] Retourne AcquisitionValidatorInterface (au lieu
+    * de la classe concrète) pour permettre la surcharge/mock dans les tests.
+    */
+    protected function validator(): AcquisitionValidatorInterface
     {
         return new AcquisitionValidator(
             new AcquisitionLigneManager(),

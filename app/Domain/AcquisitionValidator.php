@@ -15,7 +15,7 @@ use Epiclub\Process\AcquisitionProcess;
  * Testable en isolation : aucune dépendance à Request/Session.
  * Les contrôleurs fournissent les routes de redirection en paramètre.
  */
-final class AcquisitionValidator
+final class AcquisitionValidator implements AcquisitionValidatorInterface
 {
     public function __construct(
         private AcquisitionLigneManager $ligneManager,

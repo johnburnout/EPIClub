@@ -8,6 +8,7 @@ use Epiclub\Engine\FactureUploader;
 use Epiclub\Engine\FactureUploaderInterface;
 use Epiclub\Engine\Session;
 use Epiclub\Tests\Unit\Controller\Support\TestableAcquisitionController;
+use Epiclub\Domain\AcquisitionValidatorInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
@@ -127,7 +128,78 @@ final class AcquisitionControllerHandlersTest extends TestCase
             $result->response->headers->get('Location')
         );
     }
-
+    
+    // ==================================================================
+    // handleAddLigneAction — avec mock AcquisitionValidatorInterface
+    // ==================================================================
+    
+    public function testHandleAddLigneActionReturnsValidationErrorsFromValidator(): void
+    {
+        $validator = $this->createMock(AcquisitionValidatorInterface::class);
+        $validator->expects(self::once())
+        ->method('validateLigne')
+        ->willReturn([
+            'reference'   => 'Cette référence existe déjà.',
+            'designation' => 'Le libellé est obligatoire.',
+        ]);
+        
+        $controller = $this->makeControllerWithValidator($validator);
+        $request = $this->makePostRequest([
+            'action' => 'add_ligne',
+            'ligne'  => [
+                'reference'         => 'REF-DUP',
+                'designation'       => '',
+                'categorie_libelle' => 'Outillage',
+                'nombre'            => 2,
+            ],
+        ]);
+        
+        $result = $controller->callHandleAddLigneAction($request, ['id' => 42]);
+        
+    self::assertNull($result->response);
+    self::assertFalse($result->isRedirect());
+        // Erreurs remappées par prefixLigneErrors()
+    self::assertArrayHasKey('ligne_reference', $result->formErrors);
+    self::assertSame(
+            'Cette référence existe déjà.',
+            $result->formErrors['ligne_reference']
+        );
+    self::assertArrayHasKey('ligne_designation', $result->formErrors);
+        // ligneData remontée
+    self::assertSame('REF-DUP', $result->ligneData['reference']);
+    self::assertSame('', $result->ligneData['designation']);
+    }
+    
+    public function testHandleAddLigneActionReturnsLigneDataOnEmptyReference(): void
+    {
+        // Court-circuit AVANT l'appel au validator
+        $validator = $this->createMock(AcquisitionValidatorInterface::class);
+        $validator->expects(self::never())->method('validateLigne');
+        
+        $controller = $this->makeControllerWithValidator($validator);
+        $request = $this->makePostRequest([
+            'action' => 'add_ligne',
+            'ligne'  => [
+                'reference'         => '',
+                'designation'       => 'Tournevis',
+                'categorie_libelle' => 'Outillage',
+                'nombre'            => 1,
+            ],
+        ]);
+        
+        $result = $controller->callHandleAddLigneAction($request, ['id' => 42]);
+        
+    self::assertNull($result->response);
+    self::assertArrayHasKey('ligne_reference', $result->formErrors);
+    self::assertSame(
+            'Veuillez remplir les champs de la ligne.',
+            $result->formErrors['ligne_reference']
+        );
+        // ligneData remontée même en cas d'erreur
+    self::assertSame('', $result->ligneData['reference']);
+    self::assertSame('Tournevis', $result->ligneData['designation']);
+    }
+    
     // ==================================================================
     // Helpers
     // ==================================================================
@@ -136,10 +208,23 @@ final class AcquisitionControllerHandlersTest extends TestCase
     {
         $session = new Session(new MockArraySessionStorage());
         $session->set('user', ['id' => 42, 'username' => 'admin']);
-
+        
         return new TestableAcquisitionController(
             $session,
             new FactureUploader($this->tmpUploadDir),
+            $this->createMock(AcquisitionValidatorInterface::class),
+        );
+    }
+    
+    private function makeControllerWithValidator(AcquisitionValidatorInterface $validator): TestableAcquisitionController
+    {
+        $session = new Session(new MockArraySessionStorage());
+        $session->set('user', ['id' => 42, 'username' => 'admin']);
+        
+        return new TestableAcquisitionController(
+            $session,
+            new FactureUploader($this->tmpUploadDir),
+            $validator,
         );
     }
 
