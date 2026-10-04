@@ -10,6 +10,81 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [0.17.14] — 2026-10-04
+
+### Changed
+
+- **AcquisitionController** : introduction du DTO
+`Epiclub\Engine\HandlerResult` (Vague 7 du chantier #34).
+Les 4 handlers extraits dans les vagues 3, 4 et 6 abandonnent la
+convention `?Response` + mutation par référence (`&$acquisition`,
+`&$form_errors`, `&$ligneData`) au profit d'un objet immuable
+(`readonly`) qui porte le contrat de manière explicite :
+
+| Handler | Avant | Après |
+|---|---|---|
+| `handleCreateAction` | `?Response` + `&$acquisition`, `&$form_errors` | `HandlerResult` |
+| `handleUpdateAction` | `?Response` + `&$acquisition`, `&$form_errors` | `HandlerResult` |
+| `handleAddLigneAction` | `?Response` + `&$form_errors`, `&$ligneData` | `HandlerResult` |
+| `handleDeleteAction` | `Response` (retour direct) | `HandlerResult` |
+
+- Le DTO expose 4 propriétés publiques readonly :
+- `response` (`?Response`) — redirection immédiate si non-null,
+sinon rendu du formulaire.
+- `acquisition` (`array`) — acquisition mise à jour (whitelist,
+`fournisseur_id`, `facture_document`…), remontée **même en cas
+d'erreur** pour que le template réaffiche la saisie.
+- `formErrors` (`array`) — erreurs indexées par champ.
+- `ligneData` (`array`) — données de ligne saisies (add_ligne).
+- `isRedirect()` : `true` si `response` est non-null.
+
+- `create()`, `update()` et `delete()` adaptés pour consommer le DTO
+(`$result->isRedirect()`, `$result->response`, `$result->acquisition`,
+`$result->formErrors`, `$result->ligneData`). Le cas `valider` de
+`update()` reste hors du match DTO car `performValidation()` retourne
+directement une `Response`.
+
+- Les 4 handlers passent de `private` à `protected` pour permettre la
+surcharge dans une sous-classe de test
+(`TestableAcquisitionController`). Changement de visibilité
+iso-comportement, motivé par la testabilité.
+
+- Aucun changement de comportement observable : routes, templates,
+managers, validators et flux HTTP inchangés.
+
+### Added
+
+- `app/Engine/HandlerResult.php` : DTO immuable portant le contrat
+des handlers.
+- `tests/Unit/Engine/HandlerResultTest.php` : 11 tests (constructeur,
+valeurs par défaut, `isRedirect()` sur `RedirectResponse` et
+`Response` simple, immutabilité des 4 propriétés).
+- `tests/Unit/Controller/AcquisitionControllerHandlersTest.php` :
+4 tests des handlers couvrant les cas qui court-circuitent avant tout
+appel BDD (référence vide, whitelist, absence d'appel à
+`FactureUploader::upload()`, `handleDeleteAction` sur acquisition
+validée).
+- `tests/Unit/Controller/Support/TestableAcquisitionController.php` :
+sous-classe de test exposant les handlers protégés et injectant un
+`FactureUploader` réel (classe `final`, non mockable) sur un
+répertoire temporaire.
+
+### Tests
+
+- Unit : 38 → 53 tests (+15), 115 assertions.
+- Integration : 88 tests (inchangés), 164 assertions.
+- **Total : 141 tests verts** (53 Unit + 88 Integration).
+
+### Notes
+
+- `FactureUploader` et `AcquisitionValidator` sont `final` et ne
+peuvent donc pas être mockés par PHPUnit. Les tests Unit utilisent
+des instances réelles avec répertoire temporaire pour le premier,
+et court-circuitent le second (jamais appelé dans les scénarios
+testés).
+- Les scénarios qui nécessitent la BDD (référence dupliquée, échec
+`save()`) restent couverts par la suite Integration existante.
+
 ## [0.17.13] — 2026-10-03
 
 ### Changed
