@@ -12,6 +12,7 @@ use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\CategorieManager;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\FactureUploader; 
+use Epiclub\Engine\HandlerResult;
 use Epiclub\Exception\DuplicateReferenceException;
 use Epiclub\Exception\FactureUploadException;
 use Epiclub\Exception\NotFoundException;
@@ -28,7 +29,7 @@ class AcquisitionController extends AbstractController
      * Pas de cache : le constructeur ne fait aucune I/O, l'instanciation
      * est triviale et évite tout état persistant entre appels.
      */
-    private function validator(): AcquisitionValidator
+    protected function validator(): AcquisitionValidator
     {
         return new AcquisitionValidator(
             new AcquisitionLigneManager(),
@@ -111,12 +112,12 @@ class AcquisitionController extends AbstractController
     public function create(Request $request): Response
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
-
+        
         $fournisseurManager = new FournisseurManager();
         $categorieManager = new CategorieManager();
         $acquisition = [];
         $form_errors = [];
-
+        
         if ($request->getMethod() === 'POST') {
             // [ROBUSTESSE] Détection d'un POST tronqué par post_max_size.
             // Si le fichier dépasse post_max_size, PHP vide $_POST et $_FILES
@@ -134,24 +135,27 @@ class AcquisitionController extends AbstractController
                 // Reste dans create() (hors dispatch) car validateCsrf() doit conserver
                 // son throw : il protège toutes les actions d'un seul coup.
                 $this->validateCsrf($request);
-
+                
                 $action = $request->request->get('action');
-
-                // [REFACTOR VAGUE 4] Dispatch vers un handler dédié (symétrie avec update()).
-                // Convention : un handler retourne ?Response :
-                //   - Response : redirection immédiate (succès)
-                //   - null     : on continue vers le rendu du formulaire (erreurs ou no-op)
-                $response = match ($action) {
-                    'create' => $this->handleCreateAction($request, $acquisition, $form_errors),
+                
+                // [REFACTOR VAGUE 7] Dispatch vers un handler qui retourne
+                // un HandlerResult (plus de mutation par référence).
+                $result = match ($action) {
+                    'create' => $this->handleCreateAction($request, $acquisition),
                     default  => null,
                 };
-
-                if ($response !== null) {
-                    return $response;
+                
+                if ($result !== null) {
+                    if ($result->isRedirect()) {
+                        return $result->response;
+                    }
+                    // Rendu du formulaire avec la saisie et les erreurs remontées
+                    $acquisition = $result->acquisition;
+                    $form_errors = $result->formErrors;
                 }
             }
         }
-
+        
         return $this->render('acquisition_form.twig', [
             'acquisition' => $acquisition,
             'fournisseurs' => $fournisseurManager->findAll(),
@@ -161,25 +165,23 @@ class AcquisitionController extends AbstractController
     }
 
     /**
-     * [REFACTOR VAGUE 4] Handler de l'action 'create'.
-     *
-     * Extrait de create() pour isoler la création d'une acquisition
-     * (whitelist, unicité référence, upload facture, process métier).
-     *
-     * @param array $acquisition  Muté par référence : rempli avec les champs
-     *                            whitelistés + 'saisie_par' + 'facture_document',
-     *                            afin que le template réaffiche la saisie en
-     *                            cas d'erreur.
-     * @param array $form_errors  Rempli par référence en cas d'erreur.
-     *
-     * @return Response|null  RedirectResponse en cas de succès, null si on doit
-     *                        réafficher le formulaire avec les erreurs.
-     */
-    private function handleCreateAction(
+    * [REFACTOR VAGUE 4 → 7] Handler de l'action 'create'.
+    *
+    * Extrait de create() pour isoler la création d'une acquisition
+    * (whitelist, unicité référence, upload facture, process métier).
+    *
+    * [VAGUE 7] Retourne un HandlerResult au lieu de muter par référence :
+    *   - response    : RedirectResponse en cas de succès, null sinon
+    *   - acquisition : champs whitelistés + 'saisie_par' + 'facture_document'
+    *                   (remonté même en cas d'erreur pour réaffichage)
+    *   - formErrors  : erreurs indexées par champ
+    *
+    * @param array $acquisition  Acquisition initiale (généralement vide).
+    */
+    protected function handleCreateAction(
         Request $request,
-        array &$acquisition,
-        array &$form_errors,
-    ): ?Response {
+        array $acquisition,
+    ): HandlerResult {
         // [SÉCURITÉ] Whitelist des champs — empêche l'injection de clés
         // arbitraires (id, est_validee, saisie_par, ...) via POST forgé.
         $acquisition = [
@@ -189,20 +191,22 @@ class AcquisitionController extends AbstractController
         ];
         $acquisition['saisie_par'] = $this->session->get('user')['id'];
         $acquisition['facture_document'] = null;
-
+        
+        $formErrors = [];
+        
         // [ROBUSTESSE] Vérifier l'unicité de la référence AVANT l'insert
         $factureReference = $acquisition['facture_reference'];
         if ($factureReference === '') {
-            $form_errors['facture_reference'] = 'La référence de facture est obligatoire.';
+            $formErrors['facture_reference'] = 'La référence de facture est obligatoire.';
         } else {
             $acquisitionManager = new AcquisitionManager();
             if ($acquisitionManager->findOneByCriteria(['facture_reference' => $factureReference])) {
-                $form_errors['facture_reference'] = 'Cette référence de facture existe déjà. Merci d\'en choisir une autre.';
+                $formErrors['facture_reference'] = 'Cette référence de facture existe déjà. Merci d\'en choisir une autre.';
             }
         }
-
+        
         // Téléchargement de la facture (seulement si pas d'erreur bloquante)
-        if (empty($form_errors)) {
+        if (empty($formErrors)) {
             try {
                 $factureDocument = $this->factureUploader()
                 ->upload($request->files->get('facture_document'));
@@ -210,15 +214,17 @@ class AcquisitionController extends AbstractController
                     $acquisition['facture_document'] = $factureDocument;
                 }
             } catch (FactureUploadException $e) {
-                $form_errors['facture_document'] = $e->getMessage();
+                $formErrors['facture_document'] = $e->getMessage();
             }
         }
-
-        // [ROBUSTESSE] Ne lancer le process métier que si pas d'erreur
-        if (!empty($form_errors)) {
-            return null;
+        
+        // [ROBUSTESSE] Ne lancer le process métier que si pas d'erreur.
+        // [VAGUE 7] On remonte $acquisition modifié (whitelist + facture_document
+        // éventuellement uploadé) pour que le template réaffiche la saisie.
+        if (!empty($formErrors)) {
+            return new HandlerResult(null, $acquisition, $formErrors);
         }
-
+        
         $acquisitionProcess = new AcquisitionProcess();
         try {
             if ($id = $acquisitionProcess->acquisition_process($acquisition)) {
@@ -227,10 +233,12 @@ class AcquisitionController extends AbstractController
                     'success',
                     '✅ Acquisition créée avec succès. Vous pouvez maintenant ajouter des lignes.'
                 );
-                return $this->redirectTo("/admin/acquisitions/acquisition_modification-$id");
+                return new HandlerResult(
+                    $this->redirectTo("/admin/acquisitions/acquisition_modification-$id")
+                );
             }
-            $form_errors['general'] = 'Erreur lors de la création de l\'acquisition.';
-            return null;
+            $formErrors['general'] = 'Erreur lors de la création de l\'acquisition.';
+            return new HandlerResult(null, $acquisition, $formErrors);
         } catch (\Throwable $e) {
             error_log(sprintf(
                 '[AcquisitionController] Create failed: %s in %s:%d',
@@ -238,38 +246,38 @@ class AcquisitionController extends AbstractController
                 $e->getFile(),
                 $e->getLine()
             ));
-            $form_errors['general'] = 'Une erreur est survenue lors de la création. Merci de réessayer.';
-            return null;
+            $formErrors['general'] = 'Une erreur est survenue lors de la création. Merci de réessayer.';
+            return new HandlerResult(null, $acquisition, $formErrors);
         }
     }
-
+    
     public function update(Request $request): Response
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
-
+        
         $acquisitionManager = new AcquisitionManager();
         $acquisitionLigneManager = new AcquisitionLigneManager();
         $fournisseurManager = new FournisseurManager();
         $categorieManager = new CategorieManager();
         $equipementManager = new EquipementManager();
-
+        
         // [ROBUSTESSE] Cast explicite de l'id
         $id = (int) $request->get('id');
         if ($id <= 0) {
             $this->session->getFlashBag()->add('error', 'Acquisition invalide.');
             return $this->redirectTo('/admin/acquisitions');
         }
-
+        
         $acquisition = $acquisitionManager->findId($id);
         if (!$acquisition) {
             $this->session->getFlashBag()->add('error', 'Acquisition non trouvée.');
             return $this->redirectTo('/admin/acquisitions');
         }
-
+        
         $acquisition['lignes'] = $acquisitionLigneManager->findByAcquisition($acquisition['id']);
         $form_errors = [];
         $ligneData = [];
-
+        
         if ($request->getMethod() === 'POST') {
             // [ROBUSTESSE] Détection d'un POST tronqué par post_max_size (cf. create()).
             if ($this->isPostTruncated($request)) {
@@ -283,11 +291,11 @@ class AcquisitionController extends AbstractController
                 // Reste dans update() (hors dispatch) car validateCsrf() doit conserver
                 // son throw : il protège toutes les actions d'un seul coup.
                 $this->validateCsrf($request);
-
+                
                 $action = $request->request->get('action');
-
+                
                 // [REFACTOR VAGUE 3] Dispatch par match() vers des handlers dédiés.
-                // Convention : un handler retourne ?Response :
+                // Convention actuelle : un handler retourne ?Response :
                 //   - Response : redirection immédiate (succès ou refus métier)
                 //   - null     : on continue vers le rendu du formulaire (erreurs)
                 $response = match ($action) {
@@ -296,15 +304,15 @@ class AcquisitionController extends AbstractController
                     'add_ligne' => $this->handleAddLigneAction($request, $acquisition, $form_errors, $ligneData),
                     default     => null,
                 };
-
+                
                 if ($response !== null) {
                     return $response;
                 }
             }
         }
-
+        
         $equipements = $equipementManager->findAll();
-
+        
         return $this->render('acquisition_form.twig', [
             'acquisition' => $acquisition,
             'fournisseurs' => $fournisseurManager->findAll(),
@@ -683,7 +691,7 @@ class AcquisitionController extends AbstractController
     * Le chemin est résolu à la construction (issue #40, D1-a) :
     * le service ne connaît pas la structure du projet.
     */
-    private function factureUploader(): FactureUploader
+    protected function factureUploader(): FactureUploader
     {
         return new FactureUploader($this->getUploadsDir());
     }
