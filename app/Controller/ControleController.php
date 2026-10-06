@@ -15,13 +15,36 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ControleController extends AbstractController
 {
-    /**
-    * Vérifie si l'utilisateur courant peut modifier le contrôle.
-    *
-    * @param array $controle
-    * @param array $user
-    * @return bool
-    */
+    // ==================================================================
+    // [REFACTOR VAGUE 11] Factories managers — mockables en test Unit.
+    //
+    // Chaque méthode retourne une nouvelle instance concrète.
+    // Les sous-classes de test (TestableControleController) surchargent
+    // ces factories pour injecter des mocks et éviter l'ouverture PDO
+    // déclenchée par AbstractManager::__construct().
+    // ==================================================================
+    
+    protected function controleManager(): ControleManager
+    {
+        return new ControleManager();
+    }
+    
+    protected function controleLigneManager(): ControleLigneManager
+    {
+        return new ControleLigneManager();
+    }
+    
+    protected function equipementManager(): EquipementManager
+    {
+        return new EquipementManager();
+    }
+    
+    protected function utilisateurManager(): UtilisateurManager
+    {
+        return new UtilisateurManager();
+    }
+    
+    
     private function canEdit($controle, $user)
     {
         // Si clôturé => jamais modifiable
@@ -60,18 +83,18 @@ class ControleController extends AbstractController
 
         // ✅ Vérifier si l'utilisateur a un contrôle en cours qui est clôturé
         if (!empty($user['controle_en_cours_id'])) {
-            $controleManager = new ControleManager();
+            $controleManager = $this->controleManager();
             $controle = $controleManager->findId($user['controle_en_cours_id']);
             if (!$controle || $controle['statut'] === 'cloture') {
                 // Le contrôle n'existe plus ou est clôturé : on réinitialise
                 $user['controle_en_cours_id'] = null;
-                $utilisateurManager = new UtilisateurManager();
+                $utilisateurManager = $this->utilisateurManager();
                 $utilisateurManager->save($user);
                 $this->session->set('user', $user);
             }
         }
 
-        $controleManager = new ControleManager();
+        $controleManager = $this->controleManager();
         $allControles = $controleManager->findAll();
 
         $statut = $request->query->get('statut');
@@ -99,7 +122,7 @@ class ControleController extends AbstractController
         }
 
         $today = date('Y-m-d');
-        $ligneManager = new ControleLigneManager();
+        $ligneManager = $this->controleLigneManager();
 
         foreach ($allControles as &$controle) {
             $isOwner = ($controle['controleur_id'] == $user['id']);
@@ -160,7 +183,7 @@ class ControleController extends AbstractController
             'last' => '?' . http_build_query(array_merge($baseParams, ['page' => $totalPages])),
         ];
 
-        $utilisateurManager = new UtilisateurManager();
+        $utilisateurManager = $this->utilisateurManager();
         $controleurs = $utilisateurManager->findAll('nom ASC');
 
         return $this->render('controle_list.twig', [
@@ -215,11 +238,11 @@ class ControleController extends AbstractController
             'cree_par' => $user['id'],
             'hash_remarques' => null
         ];
-        $controleManager = new ControleManager();
+        $controleManager = $this->controleManager();
         $id = $controleManager->save($controle);
 
         $user['controle_en_cours_id'] = $id;
-        $utilisateurManager = new UtilisateurManager();
+        $utilisateurManager = $this->utilisateurManager();
         $utilisateurManager->save($user);
         $this->session->set('user', $user);
 
@@ -229,7 +252,7 @@ class ControleController extends AbstractController
 
     private function isUserOnline($user_id)
     {
-        $utilisateurManager = new UtilisateurManager();
+        $utilisateurManager = $this->utilisateurManager();
         $user = $utilisateurManager->findId($user_id);
         if (!$user || empty($user['last_activity'])) {
             return false;
@@ -249,7 +272,7 @@ class ControleController extends AbstractController
             return $this->redirectTo('/admin/controles');
         }
 
-        $controleManager = new ControleManager();
+        $controleManager = $this->controleManager();
         $controle = $controleManager->findId($id);
 
         if (!$controle) {
@@ -275,10 +298,10 @@ class ControleController extends AbstractController
         // --- Fin de la gestion POST ---
 
         // ---- 1. Récupération des lignes (équipements déjà ajoutés) ----
-        $ligneManager = new ControleLigneManager();
+        $ligneManager = $this->controleLigneManager();
         $allLignes = $ligneManager->findByControle($id);
 
-        $equipementManager = new EquipementManager();
+        $equipementManager = $this->equipementManager();
         foreach ($allLignes as &$ligne) {
             $equipement = $equipementManager->findId($ligne['equipement_id']);
             if ($equipement) {
@@ -586,7 +609,7 @@ class ControleController extends AbstractController
             return $this->redirectTo("/admin/controles/edit/$controle_id");
         }
 
-        $controleManager = new ControleManager();
+        $controleManager = $this->controleManager();
         $controle = $controleManager->findId($controle_id);
         if (!$controle || $controle['statut'] === 'cloture') {
             return $this->redirectTo("/admin/controles/edit/$controle_id");
@@ -598,7 +621,7 @@ class ControleController extends AbstractController
             return $this->redirectTo('/admin/controles');
         }
 
-        $ligneManager = new ControleLigneManager();
+        $ligneManager = $this->controleLigneManager();
         $ligneManager->save([
             'controle_id' => $controle_id,
             'equipement_id' => $equipement_id,
@@ -620,14 +643,14 @@ class ControleController extends AbstractController
             return $this->redirectTo('/admin/controles');
         }
 
-        $ligneManager = new ControleLigneManager();
+        $ligneManager = $this->controleLigneManager();
         $ligne = $ligneManager->findId($ligne_id);
 
         if (!$ligne) {
             return $this->redirectTo('/admin/controles');
         }
 
-        $controleManager = new ControleManager();
+        $controleManager = $this->controleManager();
         $controle = $controleManager->findId($ligne['controle_id']);
         $user = $this->session->get('user');
 
@@ -651,7 +674,7 @@ class ControleController extends AbstractController
             $ligneManager->save($ligne);
 
             // ✅ Mettre à jour le statut de l'équipement : "en contrôle"
-            $equipementManager = new EquipementManager();
+            $equipementManager = $this->equipementManager();
             $equipement = $equipementManager->findId($ligne['equipement_id']);
             if ($equipement) {
                 $equipement['controle_en_cours'] = 1;
@@ -665,7 +688,7 @@ class ControleController extends AbstractController
             $ligne['date_controle'] = date('Y-m-d H:i:s');
         }
 
-        $equipementManager = new EquipementManager();
+        $equipementManager = $this->equipementManager();
         $equipement = $equipementManager->findId($ligne['equipement_id']);
         if ($equipement) {
             $ligne['reference'] = $equipement['reference'] ?? '';
@@ -692,7 +715,7 @@ class ControleController extends AbstractController
             return $this->redirectTo('/admin/controles');
         }
 
-        $controleManager = new ControleManager();
+        $controleManager = $this->controleManager();
         $controle = $controleManager->findId($id);
 
         if (!$controle || $controle['statut'] === 'cloture') {
@@ -709,7 +732,7 @@ class ControleController extends AbstractController
             return $this->redirectTo('/admin/controles');
         }
 
-        $ligneManager = new ControleLigneManager();
+        $ligneManager = $this->controleLigneManager();
         $lignes = $ligneManager->findByControle($id);
 
         // Vérifier si des équipements sont encore "à contrôler"
@@ -752,7 +775,7 @@ class ControleController extends AbstractController
         $controleManager->save($controle);
 
         // ✅ Mettre à jour le statut des équipements
-        $equipementManager = new EquipementManager();
+        $equipementManager = $this->equipementManager();
         foreach ($lignes as $ligne) {
             $equipement = $equipementManager->findId($ligne['equipement_id']);
             if ($equipement) {
@@ -777,7 +800,7 @@ class ControleController extends AbstractController
         // Nettoyage de la session
         if ($user['controle_en_cours_id'] == $id) {
             $user['controle_en_cours_id'] = null;
-            $utilisateurManager = new UtilisateurManager();
+            $utilisateurManager = $this->utilisateurManager();
             $utilisateurManager->save($user);
             $this->session->set('user', $user);
         }
@@ -808,7 +831,7 @@ class ControleController extends AbstractController
             return $this->redirectTo('/admin/controles');
         }
 
-        $controleManager = new ControleManager();
+        $controleManager = $this->controleManager();
         $controle = $controleManager->findId($id);
 
         if (!$controle) {
@@ -840,8 +863,8 @@ class ControleController extends AbstractController
 
         try {
             // [ROBUSTESSE] Remettre controle_en_cours = 0 sur les équipements liés
-            $controleLigneManager = new ControleLigneManager();
-            $equipementManager = new EquipementManager();
+            $controleLigneManager = $this->controleLigneManager();
+            $equipementManager = $this->equipementManager();
             $lignes = $controleLigneManager->findByControle($id);
 
             foreach ($lignes as $ligne) {
@@ -855,7 +878,7 @@ class ControleController extends AbstractController
             // Retirer le contrôle en cours de l'utilisateur s'il y en a un
             if (!empty($user['controle_en_cours_id']) && $user['controle_en_cours_id'] == $id) {
                 $user['controle_en_cours_id'] = null;
-                $utilisateurManager = new UtilisateurManager();
+                $utilisateurManager = $this->utilisateurManager();
                 $utilisateurManager->save($user);
                 $this->session->set('user', $user);
             }
