@@ -3,6 +3,8 @@
 namespace Epiclub\Controller;
 
 use Epiclub\Engine\AbstractController;
+use Epiclub\Engine\GitHubReleaseProvider;
+use Epiclub\Engine\GitHubReleaseProviderInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -21,6 +23,21 @@ class AppUpdateController extends AbstractController
     private const TEMP_DIR = __DIR__ . '/../../var/tmp/update';
     private const EXCLUDED_DIRS = ['var', 'vendor', '.git', '_storage', 'config', 'setup'];
     private const EXCLUDED_FILES = ['.env', '.env.local', '.env.local.php', 'version.txt'];
+    
+    /**
+    * [REFACTOR VAGUE 10] Factory du fournisseur de releases GitHub.
+    *
+    * Surchargée dans TestableAppUpdateController pour injecter un mock.
+    * Voir GitHubReleaseProviderInterface (issue #45).
+    */
+    protected function githubReleaseProvider(): GitHubReleaseProviderInterface
+    {
+        return new GitHubReleaseProvider(
+        self::GITHUB_REPO,
+        self::TEMP_DIR . '/latest_release.json',
+            3600,
+        );
+    }
 
     // --------------------------------------------------------------
     // AFFICHAGE DE LA PAGE DE MISE À JOUR
@@ -36,7 +53,7 @@ class AppUpdateController extends AbstractController
         $csrfToken = $this->session->get('csrf_token');
 
         $currentVersion = $this->getCurrentVersion();
-        $latestRelease = $this->getLatestRelease();
+        $latestRelease = $this->githubReleaseProvider()->getLatestRelease();
 
         $updateAvailable = false;
         if ($latestRelease) {
@@ -89,7 +106,7 @@ class AppUpdateController extends AbstractController
                 ]);
             }
             
-            $latest = $this->getLatestRelease();
+            $latest = $this->githubReleaseProvider()->getLatestRelease();
             if (!$latest) {
                 return $this->render('update_result.twig', [
                     'success' => false,
@@ -106,7 +123,7 @@ class AppUpdateController extends AbstractController
             }
             
             // Télécharger le zip
-            $zipContent = $this->downloadUrl($zipUrl);
+            $zipContent = $this->githubReleaseProvider()->downloadUrl($zipUrl);
             if (empty($zipContent)) {
                 return $this->render('update_result.twig', [
                     'success' => false,
@@ -271,82 +288,6 @@ class AppUpdateController extends AbstractController
             return trim(file_get_contents(self::VERSION_FILE));
         }
         return 'v0.0.0';
-    }
-
-    private function getLatestRelease(): ?array
-    {
-        $cacheFile = self::TEMP_DIR . '/latest_release.json';
-        $cacheTTL = 3600;
-
-        if (file_exists($cacheFile) && (time() - filemtime($cacheFile) < $cacheTTL)) {
-            $cached = json_decode(file_get_contents($cacheFile), true);
-            if ($cached) {
-                return $cached;
-            }
-        }
-
-        $url = 'https://api.github.com/repos/' . self::GITHUB_REPO . '/releases/latest';
-        $options = [
-            'http' => [
-                'header' => "User-Agent: EPIClub-Update\r\nAccept: application/vnd.github.v3+json\r\n"
-            ]
-        ];
-        $context = stream_context_create($options);
-        $data = @file_get_contents($url, false, $context);
-
-        if ($data === false) {
-            return null;
-        }
-
-        $release = json_decode($data, true);
-        if (!isset($release['tag_name'], $release['zipball_url'], $release['body'])) {
-            return null;
-        }
-
-        $result = [
-            'tag' => $release['tag_name'],
-            'zip_url' => $release['zipball_url'],
-            'body' => $release['body']
-        ];
-
-        if (!is_dir(self::TEMP_DIR)) {
-            mkdir(self::TEMP_DIR, 0755, true);
-        }
-        file_put_contents($cacheFile, json_encode($result));
-
-        return $result;
-    }
-
-    private function downloadUrl(string $url): string
-    {
-        $content = @file_get_contents($url);
-        if ($content !== false) {
-            return $content;
-        }
-
-        if (function_exists('curl_version')) {
-            $ch = curl_init();
-            curl_setopt($ch, CURLOPT_URL, $url);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-            curl_setopt($ch, CURLOPT_USERAGENT, 'EPIClub-Update/1.0');
-            $content = curl_exec($ch);
-            $error = curl_error($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-
-            if ($content === false) {
-                throw new \Exception('cURL erreur : ' . $error . ' (HTTP ' . $httpCode . ')');
-            }
-            if ($httpCode !== 200) {
-                throw new \Exception('HTTP ' . $httpCode . ' - ' . substr($content, 0, 200));
-            }
-            return $content;
-        }
-
-        throw new \Exception('Impossible de télécharger (file_get_contents et cURL indisponibles).');
     }
 
     private function copyFiles(string $source, string $target): void
