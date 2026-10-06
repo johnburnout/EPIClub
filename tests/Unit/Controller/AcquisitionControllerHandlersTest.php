@@ -112,6 +112,65 @@ final class AcquisitionControllerHandlersTest extends TestCase
         self::assertArrayNotHasKey('facture_document', $result->formErrors);
         self::assertDirectoryDoesNotExist($this->tmpUploadDir . '/factures');
     }
+    
+    public function testHandleCreateActionRemontesNullFactureDateOnMissingInput(): void
+    {
+        $controller = $this->makeController();
+        
+        $request = $this->makePostRequest([
+            'action'            => 'create',
+            'facture_reference' => '',  // ← vide → court-circuit avant process
+            'fournisseur_nom'   => 'Fournisseur Test',
+            // facture_date volontairement absent
+        ]);
+        
+        $result = $controller->callHandleCreateAction($request, []);
+        
+    self::assertFalse($result->isRedirect());
+    self::assertArrayHasKey('facture_reference', $result->formErrors);
+        // facture_date doit valoir null (pas d'exception, pas de throw)
+    self::assertNull($result->acquisition['facture_date']);
+    }
+    
+    public function testHandleCreateActionAllowsEmptyFournisseurNomAndReachesProcess(): void
+    {
+        $acquisitionManager = $this->getMockBuilder(AcquisitionManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $acquisitionManager->expects(self::once())
+        ->method('findOneByCriteria')
+        ->willReturn(null);
+        
+        $uploader = $this->createMock(FactureUploaderInterface::class);
+        $uploader->method('upload')->willReturn(null);
+        
+        $process = $this->createMock(AcquisitionProcess::class);
+        // ⚠️ Le process DOIT être appelé, même avec fournisseur_nom vide
+        $process->expects(self::once())
+        ->method('acquisition_process')
+        ->willReturn(42);
+        
+        $controller = $this->makeControllerWith(
+        uploader: $uploader,
+        acquisitionManager: $acquisitionManager,
+        acquisitionProcess: $process,
+        );
+        
+        $request = $this->makePostRequest([
+            'action'            => 'create',
+            'facture_reference' => 'FAC-001',
+            'facture_date'      => '2025-01-15',
+            'fournisseur_nom'   => '',  // ← vide
+        ]);
+        
+        $result = $controller->callHandleCreateAction($request, []);
+        
+    self::assertTrue($result->isRedirect());
+    self::assertSame(
+            '/admin/acquisitions/acquisition_modification-42',
+            $result->response->headers->get('Location')
+        );
+    }
 
     // ==================================================================
     // handleDeleteAction — cas sans BDD
@@ -244,6 +303,46 @@ final class AcquisitionControllerHandlersTest extends TestCase
     self::assertTrue($result->isRedirect());
     self::assertSame(
             '/admin/acquisitions/acquisition_modification-42',
+            $result->response->headers->get('Location')
+        );
+    }
+    
+    public function testHandleDeleteActionDeletesFactureDocumentWhenPresent(): void
+    {
+        $ligneManager = $this->getMockBuilder(AcquisitionLigneManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $ligneManager->method('findByAcquisition')->willReturn([]);
+        
+        $acquisitionManager = $this->getMockBuilder(AcquisitionManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $acquisitionManager->expects(self::once())->method('delete')->with(42);
+        
+        $uploader = $this->createMock(FactureUploaderInterface::class);
+        // ⚠️ delete DOIT être appelé une fois avec le chemin
+        $uploader->expects(self::once())
+        ->method('delete')
+        ->with('factures/old.pdf')
+        ->willReturn(true);
+        
+        $controller = $this->makeControllerWith(
+        uploader: $uploader,
+        acquisitionManager: $acquisitionManager,
+        acquisitionLigneManager: $ligneManager,
+        );
+        
+        $acquisition = [
+            'id'               => 42,
+            'est_validee'      => 0,
+            'facture_document' => 'factures/old.pdf',  // ← présent
+        ];
+        
+        $result = $controller->callHandleDeleteAction($acquisition);
+        
+    self::assertTrue($result->isRedirect());
+    self::assertSame(
+            '/admin/acquisitions',
             $result->response->headers->get('Location')
         );
     }
@@ -656,6 +755,103 @@ final class AcquisitionControllerHandlersTest extends TestCase
     self::assertStringContainsString(
             'déjà utilisée',
             $result->formErrors['facture_reference']
+        );
+    }
+    
+    public function testHandleUpdateActionUploadsNewFactureWithoutDeletingWhenNoOldFacture(): void
+    {
+        $acquisitionManager = $this->getMockBuilder(AcquisitionManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $acquisitionManager->method('findOneByCriteria')->willReturn(null);
+        $acquisitionManager->expects(self::once())->method('save')->willReturn(true);
+        
+        $uploader = $this->createMock(FactureUploaderInterface::class);
+        $uploader->expects(self::once())
+        ->method('upload')
+        ->willReturn('factures/new.pdf');
+        // ⚠️ delete NE DOIT PAS être appelé : pas d'ancienne facture
+        $uploader->expects(self::never())->method('delete');
+        
+        $fournisseurManager = $this->getMockBuilder(FournisseurManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $fournisseurManager->method('findOneByCriteria')
+        ->willReturn(['id' => 5, 'nom' => 'Fournisseur Test']);
+        
+        $controller = $this->makeControllerWith(
+        uploader: $uploader,
+        acquisitionManager: $acquisitionManager,
+        fournisseurManager: $fournisseurManager,
+        );
+        
+        $request = $this->makePostRequest([
+            'action'            => 'update',
+            'facture_reference' => 'FAC-001',
+            'facture_date'      => '2025-01-20',
+            'fournisseur_nom'   => 'Fournisseur Test',
+        ]);
+        $request->files->set('facture_document', $this->makeUploadedFile());
+        
+        $acquisition = [
+            'id'               => 42,
+            'facture_document' => null,  // ← pas d'ancienne facture
+        ];
+        
+        $result = $controller->callHandleUpdateAction($request, $acquisition);
+        
+    self::assertTrue($result->isRedirect());
+    self::assertSame(
+            '/admin/acquisitions/acquisition_modification-42',
+            $result->response->headers->get('Location')
+        );
+    }
+    
+    public function testHandleUpdateActionCreatesFournisseurWhenUnknown(): void
+    {
+        $acquisitionManager = $this->getMockBuilder(AcquisitionManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $acquisitionManager->method('findOneByCriteria')->willReturn(null);
+        $acquisitionManager->expects(self::once())->method('save')->willReturn(true);
+        
+        $fournisseurManager = $this->getMockBuilder(FournisseurManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        // findOneByCriteria retourne null → passe dans le else
+        $fournisseurManager->expects(self::once())
+        ->method('findOneByCriteria')
+        ->with(['nom' => 'Nouveau Fournisseur'])
+        ->willReturn(null);
+        // save doit être appelé et retourner le nouvel id
+        $fournisseurManager->expects(self::once())
+        ->method('save')
+        ->with(['nom' => 'Nouveau Fournisseur'])
+        ->willReturn(99);
+        
+        $controller = $this->makeControllerWith(
+        acquisitionManager: $acquisitionManager,
+        fournisseurManager: $fournisseurManager,
+        );
+        
+        $request = $this->makePostRequest([
+            'action'            => 'update',
+            'facture_reference' => 'FAC-001',
+            'facture_date'      => '2025-01-20',
+            'fournisseur_nom'   => 'Nouveau Fournisseur',
+        ]);
+        
+        $acquisition = [
+            'id'               => 42,
+            'facture_document' => null,
+        ];
+        
+        $result = $controller->callHandleUpdateAction($request, $acquisition);
+        
+    self::assertTrue($result->isRedirect());
+    self::assertSame(
+            '/admin/acquisitions/acquisition_modification-42',
+            $result->response->headers->get('Location')
         );
     }
     
