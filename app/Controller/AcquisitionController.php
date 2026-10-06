@@ -32,10 +32,40 @@ class AcquisitionController extends AbstractController
     protected function validator(): AcquisitionValidatorInterface
     {
         return new AcquisitionValidator(
-            new AcquisitionLigneManager(),
-            new AcquisitionManager(),
-            new AcquisitionProcess(),
+            $this->acquisitionLigneManager(),
+            $this->acquisitionManager(),
+            $this->acquisitionProcess(),
         );
+    }
+    
+    protected function acquisitionManager(): AcquisitionManager
+    {
+        return new AcquisitionManager();
+    }
+    
+    protected function acquisitionLigneManager(): AcquisitionLigneManager
+    {
+        return new AcquisitionLigneManager();
+    }
+    
+    protected function fournisseurManager(): FournisseurManager
+    {
+        return new FournisseurManager();
+    }
+    
+    protected function categorieManager(): CategorieManager
+    {
+        return new CategorieManager();
+    }
+    
+    protected function equipementManager(): EquipementManager
+    {
+        return new EquipementManager();
+    }
+    
+    protected function acquisitionProcess(): AcquisitionProcess
+    {
+        return new AcquisitionProcess();
     }
 
     /**
@@ -97,8 +127,7 @@ class AcquisitionController extends AbstractController
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
 
-        $acquisitionManager = new AcquisitionManager();
-        $acquisitions = $acquisitionManager->findAll();
+        $acquisitions = $this->acquisitionManager()->findAll();
 
         // Toutes les acquisitions (brouillons + validées).
         // Les brouillons ne sont pas cachés : ils sont accessibles pour
@@ -113,8 +142,8 @@ class AcquisitionController extends AbstractController
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
         
-        $fournisseurManager = new FournisseurManager();
-        $categorieManager = new CategorieManager();
+        $fournisseurManager = $this->fournisseurManager();
+        $categorieManager = $this->categorieManager();
         $acquisition = [];
         $form_errors = [];
         
@@ -255,11 +284,11 @@ class AcquisitionController extends AbstractController
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
         
-        $acquisitionManager = new AcquisitionManager();
-        $acquisitionLigneManager = new AcquisitionLigneManager();
-        $fournisseurManager = new FournisseurManager();
-        $categorieManager = new CategorieManager();
-        $equipementManager = new EquipementManager();
+        $acquisitionManager = $this->acquisitionManager();
+        $acquisitionLigneManager = $this->acquisitionLigneManager();
+        $fournisseurManager = $this->fournisseurManager();
+        $categorieManager = $this->categorieManager();
+        $equipementManager = $this->equipementManager();
         
         // [ROBUSTESSE] Cast explicite de l'id
         $id = (int) $request->get('id');
@@ -529,7 +558,7 @@ class AcquisitionController extends AbstractController
             return $this->redirectTo('/admin/acquisitions');
         }
         
-        $acquisitionManager = new AcquisitionManager();
+        $acquisitionManager = $this->acquisitionManager();
         $acquisition = $acquisitionManager->findId($id);
         if (!$acquisition) {
             $this->session->getFlashBag()->add('error', 'Acquisition non trouvée.');
@@ -629,9 +658,9 @@ class AcquisitionController extends AbstractController
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
 
-        $acquisitionManager = new AcquisitionManager();
-        $fournisseurManager = new FournisseurManager();
-        $acquisitionLigneManager = new AcquisitionLigneManager();
+        $acquisitionManager = $this->acquisitionManager();
+        $fournisseurManager = $this->fournisseurManager();
+        $acquisitionLigneManager = $this->acquisitionLigneManager();
 
         $id = (int) $request->get('id');
         if ($id <= 0) {
@@ -659,7 +688,7 @@ class AcquisitionController extends AbstractController
         $this->validateCsrf($request);
 
         $id = (int) $request->get('id');
-        $acquisitionManager = new AcquisitionManager();
+        $acquisitionManager = $this->acquisitionManager();
         $acquisition = $acquisitionManager->findId($id);
 
         if (!$acquisition) {
