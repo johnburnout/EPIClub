@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Epiclub\Tests\Unit\Controller;
 
 use Epiclub\Engine\FactureUploader;
-use Epiclub\Engine\FactureUploaderInterface;
 use Epiclub\Engine\Session;
 use Epiclub\Tests\Unit\Controller\Support\TestableAcquisitionController;
+use Epiclub\Tests\Unit\Controller\Support\TestableAcquisitionControllerBuilder;
 use Epiclub\Domain\AcquisitionValidatorInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
@@ -209,11 +209,11 @@ final class AcquisitionControllerHandlersTest extends TestCase
         $session = new Session(new MockArraySessionStorage());
         $session->set('user', ['id' => 42, 'username' => 'admin']);
         
-        return new TestableAcquisitionController(
-            $session,
-            new FactureUploader($this->tmpUploadDir),
-            $this->createMock(AcquisitionValidatorInterface::class),
-        );
+        return (new TestableAcquisitionControllerBuilder($this))
+            ->withSession($session)
+            ->withFactureUploader(new FactureUploader($this->tmpUploadDir))
+            ->withValidator($this->createMock(AcquisitionValidatorInterface::class))
+            ->build();
     }
     
     private function makeControllerWithValidator(AcquisitionValidatorInterface $validator): TestableAcquisitionController
@@ -221,11 +221,11 @@ final class AcquisitionControllerHandlersTest extends TestCase
         $session = new Session(new MockArraySessionStorage());
         $session->set('user', ['id' => 42, 'username' => 'admin']);
         
-        return new TestableAcquisitionController(
-            $session,
-            new FactureUploader($this->tmpUploadDir),
-            $validator,
-        );
+        return (new TestableAcquisitionControllerBuilder($this))
+            ->withSession($session)
+            ->withFactureUploader(new FactureUploader($this->tmpUploadDir))
+            ->withValidator($validator)
+            ->build();
     }
 
     /**
