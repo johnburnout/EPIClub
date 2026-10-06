@@ -9,6 +9,58 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 à l'historique Git (`git log`, `git tag`).
 
 ## [Unreleased]
+
+## [0.17.19] — 2026-10-06
+
+### Fixed
+
+- **AppUpdateController** : les Releases GitHub **sans description**
+(`body: null`) ne sont plus rejetées (issue #45).
+- Cause : `isset($release['body'])` retourne `false` quand la clé
+existe mais vaut `null`. Le contrôleur en déduisait à tort
+« Impossible de contacter GitHub. »
+- Fix : `GitHubReleaseProvider` accepte `body: null` et le convertit
+en chaîne vide (`body: ''`).
+- Effet : plus besoin d'ajouter manuellement un body aux Releases
+GitHub pour que l'updater fonctionne.
+
+- **AppUpdateController** : suppression de `curl_close()` dans
+`GitHubReleaseProvider` (déprécié en PHP 8.5, no-op depuis 8.0).
+
+### Changed
+
+- **AppUpdateController** : extraction des appels réseau vers un
+nouveau service `GitHubReleaseProvider` (Vague 10 du chantier
+« injection de dépendances », issue #45) :
+- `GitHubReleaseProviderInterface` : contrat pour
+`getLatestRelease()` et `downloadUrl()`.
+- `GitHubReleaseProvider` : implémentation concrète avec cache TTL,
+fallback cURL, et logs de diagnostic (HTTP code, JSON invalide).
+- Factory `protected githubReleaseProvider()` dans
+`AppUpdateController`, surchargeable en test.
+- Suppression des méthodes privées `getLatestRelease()` et
+`downloadUrl()` (déplacées dans le service).
+
+- Aucun changement de comportement observable hors fix #45 :
+routes, templates, flux HTTP et logique métier inchangés.
+
+### Added
+
+- **`TestableAppUpdateController`** : sous-classe de test qui injecte
+un `GitHubReleaseProviderInterface` mocké.
+
+- **9 nouveaux tests Unit** :
+- `GitHubReleaseProvider` (5 tests) : cache frais, cache expiré,
+cache sans body, cache corrompu, `downloadUrl` sur URL invalide.
+- `AppUpdateController::index()` (4 tests) : release plus récente,
+release sans body (fix #45), provider null, version identique.
+
+### Tests
+
+- Unit : 94 → 103 tests (+9), 306 assertions.
+- Integration : 88 tests (inchangés), 165 assertions.
+- **Total : 191 tests verts** (103 Unit + 88 Integration).
+
 ## [0.17.18] — 2026-10-06
 
 ### Changed
