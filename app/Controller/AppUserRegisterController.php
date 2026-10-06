@@ -7,7 +7,7 @@ namespace Epiclub\Controller;
 use Epiclub\Domain\ClubManager;
 use Epiclub\Domain\UtilisateurManager;
 use Epiclub\Engine\AbstractController;
-use Epiclub\Engine\Exception\MailDeliveryException;
+use Epiclub\Exception\MailDeliveryException;
 use Epiclub\Engine\MailerService;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Epiclub\Engine;
 
-use Epiclub\Engine\Exception\MailDeliveryException;
+use Epiclub\Exception\MailDeliveryException;
 use Symfony\Component\Mailer\Exception\TransportExceptionInterface;
 use Symfony\Component\Mailer\Mailer;
 use Symfony\Component\Mailer\MailerInterface;

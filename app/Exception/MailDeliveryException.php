@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Epiclub\Engine\Exception;
+namespace Epiclub\Exception;
 
 final class MailDeliveryException extends \RuntimeException
 {
