@@ -110,8 +110,6 @@ final class GitHubReleaseProvider implements GitHubReleaseProviderInterface
             $content = curl_exec($ch);
             $error = curl_error($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
-
             if ($content === false) {
                 throw new \RuntimeException(
                     'cURL erreur : ' . $error . ' (HTTP ' . $httpCode . ')'
