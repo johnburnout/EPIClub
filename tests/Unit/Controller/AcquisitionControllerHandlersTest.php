@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Epiclub\Tests\Unit\Controller;
 
-use Epiclub\Engine\FactureUploader;
 use Epiclub\Engine\Session;
 use Epiclub\Tests\Unit\Controller\Support\TestableAcquisitionController;
 use Epiclub\Tests\Unit\Controller\Support\TestableAcquisitionControllerBuilder;
@@ -12,6 +11,14 @@ use Epiclub\Domain\AcquisitionValidatorInterface;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
+use Epiclub\Domain\AcquisitionLigneManager;
+use Epiclub\Domain\AcquisitionManager;
+use Epiclub\Domain\FournisseurManager;
+use Epiclub\Engine\FactureUploaderInterface;
+use Epiclub\Exception\DuplicateReferenceException;
+use Epiclub\Exception\FactureUploadException;
+use Epiclub\Process\AcquisitionProcess;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 
 /**
  * Tests unitaires des handlers d'AcquisitionController (Vague 7).
@@ -130,6 +137,529 @@ final class AcquisitionControllerHandlersTest extends TestCase
     }
     
     // ==================================================================
+    // handleDeleteAction — brouillon, échec, lignes générées
+    // ==================================================================
+    
+    public function testHandleDeleteActionDeletesLignesAndAcquisitionOnDraft(): void
+    {
+        $ligneManager = $this->getMockBuilder(AcquisitionLigneManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $ligneManager->method('findByAcquisition')
+        ->willReturn([
+            ['id' => 10, 'equipements_generes' => 0],
+            ['id' => 11, 'equipements_generes' => 0],
+        ]);
+        $ligneManager->expects(self::exactly(2))->method('delete');
+        
+        $acquisitionManager = $this->getMockBuilder(AcquisitionManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $acquisitionManager->expects(self::once())
+        ->method('delete')
+        ->with(42);
+        
+        $controller = $this->makeControllerWith(
+        acquisitionManager: $acquisitionManager,
+        acquisitionLigneManager: $ligneManager,
+        );
+        
+        $acquisition = [
+            'id'               => 42,
+            'est_validee'      => 0,
+            'facture_document' => null,
+        ];
+        
+        $result = $controller->callHandleDeleteAction($acquisition);
+        
+    self::assertTrue($result->isRedirect());
+    self::assertSame(
+            '/admin/acquisitions',
+            $result->response->headers->get('Location')
+        );
+    }
+    
+    public function testHandleDeleteActionReturnsErrorFlashWhenDeleteThrows(): void
+    {
+        $ligneManager = $this->getMockBuilder(AcquisitionLigneManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $ligneManager->method('findByAcquisition')->willReturn([]);
+        
+        $acquisitionManager = $this->getMockBuilder(AcquisitionManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $acquisitionManager->method('delete')
+        ->willThrowException(new \RuntimeException('DB down'));
+        
+        $controller = $this->makeControllerWith(
+        acquisitionManager: $acquisitionManager,
+        acquisitionLigneManager: $ligneManager,
+        );
+        
+        $acquisition = [
+            'id'               => 42,
+            'est_validee'      => 0,
+            'facture_document' => null,
+        ];
+        
+        $result = $controller->callHandleDeleteAction($acquisition);
+        
+    self::assertTrue($result->isRedirect());
+    self::assertSame(
+            '/admin/acquisitions/acquisition-42',
+            $result->response->headers->get('Location')
+        );
+    }
+    
+    public function testHandleDeleteActionRefusesWhenLigneHasGeneratedEquipements(): void
+    {
+        $ligneManager = $this->getMockBuilder(AcquisitionLigneManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $ligneManager->method('findByAcquisition')
+        ->willReturn([
+            ['id' => 10, 'equipements_generes' => 1],  // ← génère → refus
+        ]);
+        $ligneManager->expects(self::never())->method('delete');
+        
+        $acquisitionManager = $this->getMockBuilder(AcquisitionManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $acquisitionManager->expects(self::never())->method('delete');
+        
+        $controller = $this->makeControllerWith(
+        acquisitionManager: $acquisitionManager,
+        acquisitionLigneManager: $ligneManager,
+        );
+        
+        $acquisition = [
+            'id'               => 42,
+            'est_validee'      => 0,
+            'facture_document' => null,
+        ];
+        
+        $result = $controller->callHandleDeleteAction($acquisition);
+        
+    self::assertTrue($result->isRedirect());
+    self::assertSame(
+            '/admin/acquisitions/acquisition_modification-42',
+            $result->response->headers->get('Location')
+        );
+    }
+    
+    // ==================================================================
+    // handleCreateAction — upload et process
+    // ==================================================================
+    
+    public function testHandleCreateActionUploadsFactureOnSuccess(): void
+    {
+        $uploader = $this->createMock(FactureUploaderInterface::class);
+        $uploader->expects(self::once())
+        ->method('upload')
+        ->willReturn('factures/abc123.pdf');
+        
+        $acquisitionManager = $this->getMockBuilder(AcquisitionManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $acquisitionManager->expects(self::once())
+        ->method('findOneByCriteria')
+        ->with(['facture_reference' => 'FAC-001'])
+        ->willReturn(null);
+        
+        $process = $this->createMock(AcquisitionProcess::class);
+        $process->expects(self::once())
+        ->method('acquisition_process')
+        ->willReturn(42);
+        
+        $controller = $this->makeControllerWith(
+        uploader: $uploader,
+        acquisitionManager: $acquisitionManager,
+        acquisitionProcess: $process,
+        );
+        
+        $request = $this->makePostRequest([
+            'action'            => 'create',
+            'facture_reference' => 'FAC-001',
+            'facture_date'      => '2025-01-15',
+            'fournisseur_nom'   => 'Fournisseur Test',
+        ]);
+        $request->files->set('facture_document', $this->makeUploadedFile());
+        
+        $result = $controller->callHandleCreateAction($request, []);
+        
+    self::assertTrue($result->isRedirect());
+    self::assertSame(
+            '/admin/acquisitions/acquisition_modification-42',
+            $result->response->headers->get('Location')
+        );
+    }
+    
+    public function testHandleCreateActionReturnsBadMimeErrorFromUploader(): void
+    {
+        $uploader = $this->createMock(FactureUploaderInterface::class);
+        $uploader->expects(self::once())
+        ->method('upload')
+        ->willThrowException(new FactureUploadException(
+            'Format de fichier non autorisé (PDF uniquement).',
+        FactureUploadException::BAD_MIME,
+        ));
+        
+        $acquisitionManager = $this->getMockBuilder(AcquisitionManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $acquisitionManager->method('findOneByCriteria')->willReturn(null);
+        
+        $controller = $this->makeControllerWith(
+        uploader: $uploader,
+        acquisitionManager: $acquisitionManager,
+        );
+        
+        $request = $this->makePostRequest([
+            'action'            => 'create',
+            'facture_reference' => 'FAC-001',
+            'facture_date'      => '2025-01-15',
+            'fournisseur_nom'   => 'Fournisseur Test',
+        ]);
+        $request->files->set('facture_document', $this->makeUploadedFile());
+        
+        $result = $controller->callHandleCreateAction($request, []);
+        
+    self::assertFalse($result->isRedirect());
+    self::assertArrayHasKey('facture_document', $result->formErrors);
+    self::assertSame(
+            'Format de fichier non autorisé (PDF uniquement).',
+            $result->formErrors['facture_document']
+        );
+    }
+    
+    public function testHandleCreateActionReturnsTooLargeErrorFromUploader(): void
+    {
+        $uploader = $this->createMock(FactureUploaderInterface::class);
+        $uploader->expects(self::once())
+        ->method('upload')
+        ->willThrowException(new FactureUploadException(
+            'Le fichier dépasse la taille maximale autorisée.',
+        FactureUploadException::TOO_LARGE,
+        ));
+        
+        $acquisitionManager = $this->getMockBuilder(AcquisitionManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $acquisitionManager->method('findOneByCriteria')->willReturn(null);
+        
+        $controller = $this->makeControllerWith(
+        uploader: $uploader,
+        acquisitionManager: $acquisitionManager,
+        );
+        
+        $request = $this->makePostRequest([
+            'action'            => 'create',
+            'facture_reference' => 'FAC-001',
+            'facture_date'      => '2025-01-15',
+            'fournisseur_nom'   => 'Fournisseur Test',
+        ]);
+        $request->files->set('facture_document', $this->makeUploadedFile());
+        
+        $result = $controller->callHandleCreateAction($request, []);
+        
+    self::assertFalse($result->isRedirect());
+    self::assertArrayHasKey('facture_document', $result->formErrors);
+    }
+    
+    public function testHandleCreateActionReturnsErrorOnDuplicateReference(): void
+    {
+        $acquisitionManager = $this->getMockBuilder(AcquisitionManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $acquisitionManager->expects(self::once())
+        ->method('findOneByCriteria')
+        ->with(['facture_reference' => 'FAC-DUP'])
+        ->willReturn(['id' => 7, 'facture_reference' => 'FAC-DUP']);
+        
+        $uploader = $this->createMock(FactureUploaderInterface::class);
+        $uploader->expects(self::never())->method('upload');
+        
+        $process = $this->createMock(AcquisitionProcess::class);
+        $process->expects(self::never())->method('acquisition_process');
+        
+        $controller = $this->makeControllerWith(
+        uploader: $uploader,
+        acquisitionManager: $acquisitionManager,
+        acquisitionProcess: $process,
+        );
+        
+        $request = $this->makePostRequest([
+            'action'            => 'create',
+            'facture_reference' => 'FAC-DUP',
+            'facture_date'      => '2025-01-15',
+            'fournisseur_nom'   => 'Fournisseur Test',
+        ]);
+        
+        $result = $controller->callHandleCreateAction($request, []);
+        
+    self::assertFalse($result->isRedirect());
+    self::assertArrayHasKey('facture_reference', $result->formErrors);
+    self::assertStringContainsString(
+            'existe déjà',
+            $result->formErrors['facture_reference']
+        );
+    }
+    
+    public function testHandleCreateActionReturnsGeneralErrorWhenProcessThrows(): void
+    {
+        $acquisitionManager = $this->getMockBuilder(AcquisitionManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $acquisitionManager->method('findOneByCriteria')->willReturn(null);
+        
+        $uploader = $this->createMock(FactureUploaderInterface::class);
+        $uploader->method('upload')->willReturn('factures/abc.pdf');
+        
+        $process = $this->createMock(AcquisitionProcess::class);
+        $process->expects(self::once())
+        ->method('acquisition_process')
+        ->willThrowException(new \RuntimeException('DB down'));
+        
+        $controller = $this->makeControllerWith(
+        uploader: $uploader,
+        acquisitionManager: $acquisitionManager,
+        acquisitionProcess: $process,
+        );
+        
+        $request = $this->makePostRequest([
+            'action'            => 'create',
+            'facture_reference' => 'FAC-001',
+            'facture_date'      => '2025-01-15',
+            'fournisseur_nom'   => 'Fournisseur Test',
+        ]);
+        $request->files->set('facture_document', $this->makeUploadedFile());
+        
+        $result = $controller->callHandleCreateAction($request, []);
+        
+    self::assertFalse($result->isRedirect());
+    self::assertArrayHasKey('general', $result->formErrors);
+    self::assertSame(
+            'Une erreur est survenue lors de la création. Merci de réessayer.',
+            $result->formErrors['general']
+        );
+    }
+    
+    public function testHandleCreateActionReturnsGeneralErrorWhenProcessReturnsZero(): void
+    {
+        $acquisitionManager = $this->getMockBuilder(AcquisitionManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $acquisitionManager->method('findOneByCriteria')->willReturn(null);
+        
+        $uploader = $this->createMock(FactureUploaderInterface::class);
+        $uploader->method('upload')->willReturn(null);
+        
+        $process = $this->createMock(AcquisitionProcess::class);
+        $process->method('acquisition_process')->willReturn(0);
+        
+        $controller = $this->makeControllerWith(
+        uploader: $uploader,
+        acquisitionManager: $acquisitionManager,
+        acquisitionProcess: $process,
+        );
+        
+        $request = $this->makePostRequest([
+            'action'            => 'create',
+            'facture_reference' => 'FAC-001',
+            'facture_date'      => '2025-01-15',
+            'fournisseur_nom'   => 'Fournisseur Test',
+        ]);
+        
+        $result = $controller->callHandleCreateAction($request, []);
+        
+    self::assertFalse($result->isRedirect());
+    self::assertArrayHasKey('general', $result->formErrors);
+    self::assertSame(
+            'Erreur lors de la création de l\'acquisition.',
+            $result->formErrors['general']
+        );
+    }
+    
+    // ==================================================================
+    // handleUpdateAction — upload et save
+    // ==================================================================
+    
+    public function testHandleUpdateActionUploadsNewFactureAndDeletesOldOne(): void
+    {
+        $acquisitionManager = $this->getMockBuilder(AcquisitionManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $acquisitionManager->expects(self::once())
+        ->method('findOneByCriteria')
+        ->willReturn(null);
+        $acquisitionManager->expects(self::once())
+        ->method('save')
+        ->willReturn(true);
+        
+        $uploader = $this->createMock(FactureUploaderInterface::class);
+        $uploader->expects(self::once())
+        ->method('upload')
+        ->willReturn('factures/new.pdf');
+        $uploader->expects(self::once())
+        ->method('delete')
+        ->with('factures/old.pdf')
+        ->willReturn(true);
+        
+        $fournisseurManager = $this->getMockBuilder(FournisseurManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $fournisseurManager->method('findOneByCriteria')
+        ->willReturn(['id' => 5, 'nom' => 'Fournisseur Test']);
+        
+        $controller = $this->makeControllerWith(
+        uploader: $uploader,
+        acquisitionManager: $acquisitionManager,
+        fournisseurManager: $fournisseurManager,
+        );
+        
+        $request = $this->makePostRequest([
+            'action'            => 'update',
+            'facture_reference' => 'FAC-001',
+            'facture_date'      => '2025-01-20',
+            'fournisseur_nom'   => 'Fournisseur Test',
+        ]);
+        $request->files->set('facture_document', $this->makeUploadedFile());
+        
+        $acquisition = [
+            'id'               => 42,
+            'facture_document' => 'factures/old.pdf',
+        ];
+        
+        $result = $controller->callHandleUpdateAction($request, $acquisition);
+        
+    self::assertTrue($result->isRedirect());
+    self::assertSame(
+            '/admin/acquisitions/acquisition_modification-42',
+            $result->response->headers->get('Location')
+        );
+    }
+    
+    public function testHandleUpdateActionPreservesOldFactureWhenUploadFails(): void
+    {
+        $acquisitionManager = $this->getMockBuilder(AcquisitionManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $acquisitionManager->method('findOneByCriteria')->willReturn(null);
+        $acquisitionManager->expects(self::never())->method('save');
+        
+        $uploader = $this->createMock(FactureUploaderInterface::class);
+        $uploader->expects(self::once())
+        ->method('upload')
+        ->willThrowException(new FactureUploadException(
+            'Format de fichier non autorisé.',
+        FactureUploadException::BAD_MIME,
+        ));
+        $uploader->expects(self::never())->method('delete');
+        
+        $controller = $this->makeControllerWith(
+        uploader: $uploader,
+        acquisitionManager: $acquisitionManager,
+        );
+        
+        $request = $this->makePostRequest([
+            'action'            => 'update',
+            'facture_reference' => 'FAC-001',
+            'facture_date'      => '2025-01-20',
+            'fournisseur_nom'   => 'Fournisseur Test',
+        ]);
+        $request->files->set('facture_document', $this->makeUploadedFile());
+        
+        $acquisition = [
+            'id'               => 42,
+            'facture_document' => 'factures/old.pdf',
+        ];
+        
+        $result = $controller->callHandleUpdateAction($request, $acquisition);
+        
+    self::assertFalse($result->isRedirect());
+    self::assertArrayHasKey('facture_document', $result->formErrors);
+        // Ancienne facture préservée
+    self::assertSame('factures/old.pdf', $result->acquisition['facture_document']);
+    }
+    
+    public function testHandleUpdateActionReturnsGeneralErrorOnSaveFailure(): void
+    {
+        $acquisitionManager = $this->getMockBuilder(AcquisitionManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $acquisitionManager->method('findOneByCriteria')->willReturn(null);
+        $acquisitionManager->expects(self::once())
+        ->method('save')
+        ->willThrowException(new \RuntimeException('DB down'));
+        
+        $fournisseurManager = $this->getMockBuilder(FournisseurManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $fournisseurManager->method('findOneByCriteria')
+        ->willReturn(['id' => 5, 'nom' => 'Fournisseur Test']);
+        
+        $controller = $this->makeControllerWith(
+        acquisitionManager: $acquisitionManager,
+        fournisseurManager: $fournisseurManager,
+        );
+        
+        $request = $this->makePostRequest([
+            'action'            => 'update',
+            'facture_reference' => 'FAC-001',
+            'facture_date'      => '2025-01-20',
+            'fournisseur_nom'   => 'Fournisseur Test',
+        ]);
+        
+        $acquisition = [
+            'id'               => 42,
+            'facture_document' => null,
+        ];
+        
+        $result = $controller->callHandleUpdateAction($request, $acquisition);
+        
+    self::assertFalse($result->isRedirect());
+    self::assertArrayHasKey('general', $result->formErrors);
+    self::assertSame(
+            'Une erreur est survenue lors de la mise à jour. Merci de réessayer.',
+            $result->formErrors['general']
+        );
+    }
+    
+    public function testHandleUpdateActionReturnsErrorOnDuplicateReferenceFromOtherAcquisition(): void
+    {
+        $acquisitionManager = $this->getMockBuilder(AcquisitionManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $acquisitionManager->expects(self::once())
+        ->method('findOneByCriteria')
+        ->willReturn(['id' => 99, 'facture_reference' => 'FAC-DUP']);
+        $acquisitionManager->expects(self::never())->method('save');
+        
+        $controller = $this->makeControllerWith(
+        acquisitionManager: $acquisitionManager,
+        );
+        
+        $request = $this->makePostRequest([
+            'action'            => 'update',
+            'facture_reference' => 'FAC-DUP',
+            'facture_date'      => '2025-01-20',
+            'fournisseur_nom'   => 'Fournisseur Test',
+        ]);
+        
+        $acquisition = ['id' => 42, 'facture_document' => null];
+        
+        $result = $controller->callHandleUpdateAction($request, $acquisition);
+        
+    self::assertFalse($result->isRedirect());
+    self::assertArrayHasKey('facture_reference', $result->formErrors);
+    self::assertStringContainsString(
+            'déjà utilisée',
+            $result->formErrors['facture_reference']
+        );
+    }
+    
+    // ==================================================================
     // handleAddLigneAction — avec mock AcquisitionValidatorInterface
     // ==================================================================
     
@@ -201,31 +731,154 @@ final class AcquisitionControllerHandlersTest extends TestCase
     }
     
     // ==================================================================
+    // handleAddLigneAction — succès et exception
+    // ==================================================================
+    
+    public function testHandleAddLigneActionRedirectsOnSuccess(): void
+    {
+        $validator = $this->createMock(AcquisitionValidatorInterface::class);
+        $validator->method('validateLigne')->willReturn([]);
+        
+        $ligneManager = $this->getMockBuilder(AcquisitionLigneManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $ligneManager->expects(self::once())
+        ->method('save')
+        ->willReturn(1);
+        
+        $process = $this->createMock(AcquisitionProcess::class);
+        $process->expects(self::once())
+        ->method('categorie_process')
+        ->willReturn(5);
+        
+        $controller = $this->makeControllerWith(
+        validator: $validator,
+        acquisitionLigneManager: $ligneManager,
+        acquisitionProcess: $process,
+        );
+        
+        $request = $this->makePostRequest([
+            'action' => 'add_ligne',
+            'ligne'  => [
+                'reference'         => 'REF-001',
+                'designation'       => 'Tournevis',
+                'categorie_libelle' => 'Outillage',
+                'nombre'            => 2,
+            ],
+        ]);
+        
+        $result = $controller->callHandleAddLigneAction($request, ['id' => 42]);
+        
+    self::assertTrue($result->isRedirect());
+    self::assertSame(
+            '/admin/acquisitions/acquisition_modification-42',
+            $result->response->headers->get('Location')
+        );
+    }
+    
+    public function testHandleAddLigneActionReturnsErrorOnDuplicateReferenceException(): void
+    {
+        $validator = $this->createMock(AcquisitionValidatorInterface::class);
+        $validator->method('validateLigne')->willReturn([]);
+        
+        $ligneManager = $this->getMockBuilder(AcquisitionLigneManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $ligneManager->expects(self::once())
+        ->method('save')
+        ->willThrowException(new DuplicateReferenceException('Duplicate'));
+        
+        $process = $this->createMock(AcquisitionProcess::class);
+        $process->method('categorie_process')->willReturn(5);
+        
+        $controller = $this->makeControllerWith(
+        validator: $validator,
+        acquisitionLigneManager: $ligneManager,
+        acquisitionProcess: $process,
+        );
+        
+        $request = $this->makePostRequest([
+            'action' => 'add_ligne',
+            'ligne'  => [
+                'reference'         => 'REF-DUP',
+                'designation'       => 'Tournevis',
+                'categorie_libelle' => 'Outillage',
+                'nombre'            => 1,
+            ],
+        ]);
+        
+        $result = $controller->callHandleAddLigneAction($request, ['id' => 42]);
+        
+    self::assertFalse($result->isRedirect());
+    self::assertArrayHasKey('ligne_reference', $result->formErrors);
+    self::assertStringContainsString(
+            'existe déjà',
+            $result->formErrors['ligne_reference']
+        );
+    }
+    
+    // ==================================================================
     // Helpers
     // ==================================================================
-
-    private function makeController(): TestableAcquisitionController
+    
+    /**
+    * Construit un contrôleur avec les mocks fournis.
+    * Les paramètres null sont remplacés par des mocks silencieux du builder.
+    *
+    * ⚠️ PHPUnit 11 : createMock() est protected → on utilise MockBuilder
+    *    directement pour les classes concrètes (managers).
+    */
+    private function makeControllerWith(
+        ?AcquisitionValidatorInterface $validator = null,
+        ?FactureUploaderInterface $uploader = null,
+        ?AcquisitionManager $acquisitionManager = null,
+        ?AcquisitionLigneManager $acquisitionLigneManager = null,
+        ?FournisseurManager $fournisseurManager = null,
+        ?AcquisitionProcess $acquisitionProcess = null,
+        ?Session $session = null,
+    ): TestableAcquisitionController {
+        $session ??= $this->makeSession();
+        
+        $builder = (new TestableAcquisitionControllerBuilder($this))
+        ->withSession($session);
+        
+        if ($uploader !== null) {
+            $builder->withFactureUploader($uploader);
+        }
+        if ($validator !== null) {
+            $builder->withValidator($validator);
+        }
+        if ($acquisitionManager !== null) {
+            $builder->withAcquisitionManager($acquisitionManager);
+        }
+        if ($acquisitionLigneManager !== null) {
+            $builder->withAcquisitionLigneManager($acquisitionLigneManager);
+        }
+        if ($fournisseurManager !== null) {
+            $builder->withFournisseurManager($fournisseurManager);
+        }
+        if ($acquisitionProcess !== null) {
+            $builder->withAcquisitionProcess($acquisitionProcess);
+        }
+        
+        return $builder->build();
+    }
+    
+    private function makeSession(): Session
     {
         $session = new Session(new MockArraySessionStorage());
         $session->set('user', ['id' => 42, 'username' => 'admin']);
-        
-        return (new TestableAcquisitionControllerBuilder($this))
-            ->withSession($session)
-            ->withFactureUploader(new FactureUploader($this->tmpUploadDir))
-            ->withValidator($this->createMock(AcquisitionValidatorInterface::class))
-            ->build();
+        return $session;
+    }
+
+    private function makeController(): TestableAcquisitionController
+    {
+        return $this->makeControllerWith();
     }
     
     private function makeControllerWithValidator(AcquisitionValidatorInterface $validator): TestableAcquisitionController
     {
-        $session = new Session(new MockArraySessionStorage());
-        $session->set('user', ['id' => 42, 'username' => 'admin']);
-        
-        return (new TestableAcquisitionControllerBuilder($this))
-            ->withSession($session)
-            ->withFactureUploader(new FactureUploader($this->tmpUploadDir))
-            ->withValidator($validator)
-            ->build();
+        return $this->makeControllerWith(validator: $validator);
     }
 
     /**
@@ -256,5 +909,14 @@ final class AcquisitionControllerHandlersTest extends TestCase
         }
 
         rmdir($dir);
+    }
+    
+    private function makeUploadedFile(
+        string $originalName = 'facture.pdf',
+        string $mimeType = 'application/pdf',
+    ): UploadedFile {
+        $path = $this->tmpUploadDir . '/' . $originalName;
+        file_put_contents($path, '%PDF-1.4 fake content');
+        return new UploadedFile($path, $originalName, $mimeType, null, true);
     }
 }
