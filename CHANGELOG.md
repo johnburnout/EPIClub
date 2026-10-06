@@ -9,6 +9,53 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 à l'historique Git (`git log`, `git tag`).
 
 ## [Unreleased]
+## [0.17.18] — 2026-10-06
+
+### Changed
+
+- **AcquisitionProcess** : extraction de 5 factories `protected`
+pour les managers internes (Vague 9 du chantier
+« injection de dépendances », issue #46) :
+- `acquisitionManager()`
+- `acquisitionLigneManager()`
+- `fournisseurManager()`
+- `categorieManager()`
+- `equipementManager()`
+- Tous les `new XxxManager()` en dur dans les 4 méthodes publiques
+(`acquisition_process`, `categorie_process`,
+`create_equipement_process`, `validerAcquisition`) sont remplacés
+par des appels à ces factories.
+- Objectif : rendre ces dépendances **mockables** en test unitaire
+et supprimer les connexions PDO déclenchées par
+`AbstractManager::__construct()` lors de l'exécution de
+`AcquisitionProcess`.
+
+- Aucun changement de comportement observable : routes, templates,
+flux HTTP et logique métier inchangés.
+
+### Added
+
+- **`TestableAcquisitionProcess`** : sous-classe de test qui accepte
+les 5 managers mockés en constructeur et surcharge les factories
+correspondantes.
+
+- **19 nouveaux tests Unit** sur `AcquisitionProcess` :
+- `acquisition_process()` : réutilisation fournisseur existant,
+création si inconnu, application des defaults, cast en int.
+- `categorie_process()` : réutilisation catégorie existante,
+création avec `ucfirst`, retour id du manager.
+- `create_equipement_process()` : ligne introuvable, ligne déjà
+générée, `regrouper_en_lot` (1 vs N), suffixe aléatoire sur
+collision de code, `est_epi` hérité de la catégorie (ou défaut 1).
+- `validerAcquisition()` : skip si toutes lignes générées,
+génération pour les lignes non générées, marquage
+`est_validee=1`, gestion multi-lignes, cas acquisition introuvable.
+
+### Tests
+
+- Unit : 75 → 94 tests (+19), 286 assertions.
+- Integration : 88 tests (inchangés), 165 assertions.
+- **Total : 182 tests verts** (94 Unit + 88 Integration).
 
 ## [0.17.17] — 2026-10-06
 
