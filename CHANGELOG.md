@@ -10,6 +10,27 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [0.17.17] — 2026-10-06
+
+### Tests
+
+- **+5 tests Unit** sur les handlers d'`AcquisitionController`
+(palier 70 → 75, cible haute de l'issue #43) :
+- `handleCreateAction` : `facture_date` manquante (`null` remonté),
+`fournisseur_nom` vide (passe quand même à
+`acquisitionProcess->acquisition_process()`).
+- `handleUpdateAction` : upload OK sans ancienne facture
+(`uploader->delete()` non appelé), `fournisseur_nom` inconnu
+(`fournisseurManager->save()` appelé).
+- `handleDeleteAction` : `facture_document` présent
+(`uploader->delete()` appelé une fois).
+
+- Aucun changement de code prod. Iso-comportement strict :
+Integration 88 inchangés.
+- Unit : 70 → 75 tests (+5), 217 assertions.
+- Integration : 88 tests (inchangés), 165 assertions.
+- **Total : 163 tests verts** (75 Unit + 88 Integration).
+
 ## [0.17.16] — 2026-10-06
 
 ### Changed
