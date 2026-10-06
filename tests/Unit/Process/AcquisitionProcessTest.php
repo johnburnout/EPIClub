@@ -193,6 +193,219 @@ final class AcquisitionProcessTest extends TestCase
         // que la valeur retournée est bien celle du manager.
         self::assertEquals(7, $id);
     }
+    
+    // ==================================================================
+    // create_equipement_process()
+    // ==================================================================
+    
+    public function testCreateEquipementProcessThrowsWhenLigneNotFound(): void
+    {
+        $ligneManager = $this->makeAcquisitionLigneManagerMock();
+        $ligneManager->expects(self::once())
+        ->method('findId')
+        ->with(999)
+        ->willReturn(null);
+        
+        $process = $this->makeProcessWith(acquisitionLigneManager: $ligneManager);
+        
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage("L'acquisition ligne n'existe pas");
+        
+        $process->create_equipement_process(999);
+    }
+    
+    public function testCreateEquipementProcessThrowsWhenAlreadyGenerated(): void
+    {
+        $ligneManager = $this->makeAcquisitionLigneManagerMock();
+        $ligneManager->expects(self::once())
+        ->method('findId')
+        ->with(10)
+        ->willReturn([
+            'id'                  => 10,
+            'acquisition_id'      => 42,
+            'reference'           => 'REF-001',
+            'designation'         => 'Tournevis',
+            'categorie_id'        => 3,
+            'nombre'              => 5,
+            'equipements_generes' => 1,  // ← déjà généré
+            'regrouper_en_lot'    => 0,
+        ]);
+        
+        $equipementManager = $this->makeEquipementManagerMock();
+        $equipementManager->expects(self::never())->method('save');
+        
+        $process = $this->makeProcessWith(
+        acquisitionLigneManager: $ligneManager,
+        equipementManager: $equipementManager,
+        );
+        
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('Les équipements ont déjà été générés');
+        
+        $process->create_equipement_process(10);
+    }
+    
+    public function testCreateEquipementProcessCreatesOneEquipementWhenRegrouperEnLot(): void
+    {
+        $ligneManager = $this->makeAcquisitionLigneManagerMock();
+        $ligneManager->expects(self::once())
+        ->method('findId')
+        ->with(10)
+        ->willReturn($this->makeLigneFixture(regrouperEnLot: 1, nombre: 5));
+        // Le save final marque equipements_generes=1
+        $ligneManager->expects(self::once())
+        ->method('save')
+        ->with(self::callback(fn(array $l): bool => $l['equipements_generes'] === 1));
+        
+        $acquisitionManager = $this->makeAcquisitionManagerMock();
+        $acquisitionManager->expects(self::once())
+        ->method('findId')
+        ->with(42)
+        ->willReturn(['id' => 42, 'facture_date' => '2025-01-15']);
+        
+        $categorieManager = $this->makeCategorieManagerMock();
+        $categorieManager->expects(self::once())
+        ->method('findId')
+        ->with(3)
+        ->willReturn(['id' => 3, 'est_epi' => 1]);
+        
+        $equipementManager = $this->makeEquipementManagerMock();
+        $equipementManager->method('codeExists')->willReturn(false);
+        // Un seul équipement créé (lot)
+        $equipementManager->expects(self::once())
+        ->method('save')
+        ->with(self::callback(function (array $equipement): bool {
+            return $equipement['nombre'] === 5
+            && str_ends_with($equipement['code'], '-LOT');
+        }));
+        
+        $process = $this->makeProcessWith(
+        acquisitionManager: $acquisitionManager,
+        acquisitionLigneManager: $ligneManager,
+        categorieManager: $categorieManager,
+        equipementManager: $equipementManager,
+        );
+        
+    self::assertTrue($process->create_equipement_process(10));
+    }
+    
+    public function testCreateEquipementProcessCreatesNEquipementsWhenNotRegrouper(): void
+    {
+        $ligneManager = $this->makeAcquisitionLigneManagerMock();
+        $ligneManager->method('findId')->willReturn($this->makeLigneFixture(regrouperEnLot: 0, nombre: 3));
+        $ligneManager->expects(self::once())->method('save');
+        
+        $acquisitionManager = $this->makeAcquisitionManagerMock();
+        $acquisitionManager->method('findId')->willReturn(['id' => 42, 'facture_date' => '2025-01-15']);
+        
+        $categorieManager = $this->makeCategorieManagerMock();
+        $categorieManager->method('findId')->willReturn(['id' => 3, 'est_epi' => 1]);
+        
+        $equipementManager = $this->makeEquipementManagerMock();
+        $equipementManager->method('codeExists')->willReturn(false);
+        // 3 équipements créés (nombre=3)
+        $equipementManager->expects(self::exactly(3))->method('save');
+        
+        $process = $this->makeProcessWith(
+        acquisitionManager: $acquisitionManager,
+        acquisitionLigneManager: $ligneManager,
+        categorieManager: $categorieManager,
+        equipementManager: $equipementManager,
+        );
+        
+    self::assertTrue($process->create_equipement_process(10));
+    }
+    
+    public function testCreateEquipementProcessAddsSuffixWhenCodeAlreadyExists(): void
+    {
+        $ligneManager = $this->makeAcquisitionLigneManagerMock();
+        $ligneManager->method('findId')->willReturn($this->makeLigneFixture(regrouperEnLot: 0, nombre: 1));
+        $ligneManager->method('save');
+        
+        $acquisitionManager = $this->makeAcquisitionManagerMock();
+        $acquisitionManager->method('findId')->willReturn(['id' => 42, 'facture_date' => '2025-01-15']);
+        
+        $categorieManager = $this->makeCategorieManagerMock();
+        $categorieManager->method('findId')->willReturn(['id' => 3, 'est_epi' => 1]);
+        
+        $equipementManager = $this->makeEquipementManagerMock();
+        // 1er code existe → suffixe aléatoire ajouté, puis 2e check → false
+        $equipementManager->method('codeExists')
+        ->willReturnOnConsecutiveCalls(true, false);
+        $equipementManager->expects(self::once())
+        ->method('save')
+        ->with(self::callback(function (array $equipement): bool {
+            // Le code doit avoir un suffixe -XX (2 chiffres) ajouté
+            return preg_match('/-\d{2}$/', $equipement['code']) === 1;
+        }));
+        
+        $process = $this->makeProcessWith(
+        acquisitionManager: $acquisitionManager,
+        acquisitionLigneManager: $ligneManager,
+        categorieManager: $categorieManager,
+        equipementManager: $equipementManager,
+        );
+        
+    self::assertTrue($process->create_equipement_process(10));
+    }
+    
+    public function testCreateEquipementProcessUsesCategorieEstEpi(): void
+    {
+        $ligneManager = $this->makeAcquisitionLigneManagerMock();
+        $ligneManager->method('findId')->willReturn($this->makeLigneFixture(regrouperEnLot: 0, nombre: 1));
+        $ligneManager->method('save');
+        
+        $acquisitionManager = $this->makeAcquisitionManagerMock();
+        $acquisitionManager->method('findId')->willReturn(['id' => 42, 'facture_date' => '2025-01-15']);
+        
+        $categorieManager = $this->makeCategorieManagerMock();
+        // La catégorie a est_epi = 0
+        $categorieManager->method('findId')->willReturn(['id' => 3, 'est_epi' => 0]);
+        
+        $equipementManager = $this->makeEquipementManagerMock();
+        $equipementManager->method('codeExists')->willReturn(false);
+        $equipementManager->expects(self::once())
+        ->method('save')
+        ->with(self::callback(fn(array $e): bool => $e['est_epi'] === 0));
+        
+        $process = $this->makeProcessWith(
+        acquisitionManager: $acquisitionManager,
+        acquisitionLigneManager: $ligneManager,
+        categorieManager: $categorieManager,
+        equipementManager: $equipementManager,
+        );
+        
+        $process->create_equipement_process(10);
+    }
+    
+    public function testCreateEquipementProcessDefaultsEstEpiToOneWhenCategorieMissing(): void
+    {
+        $ligneManager = $this->makeAcquisitionLigneManagerMock();
+        $ligneManager->method('findId')->willReturn($this->makeLigneFixture(regrouperEnLot: 0, nombre: 1));
+        $ligneManager->method('save');
+        
+        $acquisitionManager = $this->makeAcquisitionManagerMock();
+        $acquisitionManager->method('findId')->willReturn(['id' => 42, 'facture_date' => '2025-01-15']);
+        
+        $categorieManager = $this->makeCategorieManagerMock();
+        // Catégorie introuvable → est_epi par défaut = 1
+        $categorieManager->method('findId')->willReturn(null);
+        
+        $equipementManager = $this->makeEquipementManagerMock();
+        $equipementManager->method('codeExists')->willReturn(false);
+        $equipementManager->expects(self::once())
+        ->method('save')
+        ->with(self::callback(fn(array $e): bool => $e['est_epi'] === 1));
+        
+        $process = $this->makeProcessWith(
+        acquisitionManager: $acquisitionManager,
+        acquisitionLigneManager: $ligneManager,
+        categorieManager: $categorieManager,
+        equipementManager: $equipementManager,
+        );
+        
+        $process->create_equipement_process(10);
+    }
 
     // ==================================================================
     // Helpers
@@ -247,5 +460,27 @@ final class AcquisitionProcessTest extends TestCase
         return (new MockBuilder($this, EquipementManager::class))
             ->disableOriginalConstructor()
             ->getMock();
+    }
+    
+    /**
+    * Fixture minimale d'une ligne d'acquisition pour les tests
+    * de create_equipement_process().
+    *
+    * @param int $regrouperEnLot 0 ou 1
+    * @param int $nombre         Nombre d'équipements à générer
+    * @return array<string,mixed>
+    */
+    private function makeLigneFixture(int $regrouperEnLot = 0, int $nombre = 1): array
+    {
+        return [
+            'id'                  => 10,
+            'acquisition_id'      => 42,
+            'reference'           => 'REF-001',
+            'designation'         => 'Tournevis',
+            'categorie_id'        => 3,
+            'nombre'              => $nombre,
+            'equipements_generes' => 0,
+            'regrouper_en_lot'    => $regrouperEnLot,
+        ];
     }
 }
