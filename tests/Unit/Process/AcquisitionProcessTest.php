@@ -406,6 +406,178 @@ final class AcquisitionProcessTest extends TestCase
         
         $process->create_equipement_process(10);
     }
+    
+    // ==================================================================
+    // validerAcquisition()
+    // ==================================================================
+    
+    public function testValiderAcquisitionReturnsFalseWhenAllLignesAlreadyGenerated(): void
+    {
+        $ligneManager = $this->makeAcquisitionLigneManagerMock();
+        $ligneManager->expects(self::once())
+        ->method('findByAcquisition')
+        ->with(42)
+        ->willReturn([
+            ['id' => 10, 'equipements_generes' => 1],
+            ['id' => 11, 'equipements_generes' => 1],
+        ]);
+        $ligneManager->expects(self::never())->method('save');
+        
+        $acquisitionManager = $this->makeAcquisitionManagerMock();
+        $acquisitionManager->expects(self::never())->method('findId');
+        $acquisitionManager->expects(self::never())->method('save');
+        
+        $process = $this->makeProcessWith(
+        acquisitionManager: $acquisitionManager,
+        acquisitionLigneManager: $ligneManager,
+        );
+        
+    self::assertFalse($process->validerAcquisition(42));
+    }
+    
+    public function testValiderAcquisitionGeneratesEquipementsForNonGeneratedLignes(): void
+    {
+        $ligneManager = $this->makeAcquisitionLigneManagerMock();
+        $ligneManager->expects(self::once())
+        ->method('findByAcquisition')
+        ->with(42)
+        ->willReturn([
+            ['id' => 10, 'equipements_generes' => 0],
+        ]);
+        $ligneManager->expects(self::once())
+        ->method('findId')
+        ->with(10)
+        ->willReturn($this->makeLigneFixture(regrouperEnLot: 0, nombre: 1));
+        $ligneManager->expects(self::exactly(2))->method('save');
+        
+        $acquisitionManager = $this->makeAcquisitionManagerMock();
+        $acquisitionManager->expects(self::exactly(2))
+        ->method('findId')
+        ->willReturn(['id' => 42, 'facture_date' => '2025-01-15']);
+        $acquisitionManager->expects(self::once())
+        ->method('save')
+        ->with(self::callback(fn(array $a): bool => $a['est_validee'] === 1));
+        
+        $categorieManager = $this->makeCategorieManagerMock();
+        $categorieManager->method('findId')->willReturn(['id' => 3, 'est_epi' => 1]);
+        
+        $equipementManager = $this->makeEquipementManagerMock();
+        $equipementManager->method('codeExists')->willReturn(false);
+        $equipementManager->expects(self::once())->method('save');
+        
+        $process = $this->makeProcessWith(
+        acquisitionManager: $acquisitionManager,
+        acquisitionLigneManager: $ligneManager,
+        categorieManager: $categorieManager,
+        equipementManager: $equipementManager,
+        );
+        
+    self::assertTrue($process->validerAcquisition(42));
+    }
+    
+    public function testValiderAcquisitionMarksAcquisitionAsValidee(): void
+    {
+        $ligneManager = $this->makeAcquisitionLigneManagerMock();
+        $ligneManager->method('findByAcquisition')->willReturn([
+            ['id' => 10, 'equipements_generes' => 0],
+        ]);
+        $ligneManager->method('findId')->willReturn($this->makeLigneFixture());
+        $ligneManager->method('save');
+        
+        $acquisitionManager = $this->makeAcquisitionManagerMock();
+        $acquisitionManager->method('findId')->willReturn([
+            'id'           => 42,
+            'est_validee'  => 0,
+            'facture_date' => '2025-01-15',
+        ]);
+        $acquisitionManager->expects(self::once())
+        ->method('save')
+        ->with(self::callback(fn(array $a): bool => $a['est_validee'] === 1));
+        
+        $categorieManager = $this->makeCategorieManagerMock();
+        $categorieManager->method('findId')->willReturn(['id' => 3, 'est_epi' => 1]);
+        
+        $equipementManager = $this->makeEquipementManagerMock();
+        $equipementManager->method('codeExists')->willReturn(false);
+        
+        $process = $this->makeProcessWith(
+        acquisitionManager: $acquisitionManager,
+        acquisitionLigneManager: $ligneManager,
+        categorieManager: $categorieManager,
+        equipementManager: $equipementManager,
+        );
+        
+    self::assertTrue($process->validerAcquisition(42));
+    }
+    
+    public function testValiderAcquisitionHandlesMultipleLignes(): void
+    {
+        $ligneManager = $this->makeAcquisitionLigneManagerMock();
+        $ligneManager->method('findByAcquisition')->willReturn([
+            ['id' => 10, 'equipements_generes' => 0],
+            ['id' => 11, 'equipements_generes' => 0],
+            ['id' => 12, 'equipements_generes' => 1],
+        ]);
+        $ligneManager->expects(self::exactly(2))
+        ->method('findId')
+        ->willReturn($this->makeLigneFixture(regrouperEnLot: 0, nombre: 1));
+        $ligneManager->method('save');
+        
+        $acquisitionManager = $this->makeAcquisitionManagerMock();
+        $acquisitionManager->method('findId')->willReturn(['id' => 42, 'facture_date' => '2025-01-15']);
+        $acquisitionManager->expects(self::once())->method('save');
+        
+        $categorieManager = $this->makeCategorieManagerMock();
+        $categorieManager->method('findId')->willReturn(['id' => 3, 'est_epi' => 1]);
+        
+        $equipementManager = $this->makeEquipementManagerMock();
+        $equipementManager->method('codeExists')->willReturn(false);
+        $equipementManager->expects(self::exactly(2))->method('save');
+        
+        $process = $this->makeProcessWith(
+        acquisitionManager: $acquisitionManager,
+        acquisitionLigneManager: $ligneManager,
+        categorieManager: $categorieManager,
+        equipementManager: $equipementManager,
+        );
+        
+    self::assertTrue($process->validerAcquisition(42));
+    }
+    
+    public function testValiderAcquisitionStillReturnsTrueWhenAcquisitionNotFound(): void
+    {
+        $ligneManager = $this->makeAcquisitionLigneManagerMock();
+        $ligneManager->method('findByAcquisition')->willReturn([
+            ['id' => 10, 'equipements_generes' => 0],
+        ]);
+        $ligneManager->method('findId')->willReturn($this->makeLigneFixture());
+        $ligneManager->method('save');
+        
+        $acquisitionManager = $this->makeAcquisitionManagerMock();
+        // 1er appel : dans create_equipement_process() → acquisition trouvée
+        // 2e appel  : dans validerAcquisition()    → null → pas de save
+        $acquisitionManager->method('findId')
+        ->willReturnOnConsecutiveCalls(
+            ['id' => 42, 'facture_date' => '2025-01-15'],
+            null,
+        );
+        $acquisitionManager->expects(self::never())->method('save');
+        
+        $categorieManager = $this->makeCategorieManagerMock();
+        $categorieManager->method('findId')->willReturn(['id' => 3, 'est_epi' => 1]);
+        
+        $equipementManager = $this->makeEquipementManagerMock();
+        $equipementManager->method('codeExists')->willReturn(false);
+        
+        $process = $this->makeProcessWith(
+        acquisitionManager: $acquisitionManager,
+        acquisitionLigneManager: $ligneManager,
+        categorieManager: $categorieManager,
+        equipementManager: $equipementManager,
+        );
+        
+    self::assertTrue($process->validerAcquisition(42));
+    }
 
     // ==================================================================
     // Helpers
