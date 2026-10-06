@@ -10,6 +10,63 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [0.17.16] — 2026-10-06
+
+### Changed
+
+- **AcquisitionController** : extraction de 6 factories `protected`
+pour les managers et le process (Vague 8 du chantier
+« injection de dépendances ») :
+- `acquisitionManager()`
+- `acquisitionLigneManager()`
+- `fournisseurManager()`
+- `categorieManager()`
+- `equipementManager()`
+- `acquisitionProcess()`
+- Tous les `new XxxManager()` / `new AcquisitionProcess()` en dur
+dans les handlers et méthodes publiques (`list`, `create`,
+`update`, `show`, `valider`, `delete`,
+`handleCreateAction`, `handleUpdateAction`,
+`handleAddLigneAction`, `handleDeleteAction`) sont remplacés
+par des appels à ces factories.
+- Objectif : rendre ces dépendances **mockables** en test unitaire
+et supprimer les connexions PDO déclenchées par
+`AbstractManager::__construct()` lors de l'exécution des
+handlers.
+
+- Aucun changement de comportement observable : routes, templates,
+flux HTTP et logique métier inchangés.
+
+### Added
+
+- **`TestableAcquisitionController`** accepte désormais 9 paramètres
+(Session, FactureUploader, Validator, 5 managers, AcquisitionProcess)
+et surcharge les 8 factories correspondantes.
+
+- **`TestableAcquisitionControllerBuilder`** :
+nouveau builder de test qui masque la complexité du constructeur
+et fournit des mocks silencieux par défaut.
+Utilise `MockBuilder` directement car `createMock()` est `protected`
+en PHPUnit 11.
+
+- **15 nouveaux tests Unit** sur les handlers, couvrant les scénarios
+jusqu'ici bloqués par l'ouverture PDO :
+- `handleCreateAction` : upload OK, BAD_MIME, TOO_LARGE,
+référence dupliquée, process qui throw, process qui retourne 0.
+- `handleUpdateAction` : upload OK + suppression ancienne facture,
+upload KO + ancienne préservée, échec `save()`, référence
+dupliquée d'une autre acquisition.
+- `handleAddLigneAction` : redirect sur succès,
+`DuplicateReferenceException`.
+- `handleDeleteAction` : brouillon OK (lignes + acquisition),
+échec `delete()` (flash erreur), refus si équipements générés.
+
+### Tests
+
+- Unit : 55 → 70 tests (+15), 196 assertions.
+- Integration : 88 tests (inchangés), 165 assertions.
+- **Total : 158 tests verts** (70 Unit + 88 Integration).
+
 ## [0.17.15] — 2026-10-04
 
 ### Changed
