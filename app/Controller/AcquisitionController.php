@@ -228,7 +228,7 @@ class AcquisitionController extends AbstractController
         if ($factureReference === '') {
             $formErrors['facture_reference'] = 'La référence de facture est obligatoire.';
         } else {
-            $acquisitionManager = new AcquisitionManager();
+            $acquisitionManager = $this->acquisitionManager();
             if ($acquisitionManager->findOneByCriteria(['facture_reference' => $factureReference])) {
                 $formErrors['facture_reference'] = 'Cette référence de facture existe déjà. Merci d\'en choisir une autre.';
             }
@@ -254,7 +254,7 @@ class AcquisitionController extends AbstractController
             return new HandlerResult(null, $acquisition, $formErrors);
         }
         
-        $acquisitionProcess = new AcquisitionProcess();
+        $acquisitionProcess = $this->acquisitionProcess();
         try {
             if ($id = $acquisitionProcess->acquisition_process($acquisition)) {
                 $acquisition['id'] = $id;
@@ -384,8 +384,8 @@ class AcquisitionController extends AbstractController
         Request $request,
         array $acquisition,
     ): HandlerResult {
-        $acquisitionManager = new AcquisitionManager();
-        $fournisseurManager = new FournisseurManager();
+        $acquisitionManager = $this->acquisitionManager();
+        $fournisseurManager = $this->fournisseurManager();
         
         $fournisseurNom = trim((string) $request->request->get('fournisseur_nom', ''));
         $factureReference = trim((string) $request->request->get('facture_reference', ''));
@@ -477,7 +477,7 @@ class AcquisitionController extends AbstractController
         Request $request,
         array $acquisition,
     ): HandlerResult {
-        $acquisitionLigneManager = new AcquisitionLigneManager();
+        $acquisitionLigneManager = $this->acquisitionLigneManager();
         
         // [SÉCURITÉ] Whitelist des champs — empêche l'injection de clés
         // arbitraires (id, acquisition_id, equipements_generes) via POST forgé.
@@ -513,7 +513,7 @@ class AcquisitionController extends AbstractController
         }
         
         try {
-            $acquisitionProcess = new AcquisitionProcess();
+            $acquisitionProcess = $this->acquisitionProcess();
             $ligne['categorie_id'] = $acquisitionProcess->categorie_process($ligne);
             $ligne['acquisition_id'] = $acquisition['id'];
             $ligne['equipements_generes'] = 0;
@@ -605,7 +605,7 @@ class AcquisitionController extends AbstractController
         }
         
         // [SÉCURITÉ] Refuser si une ligne a déjà généré des équipements
-        $acquisitionLigneManager = new AcquisitionLigneManager();
+        $acquisitionLigneManager = $this->acquisitionLigneManager();
         $lignes = $acquisitionLigneManager->findByAcquisition($id);
         foreach ($lignes as $ligne) {
             if ($ligne['equipements_generes'] == 1) {
@@ -631,7 +631,7 @@ class AcquisitionController extends AbstractController
             }
             
             // Puis l'acquisition
-            $acquisitionManager = new AcquisitionManager();
+            $acquisitionManager = $this->acquisitionManager();
             $acquisitionManager->delete($id);
             
             $this->session->getFlashBag()->add('success', "L'acquisition #{$id} a été supprimée.");
