@@ -10,10 +10,45 @@ use Epiclub\Domain\EquipementManager;
 
 class AcquisitionProcess
 {
+    
+    // ==================================================================
+    // [REFACTOR VAGUE 9] Factories managers — mockables en test Unit.
+    //
+    // Chaque méthode retourne une nouvelle instance concrète.
+    // Les sous-classes de test (TestableAcquisitionProcess) surchargent
+    // ces factories pour injecter des mocks et éviter l'ouverture PDO
+    // déclenchée par AbstractManager::__construct().
+    // ==================================================================
+    
+    protected function acquisitionManager(): AcquisitionManager
+    {
+        return new AcquisitionManager();
+    }
+    
+    protected function acquisitionLigneManager(): AcquisitionLigneManager
+    {
+        return new AcquisitionLigneManager();
+    }
+    
+    protected function fournisseurManager(): FournisseurManager
+    {
+        return new FournisseurManager();
+    }
+    
+    protected function categorieManager(): CategorieManager
+    {
+        return new CategorieManager();
+    }
+    
+    protected function equipementManager(): EquipementManager
+    {
+        return new EquipementManager();
+    }
+    
     public function acquisition_process($acquisition)
     {
-        $acquisitionManager = new AcquisitionManager();
-        $fournisseurManager = new FournisseurManager();
+        $acquisitionManager = $this->acquisitionManager();
+        $fournisseurManager = $this->fournisseurManager();
 
         // ✅ S'assurer que toutes les clés existent avec des valeurs par défaut
         $defaults = [
@@ -41,7 +76,7 @@ class AcquisitionProcess
 
     public function categorie_process(array $ligne)
     {
-        $categorieManager = new CategorieManager();
+        $categorieManager = $this->categorieManager();
 
         if ($categorie = $categorieManager->findOneByCriteria(['libelle' => $ligne['categorie_libelle']])) {
             $categorie_id = $categorie['id'];
@@ -60,9 +95,9 @@ class AcquisitionProcess
 
     public function create_equipement_process(int $ligne_id)
     {
-        $acquisitionLigneManager = new AcquisitionLigneManager();
-        $acquisitionManager = new AcquisitionManager();
-        $categorieManager = new CategorieManager();
+        $acquisitionLigneManager = $this->acquisitionLigneManager();
+        $acquisitionManager = $this->acquisitionManager();
+        $categorieManager = $this->categorieManager();
         
         if ($ligne = $acquisitionLigneManager->findId($ligne_id)) {
             if ($ligne['equipements_generes'] === 1) {
@@ -71,7 +106,7 @@ class AcquisitionProcess
             
             $acquisition = $acquisitionManager->findId($ligne['acquisition_id']);
             $annee = date('Y', strtotime($acquisition['facture_date']));
-            $equipementManager = new EquipementManager();
+            $equipementManager = $this->equipementManager();
             
             $categorie = $categorieManager->findId($ligne['categorie_id']);
             $est_epi = $categorie ? $categorie['est_epi'] : 1;
@@ -140,7 +175,7 @@ class AcquisitionProcess
     
     public function validerAcquisition(int $acquisitionId): bool
     {
-        $acquisitionLigneManager = new AcquisitionLigneManager();
+        $acquisitionLigneManager = $this->acquisitionLigneManager();
         $lignes = $acquisitionLigneManager->findByAcquisition($acquisitionId);
         
         $lignesNonGenerees = array_filter($lignes, function($ligne) {
@@ -160,7 +195,7 @@ class AcquisitionProcess
             $acquisitionLigneManager->save($ligne);
         }
         
-        $acquisitionManager = new AcquisitionManager();
+        $acquisitionManager = $this->acquisitionManager();
         $acquisition = $acquisitionManager->findId($acquisitionId);
         if ($acquisition) {
             $acquisition['est_validee'] = 1;
