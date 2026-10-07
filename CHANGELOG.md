@@ -10,6 +10,82 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [0.17.22] — 2026-10-07
+
+### Fixed
+
+- **CategorieController** : validation des champs dans `edit()`
+(issue #48). Suppression du `/** @todo Need validation here */`.
+- `libelle` était accepté vide et persisté tel quel.
+Fix : `trim()` + rejet si vide (flash `form_errors['libelle']`).
+- `libelle` pouvait dépasser 32 caractères (colonne `varchar(32)`).
+Fix : `mb_substr($libelle, 0, 32)` — `mb_substr()` et non `substr()`
+pour ne pas couper un caractère UTF-8 en deux.
+- `description` n'était pas bornée (colonne `TEXT`, 65535 octets).
+Fix : troncature à `self::DESCRIPTION_MAX_LENGTH` (2000).
+
+- **CategorieController** : nettoyage du nom de fichier image
+(issue #48).
+- `pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME)`
+seul pouvait produire un nom vide (`../../.jpg` → `''`) ou
+conserver des caractères non désirables (`<`, `>`, unicode, …).
+Fix : `sanitizeUploadedFilename()` (`protected`, testable) qui
+applique `basename()` + regex `[^a-zA-Z0-9_-]` + `mb_substr(100)`
++ fallback `'image'` si le nom est vidé.
+
+- **`categorie_form.twig`** : affichage des erreurs de validation
+(issue #48).
+- Le template n'affichait **aucune** `form_errors`, rendant les
+rejets silencieux côté utilisateur.
+Fix : alerte générale en tête de formulaire + `invalid-feedback`
+sous les champs `libelle` et `image`.
+
+### Added
+
+- **Tests Unit** sur `CategorieController::edit()` :
+- `testEditRejectsEmptyLibelle`, `testEditRejectsWhitespaceOnlyLibelle` :
+rejet + pas de `save()`.
+- `testEditTruncatesLongLibelle`, `testEditTruncatesLongDescription` :
+troncature effective.
+- `testEditAcceptsValidLibelle` : cas nominal.
+- `testSanitizeUploadedFilename` (13 datasets) : traversal
+(`../../evil.jpg`, `/etc/passwd/secret.jpg`), dotfiles
+(`.htaccess`), ponctuation seule (`...`), caractères spéciaux,
+unicode, accents, longueur extrême.
+
+### Changed
+
+- **CategorieController** : extraction d'une factory `protected`
+pour le manager interne (Vague 11 du chantier « injection de
+dépendances », issue #48) :
+- `categorieManager()`
+- Objectif : rendre cette dépendance **mockable** en test unitaire
+et supprimer les connexions PDO déclenchées par
+`AbstractManager::__construct()`.
+
+- Extraction de `sanitizeUploadedFilename()` en méthode `protected`
+(pure, string → string) pour la rendre testable sans monter un
+`UploadedFile` réel ni écrire sur le disque.
+
+- Aucun changement de comportement observable hors fix #48 :
+routes, managers et logique métier inchangés.
+
+### Tests
+
+- Unit : 121 → 139 tests (+18), 371 → 402 assertions (+31).
+- Integration : 88 tests (inchangés), 165 assertions.
+- **Total : 227 tests verts** (139 Unit + 88 Integration).
+
+### Added (tests)
+
+- **`TestableCategorieController`** : sous-classe de test qui
+injecte un `CategorieManager` mocké, surcharge la factory
+`categorieManager()` et expose `sanitizeUploadedFilename()` en
+`public` pour la tester en isolation.
+- **`TestableCategorieControllerBuilder`** : builder de test qui
+masque la complexité du constructeur. Utilise `MockBuilder`
+directement car `createMock()` est `protected` en PHPUnit 11.
+
 ## [0.17.21] — 2026-10-07
 
 ### Security
