@@ -10,6 +10,92 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [0.17.20] — 2026-10-07
+
+### Fixed
+
+- **ControleController** : whitelist stricte du statut dans
+`updateLigne()` (issue #35).
+- Le statut soumis via POST était assigné tel quel à
+`$ligne['statut']` puis passé à `ControleLigneManager::save()`.
+- Un POST forgé avec une valeur arbitraire (`'hacked'`) était
+silencieusement tronqué par MySQL (ENUM) en chaîne vide,
+produisant un état incohérent jamais matché par le `switch`
+de `cloturer()`.
+- Fix : validation via `ControleLigneStatut::tryFrom()`. Si la
+valeur est invalide, on log et on redirige avec un flash
+d'erreur, sans appeler `save()`.
+
+- **ControleController** : `switch` exhaustif dans `cloturer()`
+(issue #35).
+- Le `switch` sur `$ligne['statut']` avait un `default: break`
+silencieux. Une valeur BDD hors enum (héritage, corruption,
+futur ajout non géré ici) laissait l'équipement avec
+`controle_en_cours=0` mais `statut` inchangé — sans aucune
+trace.
+- Fix : `match()` exhaustif sur `ControleLigneStatut`. Les 4
+cases sont couvertes explicitement. Une valeur hors enum est
+loggée et traitée en `continue` (libération de l'équipement
+sans toucher au statut).
+
+### Added
+
+- **`Epiclub\Enum\ControleLigneStatut`** : enum PHP 8.1 pour les
+4 statuts de `controle_ligne`
+(cf. `migrations/001_initial.sql`) :
+- `a_controler`
+- `controle_ok`
+- `controle_ko`
+- `hors_service`
+- Expose `label()` (libellé humain) et `isTerminal()`.
+
+### Changed
+
+- **ControleController** : extraction de 4 factories `protected`
+pour les managers internes (Vague 11 du chantier
+« injection de dépendances », issue #35) :
+- `controleManager()`
+- `controleLigneManager()`
+- `equipementManager()`
+- `utilisateurManager()`
+- Tous les `new XxxManager()` en dur dans les méthodes publiques
+(`list`, `create`, `edit`, `addEquipement`, `updateLigne`,
+`cloturer`, `delete`, `isUserOnline`) sont remplacés par des
+appels à ces factories.
+- Objectif : rendre ces dépendances **mockables** en test
+unitaire et supprimer les connexions PDO déclenchées par
+`AbstractManager::__construct()`.
+
+- Aucun changement de comportement observable hors fix #35 :
+routes, templates, flux HTTP et logique métier inchangés.
+
+### Tests
+
+- Unit : 103 → 115 tests (+12), 350 assertions.
+- Integration : 88 tests (inchangés), 165 assertions.
+- **Total : 203 tests verts** (115 Unit + 88 Integration).
+
+### Added (tests)
+
+- **`TestableControleController`** : sous-classe de test qui
+injecte 4 managers mockés et surcharge les factories
+correspondantes.
+- **`TestableControleControllerBuilder`** : builder de test qui
+masque la complexité du constructeur et fournit des mocks
+silencieux par défaut.
+- **12 nouveaux tests Unit** :
+- `ControleLigneStatutTest` (5 tests) : intégrité des 4 cases,
+`tryFrom()` valide et invalide, `label()`, `isTerminal()`.
+- `ControleControllerHandlersTest` (7 tests) :
+- `updateLigne` : statut invalide (rejet + pas de save),
+statut valide (save avec la bonne valeur), statut vide
+(rejet + pas de save).
+- `cloturer` : statut hors enum (log + statut inchangé +
+libération), mapping des 3 statuts valides
+(`hors_service→2`, `controle_ko→1`, `controle_ok→0`)
+via dataProvider.
+
+
 ## [0.17.19] — 2026-10-06
 
 ### Fixed
