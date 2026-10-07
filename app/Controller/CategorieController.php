@@ -26,6 +26,27 @@ class CategorieController extends AbstractController
     {
         return new CategorieManager();
     }
+    
+    /**
+    * [SÉCURITÉ] Nettoie le nom de fichier uploadé avant écriture disque.
+    *
+    * - basename() : retire tout chemin résiduel
+    * - pathinfo(PATHINFO_FILENAME) : retire l'extension
+    * - regex [^a-zA-Z0-9_-] : ne garde que l'alphanumérique ASCII + tirets
+    * - mb_substr(..., 0, 100) : borne la longueur (limite FS safe)
+    * - fallback 'image' : évite un nom vide (ex. '../../.jpg' → '')
+    *
+    * @param string $originalName Nom brut fourni par le client
+    * @return string Fragment de nom de fichier utilisable (sans extension)
+    */
+    protected function sanitizeUploadedFilename(string $originalName): string
+    {
+        $name = pathinfo(basename($originalName), PATHINFO_FILENAME);
+        $name = preg_replace('/[^a-zA-Z0-9_-]/', '', $name);
+        $name = mb_substr((string) $name, 0, 100);
+        
+        return $name === '' ? 'image' : $name;
+    }
 
     public function list(Request $request)
     {
@@ -116,8 +137,8 @@ class CategorieController extends AbstractController
                 );
                 
                 if ($image = $request->files->get('image')) {
-                    $originalFilename = pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME);
-                    $newFilename = $originalFilename . '-' . uniqid() . '.' . $image->guessExtension();
+                    $sanitized = $this->sanitizeUploadedFilename($image->getClientOriginalName());
+                    $newFilename = $sanitized . '-' . uniqid() . '.' . $image->guessExtension();
                     try {
                         $image->move(__DIR__ . self::IMAGE_DIR, $newFilename);
 

@@ -21,4 +21,9 @@ final class TestableCategorieController extends CategorieController
     {
         return $this->categorieManager;
     }
+    
+    public function sanitizeUploadedFilename(string $originalName): string
+    {
+        return parent::sanitizeUploadedFilename($originalName);
+    }
 }

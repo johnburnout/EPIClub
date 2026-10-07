@@ -163,6 +163,41 @@ final class CategorieControllerHandlersTest extends TestCase
         self::assertInstanceOf(RedirectResponse::class, $response);
         self::assertSame('/admin/categories', $response->headers->get('Location'));
     }
+    
+    // ==================================================================
+    // sanitizeUploadedFilename — nettoyage du nom de fichier (commit 2)
+    // ==================================================================
+    
+    /**
+    * @return array<string, array{0:string, 1:string}>
+    */
+    public static function filenameSanitizeProvider(): array
+    {
+        return [
+            'nom simple'                 => ['photo.jpg',              'photo'],
+            'chemin traversant'          => ['../../evil.jpg',         'evil'],
+            'chemin traversant profond'  => ['/etc/passwd/secret.jpg', 'secret'],
+            // .htaccess : pathinfo('.htaccess', PATHINFO_FILENAME) = '' → fallback 'image'
+            'fichier caché'              => ['.htaccess',              'image'],
+            'nom vide'                   => ['',                       'image'],
+            'nom uniquement ponctuation' => ['...',                    'image'],
+            'caractères spéciaux'        => ['a<b>c|d.jpg',            'abcd'],
+            'unicode'                    => ['中文.jpg',                'image'],
+            'espaces'                    => ['   photo   .jpg',        'photo'],
+            'accents'                    => ['éphémère.jpg',           'phmre'],
+            'tirets et underscores'      => ['my_file-2024.jpg',       'my_file-2024'],
+            'nom très long'              => [str_repeat('a', 200) . '.jpg', str_repeat('a', 100)],
+            'chemin + nom très long'     => ['../../' . str_repeat('b', 300) . '.jpg', str_repeat('b', 100)],
+        ];
+    }
+    
+    #[DataProvider('filenameSanitizeProvider')]
+    public function testSanitizeUploadedFilename(string $input, string $expected): void
+    {
+        $controller = $this->makeControllerWith();
+        
+    self::assertSame($expected, $controller->sanitizeUploadedFilename($input));
+    }
 
     // ==================================================================
     // Helpers
