@@ -12,11 +12,25 @@ class CategorieController extends AbstractController
 {
     private const IMAGE_DIR = '/../../public/images/';
 
+    // ==================================================================
+    // [REFACTOR VAGUE 11] Factory manager — mockable en test Unit.
+    //
+    // Retourne une nouvelle instance concrète. Les sous-classes de test
+    // (TestableCategorieController) surchargent cette factory pour
+    // injecter un mock et éviter l'ouverture PDO déclenchée par
+    // AbstractManager::__construct().
+    // ==================================================================
+
+    protected function categorieManager(): CategorieManager
+    {
+        return new CategorieManager();
+    }
+
     public function list(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
 
-        $categorieManager = new CategorieManager();
+        $categorieManager = $this->categorieManager();
         $categories = $categorieManager->findAll();
 
         return $this->render('categorie_list.twig', [
@@ -34,7 +48,7 @@ class CategorieController extends AbstractController
             return new RedirectResponse('/admin/categories');
         }
 
-        $categorieManager = new CategorieManager();
+        $categorieManager = $this->categorieManager();
         $categorie = $categorieManager->findId($id);
 
         if (!$categorie) {
@@ -51,7 +65,7 @@ class CategorieController extends AbstractController
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
 
-        $categorieManager = new CategorieManager();
+        $categorieManager = $this->categorieManager();
 
         $categorie = [];
         $form_errors = [];
@@ -135,7 +149,7 @@ class CategorieController extends AbstractController
             return new RedirectResponse('/admin/categories');
         }
 
-        $categorieManager = new CategorieManager();
+        $categorieManager = $this->categorieManager();
         $categorie = $categorieManager->findId($id);
 
         if (!$categorie) {
