@@ -5,9 +5,8 @@ namespace Epiclub\Controller;
 use Epiclub\Domain\CategorieManager;
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\EmplacementManager;
-use Epiclub\Domain\AcquisitionManager;  // AJOUT
-use Epiclub\Enum\EquipementEtats;
-use Epiclub\Enum\EquipementStatuts;
+use Epiclub\Domain\AcquisitionManager;
+use Epiclub\Enum\EquipementStatut;
 use Epiclub\Engine\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -379,9 +378,35 @@ class EquipementController extends AbstractController
             }
             
             if (empty($form_errors)) {
+                // [SÉCURITÉ] Whitelist stricte du statut (ENUM BDD 0/1/2).
+                // Empêche un POST forgé de pousser une valeur arbitraire.
+                // ⚠️ On exige une string numérique stricte AVANT le cast :
+                // (int)'hacked' === 0 et (int)'' === 0, ce qui laisserait
+                // passer des valeurs invalides comme DISPONIBLE.
+                $statutRaw = $request->request->get('statut');
+                if (!is_string($statutRaw) || !ctype_digit($statutRaw)) {
+                    error_log(sprintf(
+                        '[EquipementController] Invalid statut submitted for equipement id=%s: %s',
+                        $id ?? 'new',
+                        is_scalar($statutRaw) ? substr((string) $statutRaw, 0, 50) : gettype($statutRaw)
+                    ));
+                    $this->session->getFlashBag()->add('error', 'Statut invalide.');
+                    return $this->redirectTo('/equipements');
+                }
+                
+                $statutEnum = EquipementStatut::tryFrom((int) $statutRaw);
+                if ($statutEnum === null) {
+                    error_log(sprintf(
+                        '[EquipementController] Invalid statut submitted for equipement id=%s: %s',
+                        $id ?? 'new',
+                        $statutRaw
+                    ));
+                    $this->session->getFlashBag()->add('error', 'Statut invalide.');
+                    return $this->redirectTo('/equipements');
+                }
+                
                 $equipementData = [
-                    'statut_id' => $request->request->get('statut_id'),
-                    'etat_usure_id' => $request->request->get('etat_usure_id'),
+                    'statut' => $statutEnum->value,
                     'emplacement_id' => $emplacement_id,
                     'remarques' => $request->request->get('remarques'),
                     'date_mise_en_service' => $date_mise_en_service,
@@ -407,8 +432,7 @@ class EquipementController extends AbstractController
         return $this->render('equipement_form.twig', [
             'categories' => $categorieManager->findAll(),
             'emplacements' => $emplacementManager->findAll(),
-            'equipement_statuts' => EquipementStatuts::forSelect(),
-            'equipement_etats' => EquipementEtats::forSelect(),
+            'equipement_statuts' => EquipementStatut::forSelect(),
             'equipement' => $equipement,
             'form_errors' => $form_errors
         ]);

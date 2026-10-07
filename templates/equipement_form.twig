@@ -108,20 +108,10 @@
 
 		<!-- Statut (modifiable) -->
 		<div class="mb-3">
-			<label for="statut_id">Statut</label>
-			<select class="form-select" name="statut_id" id="statut_id">
+			<label for="statut">Statut</label>
+			<select class="form-select" name="statut" id="statut">
 				{% for name, value in equipement_statuts %}
-					<option value="{{ value }}" {% if equipement.statut_id == value %}selected{% endif %}>{{ name }}</option>
-				{% endfor %}
-			</select>
-		</div>
-
-		<!-- État d'usure (modifiable) -->
-		<div class="mb-3">
-			<label for="etat_usure_id">État d'usure</label>
-			<select class="form-select" name="etat_usure_id" id="etat_usure_id">
-				{% for name, value in equipement_etats %}
-					<option value="{{ value }}" {% if equipement.etat_usure_id == value %}selected{% endif %}>{{ name }}</option>
+				<option value="{{ value }}" {% if equipement.statut == value %}selected{% endif %}>{{ name }}</option>
 				{% endfor %}
 			</select>
 		</div>
