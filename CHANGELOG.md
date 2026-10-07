@@ -10,6 +10,97 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [0.17.21] — 2026-10-07
+
+### Security
+
+- **EquipementController** : whitelist stricte du statut dans `edit()`
+(issue #47).
+- Le statut soumis via POST était assigné tel quel à
+`$equipement['statut_id']` puis passé à `EquipementManager::save()`.
+Or `_patch()` filtre les colonnes inconnues : `statut_id` n'existe
+pas dans `$allowedFields`, donc **la colonne `statut` n'était jamais
+mise à jour**. Le formulaire affichait un `<select>` fonctionnel,
+mais le choix de l'utilisateur était silencieusement perdu.
+- Un POST forgé (`statut='hacked'`, `''`, `'3'`) tombait
+silencieusement sur `0` (Disponible) via le cast PHP `(int)`,
+ou était tronqué côté BDD — sans trace.
+- Fix : validation stricte via `ctype_digit()` puis
+`EquipementStatut::tryFrom()`. Si la valeur est invalide, on log
+et on redirige avec un flash d'erreur, sans appeler `save()`.
+- Renommage du champ POST : `statut_id` → `statut`, aligné sur la
+colonne BDD `club_equipement.statut`.
+
+### Fixed
+
+- **EquipementController** : suppression du champ `etat_usure_id`
+du formulaire d'édition (issue #47).
+- Colonne fantôme : aucune trace dans `club_equipement` ni dans
+`EquipementManager::_patch()`. Le champ était affiché et sa valeur
+ignorée. Retiré du template `equipement_form.twig` et du
+`render()` de `edit()`.
+- L'enum `EquipementEtats` est conservée en l'état (dette
+documentée, non utilisée après ce fix).
+
+### Added
+
+- **`Epiclub\Enum\EquipementStatut`** : enum `int` pour les
+3 statuts métier de `club_equipement.statut`
+(`TINYINT`, cf. `migrations/001_initial.sql`) :
+- `DISPONIBLE = 0`
+- `EN_MAINTENANCE = 1`
+- `HORS_SERVICE = 2`
+- Expose `label()` (libellé humain) et `forSelect()`
+(compatible Twig `for name, value in …`).
+- ⚠️ Ne pas confondre avec `EquipementStatuts` (pluriel, `string`,
+`'Libre'/'Assigné'/'Réservé'/'En controle'`) : cette dernière est
+une enum **legacy** dont les valeurs ne correspondent pas à la
+colonne BDD. Conservée en l'état, plus utilisée par le code après
+ce fix.
+
+### Changed
+
+- **EquipementController** : extraction de 4 factories `protected`
+pour les managers internes (Vague 11 du chantier
+« injection de dépendances », issue #47) :
+- `equipementManager()`
+- `categorieManager()`
+- `emplacementManager()`
+- `acquisitionManager()`
+- Tous les `new XxxManager()` en dur dans les méthodes publiques
+(`list`, `getFilteredEquipments`, `show`, `edit`, `delete`,
+`pdf`, `renderPdfListHtml`) sont remplacés par des appels à ces
+factories.
+- Objectif : rendre ces dépendances **mockables** en test unitaire
+et supprimer les connexions PDO déclenchées par
+`AbstractManager::__construct()`.
+
+- Aucun changement de comportement observable hors fix #47 :
+routes, templates, flux HTTP et logique métier inchangés.
+
+### Tests
+
+- Unit : 115 → 121 tests (+6), 350 → 371 assertions (+21).
+- Integration : 88 tests (inchangés), 165 assertions.
+- **Total : 209 tests verts** (121 Unit + 88 Integration).
+
+### Added (tests)
+
+- **`TestableEquipementController`** : sous-classe de test qui
+injecte 4 managers mockés et surcharge les factories
+correspondantes.
+- **`TestableEquipementControllerBuilder`** : builder de test
+qui masque la complexité du constructeur et fournit des mocks
+silencieux par défaut. Utilise `MockBuilder` directement car
+`createMock()` est `protected` en PHPUnit 11.
+
+- **6 nouveaux tests Unit** sur `EquipementController::edit()` :
+- Rejet `'hacked'` (non numérique) → pas de `save()` + redirect.
+- Rejet `''` (vide) → pas de `save()` + redirect.
+- Rejet `'3'` (hors enum) → pas de `save()` + redirect.
+- Acceptation `'0'`, `'1'`, `'2'` via dataProvider
+(3 tests) → `save()` appelé avec `statut === int` attendu.s
+
 ## [0.17.20] — 2026-10-07
 
 ### Fixed
