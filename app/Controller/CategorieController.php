@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 class CategorieController extends AbstractController
 {
     private const IMAGE_DIR = '/../../public/images/';
+    private const DESCRIPTION_MAX_LENGTH = 2000;
 
     // ==================================================================
     // [REFACTOR VAGUE 11] Factory manager — mockable en test Unit.
@@ -85,17 +86,35 @@ class CategorieController extends AbstractController
             // [SÉCURITÉ] Vérification CSRF avant tout traitement (y compris upload)
             $this->validateCsrf($request);
 
-            /** @todo Need validation here */
+            // [SÉCURITÉ] Validation + troncature des champs texte.
+            // - libelle : obligatoire après trim(), max 32 (varchar(32))
+            // - description : max DESCRIPTION_MAX_LENGTH (TEXT en BDD)
+            // mb_substr() et non substr() pour ne pas couper un caractère
+            // UTF-8 en deux (é = 2 octets).
+            $libelleRaw = $request->request->get('libelle');
+            $libelle = is_string($libelleRaw) ? trim($libelleRaw) : '';
+            
+            if ($libelle === '') {
+                $form_errors['libelle'] = 'Le libellé est obligatoire.';
+            } else {
+                $libelle = mb_substr($libelle, 0, 32);
+            }
+            
+            $descriptionRaw = $request->request->get('description');
+            $description = is_string($descriptionRaw)
+            ? mb_substr($descriptionRaw, 0, self::DESCRIPTION_MAX_LENGTH)
+            : null;
+            
             if (empty($form_errors)) {
                 $categorie = array_merge(
                     $categorie,
                     [
-                        'libelle' => $request->request->get('libelle'),
+                        'libelle' => $libelle,
                         'est_epi' => $request->request->has('est_epi') ? 1 : 0,
-                        'description' => $request->request->get('description'),
+                        'description' => $description,
                     ]
                 );
-
+                
                 if ($image = $request->files->get('image')) {
                     $originalFilename = pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME);
                     $newFilename = $originalFilename . '-' . uniqid() . '.' . $image->guessExtension();

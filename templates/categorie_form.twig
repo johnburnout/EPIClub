@@ -5,11 +5,30 @@
 	<h3>{% if categorie.id %}Modifier{% else %}Nouvelle{% endif %} catégorie</h3>
 	<hr>
 
+	{# Affichage des erreurs de validation #}
+	{% if form_errors is defined and form_errors %}
+		{% for key, message in form_errors %}
+			<div class="alert alert-danger">
+				<i class="fas fa-exclamation-triangle"></i> {{ message }}
+			</div>
+		{% endfor %}
+	{% endif %}
+
 	<form method="post" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
 		<div class="mb-3">
 			<label for="libelle">Libellé * :</label>
-			<input type="text" id="libelle" name="libelle" value="{{ categorie.libelle }}" class="form-control">
+			<input type="text"
+			       id="libelle"
+			       name="libelle"
+			       value="{{ categorie.libelle }}"
+			       class="form-control{% if form_errors.libelle is defined and form_errors.libelle %} is-invalid{% endif %}"
+			       maxlength="32"
+			       required>
+			{% if form_errors.libelle is defined and form_errors.libelle %}
+				<div class="invalid-feedback d-block">{{ form_errors.libelle }}</div>
+			{% endif %}
 		</div>
 
 		<div class="mb-3">
@@ -24,7 +43,13 @@
 
 		<div class="mb-3">
 			<label for="image">Image :</label>
-			<input type="file" id="image" name="image" class="form-control">
+			<input type="file"
+			       id="image"
+			       name="image"
+			       class="form-control{% if form_errors.image is defined and form_errors.image %} is-invalid{% endif %}">
+			{% if form_errors.image is defined and form_errors.image %}
+				<div class="invalid-feedback d-block">{{ form_errors.image }}</div>
+			{% endif %}
 			{% if categorie.image %}
 				<small class="form-text text-muted">Image actuelle : {{ categorie.image }}</small>
 			{% endif %}
