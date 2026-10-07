@@ -27,6 +27,35 @@ class EquipementController extends AbstractController
 {
     private const UPLOAD_DIR = '/images/equipements/';
     
+    // ==================================================================
+    // [REFACTOR VAGUE 11] Factories managers — mockables en test Unit.
+    //
+    // Chaque méthode retourne une nouvelle instance concrète.
+    // Les sous-classes de test (TestableEquipementController) surchargent
+    // ces factories pour injecter des mocks et éviter l'ouverture PDO
+    // déclenchée par AbstractManager::__construct().
+    // ==================================================================
+    
+    protected function equipementManager(): EquipementManager
+    {
+        return new EquipementManager();
+    }
+    
+    protected function categorieManager(): CategorieManager
+    {
+        return new CategorieManager();
+    }
+    
+    protected function emplacementManager(): EmplacementManager
+    {
+        return new EmplacementManager();
+    }
+    
+    protected function acquisitionManager(): AcquisitionManager
+    {
+        return new AcquisitionManager();
+    }
+    
     // --------------------------------------------------------------
     // LISTE (avec pagination et filtres)
     // --------------------------------------------------------------
@@ -97,8 +126,8 @@ class EquipementController extends AbstractController
         ];
 
         // Chargement des catégories et emplacements pour le formulaire de filtre
-        $categorieManager = new CategorieManager();
-        $emplacementManager = new EmplacementManager();
+        $categorieManager = $this->categorieManager();
+        $emplacementManager = $this->emplacementManager();
         $categories = $categorieManager->findAll();
         $emplacements = $emplacementManager->findAll();
 
@@ -143,9 +172,9 @@ class EquipementController extends AbstractController
     */
     private function getFilteredEquipments(Request $request): array
     {
-        $equipementManager = new EquipementManager();
-        $categorieManager = new CategorieManager();
-        $emplacementManager = new EmplacementManager();
+        $equipementManager = $this->equipementManager();
+        $categorieManager = $this->categorieManager();
+        $emplacementManager = $this->emplacementManager();
         
         // Récupération des filtres
         $categorie_id = $request->query->get('categorie');
@@ -267,7 +296,7 @@ class EquipementController extends AbstractController
             return $this->redirectTo('/equipements');
         }
         
-        $equipementManager = new EquipementManager();
+        $equipementManager = $this->equipementManager();
         $equipement = $equipementManager->findId($id);
         
         if (!$equipement) {
@@ -275,8 +304,8 @@ class EquipementController extends AbstractController
             return $this->redirectTo('/equipements');
         }
         
-        $categorieManager = new CategorieManager();
-        $emplacementManager = new EmplacementManager();
+        $categorieManager = $this->categorieManager();
+        $emplacementManager = $this->emplacementManager();
         
         if (!empty($equipement['categorie_id'])) {
             $equipement['categorie'] = $categorieManager->findId($equipement['categorie_id']);
@@ -289,7 +318,7 @@ class EquipementController extends AbstractController
         
         $acquisition = null;
         if (!empty($equipement['acquisition_id'])) {
-            $acquisitionManager = new AcquisitionManager();
+            $acquisitionManager = $this->acquisitionManager();
             $acquisition = $acquisitionManager->findId($equipement['acquisition_id']);
         }
         
@@ -307,9 +336,9 @@ class EquipementController extends AbstractController
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
         
-        $categorieManager = new CategorieManager();
-        $emplacementManager = new EmplacementManager();
-        $equipementManager = new EquipementManager();
+        $categorieManager = $this->categorieManager();
+        $emplacementManager = $this->emplacementManager();
+        $equipementManager = $this->equipementManager();
         $equipement = [];
         $form_errors = [];
         
@@ -401,7 +430,7 @@ class EquipementController extends AbstractController
             return $this->redirectTo('/equipements');
         }
         
-        $equipementManager = new EquipementManager();
+        $equipementManager = $this->equipementManager();
         $equipement = $equipementManager->findId($id);
         
         if (!$equipement) {
@@ -458,15 +487,15 @@ class EquipementController extends AbstractController
             return $this->redirectTo('/equipements');
         }
         
-        $equipementManager = new EquipementManager();
+        $equipementManager = $this->equipementManager();
         $equipement = $equipementManager->findId($id);
         if (!$equipement) {
             $this->session->getFlashBag()->add('danger', 'Équipement non trouvé.');
             return $this->redirectTo('/equipements');
         }
         
-        $categorieManager = new CategorieManager();
-        $emplacementManager = new EmplacementManager();
+        $categorieManager = $this->categorieManager();
+        $emplacementManager = $this->emplacementManager();
         if (!empty($equipement['categorie_id'])) {
             $equipement['categorie'] = $categorieManager->findId($equipement['categorie_id']);
         }
@@ -697,7 +726,7 @@ HTML;
         // --- Construction des libellés des filtres ---
         $filtresLabels = [];
         if (!empty($filtres['categorie'])) {
-            $categorieManager = new CategorieManager();
+            $categorieManager = $this->categorieManager();
             $cat = $categorieManager->findId($filtres['categorie']);
             $filtresLabels[] = 'Catégorie : ' . ($cat['libelle'] ?? $filtres['categorie']);
         }
@@ -708,7 +737,7 @@ HTML;
             $filtresLabels[] = 'Statut : ' . ($filtres['en_service'] === 'oui' ? 'En service' : 'Hors service');
         }
         if (!empty($filtres['emplacement'])) {
-            $emplacementManager = new EmplacementManager();
+            $emplacementManager = $this->emplacementManager();
             $emp = $emplacementManager->findId($filtres['emplacement']);
             $filtresLabels[] = 'Emplacement : ' . ($emp['libelle'] ?? $filtres['emplacement']);
         }
