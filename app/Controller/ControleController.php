@@ -9,6 +9,7 @@ use Epiclub\Domain\CategorieManager;
 use Epiclub\Domain\EmplacementManager;
 use Epiclub\Domain\UtilisateurManager;
 use Epiclub\Engine\AbstractController;
+use Epiclub\Enum\ControleLigneStatut;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -668,9 +669,24 @@ class ControleController extends AbstractController
             // [SÉCURITÉ] Vérification CSRF avant mise à jour de la ligne
             $this->validateCsrf($request);
 
+            // [SÉCURITÉ] Whitelist stricte du statut (ENUM MySQL).
+            // Empêche un POST forgé de pousser une valeur arbitraire qui
+            // serait silencieusement tronquée par MySQL (état incohérent).
+            $statutRaw = $request->request->get('statut');
+            $statutEnum = ControleLigneStatut::tryFrom((string) $statutRaw);
+            if ($statutEnum === null) {
+                error_log(sprintf(
+                    '[ControleController] Invalid statut submitted for ligne id=%s: %s',
+                    $ligne_id,
+                    substr((string) $statutRaw, 0, 50)
+                ));
+                $this->session->getFlashBag()->add('error', 'Statut invalide.');
+                return $this->redirectTo("/admin/controles/edit/{$controle['id']}");
+            }
+            
             $ligne['remarque'] = $request->request->get('remarque');
             $ligne['date_controle'] = $request->request->get('date_controle');
-            $ligne['statut'] = $request->request->get('statut');
+            $ligne['statut'] = $statutEnum->value;
             $ligneManager->save($ligne);
 
             // ✅ Mettre à jour le statut de l'équipement : "en contrôle"
