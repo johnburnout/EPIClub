@@ -791,26 +791,47 @@ class ControleController extends AbstractController
         $controleManager->save($controle);
 
         // ✅ Mettre à jour le statut des équipements
+        // [SÉCURITÉ] Validation du statut via l'enum (cf. commit 2).
+        // Évite qu'une valeur BDD hors enum (héritage, corruption, futur
+        // ajout d'un statut non géré ici) ne laisse l'équipement dans un
+        // état incohérent sans trace.
         $equipementManager = $this->equipementManager();
         foreach ($lignes as $ligne) {
             $equipement = $equipementManager->findId($ligne['equipement_id']);
-            if ($equipement) {
-                switch ($ligne['statut']) {
-                    case 'hors_service':
-                        $equipement['statut'] = 2; // Hors service
-                        break;
-                    case 'controle_ko':
-                        $equipement['statut'] = 1; // En maintenance (à adapter)
-                        break;
-                    case 'controle_ok':
-                        $equipement['statut'] = 0; // Disponible
-                        break;
-                    default:
-                        break;
-                }
+            if (!$equipement) {
+                continue;
+            }
+            
+            $statutLigne = ControleLigneStatut::tryFrom((string) $ligne['statut']);
+            
+            if ($statutLigne === null) {
+                // État en BDD hors enum : on log, on libère l'équipement
+                // (controle_en_cours = 0) mais on ne touche pas à son statut.
+                error_log(sprintf(
+                    '[ControleController] Unexpected statut in cloturer() '
+                    . 'for ligne id=%s, equipement id=%s: %s',
+                    $ligne['id'],
+                    $ligne['equipement_id'],
+                    $ligne['statut']
+                ));
                 $equipement['controle_en_cours'] = 0;
                 $equipementManager->save($equipement);
+                continue;
             }
+            
+            match ($statutLigne) {
+            ControleLigneStatut::HORS_SERVICE => $equipement['statut'] = 2,
+            ControleLigneStatut::CONTROLE_KO  => $equipement['statut'] = 1,
+            ControleLigneStatut::CONTROLE_OK  => $equipement['statut'] = 0,
+            ControleLigneStatut::A_CONTROLER  => error_log(sprintf(
+                    '[ControleController] A_CONTROLER leaked through '
+                    . 'cloturer() for ligne id=%s',
+                    $ligne['id']
+                )),
+            };
+            
+            $equipement['controle_en_cours'] = 0;
+            $equipementManager->save($equipement);
         }
 
         // Nettoyage de la session

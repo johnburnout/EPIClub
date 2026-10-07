@@ -14,6 +14,7 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * Tests unitaires des handlers d'ControleController (issue #35).
@@ -174,6 +175,152 @@ final class ControleControllerHandlersTest extends TestCase
             $result->headers->get('Location')
         );
     }
+    
+    // ==================================================================
+    // cloturer — switch exhaustif sur ControleLigneStatut (commit 3)
+    // ==================================================================
+    
+    public function testCloturerLogsUnexpectedStatutAndSkipsEquipementStatut(): void
+    {
+        $controleManager = $this->getMockBuilder(ControleManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $controleManager->method('findId')->willReturn([
+            'id'               => 5,
+            'statut'           => 'ouvert',
+            'controleur_id'    => 42,
+            'date_debut'       => date('Y-m-d H:i:s'),
+            'hash_remarques'   => null,
+        ]);
+        $controleManager->expects(self::once())->method('save');
+        
+        $ligneManager = $this->getMockBuilder(ControleLigneManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $ligneManager->method('findByControle')->willReturn([
+            [
+                'id'            => 10,
+                'controle_id'   => 5,
+                'equipement_id' => 42,
+                'statut'        => 'inconnu',   // ← HORS ENUM
+                'remarque'      => '',
+            ],
+        ]);
+        // Pas de remarque non vide → pas de save de ligne
+        
+        $equipementManager = $this->getMockBuilder(EquipementManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $equipementManager->method('findId')->willReturn([
+            'id'                => 42,
+            'statut'            => 0,           // ← valeur initiale
+            'controle_en_cours' => 1,
+        ]);
+        // ⚠️ statut DOIT rester 0, controle_en_cours DOIT passer à 0
+        $equipementManager->expects(self::once())
+        ->method('save')
+        ->with(self::callback(static function (array $e) {
+            return (int) $e['statut'] === 0
+            && (int) $e['controle_en_cours'] === 0;
+        }));
+        
+        $controller = $this->makeControllerWith(
+        controleManager: $controleManager,
+        controleLigneManager: $ligneManager,
+        equipementManager: $equipementManager,
+        );
+        
+        $request = $this->makePostRequest([
+            'id' => '5',
+        ]);
+        
+        $result = $controller->cloturer($request);
+        
+    self::assertInstanceOf(RedirectResponse::class, $result);
+    self::assertSame(
+            '/admin/controles',
+            $result->headers->get('Location')
+        );
+    }
+    
+    /**
+    * @return array<string, array{0:string, 1:int}>
+    */
+    public static function statutMappingProvider(): array
+    {
+        return [
+            'hors_service → 2' => ['hors_service', 2],
+            'controle_ko → 1'  => ['controle_ko', 1],
+            'controle_ok → 0'  => ['controle_ok', 0],
+        ];
+    }
+    
+    /**
+    * @dataProvider statutMappingProvider
+    */
+    #[DataProvider('statutMappingProvider')]
+    public function testCloturerMapsStatutToEquipementStatut(
+        string $statutLigne,
+        int $expectedEquipementStatut,
+    ): void {
+        $controleManager = $this->getMockBuilder(ControleManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $controleManager->method('findId')->willReturn([
+            'id'               => 5,
+            'statut'           => 'ouvert',
+            'controleur_id'    => 42,
+            'date_debut'       => date('Y-m-d H:i:s'),
+            'hash_remarques'   => null,
+        ]);
+        $controleManager->expects(self::once())->method('save');
+        
+        $ligneManager = $this->getMockBuilder(ControleLigneManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $ligneManager->method('findByControle')->willReturn([
+            [
+                'id'            => 10,
+                'controle_id'   => 5,
+                'equipement_id' => 42,
+                'statut'        => $statutLigne,
+                'remarque'      => '',
+            ],
+        ]);
+        
+        $equipementManager = $this->getMockBuilder(EquipementManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $equipementManager->method('findId')->willReturn([
+            'id'                => 42,
+            'statut'            => 0,
+            'controle_en_cours' => 1,
+        ]);
+        $equipementManager->expects(self::once())
+        ->method('save')
+        ->with(self::callback(static function (array $e) use ($expectedEquipementStatut) {
+            return (int) $e['statut'] === $expectedEquipementStatut
+            && (int) $e['controle_en_cours'] === 0;
+        }));
+        
+        $controller = $this->makeControllerWith(
+        controleManager: $controleManager,
+        controleLigneManager: $ligneManager,
+        equipementManager: $equipementManager,
+        );
+        
+        $request = $this->makePostRequest([
+            'id' => '5',
+        ]);
+        
+        $result = $controller->cloturer($request);
+        
+    self::assertInstanceOf(RedirectResponse::class, $result);
+    self::assertSame(
+            '/admin/controles',
+            $result->headers->get('Location')
+        );
+    }
 
     // ==================================================================
     // Helpers
@@ -212,13 +359,14 @@ final class ControleControllerHandlersTest extends TestCase
         $session = new Session(new MockArraySessionStorage());
         // ⚠️ user['id'] = 42 → propriétaire du contrôle (controleur_id = 42)
         //    user['role'] = ROLE_CONTROLLEUR → passe deniAccessUnlessGranted()
+        //    user['controle_en_cours_id'] = null → évite un warning PHP 8
+        //       à la fin de cloturer() quand il compare avec l'id clôturé
         $session->set('user', [
-            'id'       => 42,
-            'username' => 'controleur',
-            'role'     => 'ROLE_CONTROLLEUR',
+            'id'                     => 42,
+            'username'               => 'controleur',
+            'role'                   => 'ROLE_CONTROLLEUR',
+            'controle_en_cours_id'   => null,
         ]);
-        // ⚠️ csrf_token fixe pour les tests (évite un random qui changerait
-        //    entre la construction et la vérification)
         $session->set('csrf_token', 'test-csrf-token');
         return $session;
     }
