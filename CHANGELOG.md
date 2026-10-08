@@ -10,6 +10,65 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [0.17.23] — 2026-10-08
+
+### Security
+
+- **EnvironmentFileParser** : échappement des valeurs dans `_dump()`
+(issue #49).
+- `_dump()` écrivait les valeurs brutes dans le fichier
+`.env.local.php` (un `return [...]` PHP) :
+
+fputs($file, "    '$key' => '$value',\n");
+
+- Conséquence 1 : une valeur contenant une apostrophe
+(ex. `pass'word`) produisait un fichier PHP **syntaxiquement
+invalide**, faisant planter l'application au prochain `require`
+de `.env.local.php`.
+- Conséquence 2 : une valeur contrôlée par un utilisateur
+(ex. `MAILER_FROM` saisi dans `IndexController::updateSmtp`)
+pouvait injecter des **clés arbitraires** dans le tableau
+retourné (ex. `foo', 'APP_ENV' => 'dev` insère une clé
+`APP_ENV` non désirée).
+- Fix : `var_export((string) $key, true)` +
+`var_export((string) $value, true)`. Le résultat est du PHP
+valide quel que soit le contenu (`'`, `\`, `$`, `"`, `\n`,
+balises `<?php`).
+
+### Changed
+
+- **EnvironmentFileParser** : injection du chemin de fichier au
+constructeur (`?string $filePath = null`) pour rendre la classe
+testable sans écrire dans le vrai `.env.local.php`.
+- Défaut inchangé (`__DIR__ . '/../../.env.local.php'`), donc
+iso-comportement strict pour tous les appelants existants.
+- Aucun autre changement observable : la classe reste utilisée
+par un seul appelant dans `app/`.
+
+### Tests
+
+- Unit : 139 → 148 tests (+9), 402 → 418 assertions (+16).
+- Integration : 88 tests (inchangés), 165 assertions.
+- **Total : 236 tests verts** (148 Unit + 88 Integration).
+
+### Added (tests)
+
+- **`EnvironmentFileParserTest`** : 9 tests Unit couvrant :
+- `testDumpEscapesSingleQuote` : `pass'word` → PHP valide.
+- `testDumpEscapesBackslash` : `C:\Windows\...` → PHP valide.
+- `testDumpEscapesDollar` : `Hello $user` → PHP valide.
+- `testDumpEscapesDoubleQuote` : `Say "hi"` → PHP valide.
+- `testDumpMakesPhpTagInert` : `<?php system(...); ?>` reste
+dans une string (pas exécuté au `require`).
+- `testDumpMakesDoubleQuoteInjectionInert` :
+`foo', 'INJECTED' => 'bar` ne crée pas de clé `INJECTED`.
+- `testDumpPreservesNormalValues` : iso-comportement sur
+valeurs saines.
+- `testDumpUppercasesKeys` : `lower_key` → `LOWER_KEY`.
+- `testDumpPreservesExistingEntries` : les entrées déjà
+présentes dans le fichier ne sont pas perdues.
+
+
 ## [0.17.22] — 2026-10-07
 
 ### Fixed
