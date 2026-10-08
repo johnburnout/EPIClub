@@ -43,8 +43,14 @@ class EnvironmentFileParser
         fputs($file, " * Do not edit manually.\n");
         fputs($file, " */\n");
         fputs($file, "return [\n");
+        // [SÉCURITÉ] Échappement via var_export : gère ', \, $, ", \n, etc.
+        // Évite qu'une valeur contenant ' ne casse la syntaxe PHP du
+        // fichier généré, ou qu'un POST forgé n'injecte du code arbitraire
+        // via une clé contrôlée (ex. MAILER_FROM dans updateSmtp).
         foreach ($this->env as $key => $value) {
-            fputs($file, "    '$key' => '$value',\n");
+            $safeKey = var_export((string) $key, true);
+            $safeValue = var_export((string) $value, true);
+            fputs($file, "    {$safeKey} => {$safeValue},\n");
         }
         fputs($file, "];\n");
         fclose($file);
