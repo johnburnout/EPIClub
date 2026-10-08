@@ -5,11 +5,21 @@ namespace Epiclub\Engine;
 class EnvironmentFileParser
 {
     private array $env = [];
+    private string $filePath;
 
-    public function __construct()
+    /**
+     * @param string|null $filePath Chemin du fichier .env.local.php.
+     *                              Défaut : {app/Engine}/../../.env.local.php
+     *                              (chemin historique, conservé pour
+     *                              iso-comportement). Le paramètre est
+     *                              injectable pour les tests.
+     */
+    public function __construct(?string $filePath = null)
     {
-        if (file_exists(__DIR__ . '/../../.env.local.php')) {
-            $this->env = require(__DIR__ . '/../../.env.local.php');
+        $this->filePath = $filePath ?? __DIR__ . '/../../.env.local.php';
+
+        if (file_exists($this->filePath)) {
+            $this->env = require($this->filePath);
         }
     }
 
@@ -21,7 +31,7 @@ class EnvironmentFileParser
 
     private function _dump()
     {
-        $file = fopen(__DIR__ . '/../../.env.local.php', "wb");
+        $file = fopen($this->filePath, "wb");
 
         if (!$file) {
             throw new \Exception("Unable to create environment file.", 1);
