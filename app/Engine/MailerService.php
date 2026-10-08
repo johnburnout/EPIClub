@@ -17,7 +17,7 @@ use Symfony\Component\Mime\Email;
  * ex: MAILER_DSN=smtp://user:pass@smtp.example.com:25
  * doc: https://symfony.com/doc/current/mailer.html
  */
-final class MailerService
+final class MailerService implements MailerServiceInterface
 {
     private ?MailerInterface $mailer = null;
 

@@ -9,6 +9,7 @@ use Epiclub\Domain\UtilisateurManager;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Exception\MailDeliveryException;
 use Epiclub\Engine\MailerService;
+use Epiclub\Engine\MailerServiceInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -37,11 +38,11 @@ class AppUserRegisterController extends AbstractController
         return new ClubManager();
     }
     
-    protected function mailerService(): MailerService
+    protected function mailerService(): MailerServiceInterface
     {
         return new MailerService();
     }
-
+    
     public function account(Request $request): Response
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
