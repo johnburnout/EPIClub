@@ -10,6 +10,72 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [0.17.24] — 2026-10-08
+
+### Security
+
+- **AbstractController** : suppression du fallback `$_SERVER['HTTP_HOST']`
+dans `getBaseUrl()` (issue #50a).
+- `$_SERVER['HTTP_HOST']` provient du header HTTP `Host:`, contrôlable
+par le client. Un attaquant pouvait donc influencer les URL absolues
+générées (QR codes, liens de reset password) et rediriger vers un
+domaine malveillant (Host header injection).
+- Fix : `getBaseUrl()` lit désormais `ROOT_URL` via `ConfigProvider`.
+En l'absence de `ROOT_URL`, fallback sur `$_SERVER['SERVER_NAME']`
+(issu de la config serveur, non spoofable) + `error_log` explicite.
+- ⚠️ **Fallback transitoire** : `SERVER_NAME` reste un repli temporaire.
+Le passage en strict (`RuntimeException` si `ROOT_URL` absent) est
+planifié dans #50a-bis (cible v0.18.0).
+
+### Changed
+
+- **AbstractController** : extraction de `getBaseUrl()` (Vague 11).
+- Le code était **dupliqué à l'identique** dans 3 contrôleurs
+(`AppUserRegisterController`, `EquipementController`,
+`QrRedirectController`).
+- Fix : méthode unique dans `AbstractController`, alimentée par
+`ConfigProvider::get('ROOT_URL')`.
+- Les 3 contrôleurs suppriment leur copie locale et appellent
+`$this->getBaseUrl()`.
+
+- **AbstractController** : factory `protected configProvider()`
+(Vague 11) pour injecter un `ConfigProvider` en test Unit.
+
+### Added
+
+- **`Epiclub\Engine\ConfigProvider`** : fournisseur centralisé de
+configuration (issue #50a).
+- Lecture unique au constructeur (cache en mémoire).
+- `get($key, $default)`, `has($key)`, `set($key, $value)` (mémoire
+uniquement), `all()`, `persist()` (écriture via
+`EnvironmentFileParser`), `getFilePath()`.
+- Strict : `RuntimeException` si le fichier est absent ou ne retourne
+pas un tableau.
+
+### Tests
+
+- Unit : 148 → 168 tests (+20), 418 → 446 assertions (+28).
+- Integration : 88 tests (inchangés), 165 assertions.
+- **Total : 256 tests verts** (168 Unit + 88 Integration).
+
+### Added (tests)
+
+- **`ConfigProviderTest`** : 12 tests Unit (constructeur, get, has,
+set mémoire, all, cache, filePath).
+- **`AbstractControllerGetBaseUrlTest`** : 8 tests Unit dont
+`testGetBaseUrlDoesNotUseHttpHostHeader` qui vérifie explicitement
+que `HTTP_HOST` n'est plus utilisé.
+- **`TestableAbstractController`** : sous-classe de test qui expose
+`getBaseUrl()` en public et permet d'injecter un `ConfigProvider`
+pré-configuré.
+
+### Notes
+
+- Le strict (`throw` si `ROOT_URL` absent) est reporté à #50a-bis.
+- `ROOT_URL` n'est **pas encore** écrit par l'installateur : il doit
+être ajouté manuellement dans `.env.local.php` pour éviter le
+fallback `SERVER_NAME`.
+
 ## [0.17.23] — 2026-10-08
 
 ### Security
