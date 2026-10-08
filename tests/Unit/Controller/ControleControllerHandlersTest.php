@@ -385,4 +385,60 @@ final class ControleControllerHandlersTest extends TestCase
             $post,
         );
     }
+    
+    public function testUpdateLigneTruncatesLongRemarque(): void
+    {
+        $longRemarque = str_repeat('x', 3000); // > 2000
+        
+        $ligneManager = $this->getMockBuilder(ControleLigneManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $ligneManager->method('findId')->willReturn([
+            'id' => 10,
+            'controle_id' => 5,
+            'equipement_id' => 42,
+            'statut' => 'a_controler',
+        ]);
+        // ⚠️ save() DOIT être appelé avec remarque tronquée à 2000 chars
+        $ligneManager->expects(self::once())
+        ->method('save')
+        ->with(self::callback(static function (array $l) {
+            return mb_strlen($l['remarque']) === 2000;
+        }))
+        ->willReturn(true);
+        
+        $controleManager = $this->getMockBuilder(ControleManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $controleManager->method('findId')->willReturn([
+            'id' => 5,
+            'statut' => 'ouvert',
+            'controleur_id' => 42,
+            'date_debut' => date('Y-m-d H:i:s'),
+        ]);
+        
+        $equipementManager = $this->getMockBuilder(EquipementManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $equipementManager->method('findId')->willReturn([
+            'id' => 42,
+            'controle_en_cours' => 0,
+        ]);
+        $equipementManager->expects(self::once())->method('save');
+        
+        $controller = $this->makeControllerWith(
+        controleManager: $controleManager,
+        controleLigneManager: $ligneManager,
+        equipementManager: $equipementManager,
+        );
+        
+        $request = $this->makePostRequest([
+            'id'            => '10',
+            'statut'        => 'controle_ok',
+            'remarque'      => $longRemarque,
+            'date_controle' => '2026-01-01 10:00:00',
+        ]);
+        
+        $controller->updateLigne($request);
+    }
 }

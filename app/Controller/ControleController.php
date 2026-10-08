@@ -684,7 +684,11 @@ class ControleController extends AbstractController
                 return $this->redirectTo("/admin/controles/edit/{$controle['id']}");
             }
             
-            $ligne['remarque'] = $request->request->get('remarque');
+            // [SÉCURITÉ #53] Troncature défensive (remarque : TEXT, borne à 2000).
+            $remarqueRaw = $request->request->get('remarque');
+            $ligne['remarque'] = is_string($remarqueRaw)
+            ? mb_substr($remarqueRaw, 0, 2000)
+            : null;
             $ligne['date_controle'] = $request->request->get('date_controle');
             $ligne['statut'] = $statutEnum->value;
             $ligneManager->save($ligne);

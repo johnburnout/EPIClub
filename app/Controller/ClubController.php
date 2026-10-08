@@ -31,11 +31,12 @@ class ClubController extends AbstractController
             $this->validateCsrf($request);
             
             // Récupération des données du formulaire
-            $club['nom'] = trim($request->request->get('nom'));
-            $club['activite'] = trim($request->request->get('activite'));
+            // [SÉCURITÉ #53] Troncature défensive (nom : varchar(64)).
+            $club['nom']         = mb_substr(trim($request->request->get('nom')), 0, 64);
+            $club['activite']    = trim($request->request->get('activite'));
             $club['description'] = trim($request->request->get('description'));
-            $club['email'] = trim($request->request->get('email'));
-            $club['phone'] = trim($request->request->get('phone'));
+            $club['email']       = trim($request->request->get('email'));
+            $club['phone']       = trim($request->request->get('phone'));
             
             // Validation
             if (empty($club['nom'])) {

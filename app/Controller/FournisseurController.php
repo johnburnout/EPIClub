@@ -70,7 +70,8 @@ class FournisseurController extends AbstractController
             // [SÉCURITÉ] Vérification CSRF avant tout traitement
             $this->validateCsrf($request);
 
-            $nom = trim($request->request->get('nom'));
+            // [SÉCURITÉ #53] Troncature défensive (nom : varchar(64)).
+            $nom   = mb_substr(trim($request->request->get('nom')), 0, 64);
             $email = trim($request->request->get('email'));
             $phone = trim($request->request->get('phone'));
 

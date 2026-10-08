@@ -68,7 +68,8 @@ class EmplacementController extends AbstractController
             // [SÉCURITÉ] Vérification CSRF avant tout traitement
             $this->validateCsrf($request);
             
-            $libelle = trim($request->request->get('libelle'));
+            // [SÉCURITÉ #53] Troncature défensive (libelle : varchar(64)).
+            $libelle     = mb_substr(trim($request->request->get('libelle')), 0, 64);
             $description = trim($request->request->get('description'));
             // Champ « Image (URL) » : simple chaîne, aucun fichier téléversé
             $image = trim($request->request->get('image'));
