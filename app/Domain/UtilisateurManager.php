@@ -12,6 +12,14 @@ class UtilisateurManager extends AbstractManager
         'last_activity', 'reset_token', 'reset_token_expires',
         'reset_email_sent_at',
     ];
+    
+    /**
+    * [SÉCURITÉ #53] Longueur minimale d'un mot de passe.
+    *
+    * Recommandation ANSSI (2024) : 12 caractères minimum pour un
+    * mot de passe à facteur unique (hors gestionnaire de mots de passe).
+    */
+    public const MIN_PASSWORD_LENGTH = 12;
 
     public function findAll($order = '', $limit = -1, $offset = 0)
     {
@@ -59,6 +67,31 @@ class UtilisateurManager extends AbstractManager
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['token' => $token]);
         return $stmt->fetch() ?: null;
+    }
+    
+    /**
+    * [SÉCURITÉ #53] Valide un mot de passe selon les règles communes.
+    *
+    * Règle actuelle : longueur minimale MIN_PASSWORD_LENGTH.
+    * (Extensible plus tard : complexité, dictionnaire, etc.)
+    *
+    * ⚠️ strlen() et non mb_strlen() : on mesure en octets, ce qui est
+    * plus strict pour les caractères multi-octets (é = 2 octets). Un
+    * mot de passe de 12 caractères accentués totalise 24 octets → OK.
+    *
+    * @param string $password Le mot de passe en clair à valider
+    * @return string|null     Message d'erreur, ou null si valide
+    */
+    public static function validatePassword(string $password): ?string
+    {
+        if (strlen($password) < self::MIN_PASSWORD_LENGTH) {
+            return sprintf(
+                'Le mot de passe doit contenir au moins %d caractères.',
+            self::MIN_PASSWORD_LENGTH
+            );
+        }
+        
+        return null;
     }
 
     /**
