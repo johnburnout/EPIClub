@@ -198,8 +198,8 @@ class AppUserRegisterController extends AbstractController
 
             if (empty($password)) {
                 $form_errors['password'] = 'Le mot de passe est obligatoire.';
-            } elseif (strlen($password) < 6) {
-                $form_errors['password'] = 'Le mot de passe doit contenir au moins 6 caractères.';
+            } elseif ($error = UtilisateurManager::validatePassword($password)) {
+                $form_errors['password'] = $error;
             } elseif ($password !== $confirmPassword) {
                 $form_errors['confirm_password'] = 'Les mots de passe ne correspondent pas.';
             }

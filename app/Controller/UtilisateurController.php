@@ -10,11 +10,20 @@ use Symfony\Component\HttpFoundation\Request;
 
 class UtilisateurController extends AbstractController
 {
+    // ==================================================================
+    // [REFACTOR VAGUE 11] Factory manager — mockable en test Unit.
+    // ==================================================================
+    
+    protected function utilisateurManager(): UtilisateurManager
+    {
+        return new UtilisateurManager();
+    }
+    
     public function list(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
 
-        $utilisateurManager = new UtilisateurManager();
+        $utilisateurManager = $this->utilisateurManager();
         $utilisateurs = $utilisateurManager->findAll();
 
         foreach ($utilisateurs as $i => $utilisateur) {
@@ -36,7 +45,7 @@ class UtilisateurController extends AbstractController
         $actorRole = $actor['role'] ?? 'ROLE_USER';
         $assignableRoles = UserRole::listAssignableBy($actorRole);
 
-        $utilisateurManager = new UtilisateurManager();
+        $utilisateurManager = $this->utilisateurManager();
         $utilisateur = [];
         $form_errors = [];
 
@@ -44,11 +53,11 @@ class UtilisateurController extends AbstractController
             // [SÉCURITÉ] Vérification CSRF avant tout traitement (création de compte)
             $this->validateCsrf($request);
 
-            // Récupération des données
-            $utilisateur['nom'] = trim($request->request->get('nom'));
-            $utilisateur['prenom'] = trim($request->request->get('prenom'));
-            $utilisateur['username'] = trim($request->request->get('username'));
-            $utilisateur['email'] = trim($request->request->get('email'));
+            // [SÉCURITÉ #53] Troncature défensive (colonnes varchar(32) en BDD).
+            $utilisateur['nom']      = mb_substr(trim($request->request->get('nom')), 0, 32);
+            $utilisateur['prenom']   = mb_substr(trim($request->request->get('prenom')), 0, 32);
+            $utilisateur['username'] = mb_substr(trim($request->request->get('username')), 0, 32);
+            $utilisateur['email']    = trim($request->request->get('email'));
             $submittedRole = $request->request->get('role');
             $password = $request->request->get('password');
 
@@ -58,7 +67,11 @@ class UtilisateurController extends AbstractController
             if (empty($utilisateur['username'])) $form_errors['username'] = "Le nom d'utilisateur est obligatoire.";
             if (empty($utilisateur['email'])) $form_errors['email'] = "L'email est obligatoire.";
             if (!filter_var($utilisateur['email'], FILTER_VALIDATE_EMAIL)) $form_errors['email'] = "L'email n'est pas valide.";
-            if (empty($password)) $form_errors['password'] = 'Le mot de passe est obligatoire.';
+            if (empty($password)) {
+                $form_errors['password'] = 'Le mot de passe est obligatoire.';
+            } elseif ($error = UtilisateurManager::validatePassword($password)) {
+                $form_errors['password'] = $error;
+            }
 
             // [SÉCURITÉ] Le rôle soumis doit être dans la liste autorisée pour l'acteur
             if (!array_key_exists($submittedRole, $assignableRoles)) {
@@ -102,7 +115,7 @@ class UtilisateurController extends AbstractController
             return new RedirectResponse("/admin/utilisateurs");
         }
         
-        $utilisateurManager = new UtilisateurManager();
+        $utilisateurManager = $this->utilisateurManager();
         $utilisateur = $utilisateurManager->findId($id);
         
         if (!$utilisateur) {
@@ -133,11 +146,11 @@ class UtilisateurController extends AbstractController
             // [SÉCURITÉ] Vérification CSRF avant tout traitement (mise à jour de compte)
             $this->validateCsrf($request);
 
-            // Récupération des données du formulaire
-            $utilisateur['nom'] = trim($request->request->get('nom'));
-            $utilisateur['prenom'] = trim($request->request->get('prenom'));
-            $utilisateur['username'] = trim($request->request->get('username'));
-            $utilisateur['email'] = trim($request->request->get('email'));
+            // [SÉCURITÉ #53] Troncature défensive (colonnes varchar(32) en BDD).
+            $utilisateur['nom']      = mb_substr(trim($request->request->get('nom')), 0, 32);
+            $utilisateur['prenom']   = mb_substr(trim($request->request->get('prenom')), 0, 32);
+            $utilisateur['username'] = mb_substr(trim($request->request->get('username')), 0, 32);
+            $utilisateur['email']    = trim($request->request->get('email'));
             $submittedRole = $request->request->get('role');
             $password = $request->request->get('password');
             
@@ -182,7 +195,12 @@ class UtilisateurController extends AbstractController
             
             // Gestion du mot de passe (optionnel en modification)
             if ($password) {
-                $utilisateur['password'] = password_hash($password, PASSWORD_DEFAULT);
+                // [SÉCURITÉ #53] Validation 12 chars minimum si un nouveau MDP est fourni.
+                if ($error = UtilisateurManager::validatePassword($password)) {
+                    $form_errors['password'] = $error;
+                } else {
+                    $utilisateur['password'] = password_hash($password, PASSWORD_DEFAULT);
+                }
             } else {
                 $existingUser = $utilisateurManager->findId($utilisateur['id']);
                 $utilisateur['password'] = $existingUser['password'];
@@ -231,7 +249,7 @@ class UtilisateurController extends AbstractController
             return new RedirectResponse("/admin/utilisateurs");
         }
 
-        $utilisateurManager = new UtilisateurManager();
+        $utilisateurManager = $this->utilisateurManager();
         $utilisateur = $utilisateurManager->findId($id);
 
         if (!$utilisateur) {
@@ -323,7 +341,7 @@ class UtilisateurController extends AbstractController
      */
     private function isLastSuperAdmin(int $userId): bool
     {
-        $utilisateurManager = new UtilisateurManager();
+        $utilisateurManager = $this->utilisateurManager();
         $allUsers = $utilisateurManager->findAll();
 
         $superAdmins = array_filter($allUsers, function ($u) {
