@@ -17,6 +17,30 @@ class AppUserRegisterController extends AbstractController
 {
     private const RESET_TOKEN_LIFETIME = '+24 hours';
     private const RESET_EMAIL_TIMEOUT_SECONDS = 300; // 5 minutes
+    
+    // ==================================================================
+    // [REFACTOR VAGUE 11] Factories pour la testabilité Unit.
+    //
+    // Chaque méthode retourne une nouvelle instance concrète.
+    // Les sous-classes de test (TestableAppUserRegisterController)
+    // surchargent ces factories pour injecter des mocks et éviter
+    // l'ouverture PDO.
+    // ==================================================================
+    
+    protected function utilisateurManager(): UtilisateurManager
+    {
+        return new UtilisateurManager();
+    }
+    
+    protected function clubManager(): ClubManager
+    {
+        return new ClubManager();
+    }
+    
+    protected function mailerService(): MailerService
+    {
+        return new MailerService();
+    }
 
     public function account(Request $request): Response
     {
@@ -47,7 +71,7 @@ class AppUserRegisterController extends AbstractController
             }
 
             if (empty($form_errors)) {
-                $utilisateurManager = new UtilisateurManager();
+                $utilisateurManager = $this->utilisateurManager();
                 $user = $utilisateurManager->findOneByCriteria(['email' => $email]);
 
                 // Anti-énumération : on ne révèle jamais si l'email existe.
@@ -71,25 +95,18 @@ class AppUserRegisterController extends AbstractController
                 $token = bin2hex(random_bytes(32));
                 $expires = (new \DateTime(self::RESET_TOKEN_LIFETIME))->format('Y-m-d H:i:s');
                 $sentAt = $now->format('Y-m-d H:i:s');
-
-                $pdo = $utilisateurManager->getDb();
-                $sql = "UPDATE utilisateur
-                        SET reset_token = :token,
-                            reset_token_expires = :expires,
-                            reset_email_sent_at = :sent_at
-                        WHERE id = :id";
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute([
-                    'token' => $token,
-                    'expires' => $expires,
-                    'sent_at' => $sentAt,
-                    'id' => $user['id'],
-                ]);
+                
+                $utilisateurManager->setResetToken(
+                    (int) $user['id'],
+                    $token,
+                    $expires,
+                    $sentAt
+                );
 
                 // Envoi de l'email — best effort.
                 // Le token est déjà en BDD : un échec SMTP ne doit PAS casser le flux
                 // ni révéler au client qu'un problème d'infra existe.
-                $clubManager = new ClubManager();
+                $clubManager = $this->clubManager();
                 $club = $clubManager->findParameters();
                 $resetUrl = $this->getBaseUrl() . '/regenerer_mot_de_passe?token=' . $token;
 
@@ -108,7 +125,7 @@ class AppUserRegisterController extends AbstractController
                     );
 
                     try {
-                        (new MailerService())->sendEmail($emailContent);
+                        $this->mailerService()->sendEmail($emailContent);
                     } catch (MailDeliveryException $e) {
                         // On loggue côté serveur pour pouvoir alerter / monitorer.
                         // On NE remonte PAS au client : même réponse qu'en cas de succès.
@@ -146,7 +163,7 @@ class AppUserRegisterController extends AbstractController
             return new RedirectResponse('/');
         }
 
-        $utilisateurManager = new UtilisateurManager();
+        $utilisateurManager = $this->utilisateurManager();
         $utilisateur = $utilisateurManager->findOneByCriteria(['reset_token' => $token]);
 
         if (!$utilisateur) {
@@ -159,15 +176,8 @@ class AppUserRegisterController extends AbstractController
             $now = new \DateTime();
             $expires = new \DateTime($utilisateur['reset_token_expires']);
             if ($now > $expires) {
-                $pdo = $utilisateurManager->getDb();
-                $sql = "UPDATE utilisateur
-                        SET reset_token = NULL,
-                            reset_token_expires = NULL,
-                            reset_email_sent_at = NULL
-                        WHERE id = :id";
-                $stmt = $pdo->prepare($sql);
-                $stmt->execute(['id' => $utilisateur['id']]);
-
+                $utilisateurManager->clearResetToken((int) $utilisateur['id']);
+                
                 $this->session->getFlashBag()->add('error', 'Le lien a expiré.');
                 return new RedirectResponse('/');
             }
@@ -195,10 +205,8 @@ class AppUserRegisterController extends AbstractController
 
             if (empty($form_errors)) {
                 $utilisateur['password'] = password_hash($password, PASSWORD_DEFAULT);
-                $utilisateur['reset_token'] = null;
-                $utilisateur['reset_token_expires'] = null;
-                $utilisateur['reset_email_sent_at'] = null;
                 $utilisateurManager->save($utilisateur);
+                $utilisateurManager->clearResetToken((int) $utilisateur['id']);
 
                 $this->session->getFlashBag()->add('success', 'Votre mot de passe a ete reinitialise avec succes.');
                 return new RedirectResponse('/se_connecter');

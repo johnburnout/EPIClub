@@ -70,6 +70,59 @@ class UtilisateurManager extends AbstractManager
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['id' => $userId]);
     }
+    
+    /**
+    * [REFACTOR #51] Enregistre un token de reset password.
+    *
+    * Remplace le SQL brut qui était dans
+    * AppUserRegisterController::forgotPassword().
+    *
+    * @param int    $userId  ID de l'utilisateur
+    * @param string $token   Token hex (32 bytes → 64 chars)
+    * @param string $expires Date d'expiration (format Y-m-d H:i:s)
+    * @param string $sentAt  Date d'envoi (format Y-m-d H:i:s)
+    */
+    public function setResetToken(
+        int $userId,
+        string $token,
+        string $expires,
+        string $sentAt,
+    ): bool {
+        $sql = "UPDATE utilisateur
+        SET reset_token = :token,
+        reset_token_expires = :expires,
+        reset_email_sent_at = :sent_at
+        WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        
+        return $stmt->execute([
+            'token'   => $token,
+            'expires' => $expires,
+            'sent_at' => $sentAt,
+            'id'      => $userId,
+        ]);
+    }
+    
+    /**
+    * [REFACTOR #51] Efface le token de reset password.
+    *
+    * Utilisé dans deux cas :
+    *  - resetPassword() détecte un token expiré → on nettoie la BDD
+    *  - resetPassword() réussit → on nettoie après changement du mdp
+    *
+    * @param int $userId ID de l'utilisateur
+    */
+    public function clearResetToken(int $userId): bool
+    {
+        $sql = "UPDATE utilisateur
+        SET reset_token = NULL,
+        reset_token_expires = NULL,
+        reset_email_sent_at = NULL
+        WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        
+        return $stmt->execute(['id' => $userId]);
+    }
 
     public function save(array $utilisateur)
     {
