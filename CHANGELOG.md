@@ -10,6 +10,68 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [0.17.26] — 2026-10-08
+
+### Security
+
+- **UtilisateurController** + **AppUserRegisterController** : longueur
+minimale du mot de passe portée de **6 à 12 caractères** (issue #53,
+recommandation ANSSI 2024).
+- `AppUserRegisterController::resetPassword()` validait `strlen($password) < 6`.
+- `UtilisateurController::edit()` (création admin) et `show()` (édition)
+n'avaient **aucune** validation de longueur : un admin pouvait créer
+un utilisateur avec un mot de passe d'1 caractère.
+- Fix : constante `UtilisateurManager::MIN_PASSWORD_LENGTH = 12` +
+méthode statique `UtilisateurManager::validatePassword()` utilisée
+par les 3 points d'entrée. Une seule source de vérité.
+
+- **4 contrôleurs** : troncature défensive des champs à longueur fixe
+(issue #53).
+- Les champs `varchar(32)`, `varchar(64)` et `TEXT` étaient écrits
+sans troncature côté PHP. En mode MySQL non-strict, la valeur était
+silencieusement coupée ; en mode strict, une erreur SQL était levée.
+- Fix : `mb_substr()` (UTF-8 safe) sur les 5 champs restants :
+`fournisseur.nom` (64), `emplacement.libelle` (64),
+`club.nom` (64), `utilisateur.nom/prenom/username` (32),
+`controle_ligne.remarque` (2000, TEXT).
+
+### Added
+
+- **`UtilisateurManager::MIN_PASSWORD_LENGTH`** : constante publique
+(12).
+- **`UtilisateurManager::validatePassword(string): ?string`** : méthode
+statique retournant un message d'erreur ou `null` si valide.
+- `strlen()` et non `mb_strlen()` : minimum en octets, conservateur
+pour les caractères multi-octets (`é` = 2 octets).
+
+### Changed
+
+- **`UtilisateurController`** : extraction d'une factory `protected`
+`utilisateurManager()` (Vague 11) + 5 remplacements
+(`list`, `edit`, `show`, `delete`, `isLastSuperAdmin`).
+- Objectif : rendre le manager mockable en test Unit.
+
+- **`UtilisateurController::edit()`** et **`show()`** : troncature
+`mb_substr(trim(...), 0, 32)` sur `nom`, `prenom`, `username`.
+L'email (varchar 255) n'est pas tronqué mais reste validé par
+`filter_var(FILTER_VALIDATE_EMAIL)`.
+
+### Tests
+
+- Unit : 181 → 194 tests (+13), 483 → 506 assertions (+23).
+- Integration : 88 tests (inchangés), 165 assertions.
+- **Total : 282 tests verts** (194 Unit + 88 Integration).
+
+### Added (tests)
+
+- **`UtilisateurManagerTest`** : 9 tests (constante + dataprovider
+7 cas + message d'erreur).
+- **`UtilisateurControllerHandlersTest`** : 3 tests (rejet MDP court,
+acceptation MDP valide, troncature des 3 champs).
+- **`ControleControllerHandlersTest`** : +1 test
+(`testUpdateLigneTruncatesLongRemarque`).
+- **`TestableUtilisateurController`** + builder (Vague 11).
+
 ## [0.17.25] — 2026-10-08
 
 ### Changed
