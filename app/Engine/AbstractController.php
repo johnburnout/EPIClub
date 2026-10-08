@@ -11,6 +11,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Epiclub\Exception\AccessDeniedException;
 use Epiclub\Engine\CsrfValidator;
+use Epiclub\Engine\ConfigProvider;
 
 abstract class AbstractController
 {
@@ -188,5 +189,57 @@ abstract class AbstractController
         $subpath = ltrim($subpath, '/');
         
         return $subpath === '' ? $base : $base . '/' . $subpath;
+    }
+    
+    // ==================================================================
+    // [REFACTOR #50a] Config + URL de base
+    // ==================================================================
+    
+    /**
+    * [VAGUE 11] Factory ConfigProvider — mockable en test Unit.
+    *
+    * Les sous-classes de test peuvent surcharger cette factory pour
+    * injecter un ConfigProvider pré-rempli (sans lire .env.local.php).
+    */
+    protected function configProvider(): ConfigProvider
+    {
+        return new ConfigProvider(__DIR__ . '/../../.env.local.php');
+    }
+    
+    /**
+    * [SÉCURITÉ #50a] Retourne l'URL de base.
+    *
+    * Lit ROOT_URL depuis .env.local.php. Si absent, fallback sur
+    * $_SERVER['SERVER_NAME'] (⚠️ transition : ce fallback sera
+    * supprimé en #50a-bis, ROOT_URL deviendra obligatoire).
+    *
+    * ⚠️ On n'utilise PLUS $_SERVER['HTTP_HOST'] : ce header est
+    * contrôlable par le client (Host header injection) et permet
+    * de rediriger les liens générés (QR, reset password) vers un
+    * domaine attaquant.
+    *
+    * @see https://github.com/johnburnout/EPIClub/issues/50a
+    */
+    protected function getBaseUrl(): string
+    {
+        $url = $this->configProvider()->get('ROOT_URL');
+        
+        if (is_string($url) && $url !== '') {
+            return rtrim($url, '/');
+        }
+        
+        // ⚠️ FALLBACK TRANSITOIRE — sera supprimé en #50a-bis.
+        // SERVER_NAME provient de la config serveur (Apache/Nginx),
+        // pas d'un header client. Moins flexible que ROOT_URL mais
+        // non spoofable via le header Host:.
+        error_log(
+            '[AbstractController] ROOT_URL manquant dans .env.local.php, '
+            . 'fallback sur SERVER_NAME (déprécié, cf. #50a-bis).'
+        );
+        
+        $protocol = (($_SERVER['HTTPS'] ?? 'off') === 'on') ? 'https://' : 'http://';
+        $host = $_SERVER['SERVER_NAME'] ?? 'localhost';
+        
+        return $protocol . $host;
     }
 }

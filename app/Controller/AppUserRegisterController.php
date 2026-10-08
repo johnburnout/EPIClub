@@ -210,21 +210,4 @@ class AppUserRegisterController extends AbstractController
             'token' => $token,
         ]);
     }
-
-    protected function getBaseUrl(): string
-    {
-        $configFile = __DIR__ . '/../../.env.local.php';
-        if (file_exists($configFile)) {
-            $config = include $configFile;
-            if (isset($config['ROOT_URL']) && !empty($config['ROOT_URL'])) {
-                return rtrim($config['ROOT_URL'], '/');
-            }
-        }
-
-        $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://';
-        $host = $_SERVER['HTTP_HOST'];
-        $basePath = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/');
-
-        return $protocol . $host . $basePath;
-    }
 }
