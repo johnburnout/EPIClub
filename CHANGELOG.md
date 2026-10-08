@@ -10,6 +10,63 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [0.17.25] — 2026-10-08
+
+### Changed
+
+- **AppUserRegisterController** : extraction du SQL reset password
+vers `UtilisateurManager` (issue #51).
+- Le contrôleur tapait directement dans PDO via
+`$utilisateurManager->getDb()` dans deux méthodes
+(`forgotPassword()` et `resetPassword()`), violant la séparation
+des couches.
+- Fix : `UtilisateurManager::setResetToken()` et
+`UtilisateurManager::clearResetToken()` encapsulent ces requêtes.
+Le contrôleur n'appelle plus que ces méthodes.
+
+- **AppUserRegisterController** : extraction de 3 factories `protected`
+pour la testabilité Unit (Vague 11) :
+- `utilisateurManager()`
+- `clubManager()`
+- `mailerService()`
+- Objectif : rendre ces dépendances mockables en test Unit et
+supprimer les connexions PDO déclenchées par
+`AbstractManager::__construct()`.
+
+- **`resetPassword()`** : utilise désormais `clearResetToken()` au lieu
+d'un `save()` partiel qui mettait à jour `password` + les 3 colonnes
+reset en une seule requête. Le résultat observable est identique
+(2 UPDATE au lieu d'1), mais la séparation des responsabilités est
+plus nette (le manager gère le token, le contrôleur gère le flux).
+
+### Added
+
+- **`Epiclub\Engine\MailerServiceInterface`** (Vague 8) : interface
+extraite pour rendre `MailerService` mockable en test Unit.
+- `MailerService` implémente l'interface (la classe reste `final`).
+- `AppUserRegisterController::mailerService()` retourne l'interface
+au lieu de la classe concrète.
+- ⚠️ Ce changement prépare la suppression de la dépendance à
+`$_ENV['MAILER_DSN']` dans `MailerService` (traité dans #50c).
+
+### Tests
+
+- Unit : 168 → 181 tests (+13), 446 → 483 assertions (+37).
+- Integration : 88 tests (inchangés), 165 assertions.
+- **Total : 269 tests verts** (181 Unit + 88 Integration).
+
+### Added (tests)
+
+- **`AppUserRegisterControllerHandlersTest`** : 13 tests Unit couvrant :
+- `forgotPassword()` : rejet email invalide, anti-énumération
+(email inconnu → même réponse), anti-spam (délai < 5 min),
+appel `setResetToken()` avec les bons arguments, envoi
+d'email conditionnel, absorption silencieuse d'un échec SMTP.
+- `resetPassword()` : token manquant/invalide/expiré, validation
+mot de passe (longueur < 6, mismatch), succès (save +
+clearResetToken).
+- **`TestableAppUserRegisterController`** + builder (Vague 11).
+
 ## [0.17.24] — 2026-10-08
 
 ### Security
