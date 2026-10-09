@@ -45,6 +45,121 @@ class ControleController extends AbstractController
         return new UtilisateurManager();
     }
     
+    // ==================================================================
+    // [SÉCURITÉ #52] Chiffrement symétrique des remarques libres.
+    //
+    // ─── Format du ciphertext stocké ───
+    //   base64( IV || ciphertext )
+    //   - IV de openssl_cipher_iv_length($cipher) octets aléatoires
+    //   - ciphertext = openssl_encrypt($plain, $cipher, $key, 0, $iv)
+    //   - clé = hex2bin(SECRET_KEY) — 32 bytes pour AES-256
+    //
+    // ─── Politique stricte ───
+    //   SECRET_KEY absente ou invalide → RuntimeException.
+    //   On ne stocke JAMAIS en clair, et on ne "perd" pas silencieusement
+    //   la remarque : mieux vaut une 500 visible qu'une fuite silencieuse.
+    // ==================================================================
+    
+    /**
+    * Chiffre une remarque libre. Retourne null si la valeur est vide.
+    *
+    * @throws \RuntimeException si SECRET_KEY est absente ou invalide.
+    */
+    protected function encryptRemarque(?string $plain): ?string
+    {
+        if ($plain === null || $plain === '') {
+            return null;
+        }
+        
+        $config = $this->cryptoConfig();
+        
+        $ivLength = openssl_cipher_iv_length($config['cipher']);
+        if ($ivLength === false) {
+            throw new \RuntimeException(
+                'Invalid CIPHER_METHOD: ' . $config['cipher']
+            );
+        }
+        
+        $iv       = openssl_random_pseudo_bytes($ivLength);
+        $chiffre  = openssl_encrypt($plain, $config['cipher'], $config['key'], 0, $iv);
+        if ($chiffre === false) {
+            throw new \RuntimeException('openssl_encrypt failed.');
+        }
+        
+        return base64_encode($iv . $chiffre);
+    }
+    
+    /**
+    * Déchiffre une remarque libre.
+    * Retourne null si la valeur n'est pas un ciphertext valide
+    * (legacy en clair, base64 corrompu, mauvaise clé, …).
+    */
+    protected function decryptRemarque(?string $encoded): ?string
+    {
+        if ($encoded === null || $encoded === '') {
+            return null;
+        }
+        
+        $config = $this->cryptoConfig();
+        
+        $data = base64_decode($encoded, true);
+        if ($data === false) {
+            return null;
+        }
+        
+        $ivLength = openssl_cipher_iv_length($config['cipher']);
+        if ($ivLength === false || strlen($data) <= $ivLength) {
+            return null;
+        }
+        
+        $iv      = substr($data, 0, $ivLength);
+        $chiffre = substr($data, $ivLength);
+        
+        $plain = openssl_decrypt($chiffre, $config['cipher'], $config['key'], 0, $iv);
+        return $plain === false ? null : $plain;
+    }
+    
+    /**
+    * Détecte si une valeur est déjà chiffrée par notre schéma.
+    * Utilisé par cloturer() pour rester idempotent sur les contrôles
+    * déjà traités par edit() après le fix #52.
+    */
+    protected function isEncrypted(?string $value): bool
+    {
+        if ($value === null || $value === '') {
+            return false;
+        }
+        return $this->decryptRemarque($value) !== null;
+    }
+    
+    /**
+    * Charge et valide la config crypto depuis ConfigProvider.
+    *
+    * @return array{key:string, cipher:string}
+    * @throws \RuntimeException si SECRET_KEY absente ou invalide.
+    */
+    private function cryptoConfig(): array
+    {
+        $provider = $this->configProvider();
+        
+        $keyHex = $provider->get('SECRET_KEY');
+        if (!is_string($keyHex) || $keyHex === '') {
+            throw new \RuntimeException('SECRET_KEY is not configured.');
+        }
+        
+        $key = hex2bin($keyHex);
+        if ($key === false) {
+            throw new \RuntimeException('SECRET_KEY is not valid hex.');
+        }
+        
+        $cipher = $provider->get('CIPHER_METHOD', 'AES-256-CBC');
+        if (!is_string($cipher) || $cipher === '') {
+            $cipher = 'AES-256-CBC';
+        }
+        
+        return ['key' => $key, 'cipher' => $cipher];
+    }
+    
     
     private function canEdit($controle, $user)
     {
@@ -289,9 +404,13 @@ class ControleController extends AbstractController
         if ($request->getMethod() === 'POST' && !$readonly) {
             // [SÉCURITÉ] Vérification CSRF avant enregistrement des remarques
             $this->validateCsrf($request);
-
+            
+            // [SÉCURITÉ #52] Chiffrement dès l'écriture. La valeur n'est plus
+            // jamais stockée en clair, même avant clôture du contrôle.
             $remarqueGenerale = $request->request->get('remarques_generales', '');
-            $controle['hash_remarques'] = $remarqueGenerale;
+            $controle['hash_remarques'] = $this->encryptRemarque(
+                is_string($remarqueGenerale) ? $remarqueGenerale : ''
+            );
             $controleManager->save($controle);
             $this->session->getFlashBag()->add('success', 'Remarques générales mises à jour.');
             return $this->redirectTo("/admin/controles/edit/$id");
@@ -318,41 +437,22 @@ class ControleController extends AbstractController
         unset($ligne);
 
         // Déchiffrement si clôturé (sur toutes les lignes)
+        // [SÉCURITÉ #52] Déchiffrement en lecture (contrôle clôturé uniquement).
         if ($readonly && $controle['statut'] === 'cloture') {
-            $config = include __DIR__ . '/../../.env.local.php';
-            $secretKey = isset($config['SECRET_KEY']) ? hex2bin($config['SECRET_KEY']) : null;
-            $cipherMethod = $config['CIPHER_METHOD'] ?? 'AES-256-CBC';
             foreach ($allLignes as &$ligne) {
                 if (!empty($ligne['remarque'])) {
-                    $data = base64_decode($ligne['remarque'], true);
-                    if ($data !== false) {
-                        $ivLength = openssl_cipher_iv_length($cipherMethod);
-                        if (strlen($data) >= $ivLength) {
-                            $iv = substr($data, 0, $ivLength);
-                            $chiffre = substr($data, $ivLength);
-                            $decrypted = openssl_decrypt($chiffre, $cipherMethod, $secretKey, 0, $iv);
-                            if ($decrypted !== false) {
-                                $ligne['remarque'] = $decrypted;
-                            }
-                        }
+                    $decrypted = $this->decryptRemarque($ligne['remarque']);
+                    if ($decrypted !== null) {
+                        $ligne['remarque'] = $decrypted;
                     }
                 }
             }
             unset($ligne);
-
-            // --- Déchiffrement de la remarque générale ---
+            
             if (!empty($controle['hash_remarques'])) {
-                $data = base64_decode($controle['hash_remarques'], true);
-                if ($data !== false) {
-                    $ivLength = openssl_cipher_iv_length($cipherMethod);
-                    if (strlen($data) >= $ivLength) {
-                        $iv = substr($data, 0, $ivLength);
-                        $chiffre = substr($data, $ivLength);
-                        $decrypted = openssl_decrypt($chiffre, $cipherMethod, $secretKey, 0, $iv);
-                        if ($decrypted !== false) {
-                            $controle['hash_remarques'] = $decrypted;
-                        }
-                    }
+                $decrypted = $this->decryptRemarque($controle['hash_remarques']);
+                if ($decrypted !== null) {
+                    $controle['hash_remarques'] = $decrypted;
                 }
             }
         }
@@ -763,28 +863,42 @@ class ControleController extends AbstractController
             }
         }
 
-        $config = include __DIR__ . '/../../.env.local.php';
-        $secretKey = isset($config['SECRET_KEY']) ? hex2bin($config['SECRET_KEY']) : null;
-        $cipherMethod = $config['CIPHER_METHOD'] ?? 'AES-256-CBC';
-
-        // Chiffrement des remarques
-        $remarqueGenerale = $controle['hash_remarques'] ?? '';
-        if (!empty($remarqueGenerale)) {
-            $ivLength = openssl_cipher_iv_length($cipherMethod);
-            $iv = openssl_random_pseudo_bytes($ivLength);
-            $chiffre = openssl_encrypt($remarqueGenerale, $cipherMethod, $secretKey, 0, $iv);
-            $hashGlobal = base64_encode($iv . $chiffre);
+        // ==================================================================
+        // [SÉCURITÉ #52] Chiffrement idempotent des remarques.
+        //
+        // Depuis le fix #52, edit() chiffre hash_remarques dès l'écriture.
+        // Ici, on ne chiffre QUE ce qui ne l'est pas encore (legacy en
+        // clair créé avant le déploiement, ou lignes de remarque dont
+        // l'écriture passe par updateLigne()).
+        //
+        // isEncrypted() utilise decryptRemarque() qui retourne null si la
+        // valeur n'est pas un ciphertext valide → détection fiable sans
+        // marqueur dédié.
+        // ==================================================================
+        
+        // --- Remarque générale du contrôle ---
+        $remarqueGenerale = $controle['hash_remarques'] ?? null;
+        if ($remarqueGenerale !== null && $remarqueGenerale !== '') {
+            if (!$this->isEncrypted($remarqueGenerale)) {
+                // Legacy : chiffrement à la clôture (pré-fix #52).
+                $hashGlobal = $this->encryptRemarque($remarqueGenerale);
+            } else {
+                // Déjà chiffré par edit() : on conserve la valeur telle quelle.
+                $hashGlobal = $remarqueGenerale;
+            }
         } else {
             $hashGlobal = null;
         }
-
+        
+        // --- Remarques des lignes ---
         foreach ($lignes as $ligne) {
             if (!is_null($ligne['remarque']) && $ligne['remarque'] !== '') {
-                $ivLength = openssl_cipher_iv_length($cipherMethod);
-                $iv = openssl_random_pseudo_bytes($ivLength);
-                $chiffre = openssl_encrypt($ligne['remarque'], $cipherMethod, $secretKey, 0, $iv);
-                $ligne['remarque'] = base64_encode($iv . $chiffre);
-                $ligneManager->save($ligne);
+                if (!$this->isEncrypted($ligne['remarque'])) {
+                    $ligne['remarque'] = $this->encryptRemarque($ligne['remarque']);
+                    $ligneManager->save($ligne);
+                }
+                // Si déjà chiffré (cas rare mais possible via updateLigne()
+                // post-fix), on ne re-save() pas : iso-comportement observable.
             }
         }
 
