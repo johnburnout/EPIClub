@@ -10,6 +10,81 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [0.18.0] — 2026-10-09
+
+### BREAKING CHANGE
+
+- **AbstractController** : `getBaseUrl()` ne fallback plus sur
+`$_SERVER['SERVER_NAME']` (issue #50a-bis).
+- `ROOT_URL` doit désormais être présent dans `.env.local.php`. En cas
+d'absence, vide ou non-string, `getBaseUrl()` lance une
+`RuntimeException` avec un message d'aide explicite.
+- ⚠️ **Action requise avant déploiement** : vérifier que
+`.env.local.php` contient la clé `ROOT_URL`. Les installations
+antérieures à #50a (v0.17.24) n'ont probablement pas cette clé. Sans
+`ROOT_URL`, toute génération de lien absolu (email de reset password,
+QR codes d'équipement) échouera avec une 500.
+- Ajouter au minimum :
+`ROOT_URL="https://votre-domaine.fr"` (sans slash final).
+- Le fallback transitoire `SERVER_NAME` introduit en v0.17.24 est
+supprimé, comme planifié dans le CHANGELOG de cette version.
+
+### Security
+
+- `getBaseUrl()` échoue désormais explicitement si `ROOT_URL` est
+absent, vide ou non-string, au lieu de produire silencieusement une
+URL potentiellement incorrecte.
+- Cas d'erreur silencieuse supprimés :
+- **reverse-proxy / load-balancer** : `SERVER_NAME` peut ne pas
+correspondre à l'URL publique vue par le client.
+- **config serveur mal renseignée** : `SERVER_NAME` par défaut
+`localhost` produisait des liens non cliquables.
+- **installation partielle** : l'admin ne recevait aucune alerte
+et l'app continuait avec une URL inutilisable.
+- Le strict **fail loud** rend ces problèmes immédiatement visibles.
+
+### Changed
+
+- **AbstractController::getBaseUrl()** : suppression du `error_log`
+de fallback, du calcul `HTTPS`/`SERVER_NAME`, et du default
+`localhost`. La méthode fait désormais 4 lignes, une seule source de
+vérité (`ConfigProvider::get('ROOT_URL')`).
+- Aucun changement de comportement observable **lorsque `ROOT_URL` est
+présent** : la valeur retournée est identique (URL rtrimée).
+
+### Tests
+
+- Unit : 199 → 201 tests (+2), 521 → 524 assertions (+3).
+- Integration : 88 tests (inchangés), 165 assertions.
+- **Total : 289 tests verts** (201 Unit + 88 Integration).
+
+### Added (tests)
+
+- **`testGetBaseUrlThrowsWhenRootUrlMissing`** : `ROOT_URL` absent
+→ `RuntimeException`.
+- **`testGetBaseUrlThrowsWhenRootUrlEmpty`** : `ROOT_URL = ''`
+→ `RuntimeException`.
+- **`testGetBaseUrlThrowsWhenRootUrlIsNotString`** : `ROOT_URL = 42`
+→ `RuntimeException`.
+- **`testGetBaseUrlThrowsWithExplicitMessage`** : le message
+contient `ROOT_URL` et `.env.local.php` (aide au diagnostic).
+- **`testGetBaseUrlDoesNotFallbackToServerNameNorHttps`** : garde-fou,
+`SERVER_NAME` et `HTTPS` définis ne changent rien, on throw.
+
+### Changed (tests)
+
+- **`testGetBaseUrlDoesNotUseHttpHostHeader`** adapté : injecte un
+`ROOT_URL` sûr + un `HTTP_HOST` hostile, vérifie que `ROOT_URL`
+gagne et que `evil` n'apparaît pas dans le résultat.
+
+### Removed (tests)
+
+- **`testGetBaseUrlFallsBackToServerNameWhenRootUrlMissing`** :
+fallback supprimé.
+- **`testGetBaseUrlFallsBackToServerNameWhenRootUrlEmpty`** : idem.
+- **`testGetBaseUrlFallsBackToLocalhostWhenServerNameMissing`** :
+idem.
+
 ## [0.17.27] — 2026-10-09
 
 ### Security
