@@ -10,6 +10,110 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [0.17.27] — 2026-10-09
+
+### Security
+
+- **ControleController** : chiffrement de `controle.hash_remarques` **dès
+l'écriture** dans `edit()` (issue #52).
+- La remarque générale du contrôle était stockée en clair dans
+`controle.hash_remarques` jusqu'à la clôture. Elle n'était chiffrée
+qu'à l'appel de `cloturer()`.
+- Fenêtre d'exposition : entre `edit()` (POST) et `cloturer()`, la
+remarque était lisible par quiconque accède à la BDD (dump, backup,
+accès admin direct, log SQL).
+- Fix : `edit()` chiffre via les nouveaux helpers `encryptRemarque()` /
+`cryptoConfig()`, alimentés par `ConfigProvider` (Vague 11).
+`edit()` en lecture (contrôle clôturé) déchiffre via
+`decryptRemarque()`.
+
+- **ControleController** : `cloturer()` **idempotent** sur
+`hash_remarques` (issue #52).
+- Avant : `cloturer()` re-chiffrait systématiquement
+`hash_remarques`, ce qui aurait produit un **double chiffrement**
+silencieux pour les contrôles ouverts au moment du déploiement du fix.
+- Fix : `isEncrypted()` détecte les valeurs déjà chiffrées (via un
+`openssl_decrypt` test) et les conserve telles quelles. Les valeurs
+legacy en clair (contrôles créés avant le déploiement) sont chiffrées
+à la clôture, préservant la compatibilité.
+- Les remarques de lignes (`controle_ligne.remarque`) suivent la même
+logique : chiffrées à la clôture si en clair, conservées si déjà
+chiffrées.
+
+- Politique stricte : `SECRET_KEY` absente ou invalide dans
+`.env.local.php` → `RuntimeException`. On ne stocke jamais en clair,
+on ne perd jamais silencieusement une remarque (mieux vaut une 500
+visible qu'une fuite discrète).
+
+### Changed
+
+- **ControleController** : suppression de l'`include` en dur de
+`.env.local.php` dans `edit()` (lecture) et `cloturer()`. Les 3 blocs
+openssl dupliqués sont remplacés par les helpers `encryptRemarque()`,
+`decryptRemarque()`, `isEncrypted()`, alimentés par
+`ConfigProvider::get('SECRET_KEY')` et `get('CIPHER_METHOD')`.
+- Prépare l'extraction d'un `EncryptionService` centralisé (#50b) :
+la logique crypto est maintenant isolée dans 4 méthodes (dont
+`cryptoConfig()` privée), prêtes à être déplacées dans un service.
+
+- Aucun changement de comportement observable hors fix #52 : routes,
+templates, flux HTTP et logique métier inchangés. La valeur affichée
+à l'utilisateur est identique (déchiffrée à la lecture, chiffrée à
+l'écriture).
+
+### Added
+
+- **`ControleController::encryptRemarque(?string): ?string`** :
+chiffre une remarque libre en `base64(IV || ciphertext)`. Retourne
+`null` si la valeur est vide. `protected` pour être testable.
+
+- **`ControleController::decryptRemarque(?string): ?string`** :
+déchiffre une remarque. Retourne `null` si la valeur n'est pas un
+ciphertext valide (legacy en clair, base64 corrompu, mauvaise clé).
+`protected` pour être testable.
+
+- **`ControleController::isEncrypted(?string): bool`** : détecte si
+une valeur est déjà chiffrée. Utilisé par `cloturer()` pour rester
+idempotent.
+
+- **`ControleController::cryptoConfig(): array`** : charge et valide
+`SECRET_KEY` + `CIPHER_METHOD` depuis `ConfigProvider`.
+`RuntimeException` si la clé est absente ou non-hex.
+
+- **`tests/Fixtures/env.test.php`** : fixture de configuration
+réutilisable (clé AES-256 de test, cipher, ROOT_URL). Prépare
+#50b/#50c.
+
+### Tests
+
+- Unit : 194 → 199 tests (+5), 506 → 521 assertions (+15).
+- Integration : 88 tests (inchangés), 165 assertions.
+- **Total : 287 tests verts** (199 Unit + 88 Integration).
+
+### Added (tests)
+
+- **`ControleControllerEncryptionTest`** : 5 tests Unit couvrant :
+- `testEditPostEncryptsHashRemarques` : `edit()` stocke un ciphertext
+base64 déchiffrable (vérification round-trip avec la clé de fixture).
+- `testEditPostStoresNullWhenRemarquesEmpty` : remarque vide → `null`,
+pas de ciphertext.
+- `testEditPostThrowsWhenSecretKeyMissing` : `SECRET_KEY` absente →
+`RuntimeException`, `save()` non appelé.
+- `testCloturerDoesNotDoubleEncryptAlreadyEncrypted` : une valeur déjà
+chiffrée est conservée telle quelle (pas de double chiffrement).
+- `testCloturerEncryptsLegacyPlaintextValue` : une valeur legacy en
+clair est chiffrée à la clôture (compatibilité).
+
+- **`TestableControleController`** : ajout du 6e paramètre
+`?ConfigProvider` + surcharge `configProvider()`. Surcharge
+`updateLastActivity()` en no-op pour éviter l'ouverture PDO en test
+Unit (aucun test n'exerçait ce comportement, iso-comportement
+observable).
+
+- **`TestableControleControllerBuilder`** : ajout de
+`withConfigProvider()` + `ConfigProvider` par défaut pointant sur la
+fixture `env.test.php`.
+
 ## [0.17.26] — 2026-10-08
 
 ### Security
