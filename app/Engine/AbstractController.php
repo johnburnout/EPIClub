@@ -207,39 +207,35 @@ abstract class AbstractController
     }
     
     /**
-    * [SÉCURITÉ #50a] Retourne l'URL de base.
+    * [SÉCURITÉ #50a-bis] Retourne l'URL de base.
     *
-    * Lit ROOT_URL depuis .env.local.php. Si absent, fallback sur
-    * $_SERVER['SERVER_NAME'] (⚠️ transition : ce fallback sera
-    * supprimé en #50a-bis, ROOT_URL deviendra obligatoire).
+    * Lit ROOT_URL depuis ConfigProvider. Si absent, vide ou non-string,
+    * lance une RuntimeException avec un message d'aide explicite.
     *
-    * ⚠️ On n'utilise PLUS $_SERVER['HTTP_HOST'] : ce header est
-    * contrôlable par le client (Host header injection) et permet
-    * de rediriger les liens générés (QR, reset password) vers un
-    * domaine attaquant.
+    * ⚠️ Plus de fallback sur SERVER_NAME : ce dernier provenait de la
+    * config serveur (Apache/Nginx) et n'était pas spoofable via le
+    * header Host:, mais il restait imprécis derrière un reverse-proxy
+    * ou un load-balancer, et masquait une configuration incomplète.
+    * Le strict force l'admin à déclarer explicitement son URL publique.
     *
-    * @see https://github.com/johnburnout/EPIClub/issues/50a
+    * ⚠️ On n'utilise PAS $_SERVER['HTTP_HOST'] (Host header injection) :
+    * ce header est contrôlable par le client et permet de rediriger les
+    * liens générés (QR, reset password) vers un domaine attaquant.
+    *
+    * @throws \RuntimeException Si ROOT_URL est absent, vide ou non-string.
+    * @see https://github.com/johnburnout/EPIClub/issues/50a-bis
     */
     protected function getBaseUrl(): string
     {
         $url = $this->configProvider()->get('ROOT_URL');
         
-        if (is_string($url) && $url !== '') {
-            return rtrim($url, '/');
+        if (!is_string($url) || $url === '') {
+            throw new \RuntimeException(
+                'ROOT_URL is not configured in .env.local.php. '
+                . 'Add: ROOT_URL="https://votre-domaine.fr"'
+            );
         }
         
-        // ⚠️ FALLBACK TRANSITOIRE — sera supprimé en #50a-bis.
-        // SERVER_NAME provient de la config serveur (Apache/Nginx),
-        // pas d'un header client. Moins flexible que ROOT_URL mais
-        // non spoofable via le header Host:.
-        error_log(
-            '[AbstractController] ROOT_URL manquant dans .env.local.php, '
-            . 'fallback sur SERVER_NAME (déprécié, cf. #50a-bis).'
-        );
-        
-        $protocol = (($_SERVER['HTTPS'] ?? 'off') === 'on') ? 'https://' : 'http://';
-        $host = $_SERVER['SERVER_NAME'] ?? 'localhost';
-        
-        return $protocol . $host;
+        return rtrim($url, '/');
     }
 }
