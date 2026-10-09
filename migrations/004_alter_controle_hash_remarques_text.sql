@@ -1,0 +1,27 @@
+-- [SÉCURITÉ #52] Élargissement de controle.hash_remarques.
+--
+-- Contexte : depuis v0.17.27 (#52), hash_remarques est chiffré dès
+-- l'écriture en edit() via base64(IV || ciphertext). Cette
+-- représentation gonfle la taille d'environ 2× par rapport au
+-- plaintext.
+--
+-- Or la colonne était VARCHAR(64), soit ~16 octets de plaintext utile
+-- après chiffrement. Toute remarque > ~15 caractères déclenchait
+-- "Data too long for column 'hash_remarques'" en mode SQL strict.
+--
+-- Avant #52, le bug existait déjà à la clôture, mais restait invisible
+-- tant que les contrôles n'étaient pas clôturés avec une remarque
+-- longue. #52 a rendu le problème immédiat (écriture au lieu de
+-- clôture) et donc bloquant.
+--
+-- Fix : TEXT (65 535 octets), aligné sur controle_ligne.remarque
+-- (cf. #53). Capacité utile : ~49 000 octets de plaintext, soit
+-- ~24 500 caractères UTF-8 accentués.
+--
+-- ⚠️ Ordre de déploiement en prod :
+--   1. Exécuter cette migration.
+--   2. Déployer le code v0.18.1.
+--   Ne PAS inverser : le code v0.17.27 écrit du ciphertext long, qui
+--   déborderait de VARCHAR(64) avant la migration.
+
+ALTER TABLE controle MODIFY COLUMN hash_remarques TEXT NULL;
