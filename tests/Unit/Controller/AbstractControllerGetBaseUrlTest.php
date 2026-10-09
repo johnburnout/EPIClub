@@ -63,65 +63,70 @@ final class AbstractControllerGetBaseUrlTest extends TestCase
     // ROOT_URL absent → fallback SERVER_NAME
     // ==================================================================
 
-    public function testGetBaseUrlFallsBackToServerNameWhenRootUrlMissing(): void
-    {
-        $_SERVER['SERVER_NAME'] = 'fallback.example.com';
-        $_SERVER['HTTPS'] = 'on';
-
-        try {
-            $controller = $this->makeControllerWith([]);
-
-            self::assertSame(
-                'https://fallback.example.com',
-                $controller->exposeGetBaseUrl()
-            );
-        } finally {
-            unset($_SERVER['SERVER_NAME'], $_SERVER['HTTPS']);
-        }
-    }
-
-    public function testGetBaseUrlFallsBackToServerNameWhenRootUrlEmpty(): void
-    {
-        $_SERVER['SERVER_NAME'] = 'fallback.example.com';
-        unset($_SERVER['HTTPS']);
-
-        try {
-            $controller = $this->makeControllerWith(['ROOT_URL' => '']);
-
-            self::assertSame(
-                'http://fallback.example.com',
-                $controller->exposeGetBaseUrl()
-            );
-        } finally {
-            unset($_SERVER['SERVER_NAME'], $_SERVER['HTTPS']);
-        }
-    }
-
-    public function testGetBaseUrlFallsBackToLocalhostWhenServerNameMissing(): void
-    {
-        unset($_SERVER['SERVER_NAME'], $_SERVER['HTTPS']);
-
-        $controller = $this->makeControllerWith([]);
-
-        self::assertSame('http://localhost', $controller->exposeGetBaseUrl());
-    }
-
     public function testGetBaseUrlDoesNotUseHttpHostHeader(): void
     {
-        // ⚠️ Le point clé de #50a : HTTP_HOST ne doit JAMAIS être utilisé.
         $_SERVER['HTTP_HOST'] = 'evil.example.com';
         $_SERVER['SERVER_NAME'] = 'legit.example.com';
         $_SERVER['HTTPS'] = 'on';
-
+        
         try {
-            $controller = $this->makeControllerWith([]);
-
+            $controller = $this->makeControllerWith(['ROOT_URL' => 'https://safe.example.com']);
+            
             $result = $controller->exposeGetBaseUrl();
-
-            self::assertSame('https://legit.example.com', $result);
+            
+            self::assertSame('https://safe.example.com', $result);
             self::assertStringNotContainsString('evil', $result);
         } finally {
             unset($_SERVER['HTTP_HOST'], $_SERVER['SERVER_NAME'], $_SERVER['HTTPS']);
+        }
+    }
+    
+    public function testGetBaseUrlThrowsWhenRootUrlMissing(): void
+    {
+        $controller = $this->makeControllerWith([]);
+        $this->expectException(\RuntimeException::class);
+        $controller->exposeGetBaseUrl();
+    }
+    
+    public function testGetBaseUrlThrowsWhenRootUrlEmpty(): void
+    {
+        $controller = $this->makeControllerWith(['ROOT_URL' => '']);
+        $this->expectException(\RuntimeException::class);
+        $controller->exposeGetBaseUrl();
+    }
+    
+    public function testGetBaseUrlThrowsWhenRootUrlIsNotString(): void
+    {
+        $controller = $this->makeControllerWith(['ROOT_URL' => 42]);
+        $this->expectException(\RuntimeException::class);
+        $controller->exposeGetBaseUrl();
+    }
+    
+    public function testGetBaseUrlThrowsWithExplicitMessage(): void
+    {
+        $controller = $this->makeControllerWith([]);
+        
+        try {
+            $controller->exposeGetBaseUrl();
+            self::fail('Expected RuntimeException');
+        } catch (\RuntimeException $e) {
+            self::assertStringContainsString('ROOT_URL', $e->getMessage());
+            self::assertStringContainsString('.env.local.php', $e->getMessage());
+        }
+    }
+    
+    public function testGetBaseUrlDoesNotFallbackToServerNameNorHttps(): void
+    {
+        // Garde-fou : même avec SERVER_NAME et HTTPS définis, on throw.
+        $_SERVER['SERVER_NAME'] = 'fallback.example.com';
+        $_SERVER['HTTPS'] = 'on';
+        
+        try {
+            $controller = $this->makeControllerWith([]);
+            $this->expectException(\RuntimeException::class);
+            $controller->exposeGetBaseUrl();
+        } finally {
+            unset($_SERVER['SERVER_NAME'], $_SERVER['HTTPS']);
         }
     }
 
