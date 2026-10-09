@@ -436,24 +436,28 @@ class ControleController extends AbstractController
         }
         unset($ligne);
 
-        // Déchiffrement si clôturé (sur toutes les lignes)
-        // [SÉCURITÉ #52] Déchiffrement en lecture (contrôle clôturé uniquement).
-        if ($readonly && $controle['statut'] === 'cloture') {
-            foreach ($allLignes as &$ligne) {
-                if (!empty($ligne['remarque'])) {
-                    $decrypted = $this->decryptRemarque($ligne['remarque']);
-                    if ($decrypted !== null) {
-                        $ligne['remarque'] = $decrypted;
-                    }
+        // [SÉCURITÉ #52] Déchiffrement en lecture.
+        //
+        // La remarque générale est chiffrée dès l'écriture par edit() POST.
+        // Elle doit donc être déchiffrée à CHAQUE affichage du formulaire,
+        // que le contrôle soit clôturé ou non. Les lignes suivent la même
+        // logique : elles peuvent être chiffrées après une clôture, mais
+        // tant qu'elles sont en clair, decryptRemarque() retourne null et
+        // on garde la valeur d'origine.
+        foreach ($allLignes as &$ligne) {
+            if (!empty($ligne['remarque'])) {
+                $decrypted = $this->decryptRemarque($ligne['remarque']);
+                if ($decrypted !== null) {
+                    $ligne['remarque'] = $decrypted;
                 }
             }
-            unset($ligne);
-            
-            if (!empty($controle['hash_remarques'])) {
-                $decrypted = $this->decryptRemarque($controle['hash_remarques']);
-                if ($decrypted !== null) {
-                    $controle['hash_remarques'] = $decrypted;
-                }
+        }
+        unset($ligne);
+        
+        if (!empty($controle['hash_remarques'])) {
+            $decrypted = $this->decryptRemarque($controle['hash_remarques']);
+            if ($decrypted !== null) {
+                $controle['hash_remarques'] = $decrypted;
             }
         }
 

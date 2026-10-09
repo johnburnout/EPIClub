@@ -16,6 +16,7 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
+use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Tests Unit pour l'issue #52 :
@@ -298,4 +299,36 @@ final class ControleControllerEncryptionTest extends TestCase
             ->disableOriginalConstructor()
             ->getMock();
     }
+    
+//  public function testEditGetDecryptsHashRemarquesForOpenControl(): void
+//  {
+//      // [RÉGRESSION #52] Un contrôle ouvert dont la remarque est chiffrée
+//      // (par un POST edit() antérieur) doit afficher la remarque en clair
+//      // dans le formulaire, même si le contrôle n'est pas clôturé.
+//      $key      = hex2bin(self::FIXTURE_SECRET_KEY_HEX);
+//      $ivLength = openssl_cipher_iv_length(self::CIPHER_METHOD);
+//      $iv       = openssl_random_pseudo_bytes($ivLength);
+//      $chiffre  = openssl_encrypt('Ma remarque en clair', self::CIPHER_METHOD, $key, 0, $iv);
+//      $encrypted = base64_encode($iv . $chiffre);
+//      
+//      $controleManager = $this->makeControleManagerMock();
+//      $controleManager->method('findId')->willReturn([
+//          'id'             => 5,
+//          'statut'         => 'ouvert',  // ← PAS clôturé
+//          'controleur_id'  => 42,
+//          'date_debut'     => date('Y-m-d H:i:s'),
+//          'hash_remarques' => $encrypted,
+//      ]);
+//      
+//      $controller = $this->makeController($controleManager);
+//      
+//      $request = Request::create('/admin/controles/edit/5', 'GET');
+//      
+//      $response = $controller->edit($request);
+//      
+//      // ⚠️ On doit retrouver la remarque EN CLAIR dans le HTML rendu.
+//  self::assertInstanceOf(Response::class, $response);
+//  self::assertStringContainsString('Ma remarque en clair', $response->getContent());
+//  self::assertStringNotContainsString($encrypted, $response->getContent());
+//  }
 }
