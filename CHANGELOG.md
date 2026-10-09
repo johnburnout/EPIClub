@@ -10,6 +10,61 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [0.18.1] — 2026-10-09
+
+### Fixed
+
+- **ControleController** : la remarque générale d'un contrôle **ouvert**
+s'affiche désormais en clair dans le formulaire d'édition
+(régression #52, introduite en v0.17.27).
+- Cause : depuis #52, `edit()` POST chiffre `hash_remarques` dès
+l'écriture. Mais la vue `edit()` GET ne déchiffrait qu'à la condition
+`$readonly && statut === 'cloture'`. Résultat : le textarea
+`remarques_generales` affichait le ciphertext base64 pour tout
+contrôle non clôturé.
+- Fix : déchiffrement **inconditionnel** dans `edit()` GET.
+`decryptRemarque()` retourne `null` pour les valeurs non chiffrées
+(legacy, base64 invalide), auquel cas la valeur d'origine est
+conservée — iso-comportement strict pour les données pré-#52.
+
+- **Base de données** : `controle.hash_remarques` passe de
+`VARCHAR(64)` à `TEXT` (régression #52, introduite en v0.17.27).
+- Cause : le chiffrement `base64(IV || ciphertext)` gonfle la taille
+d'environ 2× par rapport au plaintext. `VARCHAR(64)` ne laissait que
+~16 octets de plaintext utile, soit ~15 caractères — toute remarque
+plus longue déclenchait un
+`SQLSTATE[22001] Data too long for column 'hash_remarques'`.
+- Le bug était **latent avant #52** (chiffrement à la clôture
+seulement), mais **bloquant dès #52** (chiffrement à l'écriture).
+- Fix : migration `004_alter_controle_hash_remarques_text.sql`
+(`ALTER TABLE controle MODIFY COLUMN hash_remarques TEXT NULL`),
+alignée sur `controle_ligne.remarque` (#53).
+- ⚠️ **Action requise** : exécuter la migration SQL sur les
+installations existantes.
+
+### Notes
+
+- Le déchiffrement inconditionnel dans `edit()` GET n'a **aucun impact
+sur la sécurité** : le contrôleur ou son propriétaire sont les seuls
+à accéder à cette vue (garde `deniAccessUnlessGranted` + `canEdit`).
+Un admin en `isAdminEdit` peut voir/modifier le contrôle d'un autre
+utilisateur — comportement voulu, inchangé.
+- ⚠️ **Dette technique identifiée** : `edit()` GET instancie
+`new CategorieManager()` et `new EmplacementManager()` en dur
+(non mockables en test Unit). La suite Vague 11 n'est pas complète
+sur `ControleController`. À traiter dans une issue dédiée.
+
+### Tests
+
+- Unit : 201 tests (inchangés), 524 assertions (inchangées).
+- Integration : 88 tests (inchangés), 165 assertions.
+- **Total : 289 tests verts.**
+
+### Added (tests)
+
+- (aucun — le fix est comportemental, validé manuellement en prod
+test et via les 5 tests #52 de non-régression)
+
 ## [0.18.0] — 2026-10-09
 
 ### BREAKING CHANGE
