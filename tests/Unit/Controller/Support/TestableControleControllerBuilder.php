@@ -8,20 +8,11 @@ use Epiclub\Domain\ControleLigneManager;
 use Epiclub\Domain\ControleManager;
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\UtilisateurManager;
+use Epiclub\Engine\ConfigProvider;
 use Epiclub\Engine\Session;
 use PHPUnit\Framework\MockObject\MockBuilder;
 use PHPUnit\Framework\TestCase;
 
-/**
- * [REFACTOR VAGUE 11] Builder pour TestableControleController.
- *
- * ⚠️ PHPUnit 11 : createMock() est protected → on utilise MockBuilder
- *    directement pour instancier les mocks depuis cette classe externe.
- *
- * ⚠️ La Session fournie par défaut NE CONTIENT PAS user['id'] :
- *    cela évite que AbstractController::updateLastActivity() n'ouvre
- *    une connexion PDO via UtilisateurManager.
- */
 final class TestableControleControllerBuilder
 {
     private Session $session;
@@ -29,6 +20,7 @@ final class TestableControleControllerBuilder
     private ControleLigneManager $controleLigneManager;
     private EquipementManager $equipementManager;
     private UtilisateurManager $utilisateurManager;
+    private ConfigProvider $configProvider;
 
     public function __construct(private readonly TestCase $testCase)
     {
@@ -37,6 +29,7 @@ final class TestableControleControllerBuilder
         $this->controleLigneManager  = $this->mockConcrete(ControleLigneManager::class);
         $this->equipementManager     = $this->mockConcrete(EquipementManager::class);
         $this->utilisateurManager    = $this->mockConcrete(UtilisateurManager::class);
+        $this->configProvider        = $this->defaultConfigProvider();
     }
 
     public function withSession(Session $session): self
@@ -69,6 +62,12 @@ final class TestableControleControllerBuilder
         return $this;
     }
 
+    public function withConfigProvider(ConfigProvider $provider): self
+    {
+        $this->configProvider = $provider;
+        return $this;
+    }
+
     public function build(): TestableControleController
     {
         return new TestableControleController(
@@ -77,17 +76,25 @@ final class TestableControleControllerBuilder
             $this->controleLigneManager,
             $this->equipementManager,
             $this->utilisateurManager,
+            $this->configProvider,
         );
     }
 
     // ==================================================================
-    // Helpers internes — utilisent MockBuilder (public en PHPUnit 11)
+    // Helpers internes
     // ==================================================================
 
     /**
-     * Mock une classe concrète en désactivant le constructeur
-     * (évite AbstractManager → PDO).
-     *
+     * ConfigProvider par défaut pointant sur la fixture de test.
+     * Chemin : tests/Unit/Controller/Support/ → ../../../../Fixtures/env.test.php
+     */
+    private function defaultConfigProvider(): ConfigProvider
+    {
+        $fixture = dirname(__DIR__, 3) . '/Fixtures/env.test.php';
+        return new ConfigProvider($fixture);
+    }
+
+    /**
      * @template T of object
      * @param class-string<T> $class
      * @return T
