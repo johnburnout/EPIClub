@@ -110,4 +110,35 @@ final class DatabaseFixture
              WHERE a.id IS NULL"
         );
     }
+    
+    /**
+    * Crée un contrôle de test.
+    *
+    * @param int         $controleurId    ID utilisateur (FK utilisateur.id)
+    * @param string      $libelle         Libellé, doit commencer par 'TEST-' (cleanup)
+    * @param string      $statut          ouvert | en_cours | cloture
+    * @param string|null $hashRemarques   Ciphertext base64, ou null
+    */
+    public function createControle(
+        int $controleurId,
+        string $libelle = 'TEST-CONTROLE',
+        string $statut = 'ouvert',
+        ?string $hashRemarques = null,
+    ): int {
+        $stmt = $this->pdo->prepare(
+            "INSERT INTO controle
+            (libelle, date_debut, date_fin, statut, controleur_id, cree_par, hash_remarques)
+            VALUES (:lib, :debut, :fin, :statut, :ctr, :ctr, :hash)"
+        );
+        $stmt->execute([
+            'lib'    => $libelle,
+            'debut'  => date('Y-m-d H:i:s'),
+            'fin'    => $statut === 'cloture' ? date('Y-m-d H:i:s') : null,
+            'statut' => $statut,
+            'ctr'    => $controleurId,
+            'hash'   => $hashRemarques,
+        ]);
+        
+        return (int) $this->pdo->lastInsertId();
+    }
 }
