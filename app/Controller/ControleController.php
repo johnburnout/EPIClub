@@ -45,6 +45,17 @@ class ControleController extends AbstractController
         return new UtilisateurManager();
     }
     
+    protected function categorieManager(): CategorieManager
+    {
+        return new CategorieManager();
+    }
+    
+    protected function emplacementManager(): EmplacementManager      // ← NOUVEAU
+    {
+        return new EmplacementManager();
+    }
+    
+    
     // ==================================================================
     // [SÉCURITÉ #52] Chiffrement symétrique des remarques libres.
     //
@@ -541,8 +552,8 @@ class ControleController extends AbstractController
         if ($page < 1) $page = 1;
         if ($limit < 1) $limit = 10;
 
-        $categorieManager = new CategorieManager();
-        $emplacementManager = new EmplacementManager();
+        $categorieManager = $this->categorieManager();
+        $emplacementManager = $this->emplacementManager();
 
         $tousLesEquipements = $equipementManager->findAll();
         foreach ($tousLesEquipements as $i => $e) {

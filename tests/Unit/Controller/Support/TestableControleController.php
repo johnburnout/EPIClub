@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Epiclub\Tests\Unit\Controller\Support;
 
 use Epiclub\Controller\ControleController;
+use Epiclub\Domain\CategorieManager;              // ← NOUVEAU
 use Epiclub\Domain\ControleLigneManager;
 use Epiclub\Domain\ControleManager;
+use Epiclub\Domain\EmplacementManager;            // ← NOUVEAU
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\UtilisateurManager;
 use Epiclub\Engine\ConfigProvider;
@@ -20,6 +22,8 @@ final class TestableControleController extends ControleController
         private readonly ControleLigneManager $controleLigneManager,
         private readonly EquipementManager $equipementManager,
         private readonly UtilisateurManager $utilisateurManager,
+        private readonly CategorieManager $categorieManager,         // ← NOUVEAU
+        private readonly EmplacementManager $emplacementManager,     // ← NOUVEAU
         private readonly ?ConfigProvider $configProvider = null,
     ) {
         parent::__construct($session);
@@ -45,28 +49,27 @@ final class TestableControleController extends ControleController
         return $this->utilisateurManager;
     }
 
-    /**
-     * [REFACTOR #52] Surcharge de la factory ConfigProvider.
-     *
-     * Sans surcharge, AbstractController::configProvider() lit le
-     * .env.local.php réel à la racine projet. En test Unit, on injecte
-     * une ConfigProvider pointant sur tests/Fixtures/env.test.php.
-     */
+    // ═══════════════════════════════════════════════════════════════
+    // [VAGUE 11 — issue #61] Nouvelles surcharges
+    // ═══════════════════════════════════════════════════════════════
+
+    protected function categorieManager(): CategorieManager
+    {
+        return $this->categorieManager;
+    }
+
+    protected function emplacementManager(): EmplacementManager
+    {
+        return $this->emplacementManager;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+
     protected function configProvider(): ConfigProvider
     {
         return $this->configProvider ?? parent::configProvider();
     }
 
-    /**
-     * [REFACTOR #52] No-op en test Unit.
-     *
-     * AbstractController::updateLastActivity() instancie un
-     * UtilisateurManager concret → ouverture PDO à chaque construction.
-     * On neutralise pour garder les tests Unit sans dépendance BDD.
-     *
-     * ⚠️ Aucun test n'asserte le comportement de updateLastActivity(),
-     * donc cette surcharge est iso-comportement observable.
-     */
     protected function updateLastActivity(): void
     {
         // no-op

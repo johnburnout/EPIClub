@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Epiclub\Tests\Unit\Controller\Support;
 
+use Epiclub\Domain\CategorieManager;            // ← NOUVEAU
 use Epiclub\Domain\ControleLigneManager;
 use Epiclub\Domain\ControleManager;
+use Epiclub\Domain\EmplacementManager;          // ← NOUVEAU
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\UtilisateurManager;
 use Epiclub\Engine\ConfigProvider;
@@ -20,6 +22,8 @@ final class TestableControleControllerBuilder
     private ControleLigneManager $controleLigneManager;
     private EquipementManager $equipementManager;
     private UtilisateurManager $utilisateurManager;
+    private CategorieManager $categorieManager;         // ← NOUVEAU
+    private EmplacementManager $emplacementManager;     // ← NOUVEAU
     private ConfigProvider $configProvider;
 
     public function __construct(private readonly TestCase $testCase)
@@ -29,6 +33,8 @@ final class TestableControleControllerBuilder
         $this->controleLigneManager  = $this->mockConcrete(ControleLigneManager::class);
         $this->equipementManager     = $this->mockConcrete(EquipementManager::class);
         $this->utilisateurManager    = $this->mockConcrete(UtilisateurManager::class);
+        $this->categorieManager      = $this->mockConcrete(CategorieManager::class);       // ← NOUVEAU
+        $this->emplacementManager    = $this->mockConcrete(EmplacementManager::class);     // ← NOUVEAU
         $this->configProvider        = $this->defaultConfigProvider();
     }
 
@@ -62,6 +68,24 @@ final class TestableControleControllerBuilder
         return $this;
     }
 
+    // ═══════════════════════════════════════════════════════════════
+    // [VAGUE 11 — issue #61] Nouveaux setters
+    // ═══════════════════════════════════════════════════════════════
+
+    public function withCategorieManager(CategorieManager $manager): self
+    {
+        $this->categorieManager = $manager;
+        return $this;
+    }
+
+    public function withEmplacementManager(EmplacementManager $manager): self
+    {
+        $this->emplacementManager = $manager;
+        return $this;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+
     public function withConfigProvider(ConfigProvider $provider): self
     {
         $this->configProvider = $provider;
@@ -76,18 +100,16 @@ final class TestableControleControllerBuilder
             $this->controleLigneManager,
             $this->equipementManager,
             $this->utilisateurManager,
+            $this->categorieManager,        // ← NOUVEAU
+            $this->emplacementManager,      // ← NOUVEAU
             $this->configProvider,
         );
     }
 
     // ==================================================================
-    // Helpers internes
+    // Helpers internes (inchangés)
     // ==================================================================
 
-    /**
-     * ConfigProvider par défaut pointant sur la fixture de test.
-     * Chemin : tests/Unit/Controller/Support/ → ../../../../Fixtures/env.test.php
-     */
     private function defaultConfigProvider(): ConfigProvider
     {
         $fixture = dirname(__DIR__, 3) . '/Fixtures/env.test.php';
