@@ -8,6 +8,25 @@ et le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 à l'historique Git (`git log`, `git tag`).
 
+## [0.18.4] — 2026-10-11
+
+### Changed
+- #50c : `MailerService` reçoit désormais un `ConfigProvider` en constructeur (Vague 11) au lieu de lire `$_ENV['MAILER_DSN']`.
+- #50c : les 2 appelants injectent leur `ConfigProvider` :
+  - `AppUserRegisterController::mailerService()` → `$this->configProvider()`.
+  - `IndexController::testMail()` → `new ConfigProvider($envFile)`.
+- #50c : `Transport::fromDsn()` (DSN malformé) est normalisé en `MailDeliveryException` par `getMailer()` — l'appelant n'a qu'une seule exception à gérer.
+
+### Notes
+- Lecture du DSN **lazy** conservée : le transport est instancié au premier `sendEmail()`, pas au constructeur. Iso-comportement avec l'implémentation pré-#50c.
+- La politique stricte reste inchangée : DSN absent ou vide → `MailDeliveryException`.
+- Fin du chantier « ConfigProvider » (#50) : les 3 volets (#50a, #50b, #50c) sont livrés. `$_ENV` n'est plus utilisé directement dans les services (`EncryptionService`, `MailerService`).
+
+### Tests
+- Unit : 228 → 232 tests (+4), 561 → 565 assertions (+4).
+- Integration : 7 tests (inchangés).
+- **Total : 232 tests verts** (4 nouveaux sur `MailerService`).
+
 ## [0.18.3] — 2026-10-11
 
 ### Changed

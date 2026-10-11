@@ -179,8 +179,10 @@ class IndexController extends AbstractController
                 return new JsonResponse(['success' => false, 'error' => 'Adresse expéditeur manquante']);
             }
 
-            // Instancier le service mailer (il lit MAILER_DSN depuis $_ENV)
-            $mailer = new \Epiclub\Engine\MailerService();
+            // [VAGUE 13 - #50c] Instancier le service mailer via ConfigProvider.
+            // Le DSN est lu depuis .env.local.php (plus de $_ENV).
+            $configProvider = new ConfigProvider($envFile);
+            $mailer = new \Epiclub\Engine\MailerService($configProvider);
 
             // Créer l'email de test
             $email = new \Symfony\Component\Mime\Email();

@@ -40,7 +40,7 @@ class AppUserRegisterController extends AbstractController
     
     protected function mailerService(): MailerServiceInterface
     {
-        return new MailerService();
+        return new MailerService($this->configProvider());
     }
     
     public function account(Request $request): Response
