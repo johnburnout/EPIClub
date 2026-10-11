@@ -3,9 +3,25 @@
 namespace Epiclub\Domain;
 
 use Epiclub\Engine\AbstractManager;
+use Epiclub\Engine\ConfigProvider;
+use Epiclub\Engine\EncryptionService;
 
 class EquipementManager extends AbstractManager
 {
+    /**
+    * [VAGUE 13 - #50b] Factory EncryptionService.
+    *
+    * Instancie le service avec le ConfigProvider par défaut
+    * (.env.local.php). Surchargeable en test pour injecter une
+    * fixture ou un mock.
+    */
+    protected function encryptionService(): EncryptionService
+    {
+        return new EncryptionService(
+            new ConfigProvider(__DIR__ . '/../../.env.local.php')
+        );
+    }
+    
     public function findAll($order = '', $limit = -1, $offset = 0)
     {
         $params = $this->buildOrderClause($order)
@@ -165,29 +181,23 @@ class EquipementManager extends AbstractManager
         $stmt->execute(['equipement_id' => $equipementId]);
         $result = $stmt->fetchAll();
 
-        // Déchiffrer les remarques si nécessaire
+        // [VAGUE 13 - #50b] Déchiffrement via EncryptionService.
+        // Si SECRET_KEY est absente/invalide, le service throw — on
+        // laisse remonter : mieux vaut une 500 visible qu'un déchiffrement
+        // silencieusement raté (aligné #52).
         if (!empty($result)) {
-            $config = include __DIR__ . '/../../.env.local.php';
-            $secretKey = isset($config['SECRET_KEY']) ? hex2bin($config['SECRET_KEY']) : null;
-            $cipherMethod = $config['CIPHER_METHOD'] ?? 'AES-256-CBC';
-
+            $service = $this->encryptionService();
             foreach ($result as &$ligne) {
-                // Déchiffrer la remarque de la ligne si elle existe
                 if (!empty($ligne['remarque'])) {
-                    $data = base64_decode($ligne['remarque'], true);
-                    if ($data !== false) {
-                        $ivLength = openssl_cipher_iv_length($cipherMethod);
-                        if (strlen($data) >= $ivLength) {
-                            $iv = substr($data, 0, $ivLength);
-                            $chiffre = substr($data, $ivLength);
-                            $decrypted = openssl_decrypt($chiffre, $cipherMethod, $secretKey, 0, $iv);
-                            if ($decrypted !== false) {
-                                $ligne['remarque'] = $decrypted;
-                            }
-                        }
+                    $decrypted = $service->decrypt($ligne['remarque']);
+                    if ($decrypted !== null) {
+                        $ligne['remarque'] = $decrypted;
                     }
+                    // Si decrypt() retourne null (legacy en clair, base64
+                    // corrompu), on garde la valeur d'origine — iso-comportement.
                 }
             }
+            unset($ligne);
         }
 
         return $result;

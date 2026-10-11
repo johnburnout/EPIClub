@@ -9,6 +9,7 @@ use Epiclub\Domain\CategorieManager;
 use Epiclub\Domain\EmplacementManager;
 use Epiclub\Domain\UtilisateurManager;
 use Epiclub\Engine\AbstractController;
+use Epiclub\Engine\EncryptionService;
 use Epiclub\Enum\ControleLigneStatut;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -55,20 +56,29 @@ class ControleController extends AbstractController
         return new EmplacementManager();
     }
     
+    /**
+    * [VAGUE 13 - #50b] Factory EncryptionService.
+    *
+    * Centralise le chiffrement/déchiffrement. Surchargeable en test
+    * pour injecter un service basé sur une fixture (env.test.php)
+    * plutôt que le vrai .env.local.php.
+    */
+    protected function encryptionService(): EncryptionService
+    {
+        return new EncryptionService($this->configProvider());
+    }
+    
     
     // ==================================================================
-    // [SÉCURITÉ #52] Chiffrement symétrique des remarques libres.
+    // [SÉCURITÉ #52 / VAGUE 13 - #50b] Chiffrement symétrique des remarques.
     //
-    // ─── Format du ciphertext stocké ───
-    //   base64( IV || ciphertext )
-    //   - IV de openssl_cipher_iv_length($cipher) octets aléatoires
-    //   - ciphertext = openssl_encrypt($plain, $cipher, $key, 0, $iv)
-    //   - clé = hex2bin(SECRET_KEY) — 32 bytes pour AES-256
+    // Délégation vers EncryptionService (Vague 13). Les helpers restent
+    // `protected` pour préserver l'API interne du contrôleur : les ~12
+    // appels internes ($this->encryptRemarque(...), etc.) sont inchangés.
     //
     // ─── Politique stricte ───
-    //   SECRET_KEY absente ou invalide → RuntimeException.
-    //   On ne stocke JAMAIS en clair, et on ne "perd" pas silencieusement
-    //   la remarque : mieux vaut une 500 visible qu'une fuite silencieuse.
+    //   SECRET_KEY absente ou invalide → RuntimeException (levée par
+    //   EncryptionService au constructeur).
     // ==================================================================
     
     /**
@@ -81,96 +91,25 @@ class ControleController extends AbstractController
         if ($plain === null || $plain === '') {
             return null;
         }
-        
-        $config = $this->cryptoConfig();
-        
-        $ivLength = openssl_cipher_iv_length($config['cipher']);
-        if ($ivLength === false) {
-            throw new \RuntimeException(
-                'Invalid CIPHER_METHOD: ' . $config['cipher']
-            );
-        }
-        
-        $iv       = openssl_random_pseudo_bytes($ivLength);
-        $chiffre  = openssl_encrypt($plain, $config['cipher'], $config['key'], 0, $iv);
-        if ($chiffre === false) {
-            throw new \RuntimeException('openssl_encrypt failed.');
-        }
-        
-        return base64_encode($iv . $chiffre);
+        return $this->encryptionService()->encrypt($plain);
     }
     
     /**
     * Déchiffre une remarque libre.
-    * Retourne null si la valeur n'est pas un ciphertext valide
-    * (legacy en clair, base64 corrompu, mauvaise clé, …).
+    * Retourne null si la valeur n'est pas un ciphertext valide.
     */
     protected function decryptRemarque(?string $encoded): ?string
     {
-        if ($encoded === null || $encoded === '') {
-            return null;
-        }
-        
-        $config = $this->cryptoConfig();
-        
-        $data = base64_decode($encoded, true);
-        if ($data === false) {
-            return null;
-        }
-        
-        $ivLength = openssl_cipher_iv_length($config['cipher']);
-        if ($ivLength === false || strlen($data) <= $ivLength) {
-            return null;
-        }
-        
-        $iv      = substr($data, 0, $ivLength);
-        $chiffre = substr($data, $ivLength);
-        
-        $plain = openssl_decrypt($chiffre, $config['cipher'], $config['key'], 0, $iv);
-        return $plain === false ? null : $plain;
+        return $this->encryptionService()->decrypt($encoded);
     }
     
     /**
     * Détecte si une valeur est déjà chiffrée par notre schéma.
-    * Utilisé par cloturer() pour rester idempotent sur les contrôles
-    * déjà traités par edit() après le fix #52.
     */
     protected function isEncrypted(?string $value): bool
     {
-        if ($value === null || $value === '') {
-            return false;
-        }
-        return $this->decryptRemarque($value) !== null;
+        return $this->encryptionService()->isEncrypted($value);
     }
-    
-    /**
-    * Charge et valide la config crypto depuis ConfigProvider.
-    *
-    * @return array{key:string, cipher:string}
-    * @throws \RuntimeException si SECRET_KEY absente ou invalide.
-    */
-    private function cryptoConfig(): array
-    {
-        $provider = $this->configProvider();
-        
-        $keyHex = $provider->get('SECRET_KEY');
-        if (!is_string($keyHex) || $keyHex === '') {
-            throw new \RuntimeException('SECRET_KEY is not configured.');
-        }
-        
-        $key = hex2bin($keyHex);
-        if ($key === false) {
-            throw new \RuntimeException('SECRET_KEY is not valid hex.');
-        }
-        
-        $cipher = $provider->get('CIPHER_METHOD', 'AES-256-CBC');
-        if (!is_string($cipher) || $cipher === '') {
-            $cipher = 'AES-256-CBC';
-        }
-        
-        return ['key' => $key, 'cipher' => $cipher];
-    }
-    
     
     private function canEdit($controle, $user)
     {

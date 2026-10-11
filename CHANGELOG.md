@@ -8,6 +8,23 @@ et le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 à l'historique Git (`git log`, `git tag`).
 
+## [0.18.3] — 2026-10-11
+
+### Changed
+- #50b : `EncryptionService` reçoit désormais un `ConfigProvider` en constructeur (Vague 11) et expose `isEncrypted()`.
+- #50b : chiffrement/déchiffrement centralisés dans `EncryptionService` — `ControleController` (helpers `encryptRemarque`/`decryptRemarque`/`isEncrypted`) et `EquipementManager::getHistoriqueControles()` délèguent au service via une factory `protected encryptionService()`.
+- #50b : politique stricte `SECRET_KEY` absente/invalide → `RuntimeException` au constructeur (aligné #52).
+
+### Notes
+- La partie « `IndexController::updateSmtp()` → `ConfigProvider::set()` » du ticket #50b a été absorbée par #59 (v0.18.2) : `updateSmtp()` utilise déjà `EnvironmentFileParser` et n'écrit plus manuellement. Aucun refactor supplémentaire.
+- Le ciphertext reste au format `base64(IV || ciphertext)`, inchangé. Compatibilité totale avec les données existantes.
+- `EncryptionService::decrypt()` retourne maintenant `null` pour les valeurs non déchiffrables (au lieu de retourner l'input) — aucun appelant avant #50b, donc iso-comportement observable préservé.
+
+### Tests
+- Unit : 216 → 228 tests (+12), 543 → 561 assertions (+18).
+- Integration : 7 tests (inchangés).
+- **Total : 228 tests verts** (12 nouveaux sur `EncryptionService`).
+
 ## [0.18.2] - 2026-10-11
 
 ### Added
