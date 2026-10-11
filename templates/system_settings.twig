@@ -1,7 +1,7 @@
 {% extends "_layout.twig" %}
 
 {% block body %}
-    <h3>Paramètres système – Configuration SMTP</h3>
+    <h3>Paramètres système</h3>
     <hr>
 
     {# Affichage des messages de succès/erreur #}
@@ -21,7 +21,7 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header bg-primary text-white">
-                    <i class="fas fa-server"></i> Serveur SMTP et envoi d'emails
+                    <i class="fas fa-cog"></i> Configuration système
                 </div>
                 <div class="card-body">
                     <form method="post" action="/update-smtp" id="smtpForm">
@@ -29,7 +29,25 @@
                         {% if csrf_token is defined %}
                             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         {% endif %}
-
+                        
+                        {# [VAGUE 13 - #59] Configuration système : ROOT_URL #}
+                        <h5 class="border-bottom pb-2 mb-3">URL racine</h5>
+                        
+                        <div class="mb-3">
+                            <label for="root_url" class="form-label">URL racine (ROOT_URL)</label>
+                            <input type="url"
+                                class="form-control"
+                                id="root_url"
+                                name="root_url"
+                                value="{{ settings.root_url|default('') }}"
+                                placeholder="https://epiclub.example.com">
+                            <div class="form-text">
+                                URL absolue http ou https, sans slash final, sans query ni fragment.
+                                Laisser vide pour ne pas modifier la valeur actuelle.
+                            </div>
+                        </div>
+                        
+                        <hr>
                         <div class="row">
                             {# --- COLONNE GAUCHE : SMTP --- #}
                             <div class="col-md-6">

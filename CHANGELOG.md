@@ -8,6 +8,23 @@ et le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 à l'historique Git (`git log`, `git tag`).
 
+## [0.18.2] - 2026-10-11
+
+### Added
+- #59 : `ROOT_URL` est désormais éditable depuis l'écran d'administration *Configuration système*.
+- #59 : nouveau validateur `Epiclub\Engine\RootUrlValidator` — URL absolue http/https, sans query ni fragment, slash final normalisé.
+- #59 : tests Unit `RootUrlValidatorTest` (14 cas) et tests Integration `IndexControllerRootUrlTest` (7 cas).
+
+### Changed
+- #59 : `IndexController::updateSmtp()` migre l'écriture de `.env.local.php` vers `Epiclub\Engine\EnvironmentFileParser` (bénéficie de l'échappement `var_export()` de #49).
+- #59 : `IndexController::systemSettings()` lit `ROOT_URL` via `ConfigProvider` (Vague 12).
+- #59 : libellé de la card « Configuration système » (au lieu de « Serveur SMTP ») et du `<h3>` (au lieu de « Paramètres système – Configuration SMTP »).
+
+### Notes
+- Utilisateur `admin` de la base de test locale passé en `ROLE_SUPER_ADMIN` (setup des tests Integration, pas un changement projet).
+- Dette identifiée : `updateSmtp()` gère désormais plus que SMTP. Renommage cosmétique (`updateSystemSettings()`, route `/update-system-settings`) à envisager dans un ticket séparé.
+- Dette identifiée : `EnvironmentFileParser::set()` réécrit le fichier à chaque appel. Un `setAll()` éviterait 3-4 écritures par requête. Ticket séparé.
+
 ## [Unreleased]
 
 ## [0.18.1] — 2026-10-09
