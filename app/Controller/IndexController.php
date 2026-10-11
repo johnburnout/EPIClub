@@ -6,6 +6,9 @@ use Epiclub\Engine\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Epiclub\Engine\ConfigProvider;
+use Epiclub\Engine\EnvironmentFileParser;
+use Epiclub\Engine\RootUrlValidator;
 
 class IndexController extends AbstractController
 {
@@ -28,12 +31,12 @@ class IndexController extends AbstractController
     {
         // ⚠️ Configuration système (SMTP) : réservée au SUPER_ADMIN
         $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
-
+        
         // Lecture des paramètres actuels depuis .env.local.php
         $mailerDsn = getenv('MAILER_DSN') ?: $_ENV['MAILER_DSN'] ?? '';
         $mailerFrom = getenv('MAILER_FROM') ?: $_ENV['MAILER_FROM'] ?? '';
         $mailerName = getenv('MAILER_NAME') ?: $_ENV['MAILER_NAME'] ?? '';
-
+        
         $dsnParts = parse_url($mailerDsn);
         $smtpHost = $dsnParts['host'] ?? '';
         $smtpPort = $dsnParts['port'] ?? 25;
@@ -41,7 +44,23 @@ class IndexController extends AbstractController
         // [SÉCURITÉ] Ne JAMAIS renvoyer le mot de passe au client.
         parse_str($dsnParts['query'] ?? '', $query);
         $smtpEncryption = $query['encryption'] ?? '';
-
+        
+        // [VAGUE 13 - #59] Lecture de ROOT_URL via ConfigProvider
+        // (source unique de vérité, cf. Vague 12). Si la clé est absente,
+        // on expose une chaîne vide — le champ HTML sera vide, l'utilisateur
+        // pourra la saisir.
+        $rootUrl = '';
+        $envFile = __DIR__ . '/../../.env.local.php';
+        if (is_file($envFile)) {
+            try {
+                $configProvider = new ConfigProvider($envFile);
+                $rootUrl = (string) $configProvider->get('ROOT_URL', '');
+            } catch (\Throwable $e) {
+                // Config illisible : on n'empêche pas l'affichage de la page SMTP.
+                error_log('[IndexController] systemSettings: ' . $e->getMessage());
+            }
+        }
+        
         return $this->render('system_settings.twig', [
             'settings' => [
                 'smtp_host' => $smtpHost,
@@ -50,18 +69,19 @@ class IndexController extends AbstractController
                 'smtp_encryption' => $smtpEncryption,
                 'mail_from' => $mailerFrom,
                 'mail_from_name' => $mailerName,
+                'root_url' => $rootUrl,
             ]
         ]);
     }
 
     public function updateSmtp(Request $request): Response
     {
-        // ⚠️ Configuration système (SMTP) : réservée au SUPER_ADMIN
+        // ⚠️ Configuration système (SMTP + ROOT_URL) : réservée au SUPER_ADMIN
         $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
-
+        
         // [SÉCURITÉ] Vérification CSRF avant toute modification de .env.local.php
         $this->validateCsrf($request);
-
+        
         // Récupération des données du formulaire
         $host = (string) $request->request->get('smtp_host', '');
         $port = (string) $request->request->get('smtp_port', '');
@@ -70,63 +90,70 @@ class IndexController extends AbstractController
         $encryption = (string) $request->request->get('smtp_encryption', '');
         $from = (string) $request->request->get('mail_from', '');
         $fromName = (string) $request->request->get('mail_from_name', '');
-
-        // Validation basique
+        $rawRootUrl = trim((string) $request->request->get('root_url', ''));
+        
+        // Validation basique SMTP (iso-comportement)
         if (empty($host) || empty($port) || empty($user) || empty($from)) {
             $this->session->getFlashBag()->add('error', 'Tous les champs obligatoires doivent être remplis.');
             return $this->redirectTo('/admin/system-settings');
         }
-
-        // Lire le fichier .env.local.php actuel
+        
+        // [VAGUE 13 - #59] Validation ROOT_URL si non vide.
+        // Si vide → no-op (on ne touche pas à la clé existante).
+        // On valide AVANT toute écriture : si ROOT_URL est invalide, on ne
+        // persiste rien (ni SMTP ni ROOT_URL) — comportement « tout ou rien ».
+        $normalizedRootUrl = null;
+        if ($rawRootUrl !== '') {
+            try {
+                $normalizedRootUrl = RootUrlValidator::validate($rawRootUrl);
+            } catch (\InvalidArgumentException $e) {
+                $this->session->getFlashBag()->add('error', $e->getMessage());
+                return $this->redirectTo('/admin/system-settings');
+            }
+        }
+        
+        // Lecture du fichier .env.local.php actuel
         $envFile = __DIR__ . '/../../.env.local.php';
         if (!file_exists($envFile)) {
             $this->session->getFlashBag()->add('error', 'Fichier de configuration introuvable.');
             return $this->redirectTo('/admin/system-settings');
         }
-
+        
         $current = require $envFile;
         if (!is_array($current)) {
             $this->session->getFlashBag()->add('error', 'Fichier de configuration invalide.');
             return $this->redirectTo('/admin/system-settings');
         }
-
+        
         // [SÉCURITÉ] Si le champ mot de passe est vide, on conserve l'ancien.
         if ($pass === '') {
             $currentDsn = $current['MAILER_DSN'] ?? '';
             $currentParts = parse_url($currentDsn);
             $pass = $currentParts['pass'] ?? '';
         }
-
+        
         // Encoder le mot de passe (caractères spéciaux comme @, :, /)
         $passEncoded = urlencode($pass);
-
+        
         // Construire le nouveau DSN
         $dsn = sprintf('smtp://%s:%s@%s:%s', $user, $passEncoded, $host, $port);
         if ($encryption !== '' && $encryption !== 'none') {
             $dsn .= '?encryption=' . $encryption;
         }
-
-        // Mettre à jour les clés
-        $current['MAILER_DSN'] = $dsn;
-        $current['MAILER_FROM'] = $from;
-        $current['MAILER_NAME'] = $fromName;
-
-        // Réécrire le fichier
-        $content = '<?php' . "\n\n";
-        $content .= '/**' . "\n";
-        $content .= ' * This file is autogenerated by application.' . "\n";
-        $content .= ' * Do not edit manually.' . "\n";
-        $content .= ' */' . "\n";
-        $content .= 'return ' . var_export($current, true) . ';' . "\n";
-
-        // [SÉCURITÉ] Vérifier que l'écriture a réussi
-        if (file_put_contents($envFile, $content) === false) {
-            error_log('[IndexController] Failed to write .env.local.php');
-            $this->session->getFlashBag()->add('error', 'Impossible d\'enregistrer la configuration.');
-            return $this->redirectTo('/admin/system-settings');
+        
+        // [VAGUE 13 - #59] Migration vers EnvironmentFileParser
+        // (bénéficie de l'échappement var_export() de l'issue #49).
+        $parser = new EnvironmentFileParser($envFile);
+        $parser->set('MAILER_DSN', $dsn);
+        $parser->set('MAILER_FROM', $from);
+        $parser->set('MAILER_NAME', $fromName);
+        
+        // [VAGUE 13 - #59] Persister ROOT_URL uniquement si fournie et valide
+        if ($normalizedRootUrl !== null) {
+            $parser->set('ROOT_URL', $normalizedRootUrl);
         }
-
-        $this->session->getFlashBag()->add('success', 'Configuration SMTP mise à jour avec succès.');
+        
+        $this->session->getFlashBag()->add('success', 'Configuration mise à jour avec succès.');
         return $this->redirectTo('/admin/system-settings');
     }
 
