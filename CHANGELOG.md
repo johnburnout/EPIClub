@@ -8,6 +8,57 @@ et le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 à l'historique Git (`git log`, `git tag`).
 
+## [Unreleased]
+
+## [0.18.5] — 2026-10-12
+
+### Changed
+
+- #63 : `ClubController` extrait une factory `protected clubManager()`
+(Vague 11 — injection de dépendances) et remplace le `new ClubManager()`
+en dur dans `show()`.
+- #63 : objectif — rendre le manager **mockable** en test Unit et
+supprimer l'ouverture PDO déclenchée par `AbstractManager::__construct()`.
+- Aucun changement de comportement observable hors refactor :
+routes, templates, flux HTTP et logique métier inchangés.
+
+### Added (tests)
+
+- **`TestableClubController`** : sous-classe de test qui injecte un
+`ClubManager` mocké, surcharge la factory `clubManager()` et
+`updateLastActivity()` en no-op (évite `new UtilisateurManager()`).
+- **`TestableClubControllerBuilder`** : builder de test avec mocks
+silencieux par défaut. Utilise `MockBuilder` directement car
+`createMock()` est `protected` en PHPUnit 11.
+- **`ClubControllerTest`** : 20 tests Unit sur `show()` :
+- GET nominal : `findParameters()` appelé, `save()` jamais.
+- `nom` vide / whitespace-only → pas de `save()`.
+- `email` : 6 cas via `#[DataProvider]` (vide accepté, valide,
+`+`, sans `@`, sans domaine, sans user).
+- `activite` : 9 cas via `#[DataProvider]` — les 5 valeurs de
+`self::ACTIVITES` acceptées, hors whitelist rejetées
+(dont `injection SQL-like`, `casse différente`).
+- POST valide : `save()` appelé avec les bonnes valeurs,
+`RedirectResponse` vers `/admin/club`.
+- Troncature défensive du `nom` à 64 chars (`varchar(64)`).
+
+### Notes
+
+- **Piège CSRF en test POST** : `private const CSRF_TOKEN` doit être
+déclarée dans la classe de test. Sans elle, `self::CSRF_TOKEN` vaut
+`null` silencieusement et `ParameterBag::replace()` filtre la clé,
+d'où `submitted=NULL` côté `CsrfValidator`. Pattern retenu :
+`$request->request->replace($params)` **puis**
+`$request->request->set('csrf_token', self::CSRF_TOKEN)`.
+- Les 3 fichiers de test sont dans `tests/Unit/Controller/` et
+`tests/Unit/Controller/Support/`.
+
+### Tests
+
+- Unit : 232 → 252 tests (+20), 565 → 623 assertions (+58).
+- Integration : 7 tests (inchangés, skippés si serveur absent).
+- **Total : 252 tests verts.**
+
 ## [0.18.4] — 2026-10-11
 
 ### Changed
@@ -60,8 +111,6 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 - Utilisateur `admin` de la base de test locale passé en `ROLE_SUPER_ADMIN` (setup des tests Integration, pas un changement projet).
 - Dette identifiée : `updateSmtp()` gère désormais plus que SMTP. Renommage cosmétique (`updateSystemSettings()`, route `/update-system-settings`) à envisager dans un ticket séparé.
 - Dette identifiée : `EnvironmentFileParser::set()` réécrit le fichier à chaque appel. Un `setAll()` éviterait 3-4 écritures par requête. Ticket séparé.
-
-## [Unreleased]
 
 ## [0.18.1] — 2026-10-09
 

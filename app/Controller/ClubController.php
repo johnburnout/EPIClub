@@ -16,13 +16,28 @@ class ClubController extends AbstractController
         'Canoé-Kayac',
         'Multi-activités'
     ];
+
+    // ==================================================================
+    // [REFACTOR VAGUE 11 — issue #63] Factory manager — mockable en
+    // test Unit.
+    //
+    // Retourne une nouvelle instance concrète. Les sous-classes de test
+    // (TestableClubController) surchargent cette factory pour injecter
+    // un mock et éviter l'ouverture PDO déclenchée par
+    // AbstractManager::__construct().
+    // ==================================================================
+
+    protected function clubManager(): ClubManager
+    {
+        return new ClubManager();
+    }
     
     public function show(Request $request)
     {
         // ⚠️ Réglages du club : réservé au SUPER_ADMIN
         $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
         
-        $clubManager = new ClubManager();
+        $clubManager = $this->clubManager();
         $club = $clubManager->findParameters();
         $form_errors = [];
         
