@@ -10,6 +10,45 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [0.18.6] — 2026-10-12
+
+### Changed
+
+- #64 : `EmplacementController` extrait une factory `protected
+emplacementManager()` (Vague 11 — injection de dépendances) et
+remplace les 4 `new EmplacementManager()` en dur (`list`, `show`,
+`edit`, `delete`).
+- #64 : objectif — rendre le manager **mockable** en test Unit et
+supprimer l'ouverture PDO déclenchée par `AbstractManager::__construct()`.
+- Aucun changement de comportement observable hors refactor :
+routes, templates, flux HTTP et logique métier inchangés.
+
+### Added (tests)
+
+- **`TestableEmplacementController`** : sous-classe de test qui injecte
+un `EmplacementManager` mocké, surcharge la factory
+`emplacementManager()`, `updateLastActivity()` en no-op, et
+`validateCsrf()` en no-op (CSRF testé isolément dans `CsrfValidatorTest`).
+- **`TestableEmplacementControllerBuilder`** : builder de test avec
+mocks silencieux par défaut.
+- **`EmplacementControllerTest`** : 27 tests Unit couvrant :
+- `edit()` : GET nominal, GET avec id valide, GET avec id inconnu
+→ redirect, POST `libelle` vide / whitespace-only → pas de save,
+troncature `libelle` à 64 chars, POST valide → save + redirect.
+- `edit()` : validation URL `image` via `#[DataProvider]` (12 cas) —
+`http`/`https` acceptés, `javascript:`/`data:`/`file:`/`ftp:`/
+`mailto:`/sans schéma rejetés.
+- `edit()` : stockage `image` (URL fournie) / `null` (vide).
+- `delete()` : GET rejeté, POST avec équipements → refus,
+POST sans équipements → delete + redirect, POST id inconnu → redirect.
+- `list()` / `show()` : smoke tests via factory mockée.
+
+### Tests
+
+- Unit : 252 → 279 tests (+27), 615 → 685 assertions (+70).
+- Integration : 7 tests (inchangés, skippés si serveur absent).
+- **Total : 279 tests verts.**
+
 ## [0.18.5] — 2026-10-12
 
 ### Changed

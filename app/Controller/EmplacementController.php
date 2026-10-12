@@ -9,11 +9,26 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class EmplacementController extends AbstractController
 {
+    // ==================================================================
+    // [REFACTOR VAGUE 11 — issue #64] Factory manager — mockable en
+    // test Unit.
+    //
+    // Retourne une nouvelle instance concrète. Les sous-classes de test
+    // (TestableEmplacementController) surchargent cette factory pour
+    // injecter un mock et éviter l'ouverture PDO déclenchée par
+    // AbstractManager::__construct().
+    // ==================================================================
+
+    protected function emplacementManager(): EmplacementManager
+    {
+        return new EmplacementManager();
+    }
+
     public function list(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
 
-        $emplacementManager = new EmplacementManager();
+        $emplacementManager = $this->emplacementManager();
         $emplacements = $emplacementManager->findAll();
 
         return $this->render('emplacement_list.twig', [
@@ -31,7 +46,7 @@ class EmplacementController extends AbstractController
             return new RedirectResponse('/admin/emplacements');
         }
 
-        $emplacementManager = new EmplacementManager();
+        $emplacementManager = $this->emplacementManager();
         $emplacement = $emplacementManager->findId($id);
 
         if (!$emplacement) {
@@ -48,7 +63,7 @@ class EmplacementController extends AbstractController
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
         
-        $emplacementManager = new EmplacementManager();
+        $emplacementManager = $this->emplacementManager();
         
         $emplacement = [];
         $form_errors = [];
@@ -131,7 +146,7 @@ class EmplacementController extends AbstractController
             return new RedirectResponse('/admin/emplacements');
         }
 
-        $emplacementManager = new EmplacementManager();
+        $emplacementManager = $this->emplacementManager();
         $emplacement = $emplacementManager->findId($id);
 
         if (!$emplacement) {
