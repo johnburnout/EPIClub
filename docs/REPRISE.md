@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-12 (fin de session #63)
-**Version courante** : v0.18.5
+**Dernière mise à jour** : 2026-10-12 (fin de session #64)
+**Version courante** : v0.18.6
 **Branche** : `main` (travail direct sur main, pas de PR)
 
 ---
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.18.5 | #63 | ClubController factory clubManager() | `<hash>` |
+| v0.18.6 | #64 | EmplacementController factory emplacementManager() | `1af7c98` |
+| v0.18.5 | #63 | ClubController factory clubManager() | `79367c3` |
 | v0.18.4 | #50c | MailerService reçoit ConfigProvider | `cd5b4d5` |
 | v0.18.3 | #50b | EncryptionService centralisé | `12e8e47` |
 | v0.18.2 | #59 | ROOT_URL dans system_settings | `cb49ca2` + merge `33e25c9` |
@@ -25,6 +26,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 ### Chantiers soldés
 
+- **#64 — EmplacementController** : factory `emplacementManager()`,
+  27 tests Unit. Vague 11 close sur Emplacement.
 - **#63 — ClubController** : factory `clubManager()`, 20 tests Unit.
   Vague 11 close sur Club.
 - **#50 — ConfigProvider** : complet (#50a + #50b + #50c).
@@ -36,7 +39,7 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 ### État des tests
 
-- **252 tests Unit/Domain** verts, 615 assertions.
+- **279 tests Unit/Domain** verts, 685 assertions.
 - **7 tests Integration** (nécessitent serveur HTTP sur `localhost:8000`), skippés si serveur absent.
 - Commande : `php vendor/bin/phpunit`
 - Avec Integration : démarrer `php -S localhost:8000 -t public` dans un autre terminal.
@@ -45,26 +48,13 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 ## Prochaines cibles
 
-### Vague 11 — soldes (2 issues à créer)
+### Vague 11 — dernier ticket (1 issue à créer)
 
 La Vague 11 (injection de dépendances via factories `protected`)
-n'est pas complètement déployée. 2 contrôleurs restent sans factories,
-donc non mockables en test Unit.
+n'est pas complètement déployée. **1 contrôleur** reste sans factory,
+donc non mockable en test Unit.
 
-**Ordre suggéré : du plus simple au plus complexe.**
-
-#### 1. `[Vague 11] EmplacementController : factory emplacementManager() + tests Unit`
-
-- Extraire `protected emplacementManager(): EmplacementManager`.
-- Remplacer les 4 `new EmplacementManager()` (`list`, `show`, `edit`, `delete`).
-- Créer `TestableEmplacementController` + builder.
-- Tests Unit :
-  - `edit()` : validation `libelle`, validation URL `image` (http/https
-    uniquement — rejet `javascript:`, `data:`), cas nominal.
-  - `delete()` : POST-only, `hasEquipements()` → refus.
-- **Estimation** : 45 min.
-
-#### 2. `[Vague 11] FournisseurController : factory fournisseurManager() + tests Unit`
+#### 1. `[Vague 11] FournisseurController : factory fournisseurManager() + tests Unit`
 
 - Extraire `protected fournisseurManager(): FournisseurManager`.
 - Remplacer les 5 `new FournisseurManager()`.
@@ -75,7 +65,8 @@ donc non mockables en test Unit.
   - `delete()` : POST-only, `hasAcquisitions()` → refus.
 - **Estimation** : 45 min.
 
-**Pattern Vague 11 de référence** : cf. #47 (EquipementController),
+**Pattern Vague 11 de référence** : cf. #63 (ClubController),
+#64 (EmplacementController), #47 (EquipementController),
 #48 (CategorieController), #53 (UtilisateurController).
 
 ### Vague 14 — à définir
@@ -207,14 +198,23 @@ Pattern release Git :
   côté `CsrfValidator`. Pattern retenu dans `postRequest()` :
   appeler d'abord `$request->request->replace($params)`, puis
   `$request->request->set('csrf_token', self::CSRF_TOKEN)`.
+- **Testable controller** : surcharger `updateLastActivity()` en no-op
+  pour éviter `new UtilisateurManager()` qui ouvre PDO. Pour les
+  contrôleurs qui appellent `validateCsrf()`, surcharger aussi
+  `validateCsrf()` en no-op (CSRF testé isolément dans
+  `CsrfValidatorTest`).
 
 ---
 
 ## Contexte de la session précédente
 
+- **#64** (v0.18.6) : `EmplacementController` factory
+  `emplacementManager()` + 27 tests Unit (edit/delete/list/show,
+  validation URL image http/https uniquement). Vague 11 close sur
+  Emplacement.
 - **#63** (v0.18.5) : `ClubController` factory `clubManager()` + 20 tests
-  Unit. Vague 11 close sur Club. Piège CSRF identifié (constante
-  `CSRF_TOKEN` manquante → `null` silencieux → clé filtrée par
-  `replace()`).
+  Unit. Piège CSRF identifié (constante `CSRF_TOKEN` manquante → `null`
+  silencieux → clé filtrée par `replace()`).
 
-**Prochaine session** : `#64 — EmplacementController` (~45 min).
+**Prochaine session** : `#65 — FournisseurController` (~45 min).
+Dernier ticket de la Vague 11.
