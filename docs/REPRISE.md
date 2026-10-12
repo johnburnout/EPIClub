@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-12 (fin de session #64)
-**Version courante** : v0.18.6
+**Dernière mise à jour** : 2026-10-12 (fin de session #65 — Vague 11 complète)
+**Version courante** : v0.18.7
 **Branche** : `main` (travail direct sur main, pas de PR)
 
 ---
@@ -16,6 +16,7 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
+| v0.18.7 | #65 | FournisseurController factory fournisseurManager() | `<hash>` |
 | v0.18.6 | #64 | EmplacementController factory emplacementManager() | `1af7c98` |
 | v0.18.5 | #63 | ClubController factory clubManager() | `79367c3` |
 | v0.18.4 | #50c | MailerService reçoit ConfigProvider | `cd5b4d5` |
@@ -26,10 +27,18 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 ### Chantiers soldés
 
+- 🎯 **Vague 11 — injection de dépendances** : **COMPLÈTE**.
+  - Tous les contrôleurs ont une factory `protected` par manager.
+  - **67 tests Unit** ajoutés sur les 3 derniers tickets
+    (#63 Club, #64 Emplacement, #65 Fournisseur).
+  - Pattern finalisé : `TestableXxxController` + builder, `postRequest()`
+    avec `replace()` puis `set('csrf_token', ...)`, `validateCsrf()`
+    no-op dans le testable.
+- **#65 — FournisseurController** : factory `fournisseurManager()`,
+  20 tests Unit.
 - **#64 — EmplacementController** : factory `emplacementManager()`,
-  27 tests Unit. Vague 11 close sur Emplacement.
+  27 tests Unit.
 - **#63 — ClubController** : factory `clubManager()`, 20 tests Unit.
-  Vague 11 close sur Club.
 - **#50 — ConfigProvider** : complet (#50a + #50b + #50c).
   - `ConfigProvider` est la source unique de vérité pour la config.
   - Plus de `$_ENV[...]` ni `getenv()` dans les services.
@@ -39,7 +48,7 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 ### État des tests
 
-- **279 tests Unit/Domain** verts, 685 assertions.
+- **299 tests Unit/Domain** verts, 741 assertions.
 - **7 tests Integration** (nécessitent serveur HTTP sur `localhost:8000`), skippés si serveur absent.
 - Commande : `php vendor/bin/phpunit`
 - Avec Integration : démarrer `php -S localhost:8000 -t public` dans un autre terminal.
@@ -48,34 +57,20 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 ## Prochaines cibles
 
-### Vague 11 — dernier ticket (1 issue à créer)
-
-La Vague 11 (injection de dépendances via factories `protected`)
-n'est pas complètement déployée. **1 contrôleur** reste sans factory,
-donc non mockable en test Unit.
-
-#### 1. `[Vague 11] FournisseurController : factory fournisseurManager() + tests Unit`
-
-- Extraire `protected fournisseurManager(): FournisseurManager`.
-- Remplacer les 5 `new FournisseurManager()`.
-- Créer `TestableFournisseurController` + builder.
-- Tests Unit :
-  - `edit()` : validation `nom`, validation `email` souple (optionnel
-    mais valide si fourni), cas nominal.
-  - `delete()` : POST-only, `hasAcquisitions()` → refus.
-- **Estimation** : 45 min.
-
-**Pattern Vague 11 de référence** : cf. #63 (ClubController),
-#64 (EmplacementController), #47 (EquipementController),
-#48 (CategorieController), #53 (UtilisateurController).
-
 ### Vague 14 — à définir
 
 Pas encore cadrée. À ouvrir quand on saura ce qu'elle contient.
 Candidats possibles :
 - Refactor `AbstractManager` (requêtes SQL concaténées à auditer).
 - `EncryptionService` : cache d'instance dans les factories.
-- Nouveaux tests Unit sur les `Manager` non couverts.
+- Nouveaux tests Unit sur les `Manager` non couverts (ClubManager,
+  EmplacementManager, FournisseurManager, CategorieManager, etc.).
+- Tests Unit sur les contrôleurs non encore couverts
+  (AcquisitionController, IndexController, QrRedirectController,
+  AppUpdateController, AppUserRegisterController — partiellement
+  couverts).
+- Migration `@dataProvider` → `#[DataProvider]` sur les tests restants
+  (cf. Dette 4).
 
 ---
 
@@ -203,18 +198,21 @@ Pattern release Git :
   contrôleurs qui appellent `validateCsrf()`, surcharger aussi
   `validateCsrf()` en no-op (CSRF testé isolément dans
   `CsrfValidatorTest`).
+- **Copier un contrôleur** : bien vérifier le `namespace` et le nom de
+  classe. Un copier-coller raté peut mettre `class FournisseurController`
+  dans `FournisseurManager.php` (incident #64).
 
 ---
 
 ## Contexte de la session précédente
 
+- **#65** (v0.18.7) : `FournisseurController` factory
+  `fournisseurManager()` + 20 tests Unit (edit/delete/list/show,
+  validation email souple). **Dernier ticket Vague 11**.
 - **#64** (v0.18.6) : `EmplacementController` factory
-  `emplacementManager()` + 27 tests Unit (edit/delete/list/show,
-  validation URL image http/https uniquement). Vague 11 close sur
-  Emplacement.
+  `emplacementManager()` + 27 tests Unit.
 - **#63** (v0.18.5) : `ClubController` factory `clubManager()` + 20 tests
-  Unit. Piège CSRF identifié (constante `CSRF_TOKEN` manquante → `null`
-  silencieux → clé filtrée par `replace()`).
+  Unit. Piège CSRF identifié (constante `CSRF_TOKEN` manquante).
 
-**Prochaine session** : `#65 — FournisseurController` (~45 min).
-Dernier ticket de la Vague 11.
+**🎯 Vague 11 complète** (3 contrôleurs, 67 tests Unit).
+**Prochaine session** : à définir — Vague 14 ou dette technique.
