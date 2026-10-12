@@ -10,6 +10,58 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [0.18.7] — 2026-10-12
+
+### Changed
+
+- #65 : `FournisseurController` extrait une factory `protected
+fournisseurManager()` (Vague 11 — injection de dépendances) et
+remplace les 4 `new FournisseurManager()` en dur (`list`, `show`,
+`edit`, `delete`).
+- #65 : objectif — rendre le manager **mockable** en test Unit et
+supprimer l'ouverture PDO déclenchée par `AbstractManager::__construct()`.
+- Aucun changement de comportement observable hors refactor :
+routes, templates, flux HTTP et logique métier inchangés.
+- 🎯 **Vague 11 complète** : les 3 derniers contrôleurs
+(ClubController #63, EmplacementController #64, FournisseurController
+#65) sont maintenant équipés de factories `protected`. Tous les
+contrôleurs de l'app sont mockables en test Unit.
+
+### Added (tests)
+
+- **`TestableFournisseurController`** : sous-classe de test qui injecte
+un `FournisseurManager` mocké, surcharge la factory
+`fournisseurManager()`, `updateLastActivity()` en no-op, et
+`validateCsrf()` en no-op (CSRF testé isolément dans `CsrfValidatorTest`).
+- **`TestableFournisseurControllerBuilder`** : builder de test avec
+mocks silencieux par défaut.
+- **`FournisseurControllerTest`** : 20 tests Unit couvrant :
+- `edit()` : GET nominal, GET avec id valide, GET avec id inconnu
+→ redirect, POST `nom` vide / whitespace-only → pas de save,
+troncature `nom` à 64 chars, POST valide → save + redirect.
+- `edit()` : validation email souple via `#[DataProvider]` (6 cas) —
+vide accepté, valide accepté, invalides rejetés.
+- `edit()` : stockage `email` / `phone` à `null` si vides.
+- `delete()` : GET rejeté, POST avec acquisitions → refus, POST sans
+acquisitions → delete + redirect, POST id inconnu → redirect.
+- `list()` / `show()` : smoke tests via factory mockée.
+
+### Tests
+
+- Unit : 279 → 299 tests (+20), 685 → 741 assertions (+56).
+- Integration : 7 tests (inchangés, skippés si serveur absent).
+- **Total : 299 tests verts.**
+
+### Notes
+
+- Fin de la Vague 11. Bilan : 3 contrôleurs (Club, Emplacement,
+Fournisseur), **67 tests Unit ajoutés** sur cette vague
+(#63 + #64 + #65).
+- Pattern Vague 11 finalisé et documenté : factory `protected` sur le
+contrôleur, `TestableXxxController` + builder, `postRequest()` avec
+`replace()` puis `set('csrf_token', ...)`, `validateCsrf()` no-op
+dans le testable.
+
 ## [0.18.6] — 2026-10-12
 
 ### Changed

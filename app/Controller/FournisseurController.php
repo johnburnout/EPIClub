@@ -10,11 +10,26 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class FournisseurController extends AbstractController
 {
+    // ==================================================================
+    // [REFACTOR VAGUE 11 — issue #65] Factory manager — mockable en
+    // test Unit.
+    //
+    // Retourne une nouvelle instance concrète. Les sous-classes de test
+    // (TestableFournisseurController) surchargent cette factory pour
+    // injecter un mock et éviter l'ouverture PDO déclenchée par
+    // AbstractManager::__construct().
+    // ==================================================================
+
+    protected function fournisseurManager(): FournisseurManager
+    {
+        return new FournisseurManager();
+    }
+
     public function list(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
 
-        $fournisseurManager = new FournisseurManager();
+        $fournisseurManager = $this->fournisseurManager();
         $fournisseurs = $fournisseurManager->findAll();
 
         return $this->render('fournisseur_list.twig', [
@@ -33,7 +48,7 @@ class FournisseurController extends AbstractController
             return new RedirectResponse('/admin/fournisseurs');
         }
 
-        $fournisseurManager = new FournisseurManager();
+        $fournisseurManager = $this->fournisseurManager();
         $fournisseur = $fournisseurManager->findId($id);
 
         if (!$fournisseur) {
@@ -50,7 +65,7 @@ class FournisseurController extends AbstractController
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
 
-        $fournisseurManager = new FournisseurManager();
+        $fournisseurManager = $this->fournisseurManager();
 
         $fournisseur = [];
         $form_errors = [];
@@ -124,7 +139,7 @@ class FournisseurController extends AbstractController
             return new RedirectResponse('/admin/fournisseurs');
         }
 
-        $fournisseurManager = new FournisseurManager();
+        $fournisseurManager = $this->fournisseurManager();
         $fournisseur = $fournisseurManager->findId($id);
 
         if (!$fournisseur) {
