@@ -16,7 +16,7 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.19.0 | #71 | AcquisitionManager::findAll() — 2N+1 → 3 requêtes | `<hash>` |
+| v0.19.0 | #71 | AcquisitionManager::findAll() — 2N+1 → 3 requêtes | `155b0a0` |
 | v0.18.10 | #70 | JournalController — EncryptionService reçoit ConfigProvider | `acfca34` |
 | v0.18.9 | #69 | JournalManager — suppression getPdo() + fix ORDER BY | `c6f57fb` |
 | v0.18.8 | #68 | buildWhereClause() dans AbstractManager | `8747339` |
