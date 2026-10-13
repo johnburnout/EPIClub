@@ -14,15 +14,36 @@ class AcquisitionLigneManager extends AbstractManager
         $stmt->execute([
             'id' => $acquisition_id
         ]);
-
+        
         $lignes = $stmt->fetchAll();
-
-        $categorieManager = new CategorieManager();
-
-        foreach ($lignes as $i => $ligne) {
-            $lignes[$i]['categorie'] = $categorieManager->findId($ligne['categorie_id']);
+        
+        // [REFACTOR #72] Early return : évite la requête IN vide.
+        if ($lignes === []) {
+            return $lignes;
         }
-
+        
+        // [REFACTOR #72] Collecte des IDs distincts non-null.
+        // categorie_id est NOT NULL en base, donc isset() est toujours
+        // vrai en pratique — on le garde par défense si le schéma évolue.
+        $categorieIds = [];
+        foreach ($lignes as $ligne) {
+            if (isset($ligne['categorie_id'])) {
+                $categorieIds[$ligne['categorie_id']] = true;
+            }
+        }
+        
+        $categories = $categorieIds === []
+        ? []
+        : (new CategorieManager())->findIds(array_keys($categorieIds));
+        
+        // [REFACTOR #72] ?? null : FK orpheline = clé présente + valeur
+        // null (comportement historique de findId() qui retournait null).
+        foreach ($lignes as $i => $ligne) {
+            if (isset($ligne['categorie_id'])) {
+                $lignes[$i]['categorie'] = $categories[$ligne['categorie_id']] ?? null;
+            }
+        }
+        
         return $lignes;
     }
 
@@ -80,16 +101,17 @@ class AcquisitionLigneManager extends AbstractManager
 
     public function delete(int $id)
     {
-        // Vérifier si la ligne appartient à une acquisition validée
+        // [REFACTOR #72] Factory protected au lieu de new en dur.
+        // Permet de mocker AcquisitionManager en test Unit.
         $ligne = $this->findId($id);
         if ($ligne) {
-            $acquisitionManager = new AcquisitionManager();
+            $acquisitionManager = $this->acquisitionManager();
             $acquisition = $acquisitionManager->findId($ligne['acquisition_id']);
             if ($acquisition && $acquisition['est_validee'] == 1) {
                 return false; // ou lancer une exception
             }
         }
-
+        
         $sql = "DELETE FROM acquisition_ligne WHERE id=:id";
         $stmt = $this->db->prepare($sql);
         return $stmt->execute(['id' => $id]);
@@ -163,5 +185,16 @@ class AcquisitionLigneManager extends AbstractManager
     {
         return $e->getCode() === '23000'
             && (int) ($e->errorInfo[1] ?? 0) === 1062;
+    }
+    
+    /**
+    * [REFACTOR #72] Factory AcquisitionManager — mockable en test Unit.
+    *
+    * Les sous-classes de test peuvent surcharger cette factory pour
+    * injecter un AcquisitionManager mocké (pattern Vague 11).
+    */
+    protected function acquisitionManager(): AcquisitionManager
+    {
+        return new AcquisitionManager();
     }
 }

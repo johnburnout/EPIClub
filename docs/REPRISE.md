@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-13 (fin de session #71 — Vague 14 en cours)
-**Version courante** : v0.19.0
+**Dernière mise à jour** : 2026-10-13 (fin de session #72 — Vague 14 en cours)
+**Version courante** : v0.20.0
 **Branche** : `main` (travail direct sur main, pas de PR)
 
 ---
@@ -16,6 +16,7 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
+| v0.20.0 | #72 | AcquisitionLigneManager — N+1 → 2 requêtes | `<hash>` |
 | v0.19.0 | #71 | AcquisitionManager::findAll() — 2N+1 → 3 requêtes | `155b0a0` |
 | v0.18.10 | #70 | JournalController — EncryptionService reçoit ConfigProvider | `acfca34` |
 | v0.18.9 | #69 | JournalManager — suppression getPdo() + fix ORDER BY | `c6f57fb` |
@@ -29,6 +30,9 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 | v0.18.1 | #52 | Fix déchiffrement hash_remarques | `10e3744` |
 | v0.18.0 | #50a-bis | getBaseUrl strict (ROOT_URL obligatoire) | — |
 
+**Règle hash** : la ligne de la version courante porte `<hash>` (rempli
+lors du ticket suivant). Les versions antérieures portent leur hash réel.
+
 ### Chantiers soldés
 
 - 🎯 **Vague 11 — injection de dépendances** : **COMPLÈTE**.
@@ -38,6 +42,13 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
   - Pattern finalisé : `TestableXxxController` + builder, `postRequest()`
     avec `replace()` puis `set('csrf_token', ...)`, `validateCsrf()`
     no-op dans le testable.
+- **#72 — `AcquisitionLigneManager`** : suppression du N+1 sur
+  `CategorieManager::findId()` dans `findByAcquisition()`.
+  `CategorieManager::findIds()` batch, factory
+  `protected acquisitionManager()` pour `delete()`.
+  8 tests Unit, 1 test Integration de caractérisation.
+  Iso-comportement strict (`isset()` conservé, `?? null` sur FK
+  orpheline, ordre préservé).
 - **#71 — `AcquisitionManager::findAll()`** : suppression du 2N+1.
   `findIds()` batch sur `FournisseurManager` et `UtilisateurManager`.
   10 tests Unit, 1 test Integration de caractérisation.
@@ -61,11 +72,12 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 ### État des tests
 
-- **348 tests** verts (Unit + Domain), **818 assertions**.
-- **8 tests Integration** (contrôleurs, nécessitent serveur HTTP sur
+- **356 tests** verts (Unit + Domain), **836 assertions**.
+- **8 tests Integration Controller** (nécessitent serveur HTTP sur
   `localhost:8000`), skippés si serveur absent.
-- **1 test Integration Domain** (`AcquisitionManagerFindAllIntegrationTest`,
-  nécessite MySQL), skippé si base indisponible.
+- **2 tests Integration Domain** (`AcquisitionManagerFindAllIntegrationTest`,
+  `AcquisitionLigneManagerFindByAcquisitionIntegrationTest`, nécessitent
+  MySQL), skippés si base indisponible.
 - Commande : `php vendor/bin/phpunit`
 - Avec Integration : démarrer `php -S localhost:8000 -t public` dans un autre terminal.
 
@@ -84,30 +96,30 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 - ✅ **#71** — `AcquisitionManager::findAll()` : 2N+1 → 3 requêtes.
   `findIds()` batch sur FournisseurManager et UtilisateurManager.
   10 tests Unit + 1 test Integration de caractérisation.
+- ✅ **#72** — `AcquisitionLigneManager::findByAcquisition()` :
+  N+1 → 2 requêtes. `CategorieManager::findIds()` batch, factory
+  `protected acquisitionManager()` pour `delete()`.
+  8 tests Unit + 1 test Integration de caractérisation.
 - Candidats suivants (par ordre de pertinence) :
-  - **#72** (prochain) — `AcquisitionLigneManager` : N+1 sur
-    `CategorieManager::findId()` dans `findByAcquisition()`, et
-    `delete()` qui instancie `new AcquisitionManager()` à chaque
-    appel (couplage + risque de casse des tests contrôleur qui
-    mockent les managers — signature potentiellement modifiée).
-    Le pattern `findIds()` est maintenant en place : ajouter
-    `CategorieManager::findIds()` sera trivial.
-  - **Tests Unit sur les contrôleurs non encore couverts**
-    (`IndexController`, `QrRedirectController`, `AppUpdateController`,
-    partiellement `AppUserRegisterController`) — priorité remontée
-    après #70 : un bug 500 est resté invisible 7 versions faute de
-    tests.
+  - **#73** (prochain) — `EquipementManager::findOneByCriteria()` :
+    audit SQL concaténé restant, ou tests Unit sur les contrôleurs
+    non encore couverts (`IndexController`, `QrRedirectController`,
+    `AppUpdateController`, partiellement `AppUserRegisterController`) —
+    priorité remontée après #70 : un bug 500 est resté invisible 7
+    versions faute de tests.
   - Factoriser `encryptionService()` dans `AbstractController`
     (Dette 5 — duplication `ControleController` / `JournalController`).
+  - Factoriser `acquisitionManager()` dans `AbstractManager`
+    (Dette 10 étendue — `AcquisitionManager`, `AcquisitionLigneManager`,
+    et à terme `AcquisitionProcess`, `EquipementManager`).
   - Fix `limit <= 0` dans `JournalManager` (`LIMIT -5` → 500).
   - Fix `'u.nom, u.prenom ASC'` (ambiguïté multi-colonnes).
-  - Audit des requêtes SQL concaténées restantes
-    (`EquipementManager::findOneByCriteria()`).
   - `AbstractManager::findOneByCriteria()` générique ? (attention à
     `EquipementManager` — cas particulier `deleted_at IS NULL` — et à
     l'hydratation spécifique d'`AcquisitionManager`).
   - Nouveaux tests Unit sur les `Manager` non couverts (ClubManager,
-    EmplacementManager, FournisseurManager, CategorieManager, etc.).
+    EmplacementManager, FournisseurManager déjà partiellement couvert,
+    CategorieManager).
   - `EncryptionService` : cache d'instance dans les factories.
   - Migration `@dataProvider` → `#[DataProvider]` sur les tests restants
     (cf. Dette 4).
@@ -149,10 +161,12 @@ séparés quand le temps le permet.
   de l'attribut `#[DataProvider]`.
 - Déjà corrigé sur `RootUrlValidatorTest` (#59).
 - Reste à corriger sur les autres tests qui utilisent `@dataProvider`.
-- Les tests #68, #69, #70 et #71 (`AbstractManagerBuildWhereClauseTest`,
+- Les tests #68, #69, #70, #71 et #72 (`AbstractManagerBuildWhereClauseTest`,
   `JournalManagerTest`, `JournalControllerTest`,
   `AcquisitionManagerFindAllTest`, `FournisseurManagerFindIdsTest`,
-  `UtilisateurManagerFindIdsTest`) utilisent déjà l'attribut
+  `UtilisateurManagerFindIdsTest`, `CategorieManagerFindIdsTest`,
+  `AcquisitionLigneManagerFindByAcquisitionTest`,
+  `AcquisitionLigneManagerDeleteTest`) utilisent déjà l'attribut
   `#[DataProvider]` ou n'en ont pas besoin — pas d'ajout de dette.
 - **Ticket à ouvrir** : oui, un petit ticket « chore: migrer
   @dataProvider vers #[DataProvider] ».
@@ -205,39 +219,59 @@ séparés quand le temps le permet.
   migrer les appelants. À traiter dans un ticket dédié.
 - **Ticket à ouvrir** : oui.
 
-### Dette 9 — Absence de contraintes FOREIGN KEY sur `acquisition`
+### Dette 9 — Absence de contraintes FOREIGN KEY sur `acquisition` et `acquisition_ligne`
 
-- `SHOW CREATE TABLE acquisition` ne déclare aucune `CONSTRAINT
-  ... FOREIGN KEY`. Or `fournisseur_id` et `saisie_par` sont
-  `int NOT NULL` et référencent logiquement `fournisseur.id` et
-  `utilisateur.id`.
-- Conséquence : rien n'empêche un `fournisseur_id = 999999` orphelin.
-  D'où le `?? null` défensif dans `AcquisitionManager::findAll()` —
-  **réellement atteignable**, pas du code mort.
+- `SHOW CREATE TABLE acquisition` et `SHOW CREATE TABLE acquisition_ligne`
+  ne déclarent aucune `CONSTRAINT ... FOREIGN KEY`. Or :
+  - `acquisition.fournisseur_id` → `fournisseur.id`
+  - `acquisition.saisie_par` → `utilisateur.id`
+  - `acquisition_ligne.acquisition_id` → `acquisition.id`
+  - `acquisition_ligne.categorie_id` → `categorie.id`
+  sont tous `int NOT NULL` et référencent logiquement une autre table.
+- Conséquence : rien n'empêche un `fournisseur_id = 999999` ou un
+  `categorie_id = 999999` orphelin. D'où les `?? null` défensifs dans
+  `AcquisitionManager::findAll()` (#71) et
+  `AcquisitionLigneManager::findByAcquisition()` (#72) —
+  **réellement atteignables**, pas du code mort.
 - **Impact** : intégrité référentielle non garantie au niveau SGBD ;
-  les FK orphelines doivent être gérées applicativement (ce que fait
-  déjà le `?? null`).
+  les FK orphelines doivent être gérées applicativement (ce que font
+  déjà les `?? null`).
 - **Recommandation** : ajouter les contraintes FK + `ON DELETE
   RESTRICT` (ou `SET NULL` avec colonne nullable, à trancher), mais
   cela nécessite de nettoyer les orphelins existants avant.
 - **Ticket à ouvrir** : oui, mais **après** la Vague 14 (chantier
   schéma, à planifier avec migration de données).
 
-### Dette 10 — `AcquisitionManager::findAll()` non testable unitairement sur le nombre de requêtes
+### Dette 10 — Instanciation en dur des managers dans les Managers
 
-- `findAll()` fait `new FournisseurManager()` et `new UtilisateurManager()` :
-  instances réelles, non injectables. Le mock PDO ne capte que la
-  première requête (SELECT acquisition).
-- Conséquence : la revendication « 3 requêtes au lieu de 2N+1 »
-  n'est pas vérifiable en Unit. Elle ne l'est qu'en Integration
-  (observation de la base).
+- **`AcquisitionManager::findAll()`** fait `new FournisseurManager()` et
+  `new UtilisateurManager()` : instances réelles, non injectables. Le
+  mock PDO ne capte que la première requête (SELECT acquisition).
+- **`AcquisitionLigneManager::findByAcquisition()`** fait
+  `new CategorieManager()` — même problème.
+- Conséquence : la revendication « 3 requêtes au lieu de 2N+1 » (#71) et
+  « 2 requêtes au lieu de N+1 » (#72) n'est pas vérifiable en Unit.
+  Elle ne l'est qu'en Integration (observation de la base).
 - **Recommandation** : extraire des factories `protected
-  fournisseurManager()` et `protected utilisateurManager()` (pattern
-  Vague 11), surchargeables en test. Aligner sur
-  `TestableJournalController` (Vague 14).
+  fournisseurManager()`, `utilisateurManager()`, `categorieManager()`
+  sur `AcquisitionManager` et `AcquisitionLigneManager`, surchargeables
+  en test. Aligner sur `TestableJournalController` (Vague 14). Envisager
+  une factorisation dans `AbstractManager`.
 - **Ticket à ouvrir** : oui, dans la continuité de la Vague 14.
 - Connexe : Dette 5 (`encryptionService()` dupliqué dans les
   contrôleurs).
+
+### Dette 11 — `AcquisitionLigneManager::findId()` reste à 2 requêtes
+
+- `findId()` fait `SELECT acquisition_ligne` + `CategorieManager::findId()`.
+  Ce n'est pas un N+1 (2 requêtes fixes), mais ce n'est pas optimal.
+- **Non traité dans #72** (périmètre strict : `findByAcquisition()` et
+  `delete()` uniquement).
+- **Recommandation** : aligner sur `findIds([$id])` (1 requête SQL au lieu
+  de 2) dans un ticket « micro-perf Managers ». Vérifier au passage
+  l'usage réel de `findId()` — il est appelé par `delete()` (2 fois
+  potentiellement) et par les contrôleurs.
+- **Ticket à ouvrir** : oui, mais **basse priorité** (pas un N+1).
 
 ---
 
@@ -256,7 +290,7 @@ séparés quand le temps le permet.
   - le message de commit mentionne le fix (`refactor + fix: ...`).
 - **Test rouge d'abord** : écrire le test qui échoue, puis implémenter.
   Pour les refactors iso-comportement : **test de caractérisation**
-  (vert avant, vert après) — cf. #71.
+  (vert avant, vert après) — cf. #71 et #72.
 - **Commit unique par ticket** : un commit = un ticket = une version.
 - **Tag annoté** : `git tag -a vX.Y.Z -m "..."`.
 - **Release GitHub** + **clôture issue** après chaque tag.
@@ -269,6 +303,10 @@ séparés quand le temps le permet.
   (comme #59).
 - **CHANGELOG + version.txt** mis à jour à chaque release.
 - **`version.txt` sans newline final** (iso-comportement).
+- **Hash dans `docs/REPRISE.md`** : la ligne de la **version courante**
+  porte `<hash>`. Le hash réel est rempli **au ticket suivant**, au
+  moment où l'on connaît la version figée. Évite un commit cosmétique
+  par ticket.
 
 ---
 
@@ -282,15 +320,17 @@ Tests (depuis la racine du projet) :
 - `php vendor/bin/phpunit --display-deprecations` — affiche le détail
   des dépréciations PHPUnit.
 
-Serveur HTTP pour tests Integration :
+Serveur HTTP pour tests Integration Controller :
 
 - `php -S localhost:8000 -t public` (dans un second terminal).
 
 Base de données de test :
 
 - `mysql -u root epiclub -e "SELECT id, username, role FROM utilisateur WHERE username='admin';"`
-- `mysql -u root epiclub -e "SHOW CREATE TABLE acquisition\G"` — utile
-  pour vérifier NOT NULL et contraintes FK.
+- `mysql -u root epiclub -e "SHOW CREATE TABLE acquisition"`
+- `mysql -u root epiclub -e "SHOW CREATE TABLE acquisition_ligne"`
+  (⚠️ `\G` n'est pas interprété en mode `-e` sous MySQL 8+ — utiliser
+  le client interactif pour le format vertical.)
 
 Pattern release Git :
 
@@ -300,13 +340,18 @@ Pattern release Git :
 - `git tag -a vX.Y.Z -m "vX.Y.Z — #ticket description"`
 - `git push origin vX.Y.Z`
 
-Pattern non-régression #71 (refactor iso-comportement) :
+Pattern non-régression (refactor iso-comportement) :
 
 - Sauvegarder le fichier refactoré : `cp app/Domain/Xxx.php /tmp/Xxx.refactored.php`
 - Restaurer la version HEAD~1 : `git checkout HEAD~1 -- app/Domain/Xxx.php`
 - Lancer le test Integration : doit être **VERT** (caractérisation)
 - Restaurer le refactor : `cp /tmp/Xxx.refactored.php app/Domain/Xxx.php`
 - Relancer : doit être **VERT** (non-régression)
+
+⚠️ **Ne pas utiliser `git stash`** pour cette procédure : il stashe
+**tous** les fichiers modifiés, y compris les fixtures et tests
+nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD~1 --
+<fichier>` + `cp` retour. C'est ce qui a marché pour #71 et #72.
 
 ---
 
@@ -362,7 +407,7 @@ Pattern non-régression #71 (refactor iso-comportement) :
   sur `AbstractManager`. **`AbstractManager::$db` est `protected`**,
   donc une sous-classe de test peut faire `$this->db = $pdo;`.
 - **Mocker `\PDO`** : PHPUnit 11 mocke bien `\PDO` et `\PDOStatement`
-  (`createMock(\PDO::class)` fonctionne). Attention à trois pièges :
+  (`createMock(\PDO::class)` fonctionne). Attention à quatre pièges :
   - `method('fetch')->willReturn(['total' => 0])` **ne matche pas**
     `fetch(\PDO::FETCH_ASSOC)` (arguments stricts). Utiliser
     `willReturnCallback(fn() => [...])` pour matcher tout appel.
@@ -376,15 +421,27 @@ Pattern non-régression #71 (refactor iso-comportement) :
     `?array $params = null` puis `$params ?? []`. Sinon `TypeError`
     en `strict_types`. Détecté sur #71.
   - **Instanciation en dur dans les Managers** : `new
-    FournisseurManager()` dans `AcquisitionManager::findAll()` n'est
-    pas mockable. Le mock PDO ne capte que la première requête.
+    FournisseurManager()` dans `AcquisitionManager::findAll()` et
+    `new CategorieManager()` dans
+    `AcquisitionLigneManager::findByAcquisition()` ne sont pas
+    mockables. Le mock PDO ne capte que la première requête.
     Conséquence : impossible de compter les requêtes en Unit (cf.
-    Dette 10). Pattern à surveiller pour #72.
+    Dette 10). Pattern à surveiller pour les prochains tickets.
 
 ---
 
 ## Contexte de la session précédente
 
+- **#72** (v0.20.0) : `AcquisitionLigneManager::findByAcquisition()` —
+  suppression du N+1 sur `CategorieManager::findId()` via
+  `findIds()` batch. Factory `protected acquisitionManager()` dans
+  `delete()` (remplace `new AcquisitionManager()`). Périmètre strict :
+  `findId()` et `findByReference()` restent inchangés.
+  8 tests Unit, 1 test Integration de caractérisation
+  (catégorie existante, catégorie orpheline). Séquence non-régression
+  prouvée (HEAD~1 vert, HEAD vert). `AcquisitionControllerHandlersTest`
+  inchangé (26 tests verts) car la signature publique de `delete()`
+  n'a pas bougé.
 - **#71** (v0.19.0) : `AcquisitionManager::findAll()` — suppression du
   2N+1. `findIds()` batch sur `FournisseurManager` et
   `UtilisateurManager`. 10 tests Unit, 1 test Integration de
@@ -413,8 +470,12 @@ Pattern non-régression #71 (refactor iso-comportement) :
   `#[DataProvider]`). **Premier ticket Vague 14**.
 
 **🎯 Vague 11 complète** (3 contrôleurs, 67 tests Unit).
-**🎯 Vague 14 en cours** (#68, #69, #70 et #71 livrés).
-**Prochaine session** : **#72** (`AcquisitionLigneManager` : N+1 sur
-`CategorieManager::findId()`, `delete()` qui instancie `new
-AcquisitionManager()`). Le pattern `findIds()` est maintenant en place,
-`CategorieManager::findIds()` sera trivial à ajouter.
+**🎯 Vague 14 en cours** (#68, #69, #70, #71 et #72 livrés).
+**Prochaine session** : **#73** — candidats par ordre de pertinence :
+(1) tests Unit sur les contrôleurs non couverts
+(`IndexController`, `QrRedirectController`, `AppUpdateController`,
+partiellement `AppUserRegisterController`) — priorité remontée après
+#70 ; (2) factorisation `encryptionService()` dans `AbstractController`
+(Dette 5) ; (3) factorisation `acquisitionManager()` /
+`categorieManager()` dans `AbstractManager` ou les Managers concernés
+(Dette 10).

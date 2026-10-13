@@ -8,6 +8,62 @@ et le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 à l'historique Git (`git log`, `git tag`).
 
+## [Unreleased]
+
+## [0.20.0] — 2026-10-13
+
+### Changed
+
+- **#72 — `AcquisitionLigneManager::findByAcquisition()` : N+1 → 2 requêtes.**
+Remplace la boucle `CategorieManager::findId()` par un batch
+`findIds()` (`IN (...)`). Pour 100 lignes d'acquisition :
+**101 requêtes → 2 requêtes fixes** (ou 1 seule si le résultat
+est vide).
+
+Périmètre strict : `findId()` et `findByReference()` restent
+inchangés (2 requêtes fixes, pas un N+1).
+
+- **#72 — `AcquisitionLigneManager::delete()`** : suppression du
+`new AcquisitionManager()` en dur, remplacé par une factory
+`protected acquisitionManager()` (pattern Vague 11). Aucun
+changement observable : la logique de refus sur acquisition
+validée est inchangée.
+
+Objectif : rendre `AcquisitionManager` mockable dans les tests
+Unit de `delete()`.
+
+Iso-comportement strict préservé :
+- `isset()` conservé sur `categorie_id` → clé absente si `null` ;
+- `?? null` sur le map → FK orpheline = clé présente + valeur
+`null` ;
+- ordre des lignes inchangé.
+
+### Added
+
+- `CategorieManager::findIds(array $ids): array` — récupération
+batch, résultat indexé par `id`, déduplication, `$ids` vide = pas
+de requête. Symétrique de `FournisseurManager::findIds()` (#71).
+
+### Tests
+
+- **Unit** : `CategorieManagerFindIdsTest` (3 tests),
+`AcquisitionLigneManagerFindByAcquisitionTest` (4 tests),
+`AcquisitionLigneManagerDeleteTest` (1 test).
+- **Integration** : `AcquisitionLigneManagerFindByAcquisitionIntegrationTest`
+(1 test de caractérisation — catégorie existante, catégorie
+orpheline).
+- Séquence de non-régression : test Integration **vert** sur
+HEAD~1 (v0.19.0, ancien `findByAcquisition()`) puis **vert** sur
+HEAD (refactor).
+
+### Documentation
+
+- `docs/REPRISE.md` : Dette 9 étendue à `acquisition_ligne`
+(absence de FK sur `categorie_id` et `acquisition_id`).
+- `docs/REPRISE.md` : Dette 10 étendue à `AcquisitionLigneManager`
+(`findByAcquisition()` non testable unitairement sur le nombre de
+requêtes).
+
 ## [0.19.0] - 2026-10-13
 
 ### Changed
