@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-13 (fin de session #72 — Vague 14 en cours)
-**Version courante** : v0.20.0
+**Dernière mise à jour** : 2026-10-13 (fin de session #73 — Vague 14 en cours)
+**Version courante** : v0.21.0
 **Branche** : `main` (travail direct sur main, pas de PR)
 
 ---
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.20.0 | #72 | AcquisitionLigneManager — N+1 → 2 requêtes | `<hash>` |
+| v0.21.0 | #73 | QrRedirectController — rattrapage Vague 11 | `<hash>` |
+| v0.20.0 | #72 | AcquisitionLigneManager — N+1 → 2 requêtes | `23d5fa0` |
 | v0.19.0 | #71 | AcquisitionManager::findAll() — 2N+1 → 3 requêtes | `155b0a0` |
 | v0.18.10 | #70 | JournalController — EncryptionService reçoit ConfigProvider | `acfca34` |
 | v0.18.9 | #69 | JournalManager — suppression getPdo() + fix ORDER BY | `c6f57fb` |
@@ -42,6 +43,10 @@ lors du ticket suivant). Les versions antérieures portent leur hash réel.
   - Pattern finalisé : `TestableXxxController` + builder, `postRequest()`
     avec `replace()` puis `set('csrf_token', ...)`, `validateCsrf()`
     no-op dans le testable.
+- **#73 — `QrRedirectController`** : rattrapage Vague 11. 6 factories
+  `protected` extraites (4 managers + `QrCodeGenerator` + `QrCodeReader`).
+  4 tests Unit. Actions publiques non testables en Unit
+  (`header()` + `exit`), Dette 13 documentée.
 - **#72 — `AcquisitionLigneManager`** : suppression du N+1 sur
   `CategorieManager::findId()` dans `findByAcquisition()`.
   `CategorieManager::findIds()` batch, factory
@@ -72,7 +77,7 @@ lors du ticket suivant). Les versions antérieures portent leur hash réel.
 
 ### État des tests
 
-- **356 tests** verts (Unit + Domain), **836 assertions**.
+- **360 tests** verts (Unit + Domain), **~842 assertions**.
 - **8 tests Integration Controller** (nécessitent serveur HTTP sur
   `localhost:8000`), skippés si serveur absent.
 - **2 tests Integration Domain** (`AcquisitionManagerFindAllIntegrationTest`,
@@ -85,7 +90,7 @@ lors du ticket suivant). Les versions antérieures portent leur hash réel.
 
 ## Prochaines cibles
 
-### Vague 14 — en cours (refactors Engine + perf SQL)
+### Vague 14 — en cours (refactors Engine + perf SQL + rattrapage Vague 11)
 
 - ✅ **#68** — `buildWhereClause()` dans `AbstractManager`.
 - ✅ **#69** — `JournalManager` : suppression `getPdo()`, extraction
@@ -100,26 +105,32 @@ lors du ticket suivant). Les versions antérieures portent leur hash réel.
   N+1 → 2 requêtes. `CategorieManager::findIds()` batch, factory
   `protected acquisitionManager()` pour `delete()`.
   8 tests Unit + 1 test Integration de caractérisation.
+- ✅ **#73** — `QrRedirectController` : rattrapage Vague 11.
+  6 factories `protected`, 4 tests Unit. Actions publiques non
+  testables en Unit (`header()` + `exit`), Dette 13.
 - Candidats suivants (par ordre de pertinence) :
-  - **#73** (prochain) — `EquipementManager::findOneByCriteria()` :
-    audit SQL concaténé restant, ou tests Unit sur les contrôleurs
-    non encore couverts (`IndexController`, `QrRedirectController`,
-    `AppUpdateController`, partiellement `AppUserRegisterController`) —
-    priorité remontée après #70 : un bug 500 est resté invisible 7
-    versions faute de tests.
+  - **#74** (prochain) — `IndexController` : rattrapage Vague 11 +
+    tests Unit. Le contrôleur a des dépendances (`ConfigProvider`,
+    `EnvironmentFileParser`, `MailerService`) et des actions publiques
+    (`updateSmtp()`, `systemSettings()`, `testMail()`). Attention :
+    `updateSmtp()` écrit dans `.env.local.php` — déjà couvert en
+    Integration (`IndexControllerRootUrlTest`, 7 tests), donc
+    périmètre Unit à délimiter prudemment.
+  - **Tests Unit sur `AppUserRegisterController`** (méthodes GET
+    restantes : `login`, `register`, `forgotPassword` GET,
+    `resetPassword` GET). Le cœur (handlers POST) est déjà couvert
+    par 13 tests Unit.
   - Factoriser `encryptionService()` dans `AbstractController`
     (Dette 5 — duplication `ControleController` / `JournalController`).
-  - Factoriser `acquisitionManager()` dans `AbstractManager`
-    (Dette 10 étendue — `AcquisitionManager`, `AcquisitionLigneManager`,
-    et à terme `AcquisitionProcess`, `EquipementManager`).
+  - Factoriser `acquisitionManager()` / `categorieManager()` dans les
+    Managers (Dette 10 — pattern Vague 11 appliqué aux Managers, pas
+    seulement aux contrôleurs).
   - Fix `limit <= 0` dans `JournalManager` (`LIMIT -5` → 500).
   - Fix `'u.nom, u.prenom ASC'` (ambiguïté multi-colonnes).
   - `AbstractManager::findOneByCriteria()` générique ? (attention à
     `EquipementManager` — cas particulier `deleted_at IS NULL` — et à
     l'hydratation spécifique d'`AcquisitionManager`).
-  - Nouveaux tests Unit sur les `Manager` non couverts (ClubManager,
-    EmplacementManager, FournisseurManager déjà partiellement couvert,
-    CategorieManager).
+  - Nouveaux tests Unit sur les `Manager` non couverts.
   - `EncryptionService` : cache d'instance dans les factories.
   - Migration `@dataProvider` → `#[DataProvider]` sur les tests restants
     (cf. Dette 4).
@@ -161,13 +172,8 @@ séparés quand le temps le permet.
   de l'attribut `#[DataProvider]`.
 - Déjà corrigé sur `RootUrlValidatorTest` (#59).
 - Reste à corriger sur les autres tests qui utilisent `@dataProvider`.
-- Les tests #68, #69, #70, #71 et #72 (`AbstractManagerBuildWhereClauseTest`,
-  `JournalManagerTest`, `JournalControllerTest`,
-  `AcquisitionManagerFindAllTest`, `FournisseurManagerFindIdsTest`,
-  `UtilisateurManagerFindIdsTest`, `CategorieManagerFindIdsTest`,
-  `AcquisitionLigneManagerFindByAcquisitionTest`,
-  `AcquisitionLigneManagerDeleteTest`) utilisent déjà l'attribut
-  `#[DataProvider]` ou n'en ont pas besoin — pas d'ajout de dette.
+- Les tests #68 à #73 utilisent déjà l'attribut `#[DataProvider]` ou
+  n'en ont pas besoin — pas d'ajout de dette.
 - **Ticket à ouvrir** : oui, un petit ticket « chore: migrer
   @dataProvider vers #[DataProvider] ».
 
@@ -272,6 +278,34 @@ séparés quand le temps le permet.
   l'usage réel de `findId()` — il est appelé par `delete()` (2 fois
   potentiellement) et par les contrôleurs.
 - **Ticket à ouvrir** : oui, mais **basse priorité** (pas un N+1).
+
+### Dette 12 — `QrRedirectController` : méthodes privées mixtes
+
+- Le contrôleur a des méthodes privées qui ne sont pas toutes pures
+  (`getControleById`, `getUtilisateurById`) : elles délèguent à des
+  managers via `method_exists()`, ce qui est un pattern fragile.
+- **Recommandation** : aligner sur les méthodes de manager standard
+  (`findId()` est présent partout) et supprimer les `method_exists()`.
+  Vérifier ensuite que les 2 méthodes ne sont pas mortes (aucun appel
+  apparent).
+- **Ticket à ouvrir** : oui, **basse priorité** — non bloquant.
+
+### Dette 13 — `QrRedirectController` utilise `header()` + `exit`
+
+- Les 7 méthodes publiques (`redirect`, `choicePage`, `generateQr`,
+  `downloadQr`, `viewQr`, `saveQr`, `apiGenerateQr`) appellent
+  `header('Location: ...')` + `exit` (ou `echo` + `exit` pour les QR).
+- Conséquence : **non testables en Unit** (le `exit` tue le processus
+  PHP). Seul le constructeur et quelques méthodes privées pures sont
+  testables (couverts par #73).
+- **Recommandation** : refactor architectural — retourner des objets
+  `Response` (Symfony HttpFoundation) au lieu d'appeler `header()` +
+  `exit`. Nécessite d'adapter le front controller (`public/index.php`)
+  pour faire `$response->send()`.
+- **Ticket à ouvrir** : oui, mais **basse priorité** — le contrôleur
+  fonctionne, il n'a juste pas de filet Unit sur les actions.
+- Connexe : `QrCodeReader::read()` (avec `$outputDirectly = true`)
+  utilise aussi `header()` + `exit`. Même problème.
 
 ---
 
@@ -390,10 +424,22 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD~1 --
     etc.) : appelle directement les factories, ne teste pas le
     constructeur réel.
   - **Avec** `parent::__construct()` + surcharge `updateLastActivity()`
-    (Vague 14, `TestableJournalController`) : teste le constructeur
-    réel. À privilégier pour les contrôleurs qui n'ont pas encore
-    été migrés Vague 11 — c'est ce qui a permis de capturer le bug
-    #70.
+    (Vague 14, `TestableJournalController`, `TestableQrRedirectController`) :
+    teste le constructeur réel. À privilégier pour les contrôleurs qui
+    n'ont pas encore été migrés Vague 11 — c'est ce qui a permis de
+    capturer le bug #70.
+  - ⚠️ **Le constructeur parent appelle `Session::get('csrf_token')`**
+    (AbstractController.php, pour le global Twig). Tout mock `Session`
+    doit tolérer cet appel : ne pas utiliser `->with('user')` seul,
+    mais `willReturnCallback` qui discrimine par clé. Sinon
+    `Expectation failed ... 'csrf_token'`. Détecté sur #73.
+  - **`ReflectionMethod::invoke()` sur la classe parente** : exécute
+    le code de la classe où la méthode est **déclarée**, pas la
+    surcharge du testable. Utile pour tester l'implémentation parente
+    (comme `JournalController::encryptionService()` qui appelle
+    `$this->configProvider()` surchargé). Inutile pour tester une
+    surcharge de testable — il faut alors cibler la classe testable.
+    Détecté sur #73.
 - **Copier un contrôleur** : bien vérifier le `namespace` et le nom de
   classe. Un copier-coller raté peut mettre `class FournisseurController`
   dans `FournisseurManager.php` (incident #64).
@@ -427,55 +473,51 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD~1 --
     mockables. Le mock PDO ne capte que la première requête.
     Conséquence : impossible de compter les requêtes en Unit (cf.
     Dette 10). Pattern à surveiller pour les prochains tickets.
+- **`header()` + `exit` dans un contrôleur** : non testable en Unit
+  (le `exit` tue le processus PHP). Détecté sur
+  `QrRedirectController` (#73). Si un autre contrôleur utilise ce
+  pattern, mêmes limites. Cf. Dette 13.
 
 ---
 
 ## Contexte de la session précédente
 
+- **#73** (v0.21.0) : `QrRedirectController` — rattrapage Vague 11.
+  6 dépendances (`EquipementManager`, `ControleManager`,
+  `ControleLigneManager`, `UtilisateurManager`, `QrCodeGenerator`,
+  `QrCodeReader`) passées en factories `protected` mockables.
+  Constructeur réduit à `parent::__construct($session)`.
+  4 tests Unit (constructeur, factory, getCurrentUser).
+  **Périmètre limité** : actions publiques non testables à cause de
+  `header()` + `exit` (Dette 13). 360 tests au total.
 - **#72** (v0.20.0) : `AcquisitionLigneManager::findByAcquisition()` —
   suppression du N+1 sur `CategorieManager::findId()` via
   `findIds()` batch. Factory `protected acquisitionManager()` dans
   `delete()` (remplace `new AcquisitionManager()`). Périmètre strict :
   `findId()` et `findByReference()` restent inchangés.
-  8 tests Unit, 1 test Integration de caractérisation
-  (catégorie existante, catégorie orpheline). Séquence non-régression
-  prouvée (HEAD~1 vert, HEAD vert). `AcquisitionControllerHandlersTest`
-  inchangé (26 tests verts) car la signature publique de `delete()`
-  n'a pas bougé.
+  8 tests Unit, 1 test Integration de caractérisation.
 - **#71** (v0.19.0) : `AcquisitionManager::findAll()` — suppression du
   2N+1. `findIds()` batch sur `FournisseurManager` et
   `UtilisateurManager`. 10 tests Unit, 1 test Integration de
-  caractérisation. Périmètre strictement limité à `findAll()` :
-  `findId()` et `findOneByCriteria()` restent inchangés (3 requêtes
-  fixes, pas un N+1). Premier ticket Vague 14 « perf SQL ».
-- **#70** (v0.18.10) : `JournalController` — fix `ArgumentCountError`
-  (`new EncryptionService()` sans argument, ligne 23). Détecté en test
-  manuel navigateur, jamais en Unit (aucun test n'existait sur ce
-  contrôleur). Migré au pattern Vague 11 : factories
-  `journalManager()` et `encryptionService()`. Propriétés passées en
-  `protected`. +2 tests Unit avec `TestableJournalController` qui
-  appelle le vrai `parent::__construct()` (pattern Vague 14). Test
-  rouge d'abord (pile d'appel capturée).
+  caractérisation. Premier ticket Vague 14 « perf SQL ».
+- **#70** (v0.18.10) : `JournalController` — fix `ArgumentCountError`.
+  Détecté en test manuel navigateur, jamais en Unit. Migré au pattern
+  Vague 11 : factories `journalManager()` et `encryptionService()`.
+  +2 tests Unit avec `TestableJournalController`.
 - **#69** (v0.18.9) : `JournalManager` — suppression de `getPdo()`
-  (code mort), extraction de `buildOrderByClause()` (whitelist pure,
-  testable) et **fix du bug** `ORDER BY c.date_debut DESC ASC` (500)
-  sur `order_by` inconnu + `order_dir`. +23 tests Unit. Premier
+  (code mort), extraction de `buildOrderByClause()` et **fix du bug**
+  `ORDER BY c.date_debut DESC ASC` (500). +23 tests Unit. Premier
   ticket appliquant l'exception « fix de bug documenté » à la règle
   d'iso-comportement.
 - **#68** (v0.18.8) : `AbstractManager::buildWhereClause()` extrait
-  dans `AbstractManager`, 6 Managers migrés (Acquisition, Categorie,
-  Emplacement, EquipementControle, Fournisseur, Utilisateur).
-  `EquipementManager` non touché (cas particulier `deleted_at IS NULL`).
-  +14 tests Unit sur `buildWhereClause` (test rouge d'abord, attribut
-  `#[DataProvider]`). **Premier ticket Vague 14**.
+  dans `AbstractManager`, 6 Managers migrés. +14 tests Unit. **Premier
+  ticket Vague 14**.
 
 **🎯 Vague 11 complète** (3 contrôleurs, 67 tests Unit).
-**🎯 Vague 14 en cours** (#68, #69, #70, #71 et #72 livrés).
-**Prochaine session** : **#73** — candidats par ordre de pertinence :
-(1) tests Unit sur les contrôleurs non couverts
-(`IndexController`, `QrRedirectController`, `AppUpdateController`,
-partiellement `AppUserRegisterController`) — priorité remontée après
-#70 ; (2) factorisation `encryptionService()` dans `AbstractController`
-(Dette 5) ; (3) factorisation `acquisitionManager()` /
-`categorieManager()` dans `AbstractManager` ou les Managers concernés
-(Dette 10).
+**🎯 Vague 14 en cours** (#68, #69, #70, #71, #72 et #73 livrés).
+**Prochaine session** : **#74** — `IndexController` : rattrapage
+Vague 11 + tests Unit. Dépendances : `ConfigProvider`,
+`EnvironmentFileParser`, `MailerService`. `updateSmtp()` écrit dans
+`.env.local.php` — déjà couvert en Integration
+(`IndexControllerRootUrlTest`, 7 tests). Périmètre Unit à délimiter
+prudemment (probablement constructeur + factories + méthodes pures).

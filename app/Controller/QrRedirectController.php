@@ -9,31 +9,60 @@ use Epiclub\Domain\UtilisateurManager;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\QrCodeGenerator;
 use Epiclub\Engine\QrCodeReader;
-use Epiclub\Engine\TwigRenderer;
 use Epiclub\Engine\Session;
 use Symfony\Component\HttpFoundation\Request;
 
 class QrRedirectController extends AbstractController
 {
-    private EquipementManager $equipementManager;
-    private ControleManager $controleManager;
-    private ControleLigneManager $controleLigneManager;
-    private UtilisateurManager $utilisateurManager;
-    private QrCodeGenerator $qrCodeGenerator;
-    private QrCodeReader $qrCodeReader;
-    
     public function __construct(Session $session)
     {
         parent::__construct($session);
-        
-        $this->equipementManager = new EquipementManager();
-        $this->controleManager = new ControleManager();
-        $this->controleLigneManager = new ControleLigneManager();
-        $this->utilisateurManager = new UtilisateurManager();
-        $this->qrCodeGenerator = new QrCodeGenerator();
-        $this->qrCodeReader = new QrCodeReader();
+        // [REFACTOR #73] Plus d'instanciations ici : les factories
+        // protected sont appelées à la demande (pattern Vague 11).
     }
-    
+
+    // ==================================================================
+    // [REFACTOR #73] Factories Vague 11 — mockables en test Unit.
+    //
+    // Les sous-classes de test peuvent surcharger ces factories pour
+    // injecter des managers mockés (TestableQrRedirectController).
+    //
+    // QrCodeGenerator et QrCodeReader ne sont pas mockables (pas
+    // d'interface), donc laissés en réel — comme FactureUploader dans
+    // TestableAcquisitionController. Leurs méthodes ne sont pas
+    // exercées par les tests Unit #73.
+    // ==================================================================
+
+    protected function equipementManager(): EquipementManager
+    {
+        return new EquipementManager();
+    }
+
+    protected function controleManager(): ControleManager
+    {
+        return new ControleManager();
+    }
+
+    protected function controleLigneManager(): ControleLigneManager
+    {
+        return new ControleLigneManager();
+    }
+
+    protected function utilisateurManager(): UtilisateurManager
+    {
+        return new UtilisateurManager();
+    }
+
+    protected function qrCodeGenerator(): QrCodeGenerator
+    {
+        return new QrCodeGenerator();
+    }
+
+    protected function qrCodeReader(): QrCodeReader
+    {
+        return new QrCodeReader();
+    }
+
     /**
     * Point d'entrée pour le scan du QR code
     * URL: /qr/{id}
@@ -55,7 +84,7 @@ class QrRedirectController extends AbstractController
         }
         
         // 2. Vérifier que l'équipement existe
-        $equipement = $this->equipementManager->findId((int)$id);
+        $equipement = $this->equipementManager()->findId((int)$id);
         if (!$equipement) {
             $this->addFlash('danger', 'Équipement non trouvé');
             header('Location: /equipements');
@@ -112,7 +141,7 @@ class QrRedirectController extends AbstractController
             exit;
         }
         
-        $equipement = $this->equipementManager->findId((int)$id);
+        $equipement = $this->equipementManager()->findId((int)$id);
         
         if (!$equipement) {
             $this->addFlash('danger', 'Équipement non trouvé');
@@ -128,7 +157,7 @@ class QrRedirectController extends AbstractController
             $controleEnCours = $this->findControleEnCours((int)$id, $user['id']);
         }
         
-        $historique = $this->equipementManager->getHistoriqueControles((int)$id);
+        $historique = $this->equipementManager()->getHistoriqueControles((int)$id);
         
         return $this->render('choice_page.twig', [
             'equipement' => $equipement,
@@ -168,7 +197,7 @@ class QrRedirectController extends AbstractController
         
         error_log("✅ ID trouvé: " . $id);
         
-        $equipement = $this->equipementManager->findId((int)$id);
+        $equipement = $this->equipementManager()->findId((int)$id);
         
         if (!$equipement) {
             error_log("❌ Équipement non trouvé - ID: " . $id);
@@ -192,7 +221,7 @@ class QrRedirectController extends AbstractController
         try {
             error_log("🔄 Génération du QR...");
             
-            $qrCodeContent = $this->qrCodeGenerator->generateFromData($qrUrl, 400, false);
+            $qrCodeContent = $this->qrCodeGenerator()->generateFromData($qrUrl, 400, false);
             
             if (empty($qrCodeContent)) {
                 throw new \Exception('QR code généré est vide');
@@ -233,7 +262,7 @@ class QrRedirectController extends AbstractController
             exit;
         }
         
-        $equipement = $this->equipementManager->findId((int)$id);
+        $equipement = $this->equipementManager()->findId((int)$id);
         
         if (!$equipement) {
             http_response_code(404);
@@ -245,7 +274,7 @@ class QrRedirectController extends AbstractController
         
         try {
             $filename = 'equipement_' . $id;
-            $filePath = $this->qrCodeGenerator->generateAndSave($filename, $qrUrl, 400);
+            $filePath = $this->qrCodeGenerator()->generateAndSave($filename, $qrUrl, 400);
             
             if (file_exists($filePath)) {
                 header('Content-Type: image/png');
@@ -329,7 +358,7 @@ class QrRedirectController extends AbstractController
             exit;
         }
         
-        $equipement = $this->equipementManager->findId((int)$id);
+        $equipement = $this->equipementManager()->findId((int)$id);
         
         if (!$equipement) {
             http_response_code(404);
@@ -349,7 +378,7 @@ class QrRedirectController extends AbstractController
         
         try {
             $filename = 'equipement_' . $id;
-            $filePath = $this->qrCodeGenerator->generateAndSave($filename, $qrData, 300);
+            $filePath = $this->qrCodeGenerator()->generateAndSave($filename, $qrData, 300);
             
             echo json_encode([
                 'success' => true,
@@ -388,7 +417,7 @@ class QrRedirectController extends AbstractController
             exit;
         }
         
-        $equipement = $this->equipementManager->findId((int)$id);
+        $equipement = $this->equipementManager()->findId((int)$id);
         
         if (!$equipement) {
             http_response_code(404);
@@ -421,7 +450,7 @@ class QrRedirectController extends AbstractController
         error_log("=== findControleEnCours ===");
         error_log("User ID: " . $userId);
         
-        $controle = $this->controleManager->findActiveByUser($userId);
+        $controle = $this->controleManager()->findActiveByUser($userId);
         
         if ($controle) {
             error_log("✅ Contrôle en cours trouvé: " . $controle['id']);
@@ -434,7 +463,7 @@ class QrRedirectController extends AbstractController
     
     private function addEquipementToControle(int $equipementId, int $controleId): bool
     {
-        return $this->controleLigneManager->addEquipement($controleId, $equipementId);
+        return $this->controleLigneManager()->addEquipement($controleId, $equipementId);
     }
     
     /**
@@ -442,12 +471,13 @@ class QrRedirectController extends AbstractController
      */
     private function getControleById(int $id): ?array
     {
-        if (method_exists($this->controleManager, 'find')) {
-            return $this->controleManager->find($id);
-        } elseif (method_exists($this->controleManager, 'findId')) {
-            return $this->controleManager->findId($id);
-        } elseif (method_exists($this->controleManager, 'getById')) {
-            return $this->controleManager->getById($id);
+        $manager = $this->controleManager();
+        if (method_exists($manager, 'find')) {
+            return $manager->find($id);
+        } elseif (method_exists($manager, 'findId')) {
+            return $manager->findId($id);
+        } elseif (method_exists($manager, 'getById')) {
+            return $manager->getById($id);
         }
         return null;
     }
@@ -457,12 +487,13 @@ class QrRedirectController extends AbstractController
      */
     private function getUtilisateurById(int $id): ?array
     {
-        if (method_exists($this->utilisateurManager, 'find')) {
-            return $this->utilisateurManager->find($id);
-        } elseif (method_exists($this->utilisateurManager, 'findId')) {
-            return $this->utilisateurManager->findId($id);
-        } elseif (method_exists($this->utilisateurManager, 'getById')) {
-            return $this->utilisateurManager->getById($id);
+        $manager = $this->utilisateurManager();
+        if (method_exists($manager, 'find')) {
+            return $manager->find($id);
+        } elseif (method_exists($manager, 'findId')) {
+            return $manager->findId($id);
+        } elseif (method_exists($manager, 'getById')) {
+            return $manager->getById($id);
         }
         return null;
     }
@@ -504,6 +535,6 @@ class QrRedirectController extends AbstractController
      */
     private function findControleLigneByEquipement(int $controleId, int $equipementId): ?array
     {
-        return $this->controleLigneManager->findByControleAndEquipement($controleId, $equipementId);
+        return $this->controleLigneManager()->findByControleAndEquipement($controleId, $equipementId);
     }
 }

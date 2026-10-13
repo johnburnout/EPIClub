@@ -10,6 +10,53 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [0.21.0] — 2026-10-13
+
+### Changed
+
+- **#73 — `QrRedirectController` : rattrapage Vague 11.**
+Les 6 dépendances (`EquipementManager`, `ControleManager`,
+`ControleLigneManager`, `UtilisateurManager`, `QrCodeGenerator`,
+`QrCodeReader`) étaient instanciées en dur dans le constructeur
+(6 `new`), ouvrant 4 connexions PDO à chaque instanciation.
+Elles sont désormais fournies par des factories `protected`
+mockables en test Unit (pattern Vague 11, aligné sur
+`EquipementController`, `ControleController`, `AcquisitionController`).
+
+Le constructeur ne fait plus que `parent::__construct($session)`.
+Aucun changement observable : les routes, templates, flux HTTP et
+logique métier sont inchangés.
+
+### Added (tests)
+
+- **`tests/Unit/Controller/QrRedirectControllerTest.php`** : 4 tests
+Unit couvrant :
+- `testConstructDoesNotOpenPdo` : instanciation sans `new XxxManager()`,
+aucun PDO ouvert ;
+- `testEquipementManagerFactoryReturnsInjectedMock` : la factory
+`equipementManager()` retourne bien le mock injecté (via réflexion) ;
+- `testGetCurrentUserReturnsNullWhenNoUserInSession` ;
+- `testGetCurrentUserReturnsUserFromSession`.
+- **`tests/Unit/Controller/Support/TestableQrRedirectController.php`** :
+sous-classe de test (pattern Vague 14) qui
+- appelle le **vrai** `parent::__construct()` ;
+- surcharge `updateLastActivity()` en no-op (évite
+`new UtilisateurManager()` → PDO) ;
+- injecte 4 mocks via surcharge des factories.
+
+### Notes
+
+- ⚠️ **Périmètre limité** : les actions publiques (`redirect()`,
+`choicePage()`, `generateQr()`, `downloadQr()`, `viewQr()`,
+`saveQr()`, `apiGenerateQr()`) ne sont **pas** testées en Unit
+car elles utilisent `header()` + `exit`, ce qui tue le processus
+PHP. Un refactor architectural (retour de `Response` au lieu de
+`header()` + `exit`) serait nécessaire. Documenté en **Dette 13**
+de `docs/REPRISE.md`.
+- `QrCodeGenerator` et `QrCodeReader` ne sont pas mockables (pas
+d'interface). Ils sont laissés en réel dans le testable, comme
+`FactureUploader` dans `TestableAcquisitionController`.
+
 ## [0.20.0] — 2026-10-13
 
 ### Changed
