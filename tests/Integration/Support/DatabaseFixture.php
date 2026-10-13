@@ -111,7 +111,41 @@ final class DatabaseFixture
 
         return (int) $this->pdo->lastInsertId();
     }
-
+    
+    /**
+    * [TEST #75] Crée un équipement de test minimal.
+    *
+    * @param int    $acquisitionId ID d'acquisition (existant en base)
+    * @param int    $categorieId   ID de catégorie (existant en base)
+    * @param string $reference     Référence unique (préfixe TEST- pour cleanup)
+    * @param string $libelle       Libellé affiché
+    * @return int ID de l'équipement créé
+    */
+    public function createEquipement(
+        int $acquisitionId,
+        int $categorieId,
+        string $reference = 'TEST-EQUIP',
+        string $libelle = 'Équipement de test',
+    ): int {
+        // `code` est UNIQUE — on le dérive pour éviter les collisions.
+        $code = 'CODE-' . $reference . '-' . bin2hex(random_bytes(4));
+        
+        $stmt = $this->pdo->prepare(
+            "INSERT INTO club_equipement
+            (acquisition_id, categorie_id, reference, libelle, code)
+            VALUES (:aid, :cid, :ref, :lib, :code)"
+        );
+        $stmt->execute([
+            'aid'  => $acquisitionId,
+            'cid'  => $categorieId,
+            'ref'  => $reference,
+            'lib'  => $libelle,
+            'code' => $code,
+        ]);
+        
+        return (int) $this->pdo->lastInsertId();
+    }
+    
     /**
      * Supprime une acquisition et ses dépendances.
      */
@@ -147,6 +181,17 @@ final class DatabaseFixture
              LEFT JOIN acquisition a ON a.id = ce.acquisition_id
              WHERE a.id IS NULL"
         );
+        
+        // [TEST #75] Filet de sécurité : équipements de test créés
+        // avec une acquisition non-TEST- (cas rare).
+        $stmt = $this->pdo->query(
+            "SELECT id FROM club_equipement WHERE reference LIKE 'TEST-%'"
+        );
+        $equipementIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        foreach ($equipementIds as $id) {
+            $this->pdo->prepare("DELETE FROM controle_ligne WHERE equipement_id = ?")->execute([$id]);
+            $this->pdo->prepare("DELETE FROM club_equipement WHERE id = ?")->execute([$id]);
+        }
     }
     
     /**

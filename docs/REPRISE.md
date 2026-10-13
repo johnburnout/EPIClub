@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-13 (fin de session #74 — Vague 14 en cours)
-**Version courante** : v0.22.0
+**Dernière mise à jour** : 2026-10-13 (fin de session #75 — Vague 14 en cours)
+**Version courante** : v0.22.1
 **Branche** : `main` (travail direct sur main, pas de PR)
 
 ---
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.22.0 | #74 | IndexController — rattrapage Vague 11 | `<hash>` |
+| v0.22.1 | #75 | Fix chemin template qr/choice_page.twig | `<hash>` |
+| v0.22.0 | #74 | IndexController — rattrapage Vague 11 | `537e2e8` |
 | v0.21.0 | #73 | QrRedirectController — rattrapage Vague 11 | `6a82b55` |
 | v0.20.0 | #72 | AcquisitionLigneManager — N+1 → 2 requêtes | `23d5fa0` |
 | v0.19.0 | #71 | AcquisitionManager::findAll() — 2N+1 → 3 requêtes | `155b0a0` |
@@ -37,6 +38,11 @@ lors du ticket suivant). Les versions antérieures portent leur hash réel.
 
 ### Chantiers soldés
 
+- **#75 — Fix chemin template `qr/choice_page.twig`** : la route
+  `/qr/choix/{id}` renvoyait 500 (`Twig\Error\LoaderError`). Le
+  template existait dans `templates/qr/` mais le `render()` le
+  cherchait à la racine. Fix 1 ligne + test Integration. Détecté en
+  test manuel navigateur après #73.
 - **#74 — `IndexController`** : rattrapage Vague 11. 2 factories
   `protected` (`environmentFileParser()`, `mailerService()`).
   5 tests Unit sur `index()`, `dashboard()`, `updateSmtp()`.
@@ -506,6 +512,10 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD~1 --
 
 ## Contexte de la session précédente
 
+- **#75** (v0.22.1) : fix chemin template `choice_page.twig` →
+  `qr/choice_page.twig`. Bug détecté en test manuel après #73.
+  `DatabaseFixture::createEquipement()` ajouté. 1 test Integration
+  sur `/qr/choix/{id}`. 366 tests au total.
 - **#74** (v0.22.0) : `IndexController` — rattrapage Vague 11.
   2 factories `protected` (`environmentFileParser()`,
   `mailerService()`). 5 tests Unit sur `index()`, `dashboard()`,
@@ -545,9 +555,8 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD~1 --
 
 **🎯 Vague 11 complète** (3 contrôleurs, 67 tests Unit).
 **🎯 Vague 14 en cours** (#68, #69, #70, #71, #72 et #73 livrés).
-**Prochaine session** : **#75** — candidats par ordre de pertinence :
-(1) tests Unit sur `AppUserRegisterController` (méthodes GET restantes :
-`login`, `register`, `forgotPassword` GET, `resetPassword` GET) ;
+**Prochaine session** : **#76** — candidats par ordre de pertinence :
+(1) tests Unit sur `AppUserRegisterController` (méthodes GET restantes) ;
 (2) factorisation `encryptionService()` dans `AbstractController`
 (Dette 5) ; (3) factorisation `acquisitionManager()` /
 `categorieManager()` dans les Managers (Dette 10).

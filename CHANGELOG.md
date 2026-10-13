@@ -10,6 +10,41 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [0.22.1] — 2026-10-13
+
+### Fixed
+
+- **#75 — `QrRedirectController::choicePage()`** : chemin du template
+`choice_page.twig` corrigé en `qr/choice_page.twig`.
+Le template existe dans `templates/qr/` mais le `render()` le
+cherchait à la racine de `templates/`, produisant une
+`Twig\Error\LoaderError: Unable to find template "choice_page.twig"`.
+Symptôme : 500 à l'utilisateur sur la route `/qr/choix/{id}`.
+Détecté en test manuel navigateur après #73.
+
+### Added (tests)
+
+- **`tests/Integration/Controller/QrRedirectControllerChoicePageTest.php`** :
+test Integration `GET /qr/choix/{id}` → 200 + présence de la
+référence et du libellé de l'équipement dans la page.
+- **`DatabaseFixture::createEquipement()`** : helper pour créer un
+équipement de test (acquisition + catégorie + référence uniques).
+- **`DatabaseFixture::cleanupTestData()`** étendu : nettoyage des
+équipements avec `reference LIKE 'TEST-%'` (filet de sécurité).
+
+### Notes
+
+- **Cause racine** : le template a probablement été déplacé dans
+`templates/qr/` lors d'un rangement, mais le `render()` n'a pas
+suivi. `choicePage()` retourne une `Response` normale (pas de
+`header()` + `exit`), donc elle aurait pu être testée en Unit —
+mais elle dépend de Twig et de la BDD, ce qui la place côté
+Integration.
+- **Dette 13 inchangée** : les autres méthodes publiques de
+`QrRedirectController` (`redirect`, `generateQr`, `downloadQr`,
+`viewQr`, `saveQr`, `apiGenerateQr`) utilisent toujours
+`header()` + `exit`.
+
 ## [0.22.0] — 2026-10-13
 
 ### Changed

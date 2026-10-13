@@ -159,7 +159,7 @@ class QrRedirectController extends AbstractController
         
         $historique = $this->equipementManager()->getHistoriqueControles((int)$id);
         
-        return $this->render('choice_page.twig', [
+        return $this->render('qr/choice_page.twig', [
             'equipement' => $equipement,
             'controleEnCours' => $controleEnCours,
             'historiqueControles' => $historique,
