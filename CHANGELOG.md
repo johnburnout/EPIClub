@@ -10,6 +10,84 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [0.18.9] — 2026-10-13
+
+### Changed
+
+- #69 : `JournalManager` supprime sa méthode privée `getPdo()` (15
+lignes) et utilise directement `$this->db` hérité d'`AbstractManager`.
+La méthode faisait `property_exists($this, 'pdo')` puis
+`property_exists($this, 'db')` puis `method_exists($this,
+'getConnection')` — or seule la 2ᵉ branche pouvait matcher, `$pdo` et
+`getConnection()` n'ayant jamais existé. Code mort probablement copié
+d'un projet où `JournalManager` n'héritait pas d'`AbstractManager`.
+- #69 : `JournalManager` extrait une méthode `protected
+buildOrderByClause(?string $orderBy, ?string $orderDir): string`
+(pure, testable) qui remplace le `switch` + ternaire dans
+`getControlesClotures()`. Whitelist explicite via
+`const ORDER_BY_WHITELIST` (3 colonnes : `controleur`, `date_debut`,
+`date_fin`), aligné sur le pattern `AbstractManager` (#68).
+- #69 : direction par défaut `DESC` quand `order_dir` est absent ou
+non whitelisté. La casse est normalisée (comparaison en lowercase,
+sortie en uppercase).
+- Aucun autre changement observable : routes, templates, flux HTTP
+et logique métier inchangés.
+
+### Fixed
+
+- #69 : `JournalManager::getControlesClotures()` produisait un SQL
+invalide (`ORDER BY c.date_debut DESC ASC`) quand `order_by` était
+inconnu **et** `order_dir` non vide. Le `switch` tombait sur le
+`default` (`c.date_debut DESC`) puis concaténait ` ASC` ou ` DESC`,
+donnant une clause à deux directions. MySQL renvoyait une erreur 500.
+Le bug était latent (aucun appelant ne le déclenchait — filtres
+whitelistés côté Twig) mais atteignable via manipulation directe de
+l'URL ou tout futur appelant.
+- #69 : comportement de `order_by='controleur'` avec `order_dir`
+absent : avant `u.nom, u.prenom` (MySQL appliquait `ASC` implicitement,
+tri par nom croissant — incohérent avec l'intention d'un journal), après
+`u.nom, u.prenom DESC` (les plus récents d'abord, cohérent avec le
+défaut global `c.date_debut DESC`).
+
+### Added (tests)
+
+- **`tests/Unit/Domain/JournalManagerTest.php`** : 23 tests Unit
+couvrant :
+- `getPdo()` supprimé (vérification par `method_exists()`) ;
+- 20 cas sur `buildOrderByClause()` via `#[DataProvider]` :
+nominal, whitelist contrôlé, casse de direction, direction
+invalide, colonne inconnue, 3 injections SQL (`'x; DROP TABLE'`,
+`"x' OR '1'='1"`) ;
+- 3 smoke tests sur `getControlesClotures()` avec PDO mocké :
+retour du struct `['data', 'total', 'page', 'limit',
+'totalPages']`, clause `ORDER BY` produite via whitelist, fix du
+bug sur `order_by` inconnu + `order_dir='asc'`.
+- **`tests/Unit/Domain/Support/TestableJournalManager.php`** :
+sous-classe de test qui court-circuite `AbstractManager::__construct()`
+(pas de PDO réel), expose `buildOrderByClause()` en public et injecte
+un PDO mocké dans `$this->db`. **Piège** : la propriété du PDO mocké
+est nommée `$mockPdo`, pas `$pdo`, pour ne pas faire matcher
+`property_exists($this, 'pdo')` dans `getPdo()` tant que la méthode
+n'est pas supprimée.
+
+### Tests
+
+- Unit : 313 → 336 tests (+23), 760 → 792 assertions (+32).
+- Integration : 7 tests (inchangés, skippés si serveur absent).
+- **Total : 336 tests verts.**
+
+### Notes
+
+- Amendement de la règle EPIClub « iso-comportement strict » : la
+règle autorise désormais un fix de bug documenté dans le même commit
+que le refactor, à condition qu'il soit isolé, testé (test rouge
+d'abord) et documenté dans la section `### Fixed` du CHANGELOG.
+C'est le premier ticket qui applique cette exception.
+- Restent hors périmètre (tickets séparés si les cas se manifestent
+en pratique) : le fix de `'u.nom, u.prenom ASC'` (le `ASC` ne
+s'applique qu'à `u.prenom`, ambiguïté multi-colonnes) et le fix de
+`limit <= 0` (`LIMIT -5` provoque une erreur MySQL).
+
 ## [0.18.8] — 2026-10-13
 
 ### Changed

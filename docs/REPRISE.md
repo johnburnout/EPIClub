@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-12 (fin de session #65 — Vague 11 complète)
-**Version courante** : v0.18.7
+**Dernière mise à jour** : 2026-10-13 (fin de session #69 — Vague 14 en cours)
+**Version courante** : v0.18.9
 **Branche** : `main` (travail direct sur main, pas de PR)
 
 ---
@@ -16,7 +16,9 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.18.7 | #65 | FournisseurController factory fournisseurManager() | `<hash>` |
+| v0.18.9 | #69 | JournalManager — suppression getPdo() + fix ORDER BY | `<hash>` |
+| v0.18.8 | #68 | buildWhereClause() dans AbstractManager | `8747339` |
+| v0.18.7 | #65 | FournisseurController factory fournisseurManager() | — |
 | v0.18.6 | #64 | EmplacementController factory emplacementManager() | `1af7c98` |
 | v0.18.5 | #63 | ClubController factory clubManager() | `79367c3` |
 | v0.18.4 | #50c | MailerService reçoit ConfigProvider | `cd5b4d5` |
@@ -48,7 +50,7 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 ### État des tests
 
-- **299 tests Unit/Domain** verts, 741 assertions.
+- **336 tests Unit/Domain** verts, 792 assertions.
 - **7 tests Integration** (nécessitent serveur HTTP sur `localhost:8000`), skippés si serveur absent.
 - Commande : `php vendor/bin/phpunit`
 - Avec Integration : démarrer `php -S localhost:8000 -t public` dans un autre terminal.
@@ -57,20 +59,28 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 ## Prochaines cibles
 
-### Vague 14 — à définir
+### Vague 14 — en cours (refactors Engine)
 
-Pas encore cadrée. À ouvrir quand on saura ce qu'elle contient.
-Candidats possibles :
-- Refactor `AbstractManager` (requêtes SQL concaténées à auditer).
-- `EncryptionService` : cache d'instance dans les factories.
-- Nouveaux tests Unit sur les `Manager` non couverts (ClubManager,
-  EmplacementManager, FournisseurManager, CategorieManager, etc.).
-- Tests Unit sur les contrôleurs non encore couverts
-  (AcquisitionController, IndexController, QrRedirectController,
-  AppUpdateController, AppUserRegisterController — partiellement
-  couverts).
-- Migration `@dataProvider` → `#[DataProvider]` sur les tests restants
-  (cf. Dette 4).
+- ✅ **#68** — `buildWhereClause()` dans `AbstractManager`.
+- ✅ **#69** — `JournalManager` : suppression `getPdo()`, extraction
+  `buildOrderByClause()`, fix du bug `ORDER BY` (500).
+- Candidats suivants :
+  - Fix `limit <= 0` dans `JournalManager` (`LIMIT -5` → 500).
+  - Fix `'u.nom, u.prenom ASC'` (ambiguïté multi-colonnes).
+  - Audit des requêtes SQL concaténées restantes
+    (`EquipementManager::findOneByCriteria()`).
+  - `AbstractManager::findOneByCriteria()` générique ? (attention à
+    `EquipementManager` — cas particulier `deleted_at IS NULL` — et à
+    l'hydratation spécifique d'`AcquisitionManager`).
+  - Nouveaux tests Unit sur les `Manager` non couverts (ClubManager,
+    EmplacementManager, FournisseurManager, CategorieManager, etc.).
+  - Tests Unit sur les contrôleurs non encore couverts
+    (AcquisitionController, IndexController, QrRedirectController,
+    AppUpdateController, AppUserRegisterController — partiellement
+    couverts).
+  - `EncryptionService` : cache d'instance dans les factories.
+  - Migration `@dataProvider` → `#[DataProvider]` sur les tests restants
+    (cf. Dette 4).
 
 ---
 
@@ -109,6 +119,9 @@ séparés quand le temps le permet.
   de l'attribut `#[DataProvider]`.
 - Déjà corrigé sur `RootUrlValidatorTest` (#59).
 - Reste à corriger sur les autres tests qui utilisent `@dataProvider`.
+- Les tests #68 et #69 (`AbstractManagerBuildWhereClauseTest`,
+  `JournalManagerTest`) utilisent déjà l'attribut `#[DataProvider]` —
+  pas d'ajout de dette.
 - **Ticket à ouvrir** : oui, un petit ticket « chore: migrer
   @dataProvider vers #[DataProvider] ».
 
@@ -127,16 +140,42 @@ séparés quand le temps le permet.
 - Si le manager se met à déchiffrer en masse, prévoir un cache.
 - Pas de ticket pour l'instant.
 
+### Dette 7 — `JournalManager` : bornage `limit` et ambiguïté multi-colonnes
+
+- **Fix reportés** identifiés pendant #69 :
+  - `limit <= 0` produit `LIMIT -5 OFFSET 0` → erreur MySQL 500.
+    `AbstractManager::buildLimitClause()` retourne `''` pour
+    `limit <= 0` (pas de limite) — divergence à trancher.
+  - `order_by='controleur'` + `order_dir='asc'` produit
+    `'u.nom, u.prenom ASC'` : le `ASC` ne s'applique qu'à `u.prenom`,
+    `u.nom` reste en `ASC` implicite — ambiguïté multi-colonnes.
+- **Ticket à ouvrir** : oui, un ticket « fix bornage limit + tri
+  multi-colonnes JournalManager » — même pattern que #69 (fix
+  documenté en `### Fixed`).
+
 ---
 
 ## Règles de travail établies
 
-- **Iso-comportement strict** : les refactors ne changent pas le
-  comportement observable.
+- **Iso-comportement strict (avec exception fix de bug documenté)** :
+  les refactors ne changent pas le comportement observable, **sauf**
+  lorsqu'ils corrigent un bug documenté (500, injection SQL,
+  corruption de données, comportement manifestement non intentionnel).
+  Dans ce cas :
+  - le fix est **isolé** dans le même commit, clairement identifiable ;
+  - il est **testé** (test rouge d'abord sur le bug, puis vert après
+    fix) ;
+  - il est documenté dans la section `### Fixed` du CHANGELOG (Keep a
+    Changelog) ;
+  - le message de commit mentionne le fix (`refactor + fix: ...`).
 - **Test rouge d'abord** : écrire le test qui échoue, puis implémenter.
 - **Commit unique par ticket** : un commit = un ticket = une version.
 - **Tag annoté** : `git tag -a vX.Y.Z -m "..."`.
 - **Release GitHub** + **clôture issue** après chaque tag.
+- **Mot-clé de clôture dans le commit** : ajouter `Closes #XX`
+  (ou `Fixes #XX` / `Resolves #XX`) dans le corps du message de
+  commit pour que GitHub ferme automatiquement l'issue au push
+  sur `main`. Évite l'étape manuelle.
 - **Travail direct sur `main`** : pas de branche feature pour les petits
   tickets. Branche feature (`feat/XX-...`) pour les tickets plus gros
   (comme #59).
@@ -164,7 +203,7 @@ Base de données de test :
 Pattern release Git :
 
 - `git add <fichiers>`
-- `git commit -m "type(#ticket): description"`
+- `git commit -m "type(#ticket): description" -m "Closes #XX"`
 - `git push origin main`
 - `git tag -a vX.Y.Z -m "vX.Y.Z — #ticket description"`
 - `git push origin vX.Y.Z`
@@ -201,11 +240,41 @@ Pattern release Git :
 - **Copier un contrôleur** : bien vérifier le `namespace` et le nom de
   classe. Un copier-coller raté peut mettre `class FournisseurController`
   dans `FournisseurManager.php` (incident #64).
+- **Testable abstract manager** : `AbstractManager::__construct()`
+  ouvre une connexion PDO. La sous-classe de test
+  (`TestableAbstractManager` dans
+  `AbstractManagerBuildWhereClauseTest.php`) surcharge le
+  constructeur en **no-op** pour les tests Unit des méthodes
+  `protected` (`buildWhereClause`, `buildOrderClause`,
+  `buildLimitClause`). Pattern à réutiliser pour les futurs tests
+  sur `AbstractManager`.
+- **Mocker `\PDO`** : PHPUnit 11 mocke bien `\PDO` et `\PDOStatement`
+  (`createMock(\PDO::class)` fonctionne). Attention à deux pièges :
+  - `method('fetch')->willReturn(['total' => 0])` **ne matche pas**
+    `fetch(\PDO::FETCH_ASSOC)` (arguments stricts). Utiliser
+    `willReturnCallback(fn() => [...])` pour matcher tout appel.
+  - `willReturnCallback` sur `prepare()` doit discriminer le count SQL
+    du data SQL. Ne pas se fier à `str_contains($sql, 'COUNT(*)')` :
+    la requête principale peut contenir une sous-requête `COUNT(*)`.
+    Discriminer sur `str_contains($sql, 'ORDER BY')` (uniquement
+    présent dans le data SQL).
 
 ---
 
 ## Contexte de la session précédente
 
+- **#69** (v0.18.9) : `JournalManager` — suppression de `getPdo()`
+  (code mort), extraction de `buildOrderByClause()` (whitelist pure,
+  testable) et **fix du bug** `ORDER BY c.date_debut DESC ASC` (500)
+  sur `order_by` inconnu + `order_dir`. +23 tests Unit. Premier
+  ticket appliquant l'exception « fix de bug documenté » à la règle
+  d'iso-comportement.
+- **#68** (v0.18.8) : `AbstractManager::buildWhereClause()` extrait
+  dans `AbstractManager`, 6 Managers migrés (Acquisition, Categorie,
+  Emplacement, EquipementControle, Fournisseur, Utilisateur).
+  `EquipementManager` non touché (cas particulier `deleted_at IS NULL`).
+  +14 tests Unit sur `buildWhereClause` (test rouge d'abord, attribut
+  `#[DataProvider]`). **Premier ticket Vague 14**.
 - **#65** (v0.18.7) : `FournisseurController` factory
   `fournisseurManager()` + 20 tests Unit (edit/delete/list/show,
   validation email souple). **Dernier ticket Vague 11**.
@@ -215,4 +284,7 @@ Pattern release Git :
   Unit. Piège CSRF identifié (constante `CSRF_TOKEN` manquante).
 
 **🎯 Vague 11 complète** (3 contrôleurs, 67 tests Unit).
-**Prochaine session** : à définir — Vague 14 ou dette technique.
+**🎯 Vague 14 en cours** (#68 et #69 livrés).
+**Prochaine session** : continuer la Vague 14 — fix `limit <= 0`
+et ambiguïté multi-colonnes de `JournalManager` (Dette 7, même
+pattern que #69), ou audit SQL restant, ou Dette 4 (rapide).
