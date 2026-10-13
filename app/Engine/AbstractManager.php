@@ -100,4 +100,41 @@ abstract class AbstractManager
 
         return " LIMIT {$limit} OFFSET {$offset}";
     }
+    
+    /**
+    * Construit une clause WHERE sécurisée à partir d'un tableau de critères.
+    *
+    * Accepte uniquement des critères d'égalité : ['col' => 'val'].
+    * Le nom de colonne est validé par regex (même pattern que
+    * buildOrderClause) pour prévenir l'injection SQL.
+    *
+    * Iso-comportement avec l'ancien code dupliqué dans les Managers :
+    *  - clause préfixée d'un espace (concaténation directe)
+    *  - params retournés au format execute() (clés sans ':' préfixe)
+    *  - ordre d'itération préservé
+    *  - tableau vide → clause vide + params vides
+    *
+    * @param array<string,mixed> $criteria
+    * @return array{0:string,1:array<string,mixed>} [clause SQL, params à binder]
+    *
+    * @throws \InvalidArgumentException si un nom de colonne est invalide
+    */
+    protected function buildWhereClause(array $criteria): array
+    {
+        if ($criteria === []) {
+            return ['', []];
+        }
+        
+        $conditions = [];
+        foreach ($criteria as $column => $value) {
+            if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', $column)) {
+                throw new \InvalidArgumentException(
+                    sprintf('Nom de colonne invalide pour la clause WHERE : "%s"', $column)
+                );
+            }
+            $conditions[] = "{$column}=:{$column}";
+        }
+        
+        return [' WHERE ' . implode(' AND ', $conditions), $criteria];
+    }
 }

@@ -32,25 +32,16 @@ class EmplacementManager extends AbstractManager
 
     public function findOneByCriteria(array $criteria = [])
     {
-        $params = '';
-        $i = 0;
-        foreach ($criteria as $key => $value) {
-            if ($i === 0) {
-                $params .= "WHERE $key=:$key";
-            } else {
-                $params .= " AND $key=:$key";
-            }
-            $i++;
-        }
-
-        $sql = "SELECT * FROM emplacement $params";
+        [$where, $params] = $this->buildWhereClause($criteria);
+        
+        $sql = "SELECT * FROM emplacement$where";
         $stmt = $this->db->prepare($sql);
-        $stmt->execute($criteria);
-
+        $stmt->execute($params);
+        
         if ($emplacement = $stmt->fetch()) {
             return $emplacement;
         }
-
+        
         return null;
     }
 

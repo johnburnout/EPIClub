@@ -10,6 +10,76 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [0.18.8] — 2026-10-13
+
+### Changed
+
+- #68 : `AbstractManager` extrait une méthode `protected
+buildWhereClause(array $criteria): array` qui centralise la
+construction des clauses WHERE (Vague 14 — refactors Engine).
+- #68 : 6 Managers migrés pour utiliser la nouvelle méthode :
+`AcquisitionManager`, `CategorieManager`, `EmplacementManager`,
+`EquipementControleManager`, `FournisseurManager`,
+`UtilisateurManager`. La boucle `foreach` qui construisait
+`WHERE col=:col AND col2=:col2` était **dupliquée à l'identique**
+dans les 6 `findOneByCriteria()`.
+- #68 : objectif — une seule source de vérité pour la clause WHERE,
+et validation stricte des noms de colonne (`^[a-zA-Z_][a-zA-Z0-9_]*$`,
+même regex que `buildOrderClause()`).
+- #68 : `EquipementManager::findOneByCriteria()` **non touché**
+(cas particulier : clause `deleted_at IS NULL` préfixée en dur,
+qui ne rentre pas dans le pattern standard).
+- Aucun changement de comportement observable hors refactor :
+routes, templates, flux HTTP et logique métier inchangés.
+
+### Security
+
+- #68 : les noms de colonne passés à `findOneByCriteria()` sont
+désormais validés par regex. Un `InvalidArgumentException` est
+levé sur clé invalide, au lieu de concaténer la clé telle quelle
+dans le SQL. Ferme une porte d'injection SQL théorique si un
+appelant passait une clé non contrôlée (`'id OR 1=1'`,
+`'id; DROP TABLE'`, …).
+- Iso-comportement en pratique : les 6 Managers migrés ne
+recevaient déjà que des littéraux propres de leurs appelants
+(`'email'`, `'username'`, `'facture_reference'`, `'nom'`,
+`'reset_token'`, `'libelle'`, …).
+
+### Added (tests)
+
+- **`tests/Unit/Engine/AbstractManagerBuildWhereClauseTest.php`** :
+14 tests Unit sur `buildWhereClause()` couvrant :
+- tableau vide → clause vide + params vides,
+- 1 critère → ` WHERE col=:col`,
+- N critères → ` WHERE a=:a AND b=:b`,
+- ordre d'itération préservé,
+- colonnes valides `reset_token`, `col_2` (underscore + digits),
+- valeur passée telle quelle dans les params (apostrophe
+`o'brien@x.y` préservée),
+- 8 cas de colonnes invalides via `#[DataProvider]` :
+`'id OR 1=1'`, `'id-col'`, `'u.id'`, `'id; DROP TABLE'`,
+`'1col'`, `''`, `"id'"`, `'id)'` → `InvalidArgumentException`.
+- **`TestableAbstractManager`** : sous-classe concrète de test
+qui surcharge le constructeur en no-op (pas de PDO) et expose
+`buildWhereClause()` en `public` via `exposeBuildWhereClause()`.
+
+### Tests
+
+- Unit : 299 → 313 tests (+14), 741 → 760 assertions (+19).
+- Integration : 7 tests (inchangés, skippés si serveur absent).
+- **Total : 313 tests verts.**
+
+### Notes
+
+- Ouverture de la Vague 14 (refactors Engine). Premier ticket
+livré : #68. Candidats suivants : audit des requêtes SQL
+concaténées restantes, tests Unit sur les Managers non couverts,
+cache d'instance `EncryptionService`, migration
+`@dataProvider` → `#[DataProvider]` (Dette 4).
+- Le nouveau test utilise déjà l'attribut `#[DataProvider]`
+(pas l'annotation `@dataProvider`) — la Dette 4 porte sur les
+tests **existants** qui n'ont pas encore migré.
+
 ## [0.18.7] — 2026-10-12
 
 ### Changed

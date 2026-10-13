@@ -42,19 +42,11 @@ class UtilisateurManager extends AbstractManager
 
     public function findOneByCriteria(array $criteria = [])
     {
-        $params = '';
-        $i = 0;
-        foreach ($criteria as $key => $value) {
-            if ($i === 0) {
-                $params .= "WHERE $key=:$key";
-            } else {
-                $params .= " AND $key=:$key";
-            }
-            $i++;
-        }
-        $sql = "SELECT * FROM utilisateur $params";
+        [$where, $params] = $this->buildWhereClause($criteria);
+        
+        $sql = "SELECT * FROM utilisateur$where";
         $stmt = $this->db->prepare($sql);
-        $stmt->execute($criteria);
+        $stmt->execute($params);
         return $stmt->fetch() ?: null;
     }
 
