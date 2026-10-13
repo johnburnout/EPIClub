@@ -13,16 +13,16 @@ use Dompdf\Options;
 
 class JournalController extends AbstractController
 {
-    private JournalManager $journalManager;
-    private EncryptionService $encryptionService;
-    
+    protected JournalManager $journalManager;
+    protected EncryptionService $encryptionService;
+
     public function __construct(\Epiclub\Engine\Session $session)
     {
         parent::__construct($session);
-        $this->journalManager = new JournalManager();
-        $this->encryptionService = new EncryptionService();
+        $this->journalManager = $this->journalManager();
+        $this->encryptionService = $this->encryptionService();
     }
-    
+
     /**
      * Page de liste des journaux
      */
@@ -31,7 +31,7 @@ class JournalController extends AbstractController
         if (!$this->isGranted('ROLE_USER')) {
             return $this->redirectTo('/se_connecter');
         }
-        
+
         $filtres = [
             'controleur_id' => $_GET['controleur'] ?? null,
             'annee' => $_GET['annee'] ?? null,
@@ -40,11 +40,11 @@ class JournalController extends AbstractController
             'limit' => (int)($_GET['limit'] ?? 10),
             'page' => (int)($_GET['page'] ?? 1)
         ];
-        
+
         $resultat = $this->journalManager->getControlesClotures($filtres);
         $controleurs = $this->journalManager->getControleurs();
         $annees = $this->journalManager->getAnneesDisponibles();
-        
+
         $baseParams = array_filter([
             'controleur' => $filtres['controleur_id'],
             'annee' => $filtres['annee'],
@@ -52,7 +52,7 @@ class JournalController extends AbstractController
             'order_dir' => $filtres['order_dir'],
             'limit' => $filtres['limit']
         ]);
-        
+
         $queryString = !empty($baseParams) ? '?' . http_build_query($baseParams) : '';
         $paginationUrls = [
             'first' => "/journaux{$queryString}&page=1",
@@ -60,7 +60,7 @@ class JournalController extends AbstractController
             'next' => "/journaux{$queryString}&page=" . ($filtres['page'] + 1),
             'last' => "/journaux{$queryString}&page=" . $resultat['totalPages']
         ];
-        
+
         return $this->render('journaux/index.twig', [
             'journaux' => $resultat['data'],
             'controleurs' => $controleurs,
@@ -76,7 +76,7 @@ class JournalController extends AbstractController
             'paginationUrls' => $paginationUrls
         ]);
     }
-    
+
     /**
      * Visualisation d'un journal
      */
@@ -85,24 +85,24 @@ class JournalController extends AbstractController
         if (!$this->isGranted('ROLE_USER')) {
             return $this->redirectTo('/se_connecter');
         }
-        
+
         $id = $request->attributes->get('id');
         if (!$id) {
             $this->session->getFlashBag()->add('danger', 'Identifiant du journal manquant');
             return $this->redirectTo('/journaux');
         }
-        
+
         $controle = $this->journalManager->getControleCloture((int)$id);
         if (!$controle) {
             $this->session->getFlashBag()->add('danger', 'Journal de contrôle non trouvé');
             return $this->redirectTo('/journaux');
         }
-        
+
         // Déchiffrer les remarques générales du contrôle
         if (!empty($controle['hash_remarques'])) {
             $controle['hash_remarques'] = $this->encryptionService->decrypt($controle['hash_remarques']);
         }
-        
+
         $lignes = $this->journalManager->getLignesControle((int)$id);
         // Déchiffrer les remarques de chaque ligne
         foreach ($lignes as &$ligne) {
@@ -110,13 +110,13 @@ class JournalController extends AbstractController
                 $ligne['remarque'] = $this->encryptionService->decrypt($ligne['remarque']);
             }
         }
-        
+
         return $this->render('journaux/voir.twig', [
             'controle' => $controle,
             'lignes' => $lignes
         ]);
     }
-    
+
     /**
      * Génération PDF d'un journal
      */
@@ -125,24 +125,24 @@ class JournalController extends AbstractController
         if (!$this->isGranted('ROLE_USER')) {
             return $this->redirectTo('/se_connecter');
         }
-        
+
         $id = $request->attributes->get('id');
         if (!$id) {
             $this->session->getFlashBag()->add('danger', 'Identifiant du journal manquant');
             return $this->redirectTo('/journaux');
         }
-        
+
         $controle = $this->journalManager->getControleCloture((int)$id);
         if (!$controle) {
             $this->session->getFlashBag()->add('danger', 'Journal de contrôle non trouvé');
             return $this->redirectTo('/journaux');
         }
-        
+
         // Déchiffrer les remarques générales
         if (!empty($controle['hash_remarques'])) {
             $controle['hash_remarques'] = $this->encryptionService->decrypt($controle['hash_remarques']);
         }
-        
+
         $lignes = $this->journalManager->getLignesControle((int)$id);
         // Déchiffrer les remarques de chaque ligne
         foreach ($lignes as &$ligne) {
@@ -150,31 +150,31 @@ class JournalController extends AbstractController
                 $ligne['remarque'] = $this->encryptionService->decrypt($ligne['remarque']);
             }
         }
-        
+
         // Génération du HTML pour le PDF
         $html = $this->generatePdfHtml($controle, $lignes);
-        
+
         // Configuration de Dompdf
         $options = new Options();
         $options->set('defaultFont', 'DejaVu Sans');
         $options->set('isHtml5ParserEnabled', true);
         $options->set('isRemoteEnabled', true);
-        
+
         $dompdf = new Dompdf($options);
         $dompdf->loadHtml($html);
         $dompdf->setPaper('A4', 'portrait');
         $dompdf->render();
-        
+
         $filename = 'journal_controle_' . $controle['id'] . '_' . date('Y-m-d') . '.pdf';
         $output = $dompdf->output();
-        
+
         return new Response($output, 200, [
             'Content-Type' => 'application/pdf',
             'Content-Disposition' => 'inline; filename="' . $filename . '"',
             'Content-Length' => strlen($output)
         ]);
     }
-    
+
     /**
      * Génère le HTML pour le PDF en utilisant la méthode render() du parent
      */
@@ -185,7 +185,24 @@ class JournalController extends AbstractController
             'lignes' => $lignes,
             'generated_at' => date('d/m/Y H:i:s')
         ]);
-        
+
         return $response->getContent();
+    }
+
+    protected function journalManager(): JournalManager
+    {
+        return new JournalManager();
+    }
+
+    /**
+    * [FIX #70] Factory EncryptionService.
+    *
+    * Reproduit le pattern de ControleController (#50b) : le service reçoit
+    * un ConfigProvider (lu depuis .env.local.php par défaut). Corrige
+    * l'ArgumentCountError sur new EncryptionService() sans argument.
+    */
+    protected function encryptionService(): EncryptionService
+    {
+        return new EncryptionService($this->configProvider());
     }
 }

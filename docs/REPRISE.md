@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-13 (fin de session #69 — Vague 14 en cours)
-**Version courante** : v0.18.9
+**Dernière mise à jour** : 2026-10-13 (fin de session #70 — Vague 14 en cours)
+**Version courante** : v0.18.10
 **Branche** : `main` (travail direct sur main, pas de PR)
 
 ---
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.18.9 | #69 | JournalManager — suppression getPdo() + fix ORDER BY | `<hash>` |
+| v0.18.10 | #70 | JournalController — EncryptionService reçoit ConfigProvider | `<hash>` |
+| v0.18.9 | #69 | JournalManager — suppression getPdo() + fix ORDER BY | `c6f57fb` |
 | v0.18.8 | #68 | buildWhereClause() dans AbstractManager | `8747339` |
 | v0.18.7 | #65 | FournisseurController factory fournisseurManager() | — |
 | v0.18.6 | #64 | EmplacementController factory emplacementManager() | `1af7c98` |
@@ -36,6 +37,9 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
   - Pattern finalisé : `TestableXxxController` + builder, `postRequest()`
     avec `replace()` puis `set('csrf_token', ...)`, `validateCsrf()`
     no-op dans le testable.
+- **#70 — JournalController** : rattrapage Vague 11 + fix
+  `ArgumentCountError`. Factories `journalManager()` et
+  `encryptionService()`, propriétés `protected`, +2 tests Unit.
 - **#65 — FournisseurController** : factory `fournisseurManager()`,
   20 tests Unit.
 - **#64 — EmplacementController** : factory `emplacementManager()`,
@@ -50,7 +54,7 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 ### État des tests
 
-- **336 tests Unit/Domain** verts, 792 assertions.
+- **338 tests Unit/Domain** verts, 794 assertions.
 - **7 tests Integration** (nécessitent serveur HTTP sur `localhost:8000`), skippés si serveur absent.
 - Commande : `php vendor/bin/phpunit`
 - Avec Integration : démarrer `php -S localhost:8000 -t public` dans un autre terminal.
@@ -64,7 +68,17 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 - ✅ **#68** — `buildWhereClause()` dans `AbstractManager`.
 - ✅ **#69** — `JournalManager` : suppression `getPdo()`, extraction
   `buildOrderByClause()`, fix du bug `ORDER BY` (500).
-- Candidats suivants :
+- ✅ **#70** — `JournalController` : fix `ArgumentCountError`
+  (`EncryptionService` sans `ConfigProvider`). Détecté en test manuel
+  navigateur, jamais en Unit.
+- Candidats suivants (par ordre de pertinence) :
+  - **Tests Unit sur les contrôleurs non encore couverts**
+    (`IndexController`, `QrRedirectController`, `AppUpdateController`,
+    partiellement `AppUserRegisterController`) — priorité remontée
+    après #70 : un bug 500 est resté invisible 7 versions faute de
+    tests.
+  - Factoriser `encryptionService()` dans `AbstractController`
+    (Dette 5 — duplication `ControleController` / `JournalController`).
   - Fix `limit <= 0` dans `JournalManager` (`LIMIT -5` → 500).
   - Fix `'u.nom, u.prenom ASC'` (ambiguïté multi-colonnes).
   - Audit des requêtes SQL concaténées restantes
@@ -74,10 +88,6 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
     l'hydratation spécifique d'`AcquisitionManager`).
   - Nouveaux tests Unit sur les `Manager` non couverts (ClubManager,
     EmplacementManager, FournisseurManager, CategorieManager, etc.).
-  - Tests Unit sur les contrôleurs non encore couverts
-    (AcquisitionController, IndexController, QrRedirectController,
-    AppUpdateController, AppUserRegisterController — partiellement
-    couverts).
   - `EncryptionService` : cache d'instance dans les factories.
   - Migration `@dataProvider` → `#[DataProvider]` sur les tests restants
     (cf. Dette 4).
@@ -119,18 +129,24 @@ séparés quand le temps le permet.
   de l'attribut `#[DataProvider]`.
 - Déjà corrigé sur `RootUrlValidatorTest` (#59).
 - Reste à corriger sur les autres tests qui utilisent `@dataProvider`.
-- Les tests #68 et #69 (`AbstractManagerBuildWhereClauseTest`,
-  `JournalManagerTest`) utilisent déjà l'attribut `#[DataProvider]` —
-  pas d'ajout de dette.
+- Les tests #68, #69 et #70 (`AbstractManagerBuildWhereClauseTest`,
+  `JournalManagerTest`, `JournalControllerTest`) utilisent déjà
+  l'attribut `#[DataProvider]` ou n'en ont pas besoin — pas d'ajout
+  de dette.
 - **Ticket à ouvrir** : oui, un petit ticket « chore: migrer
   @dataProvider vers #[DataProvider] ».
 
-### Dette 5 — `ControleController` helpers en délégation
+### Dette 5 — `encryptionService()` dupliqué dans les contrôleurs
 
-- `encryptRemarque` / `decryptRemarque` / `isEncrypted` délèguent à
-  `EncryptionService` depuis #50b.
-- Les helpers restent `protected` pour préserver les ~12 appels internes.
-- Indirection légère, acceptable. Pas de ticket.
+- `ControleController::encryptionService()` (#50b) et
+  `JournalController::encryptionService()` (#70) sont identiques :
+  `new EncryptionService($this->configProvider())`.
+- **Recommandation** : extraire une factory `protected
+  encryptionService()` dans `AbstractController`.
+- **Ticket à ouvrir** : oui, dans la continuité de la Vague 14.
+- Connexe : `EquipementManager::encryptionService()` (Dette 6) utilise
+  `new ConfigProvider(__DIR__ . '/../../.env.local.php')` en dur —
+  divergence à aligner sur `$this->configProvider()`.
 
 ### Dette 6 — `EquipementManager::encryptionService()` instancié à chaque appel
 
@@ -191,6 +207,8 @@ Tests (depuis la racine du projet) :
 - `php vendor/bin/phpunit` — suite complète.
 - `php vendor/bin/phpunit tests/Unit/Engine/FooTest.php` — un fichier.
 - `php vendor/bin/phpunit --filter testMethodName` — une méthode.
+- `php vendor/bin/phpunit --display-deprecations` — affiche le détail
+  des dépréciations PHPUnit.
 
 Serveur HTTP pour tests Integration :
 
@@ -223,6 +241,10 @@ Pattern release Git :
   constructeur).
 - **PHP 8.5** : `curl_close()` déprécié (no-op depuis 8.0).
   `hex2bin()` émet un warning si input non-hex — valider avant.
+- **`ReflectionMethod::setAccessible()` déprécié en PHP 8.5** : no-op
+  depuis PHP 8.1 (les méthodes `protected`/`private` sont accessibles
+  par réflexion sans appel). Ne pas appeler `setAccessible(true)` dans
+  les tests qui utilisent la réflexion sur des méthodes `protected`.
 - **OpCache** : si `validate_timestamps=0`, redémarrer PHP-FPM après
   toute modif de `.env.local.php` (les tests Integration en dépendent).
 - **Tests POST + CSRF** : `private const CSRF_TOKEN` doit être
@@ -236,7 +258,15 @@ Pattern release Git :
   pour éviter `new UtilisateurManager()` qui ouvre PDO. Pour les
   contrôleurs qui appellent `validateCsrf()`, surcharger aussi
   `validateCsrf()` en no-op (CSRF testé isolément dans
-  `CsrfValidatorTest`).
+  `CsrfValidatorTest`). Deux patterns coexistent :
+  - **Sans** `parent::__construct()` (Vague 11, `TestableClubController`
+    etc.) : appelle directement les factories, ne teste pas le
+    constructeur réel.
+  - **Avec** `parent::__construct()` + surcharge `updateLastActivity()`
+    (Vague 14, `TestableJournalController`) : teste le constructeur
+    réel. À privilégier pour les contrôleurs qui n'ont pas encore
+    été migrés Vague 11 — c'est ce qui a permis de capturer le bug
+    #70.
 - **Copier un contrôleur** : bien vérifier le `namespace` et le nom de
   classe. Un copier-coller raté peut mettre `class FournisseurController`
   dans `FournisseurManager.php` (incident #64).
@@ -263,6 +293,14 @@ Pattern release Git :
 
 ## Contexte de la session précédente
 
+- **#70** (v0.18.10) : `JournalController` — fix `ArgumentCountError`
+  (`new EncryptionService()` sans argument, ligne 23). Détecté en test
+  manuel navigateur, jamais en Unit (aucun test n'existait sur ce
+  contrôleur). Migré au pattern Vague 11 : factories
+  `journalManager()` et `encryptionService()`. Propriétés passées en
+  `protected`. +2 tests Unit avec `TestableJournalController` qui
+  appelle le vrai `parent::__construct()` (pattern Vague 14). Test
+  rouge d'abord (pile d'appel capturée).
 - **#69** (v0.18.9) : `JournalManager` — suppression de `getPdo()`
   (code mort), extraction de `buildOrderByClause()` (whitelist pure,
   testable) et **fix du bug** `ORDER BY c.date_debut DESC ASC` (500)
@@ -284,7 +322,8 @@ Pattern release Git :
   Unit. Piège CSRF identifié (constante `CSRF_TOKEN` manquante).
 
 **🎯 Vague 11 complète** (3 contrôleurs, 67 tests Unit).
-**🎯 Vague 14 en cours** (#68 et #69 livrés).
-**Prochaine session** : continuer la Vague 14 — fix `limit <= 0`
-et ambiguïté multi-colonnes de `JournalManager` (Dette 7, même
-pattern que #69), ou audit SQL restant, ou Dette 4 (rapide).
+**🎯 Vague 14 en cours** (#68, #69 et #70 livrés).
+**Prochaine session** : continuer la Vague 14 — tests Unit sur les
+contrôleurs non couverts (priorité remontée après #70), ou
+factorisation `encryptionService()` dans `AbstractController`
+(Dette 5), ou fix `limit <= 0` (Dette 7).

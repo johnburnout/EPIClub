@@ -10,6 +10,82 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [0.18.10] — 2026-10-13
+
+### Fixed
+
+- **#70** : `JournalController` levait une `ArgumentCountError` à chaque
+instanciation (`new EncryptionService()` sans argument, ligne 23) —
+le constructeur d'`EncryptionService` exige un `ConfigProvider` depuis
+#50b (v0.18.3). Symptôme : erreur 500 à l'utilisateur sur toute route
+du journal (`/journaux`, `/journaux/{id}`, `/journaux/{id}/pdf`).
+Détecté en test manuel dans le navigateur, jamais en test automatisé
+car `JournalController` n'avait aucun test Unit.
+- **Cause racine** : `JournalController` n'avait pas été migré au
+pattern #50b/Vague 11. Son constructeur instanciait `JournalManager`
+et `EncryptionService` en dur, sans factory mockable — invisible
+pour la suite de tests existante.
+
+### Changed
+
+- **#70** : `JournalController` migre au pattern Vague 11 :
+- factory `protected journalManager(): JournalManager` ;
+- factory `protected encryptionService(): EncryptionService`
+(reprend le pattern de `ControleController::encryptionService()`
+#50b : `new EncryptionService($this->configProvider())`).
+- **#70** : `JournalController::$journalManager` et
+`JournalController::$encryptionService` passent de `private` à
+`protected` pour être injectables dans `TestableJournalController`.
+- Aucun autre changement observable : routes, templates, flux HTTP
+et logique métier inchangés.
+
+### Added (tests)
+
+- **`tests/Unit/Controller/JournalControllerTest.php`** : 2 tests Unit
+couvrant :
+- `testConstructDoesNotThrow` : instanciation du contrôleur via
+`TestableJournalController` sans `ArgumentCountError`. **Test rouge
+avant fix** (pile d'appel `JournalController.php:23` →
+`ArgumentCountError`).
+- `testEncryptionServiceFactoryInstantiatesWithConfigProvider` :
+la factory `encryptionService()` (appelée via réflexion sur la
+classe parente) retourne bien une instance `EncryptionService`.
+- **`tests/Unit/Controller/Support/TestableJournalController.php`** :
+sous-classe de test qui
+- appelle le **vrai** `parent::__construct()` (teste le constructeur
+réel, contrairement à certaines sous-classes de la Vague 11 qui
+court-circuitaient) ;
+- surcharge `updateLastActivity()` en no-op (évite
+`new UtilisateurManager()` → PDO) ;
+- injecte des mocks `JournalManager` / `EncryptionService` via
+surcharge des factories.
+
+### Tests
+
+- Unit : 336 → 338 tests (+2), 794 assertions (inchangées).
+- Integration : 7 tests (inchangés, skippés si serveur absent).
+- **Total : 338 tests verts, 0 warning, 0 dépréciation.**
+
+### Notes
+
+- **Leçon** : le bug est passé sous le radar parce que
+`JournalController` n'avait **aucun test Unit**. Toutes les routes
+du journal étaient à 500 depuis v0.18.3 (#50b), soit 7 versions.
+Signal fort en faveur de la cible « Tests Unit sur les contrôleurs
+non encore couverts » de la Vague 14 (les contrôleurs restants :
+`IndexController`, `QrRedirectController`, `AppUpdateController`,
+partiellement `AppUserRegisterController`).
+- **Dette connexe** : le même bug de factorisation
+`encryptionService()` peut se reproduire si `AbstractController`
+n'expose pas de factory commune. `ControleController` et
+`JournalController` dupliquent maintenant la même factory.
+Factorisation à envisager dans un ticket séparé (cf. Dette 5).
+- **Dépréciation PHP 8.5** : `ReflectionMethod::setAccessible(true)`
+est no-op depuis PHP 8.1 et dépréciée depuis PHP 8.5. Le test
+`testEncryptionServiceFactoryInstantiatesWithConfigProvider`
+l'utilisait initialement — supprimé (cf. Points de vigilance de
+`docs/REPRISE.md`).
+
 ## [0.18.9] — 2026-10-13
 
 ### Changed
