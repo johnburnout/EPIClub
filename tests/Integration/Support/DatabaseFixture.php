@@ -50,6 +50,44 @@ final class DatabaseFixture
 
         return (int) $this->pdo->lastInsertId();
     }
+    
+    /**
+    * [REFACTOR #71] Crée une acquisition avec FK contrôlées, pour
+    * caractériser AcquisitionManager::findAll().
+    *
+    * Contrairement à createDraftAcquisition() / createValidatedAcquisition(),
+    * fournisseur_id et saisie_par sont explicitement paramétrables.
+    *
+    * ⚠️ Sur le schéma actuel, `acquisition.fournisseur_id` est NOT NULL :
+    *    passer `null` déclenche une PDOException (SQLSTATE 23000 / 1048).
+    *    Le paramètre reste `?int` pour rester générique si le schéma évolue.
+    *    Idem pour `saisie_par` si la colonne est NOT NULL.
+    *
+    * ⚠️ Le cas FK orpheline (fournisseur_id → id absent) nécessite
+    *    SET FOREIGN_KEY_CHECKS=0 côté appelant.
+    *
+    * @throws \PDOException si une colonne NOT NULL reçoit null,
+    *                       ou si la FK est invalide et checks activés.
+    */
+    public function createAcquisitionForFindAll(
+        string $reference,
+        ?int $fournisseurId,
+        ?int $saisiePar,
+    ): int {
+        $stmt = $this->pdo->prepare(
+            "INSERT INTO acquisition
+            (fournisseur_id, facture_reference, facture_date, facture_document, saisie_par, est_validee)
+            VALUES (:fid, :ref, :date, NULL, :sp, 0)"
+        );
+        $stmt->execute([
+            'fid'  => $fournisseurId,
+            'ref'  => $reference,
+            'date' => date('Y-m-d'),
+            'sp'   => $saisiePar,
+        ]);
+        
+        return (int) $this->pdo->lastInsertId();
+    }
 
     public function createLigne(
         int $acquisitionId,

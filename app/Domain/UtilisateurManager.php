@@ -39,6 +39,32 @@ class UtilisateurManager extends AbstractManager
         $stmt->execute(['id' => $id]);
         return $stmt->fetch() ?: null;
     }
+    
+    /**
+    * [REFACTOR #71] Récupère plusieurs utilisateurs par leurs IDs en une requête.
+    *
+    * Iso-comportement avec findId() appliqué en boucle.
+    * ⚠️ SELECT * : inclut password, reset_token, etc. — comportement
+    * historique conservé (cf. Dette 8, exposition préexistante).
+    *
+    * @param int[] $ids
+    * @return array<int, array> Tableau indexé par id.
+    */
+    public function findIds(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+        
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+        
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $sql = "SELECT * FROM utilisateur WHERE id IN ($placeholders)";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($ids);
+        
+        return array_column($stmt->fetchAll(), null, 'id');
+    }
 
     public function findOneByCriteria(array $criteria = [])
     {

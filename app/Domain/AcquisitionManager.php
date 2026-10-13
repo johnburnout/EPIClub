@@ -9,26 +9,52 @@ class AcquisitionManager extends AbstractManager
     public function findAll($order = '', $limit = -1, $offset = 0)
     {
         $params = $this->buildOrderClause($order)
-                . $this->buildLimitClause($limit, $offset);
-
+        . $this->buildLimitClause($limit, $offset);
+        
         $sql = "SELECT * FROM acquisition $params";
         $stmt = $this->db->prepare($sql);
         $stmt->execute();
         $acquisitions = $stmt->fetchAll();
-
-        $fournisseurManager = new FournisseurManager();
-        $utilisateurManager = new UtilisateurManager();
-
-        foreach ($acquisitions as $i => $acquisition) {
-            if (isset($acquisition['fournisseur_id'])) {
-                $acquisitions[$i]['fournisseur'] = $fournisseurManager->findId($acquisition['fournisseur_id']);
+        
+        // [REFACTOR #71] Early return : évite 2 requêtes IN vides.
+        if ($acquisitions === []) {
+            return $acquisitions;
+        }
+        
+        // [REFACTOR #71] Collecte des IDs distincts non-null.
+        // isset() (et non !== null) : reproduit exactement le test
+        // historique — une colonne NULL ne doit PAS produire de clé
+        // 'fournisseur' / 'redacteur' dans le résultat.
+        $fournisseurIds = [];
+        $utilisateurIds = [];
+        foreach ($acquisitions as $a) {
+            if (isset($a['fournisseur_id'])) {
+                $fournisseurIds[$a['fournisseur_id']] = true;
             }
-
-            if (isset($acquisition['saisie_par'])) {
-                $acquisitions[$i]['redacteur'] = $utilisateurManager->findId($acquisition['saisie_par']);
+            if (isset($a['saisie_par'])) {
+                $utilisateurIds[$a['saisie_par']] = true;
             }
         }
-
+        
+        $fournisseurs = $fournisseurIds === []
+        ? []
+        : (new FournisseurManager())->findIds(array_keys($fournisseurIds));
+        
+        $utilisateurs = $utilisateurIds === []
+        ? []
+        : (new UtilisateurManager())->findIds(array_keys($utilisateurIds));
+        
+        // [REFACTOR #71] ?? null : FK orpheline = clé présente + valeur
+        // null (comportement historique de findId() qui retournait null).
+        foreach ($acquisitions as $i => $a) {
+            if (isset($a['fournisseur_id'])) {
+                $acquisitions[$i]['fournisseur'] = $fournisseurs[$a['fournisseur_id']] ?? null;
+            }
+            if (isset($a['saisie_par'])) {
+                $acquisitions[$i]['redacteur'] = $utilisateurs[$a['saisie_par']] ?? null;
+            }
+        }
+        
         return $acquisitions;
     }
 

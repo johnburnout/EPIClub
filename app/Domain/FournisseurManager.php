@@ -27,6 +27,35 @@ class FournisseurManager extends AbstractManager
         }
         return null;
     }
+    
+    /**
+    * [REFACTOR #71] Récupère plusieurs fournisseurs par leurs IDs en une requête.
+    *
+    * Iso-comportement avec findId() appliqué en boucle :
+    *  - les IDs absents de la table sont absents du tableau retourné
+    *    (findId() retournait null, on omet la clé — l'appelant utilise ?? null) ;
+    *  - les doublons dans $ids sont dédupliqués (IN (...) n'a pas besoin
+    *    de répétition) ;
+    *  - $ids vide → retourne [] sans requête SQL.
+    *
+    * @param int[] $ids
+    * @return array<int, array> Tableau indexé par id.
+    */
+    public function findIds(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+        
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+        
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $sql = "SELECT * FROM fournisseur WHERE id IN ($placeholders)";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($ids);
+        
+        return array_column($stmt->fetchAll(), null, 'id');
+    }
 
     public function findOneByCriteria(array $criteria = [])
     {

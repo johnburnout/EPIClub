@@ -8,6 +8,58 @@ et le projet adhère au [versionnage sémantique](https://semver.org/lang/fr/).
 Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 à l'historique Git (`git log`, `git tag`).
 
+## [0.19.0] - 2026-10-13
+
+### Changed
+
+- **#71 — `AcquisitionManager::findAll()` : 2N+1 → 3 requêtes.**
+Remplace la boucle `findId()` par un batch `findIds()`
+(`IN (...)`) sur `FournisseurManager` et `UtilisateurManager`.
+Pour 100 acquisitions avec fournisseur + rédacteur :
+**201 requêtes → 3 requêtes fixes** (ou 1 seule si le résultat
+acquisition est vide).
+
+Périmètre strict : seule `findAll()` est touchée. `findId()` et
+`findOneByCriteria()` restent inchangés (3 requêtes fixes, pas un
+N+1).
+
+Iso-comportement strict préservé :
+- `isset()` conservé sur `fournisseur_id` / `saisie_par` → clé
+absente si `null` (comportement historique) ;
+- `?? null` sur le map → FK orpheline = clé présente + valeur
+`null` (comportement historique de `findId()` qui retournait
+`null`) ;
+- ordre des acquisitions inchangé.
+
+### Added
+
+- `FournisseurManager::findIds(array $ids): array` — récupération
+batch, résultat indexé par `id`, déduplication, `$ids` vide = pas
+de requête.
+- `UtilisateurManager::findIds(array $ids): array` — idem.
+
+### Tests
+
+- **Unit** : `AcquisitionManagerFindAllTest` (4 tests — early return,
+forme du résultat, FK null défensive, FK orpheline),
+`FournisseurManagerFindIdsTest` (3 tests),
+`UtilisateurManagerFindIdsTest` (3 tests).
+- **Integration** : `AcquisitionManagerFindAllIntegrationTest`
+(1 test de caractérisation — F+R, FK orpheline ; le cas
+`fournisseur_id = NULL` n'est pas testable car la colonne est
+`NOT NULL` en base).
+- Séquence de non-régression : test Integration **vert** sur
+HEAD~1 (v0.18.10, ancien `findAll()`) puis **vert** sur HEAD
+(refactor) — preuve d'iso-comportement.
+
+### Documentation
+
+- `REPRISE.md` : Dette 8 (hash de mot de passe exposé dans
+`redacteur`), Dette 9 (absence de contraintes FK sur
+`acquisition`), Dette 10 (`findAll()` non testable unitairement
+sur le nombre de requêtes — instanciation en dur de
+`FournisseurManager` / `UtilisateurManager`).
+
 ## [Unreleased]
 
 ## [0.18.10] — 2026-10-13
