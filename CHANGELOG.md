@@ -10,6 +10,51 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [0.22.0] — 2026-10-13
+
+### Changed
+
+- **#74 — `IndexController` : rattrapage Vague 11.**
+Deux dépendances instanciées en dur (`EnvironmentFileParser`,
+`MailerService`) sont désormais fournies par des factories
+`protected` mockables en test Unit (pattern Vague 11, aligné sur
+`QrRedirectController` #73, `JournalController` #70).
+
+Aucun changement observable : les routes, templates, flux HTTP et
+la logique métier sont inchangés.
+
+### Added (tests)
+
+- **`tests/Unit/Controller/IndexControllerTest.php`** : 5 tests Unit
+couvrant :
+- `index()` : redirection vers `/se_connecter` si non authentifié,
+vers `/tableau_de_bord` sinon ;
+- `dashboard()` : rendu du template `tableau_de_bord.twig`
+(statut 200 + contenu non vide — **pas d'assertion sur le HTML**,
+cf. Points de vigilance) ;
+- `updateSmtp()` : rejet si champs SMTP obligatoires vides (flash
+error + redirect), rejet si `ROOT_URL` invalide (flash error +
+redirect) — **branches non couvertes par les 7 tests Integration
+`IndexControllerRootUrlTest`**.
+- **`tests/Unit/Controller/Support/TestableIndexController.php`** :
+sous-classe de test (pattern Vague 14) qui
+- appelle le **vrai** `parent::__construct()` ;
+- surcharge `updateLastActivity()` en no-op ;
+- surcharge `validateCsrf()` en no-op (CSRF testé isolément dans
+`CsrfValidatorTest`) ;
+- injecte un mock `EnvironmentFileParser` et/ou
+`MailerServiceInterface` via surcharge des factories.
+
+### Notes
+
+- ⚠️ **Périmètre limité** :
+- `systemSettings()` n'est pas testé en Unit : couvert en
+Integration (`IndexControllerRootUrlTest`, 7 tests) ;
+- `testMail()` n'est pas testé en Unit : effet de bord réseau
+(SMTP), à tester manuellement ou en Integration.
+- `MailerServiceInterface` (Vague 8) permet de mocker `MailerService`
+en Unit si on veut étendre la couverture à `testMail()` plus tard.
+
 ## [0.21.0] — 2026-10-13
 
 ### Changed

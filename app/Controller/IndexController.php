@@ -3,15 +3,31 @@
 namespace Epiclub\Controller;
 
 use Epiclub\Engine\AbstractController;
-use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Epiclub\Engine\ConfigProvider;
 use Epiclub\Engine\EnvironmentFileParser;
+use Epiclub\Engine\MailerService;
+use Epiclub\Engine\MailerServiceInterface;
 use Epiclub\Engine\RootUrlValidator;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class IndexController extends AbstractController
 {
+    // ==================================================================
+    // [REFACTOR #74] Factories Vague 11 — mockables en test Unit.
+    // ==================================================================
+
+    protected function environmentFileParser(string $path): EnvironmentFileParser
+    {
+        return new EnvironmentFileParser($path);
+    }
+
+    protected function mailerService(ConfigProvider $config): MailerServiceInterface
+    {
+        return new MailerService($config);
+    }
+
     public function index(Request $request): Response
     {
         if (!$this->isGranted('ROLE_USER')) {
@@ -143,7 +159,8 @@ class IndexController extends AbstractController
         
         // [VAGUE 13 - #59] Migration vers EnvironmentFileParser
         // (bénéficie de l'échappement var_export() de l'issue #49).
-        $parser = new EnvironmentFileParser($envFile);
+        // [REFACTOR #74] Factory protected — mockable en test Unit.
+        $parser = $this->environmentFileParser($envFile);
         $parser->set('MAILER_DSN', $dsn);
         $parser->set('MAILER_FROM', $from);
         $parser->set('MAILER_NAME', $fromName);
@@ -181,8 +198,9 @@ class IndexController extends AbstractController
 
             // [VAGUE 13 - #50c] Instancier le service mailer via ConfigProvider.
             // Le DSN est lu depuis .env.local.php (plus de $_ENV).
+            // [REFACTOR #74] Factory protected — mockable en test Unit.
             $configProvider = new ConfigProvider($envFile);
-            $mailer = new \Epiclub\Engine\MailerService($configProvider);
+            $mailer = $this->mailerService($configProvider);
 
             // Créer l'email de test
             $email = new \Symfony\Component\Mime\Email();

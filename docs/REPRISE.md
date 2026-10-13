@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-13 (fin de session #73 — Vague 14 en cours)
-**Version courante** : v0.21.0
+**Dernière mise à jour** : 2026-10-13 (fin de session #74 — Vague 14 en cours)
+**Version courante** : v0.22.0
 **Branche** : `main` (travail direct sur main, pas de PR)
 
 ---
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.21.0 | #73 | QrRedirectController — rattrapage Vague 11 | `<hash>` |
+| v0.22.0 | #74 | IndexController — rattrapage Vague 11 | `<hash>` |
+| v0.21.0 | #73 | QrRedirectController — rattrapage Vague 11 | `6a82b55` |
 | v0.20.0 | #72 | AcquisitionLigneManager — N+1 → 2 requêtes | `23d5fa0` |
 | v0.19.0 | #71 | AcquisitionManager::findAll() — 2N+1 → 3 requêtes | `155b0a0` |
 | v0.18.10 | #70 | JournalController — EncryptionService reçoit ConfigProvider | `acfca34` |
@@ -36,6 +37,11 @@ lors du ticket suivant). Les versions antérieures portent leur hash réel.
 
 ### Chantiers soldés
 
+- **#74 — `IndexController`** : rattrapage Vague 11. 2 factories
+  `protected` (`environmentFileParser()`, `mailerService()`).
+  5 tests Unit sur `index()`, `dashboard()`, `updateSmtp()`.
+  `systemSettings()` et `testMail()` hors périmètre Unit (couvert en
+  Integration / effet de bord réseau).
 - 🎯 **Vague 11 — injection de dépendances** : **COMPLÈTE**.
   - Tous les contrôleurs ont une factory `protected` par manager.
   - **67 tests Unit** ajoutés sur les 3 derniers tickets
@@ -108,14 +114,14 @@ lors du ticket suivant). Les versions antérieures portent leur hash réel.
 - ✅ **#73** — `QrRedirectController` : rattrapage Vague 11.
   6 factories `protected`, 4 tests Unit. Actions publiques non
   testables en Unit (`header()` + `exit`), Dette 13.
+- ✅ **#74** (prochain) — `IndexController` : rattrapage Vague 11 +
+  tests Unit. Le contrôleur a des dépendances (`ConfigProvider`,
+  `EnvironmentFileParser`, `MailerService`) et des actions publiques
+  (`updateSmtp()`, `systemSettings()`, `testMail()`). Attention :
+  `updateSmtp()` écrit dans `.env.local.php` — déjà couvert en
+  Integration (`IndexControllerRootUrlTest`, 7 tests), donc
+  périmètre Unit à délimiter prudemment.
 - Candidats suivants (par ordre de pertinence) :
-  - **#74** (prochain) — `IndexController` : rattrapage Vague 11 +
-    tests Unit. Le contrôleur a des dépendances (`ConfigProvider`,
-    `EnvironmentFileParser`, `MailerService`) et des actions publiques
-    (`updateSmtp()`, `systemSettings()`, `testMail()`). Attention :
-    `updateSmtp()` écrit dans `.env.local.php` — déjà couvert en
-    Integration (`IndexControllerRootUrlTest`, 7 tests), donc
-    périmètre Unit à délimiter prudemment.
   - **Tests Unit sur `AppUserRegisterController`** (méthodes GET
     restantes : `login`, `register`, `forgotPassword` GET,
     `resetPassword` GET). Le cœur (handlers POST) est déjà couvert
@@ -440,6 +446,13 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD~1 --
     `$this->configProvider()` surchargé). Inutile pour tester une
     surcharge de testable — il faut alors cibler la classe testable.
     Détecté sur #73.
+  - ⚠️ **Surcharger une méthode parente dont un paramètre vient d'un
+    autre namespace** : penser à ajouter le `use` correspondant, sinon
+    PHP résout la classe dans le namespace courant et lève une erreur
+    fatale (`Could not check compatibility between ... because class
+    ... is not available`). Détecté sur #74
+    (`TestableIndexController::validateCsrf()` et le
+    `use Symfony\Component\HttpFoundation\Request`).
 - **Copier un contrôleur** : bien vérifier le `namespace` et le nom de
   classe. Un copier-coller raté peut mettre `class FournisseurController`
   dans `FournisseurManager.php` (incident #64).
@@ -477,11 +490,28 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD~1 --
   (le `exit` tue le processus PHP). Détecté sur
   `QrRedirectController` (#73). Si un autre contrôleur utilise ce
   pattern, mêmes limites. Cf. Dette 13.
+- **Tests Unit de contrôleur — pas d'assertion sur le HTML** :
+  ne PAS tester le contenu HTML (fragile, dépendant du template).
+  Tester :
+  - le code de statut (`200`, `302`) ;
+  - les headers (`Location`) ;
+  - les appels aux managers (mocks) ;
+  - les flashs de session ;
+  - les propriétés du DTO (`HandlerResult`).
+  Le contenu HTML est testé en Integration HTTP. Détecté sur #74
+  (`testDashboardRendersTableauDeBord` cherchait `'tableau_de_bord'`
+  dans le HTML rendu).
 
 ---
 
 ## Contexte de la session précédente
 
+- **#74** (v0.22.0) : `IndexController` — rattrapage Vague 11.
+  2 factories `protected` (`environmentFileParser()`,
+  `mailerService()`). 5 tests Unit sur `index()`, `dashboard()`,
+  `updateSmtp()`. Périmètre limité : `systemSettings()` couvert en
+  Integration, `testMail()` hors périmètre (effet réseau SMTP).
+  365 tests au total.
 - **#73** (v0.21.0) : `QrRedirectController` — rattrapage Vague 11.
   6 dépendances (`EquipementManager`, `ControleManager`,
   `ControleLigneManager`, `UtilisateurManager`, `QrCodeGenerator`,
@@ -515,9 +545,9 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD~1 --
 
 **🎯 Vague 11 complète** (3 contrôleurs, 67 tests Unit).
 **🎯 Vague 14 en cours** (#68, #69, #70, #71, #72 et #73 livrés).
-**Prochaine session** : **#74** — `IndexController` : rattrapage
-Vague 11 + tests Unit. Dépendances : `ConfigProvider`,
-`EnvironmentFileParser`, `MailerService`. `updateSmtp()` écrit dans
-`.env.local.php` — déjà couvert en Integration
-(`IndexControllerRootUrlTest`, 7 tests). Périmètre Unit à délimiter
-prudemment (probablement constructeur + factories + méthodes pures).
+**Prochaine session** : **#75** — candidats par ordre de pertinence :
+(1) tests Unit sur `AppUserRegisterController` (méthodes GET restantes :
+`login`, `register`, `forgotPassword` GET, `resetPassword` GET) ;
+(2) factorisation `encryptionService()` dans `AbstractController`
+(Dette 5) ; (3) factorisation `acquisitionManager()` /
+`categorieManager()` dans les Managers (Dette 10).
