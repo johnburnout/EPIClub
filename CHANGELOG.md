@@ -10,6 +10,32 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [0.23.0] — 2026-10-14
+
+### Added (tests)
+
+- **`tests/Unit/Controller/AppUserRegisterControllerTest.php`** :
+5 tests Unit sur les méthodes GET d'`AppUserRegisterController`
+qui n'étaient pas couvertes par `HandlersTest` (qui couvre les POST) :
+- `account()` : garde `ROLE_USER` (accès refusé + flash) ;
+- `edit()` : garde `ROLE_ADMIN` (accès refusé + flash) ;
+- `forgotPassword()` GET : rendu du formulaire (200) ;
+- `forgotPasswordConfirm()` : rendu de la page de confirmation (200) ;
+- `resetPassword()` GET avec token valide : rendu du formulaire (200)
+(token manquant/invalide/expiré déjà couverts par `HandlersTest`).
+
+### Notes
+
+- ⚠️ **Périmètre limité** : les rendus de `account()` et `edit()`
+**ne sont pas testés** car les templates `user_account.twig` et
+`user_register.twig` n'existent pas (cf. Dette 14). Seules les
+gardes d'accès sont testées.
+- **Dette 14 documentée** : les routes `/mon_compte` et
+`/creer_compte` sont déclarées dans `ressources/routes.php` mais
+rendent des templates manquants (renommés en `utilisateur_show.twig`
+et `utilisateur_form.twig`). Bug **dormant** : aucune référence
+dans l'UI ni les emails. Ticket #77 à ouvrir (corriger ou supprimer).
+
 ## [0.22.1] — 2026-10-13
 
 ### Fixed

@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-13 (fin de session #75 — Vague 14 en cours)
-**Version courante** : v0.22.1
+**Dernière mise à jour** : 2026-10-14 (fin de session #76 — Vague 14 en cours)
+**Version courante** : v0.23.0
 **Branche** : `main` (travail direct sur main, pas de PR)
 
 ---
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.22.1 | #75 | Fix chemin template qr/choice_page.twig | `<hash>` |
+| v0.23.0 | #76 | AppUserRegisterController — tests GET | `<hash>` |
+| v0.22.1 | #75 | Fix chemin template qr/choice_page.twig | `fec9d66` |
 | v0.22.0 | #74 | IndexController — rattrapage Vague 11 | `537e2e8` |
 | v0.21.0 | #73 | QrRedirectController — rattrapage Vague 11 | `6a82b55` |
 | v0.20.0 | #72 | AcquisitionLigneManager — N+1 → 2 requêtes | `23d5fa0` |
@@ -38,6 +39,12 @@ lors du ticket suivant). Les versions antérieures portent leur hash réel.
 
 ### Chantiers soldés
 
+- **#76 — `AppUserRegisterController` : tests Unit sur les méthodes GET.**
+  5 tests Unit : gardes d'accès `account()` (`ROLE_USER`) et `edit()`
+  (`ROLE_ADMIN`), rendus `forgotPassword()` GET, `forgotPasswordConfirm()`,
+  `resetPassword()` GET token valide. Périmètre limité : les rendus
+  de `account()`/`edit()` ne sont pas testés (templates manquants,
+  Dette 14).
 - **#75 — Fix chemin template `qr/choice_page.twig`** : la route
   `/qr/choix/{id}` renvoyait 500 (`Twig\Error\LoaderError`). Le
   template existait dans `templates/qr/` mais le `render()` le
@@ -132,12 +139,12 @@ lors du ticket suivant). Les versions antérieures portent leur hash réel.
   `/qr/choix/{id}` renvoyait 500 (`Twig\Error\LoaderError`). Le
   template existait dans `templates/qr/` mais le `render()` le
   cherchait à la racine. Fix 1 ligne + test Integration.
+- ✅ **#76** — Tests Unit sur `AppUserRegisterController` (méthodes GET
+  restantes : `login`, `register`, `forgotPassword` GET,
+  `resetPassword` GET). Le cœur (handlers POST) est déjà couvert
+  par 13 tests Unit.
 - Candidats suivants (par ordre de pertinence) :
-  - **Tests Unit sur `AppUserRegisterController`** (méthodes GET
-    restantes : `login`, `register`, `forgotPassword` GET,
-    `resetPassword` GET). Le cœur (handlers POST) est déjà couvert
-    par 13 tests Unit.
-  - Factoriser `encryptionService()` dans `AbstractController`
+  - Factoriser — `encryptionService()` dans `AbstractController`
     (Dette 5 — duplication `ControleController` / `JournalController`).
   - Factoriser `acquisitionManager()` / `categorieManager()` dans les
     Managers (Dette 10 — pattern Vague 11 appliqué aux Managers, pas
@@ -323,6 +330,31 @@ séparés quand le temps le permet.
   fonctionne, il n'a juste pas de filet Unit sur les actions.
 - Connexe : `QrCodeReader::read()` (avec `$outputDirectly = true`)
   utilise aussi `header()` + `exit`. Même problème.
+  
+### Dette 14 — `AppUserRegisterController::account()` et `edit()` : routes actives, templates manquants
+  
+- Routes **déclarées** dans `ressources/routes.php` :
+- `/mon_compte`   → `AppUserRegisterController::account()`
+- `/creer_compte` → `AppUserRegisterController::edit()`
+- Ces 2 méthodes rendent des templates qui **n'existent pas** :
+- `user_account.twig` → template réel : `utilisateur_show.twig`
+- `user_register.twig` → template réel : `utilisateur_form.twig`
+- **Conséquence** : les 2 routes renvoient **500** si on les tape
+  directement.
+- **Mais** : aucune référence à ces URLs dans les templates ni dans
+  l'UI (`grep -rn "mon_compte\|creer_compte" templates/ app/` →
+  aucun résultat). Aucune référence dans les emails (`grep` vide).
+  Donc le bug est **dormant**.
+- **Complexité** : `utilisateur_form.twig` attend des variables
+  (`utilisateur`, `roles`, `form_errors`) que `edit()` ne passe pas.
+  Un simple renommage ne suffit pas — il faut aussi passer les
+  variables.
+- **Sévérité** : basse (bug dormant, pas d'impact quotidien).
+- **Deux pistes** :
+  1. **Corriger** : renommer les templates + passer les variables.
+  2. **Supprimer** : retirer les 2 méthodes + les 2 routes si elles
+  sont obsolètes.
+- **Ticket à ouvrir** : oui, **#77**.
 
 ---
 
@@ -464,6 +496,12 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD~1 --
     ... is not available`). Détecté sur #74
     (`TestableIndexController::validateCsrf()` et le
     `use Symfony\Component\HttpFoundation\Request`).
+  - ⚠️ **`Session::isGranted()` dépend de `user['role']`** : pour
+    tester une garde `deniAccessUnlessGranted('ROLE_ADMIN')` avec un
+    utilisateur qui n'a que `ROLE_USER`, il faut passer un
+    `user['role'] = 'ROLE_USER'` dans la Session (pas un mock
+    `isGranted` → false). Voir `Session::ROLE_LEVELS` pour la
+    hiérarchie. Détecté sur #76.
 - **Copier un contrôleur** : bien vérifier le `namespace` et le nom de
   classe. Un copier-coller raté peut mettre `class FournisseurController`
   dans `FournisseurManager.php` (incident #64).
@@ -517,6 +555,10 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD~1 --
 
 ## Contexte de la session précédente
 
+- **#76** (v0.23.0) : `AppUserRegisterController` — 5 tests Unit
+  sur les méthodes GET. Périmètre limité : les rendus de `account()`
+  et `edit()` ne sont pas testés (templates manquants, Dette 14).
+  370 tests au total.
 - **#75** (v0.22.1) : fix chemin template `choice_page.twig` →
   `qr/choice_page.twig`. Bug détecté en test manuel après #73.
   `DatabaseFixture::createEquipement()` ajouté. 1 test Integration
@@ -560,8 +602,9 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD~1 --
 
 **🎯 Vague 11 complète** (3 contrôleurs, 67 tests Unit).
 **🎯 Vague 14 en cours** (#68, #69, #70, #71, #72 et #73 livrés).
-**Prochaine session** : **#76** — candidats par ordre de pertinence :
-(1) tests Unit sur `AppUserRegisterController` (méthodes GET restantes) ;
-(2) factorisation `encryptionService()` dans `AbstractController`
-(Dette 5) ; (3) factorisation `acquisitionManager()` /
-`categorieManager()` dans les Managers (Dette 10).
+**Prochaine session** : **#77** — fix ou suppression de
+`AppUserRegisterController::account()` et `edit()`. Les routes
+`/mon_compte` et `/creer_compte` rendent des templates manquants
+(renommés en `utilisateur_show.twig` / `utilisateur_form.twig`).
+Décision : corriger (renommage + variables) ou supprimer les
+2 méthodes + 2 routes (code dormant). Dette 14.
