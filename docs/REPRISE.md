@@ -88,15 +88,18 @@ lors du ticket suivant). Les versions antérieures portent leur hash réel.
 - **#61, #62** : refactors ControleController (injection managers, test Integration edit view).
 
 ### État des tests
-
-- **360 tests** verts (Unit + Domain), **~842 assertions**.
-- **8 tests Integration Controller** (nécessitent serveur HTTP sur
-  `localhost:8000`), skippés si serveur absent.
+- **365 tests** verts (Unit + Domain), **~855 assertions**.
+- **9 tests Integration Controller** (nécessitent serveur HTTP sur
+  `localhost:8000`), skippés si serveur absent :
+  `AcquisitionControllerTest`, `AcquisitionLineControllerTest`,
+  `ControleControllerEditViewTest`, `IndexControllerRootUrlTest`,
+  `QrRedirectControllerChoicePageTest`, et les 4 autres.
 - **2 tests Integration Domain** (`AcquisitionManagerFindAllIntegrationTest`,
   `AcquisitionLigneManagerFindByAcquisitionIntegrationTest`, nécessitent
   MySQL), skippés si base indisponible.
 - Commande : `php vendor/bin/phpunit`
 - Avec Integration : démarrer `php -S localhost:8000 -t public` dans un autre terminal.
+- **Total avec serveur HTTP actif** : 365 Unit/Domain + 9 Integration Controller = **374 tests**.
 
 ---
 
@@ -120,13 +123,15 @@ lors du ticket suivant). Les versions antérieures portent leur hash réel.
 - ✅ **#73** — `QrRedirectController` : rattrapage Vague 11.
   6 factories `protected`, 4 tests Unit. Actions publiques non
   testables en Unit (`header()` + `exit`), Dette 13.
-- ✅ **#74** (prochain) — `IndexController` : rattrapage Vague 11 +
-  tests Unit. Le contrôleur a des dépendances (`ConfigProvider`,
-  `EnvironmentFileParser`, `MailerService`) et des actions publiques
-  (`updateSmtp()`, `systemSettings()`, `testMail()`). Attention :
-  `updateSmtp()` écrit dans `.env.local.php` — déjà couvert en
-  Integration (`IndexControllerRootUrlTest`, 7 tests), donc
-  périmètre Unit à délimiter prudemment.
+- ✅ **#74** — `IndexController` : rattrapage Vague 11 + tests Unit.
+  2 factories `protected` (`environmentFileParser()`, `mailerService()`).
+  5 tests Unit sur `index()`, `dashboard()`, `updateSmtp()`.
+  `systemSettings()` et `testMail()` hors périmètre Unit (couvert en
+  Integration / effet de bord réseau).
+- ✅ **#75** — Fix chemin template `qr/choice_page.twig` : la route
+  `/qr/choix/{id}` renvoyait 500 (`Twig\Error\LoaderError`). Le
+  template existait dans `templates/qr/` mais le `render()` le
+  cherchait à la racine. Fix 1 ligne + test Integration.
 - Candidats suivants (par ordre de pertinence) :
   - **Tests Unit sur `AppUserRegisterController`** (méthodes GET
     restantes : `login`, `register`, `forgotPassword` GET,
