@@ -207,6 +207,19 @@ abstract class AbstractController
     }
     
     /**
+    * [REFACTOR #78 - Dette 5] Factory EncryptionService — mockable en test Unit.
+    *
+    * Centralise l'instanciation auparavant dupliquée dans
+    * ControleController (#50b) et JournalController (#70). Les sous-classes
+    * de test peuvent surcharger cette factory pour injecter un service
+    * basé sur une fixture (env.test.php) plutôt que .env.local.php.
+    */
+    protected function encryptionService(): EncryptionService
+    {
+        return new EncryptionService($this->configProvider());
+    }
+    
+    /**
     * [SÉCURITÉ #50a-bis] Retourne l'URL de base.
     *
     * Lit ROOT_URL depuis ConfigProvider. Si absent, vide ou non-string,

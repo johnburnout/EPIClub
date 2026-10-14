@@ -193,16 +193,4 @@ class JournalController extends AbstractController
     {
         return new JournalManager();
     }
-
-    /**
-    * [FIX #70] Factory EncryptionService.
-    *
-    * Reproduit le pattern de ControleController (#50b) : le service reçoit
-    * un ConfigProvider (lu depuis .env.local.php par défaut). Corrige
-    * l'ArgumentCountError sur new EncryptionService() sans argument.
-    */
-    protected function encryptionService(): EncryptionService
-    {
-        return new EncryptionService($this->configProvider());
-    }
 }

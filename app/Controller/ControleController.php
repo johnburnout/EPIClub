@@ -9,7 +9,6 @@ use Epiclub\Domain\CategorieManager;
 use Epiclub\Domain\EmplacementManager;
 use Epiclub\Domain\UtilisateurManager;
 use Epiclub\Engine\AbstractController;
-use Epiclub\Engine\EncryptionService;
 use Epiclub\Enum\ControleLigneStatut;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -54,20 +53,7 @@ class ControleController extends AbstractController
     protected function emplacementManager(): EmplacementManager      // ← NOUVEAU
     {
         return new EmplacementManager();
-    }
-    
-    /**
-    * [VAGUE 13 - #50b] Factory EncryptionService.
-    *
-    * Centralise le chiffrement/déchiffrement. Surchargeable en test
-    * pour injecter un service basé sur une fixture (env.test.php)
-    * plutôt que le vrai .env.local.php.
-    */
-    protected function encryptionService(): EncryptionService
-    {
-        return new EncryptionService($this->configProvider());
-    }
-    
+    }    
     
     // ==================================================================
     // [SÉCURITÉ #52 / VAGUE 13 - #50b] Chiffrement symétrique des remarques.

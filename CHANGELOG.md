@@ -10,6 +10,16 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v0.24.1] — 2026-10-14
+
+### Changed
+
+- Factorisation de la factory `encryptionService()` dans
+`AbstractController`. Auparavant dupliquée à l'identique dans
+`ControleController` (#50b) et `JournalController` (#70), elle est
+désormais héritée par les 17 contrôleurs de l'application. Dette 5
+soldée. Aucun changement de comportement observable.
+
 ## [v0.24.0] — 2026-10-14
 
 ### Removed

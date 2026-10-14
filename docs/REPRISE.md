@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-14 (fin de session #77 — Vague 14 en cours)
-**Version courante** : v0.24.0
+**Dernière mise à jour** : 2026-10-14 (fin de session #78 — Vague 14 en cours)
+**Version courante** : v0.24.1
 **Branche** : `main` (travail direct sur main, pas de PR)
 
 ---
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.24.0 | #77 | Suppression routes mortes `/mon_compte` et `/creer_compte` (Dette 14) | `<hash>` |
+| v0.24.1 | #78 | Factoriser encryptionService() dans AbstractController (Dette 5) | `<hash>` |
+| v0.24.0 | #77 | Suppression routes mortes `/mon_compte` et `/creer_compte` (Dette 14) | `1a6a162` |
 | v0.23.0 | #76 | AppUserRegisterController — tests GET | `5580996` |
 | v0.22.1 | #75 | Fix chemin template qr/choice_page.twig | `fec9d66` |
 | v0.22.0 | #74 | IndexController — rattrapage Vague 11 | `537e2e8` |
@@ -40,6 +41,12 @@ lors du ticket suivant). Les versions antérieures portent leur hash réel.
 
 ### Chantiers soldés
 
+- **#78 — Factorisation `encryptionService()` dans `AbstractController`.**
+  La factory était dupliquée à l'identique dans `ControleController`
+  (#50b) et `JournalController` (#70) :
+  `new EncryptionService($this->configProvider())`. Elle est désormais
+  héritée par les 17 contrôleurs de l'application. Iso-comportement
+  strict : 368 tests verts avant/après. Dette 5 soldée.
 - **#77 — Suppression routes mortes `/mon_compte` et `/creer_compte`.**
   `AppUserRegisterController::account()` et `::edit()` rendaient des
   templates inexistants (`user_account.twig`, `user_register.twig`),
@@ -154,13 +161,18 @@ lors du ticket suivant). Les versions antérieures portent leur hash réel.
   par 13 tests Unit.
 - ✅ **#77** — Suppression routes mortes `/mon_compte` et `/creer_compte`
   (`AppUserRegisterController::account()` et `::edit()`), Dette 14 soldée.
+- ✅ **#78** — Factorisation `encryptionService()` dans
+  `AbstractController`. Suppression des duplications dans
+  `ControleController` (#50b) et `JournalController` (#70). Dette 5 soldée.
 - Candidats suivants (par ordre de pertinence) :
-  - **Dette 5** — factoriser `encryptionService()` dans
-    `AbstractController` (duplication `ControleController` /
-    `JournalController`).
   - **Dette 10** — factoriser `acquisitionManager()` /
     `categorieManager()` dans les Managers (pattern Vague 11 appliqué
     aux Managers, pas seulement aux contrôleurs).
+  - **Dette 6** — `EquipementManager::encryptionService()` divergent :
+    utilise `new ConfigProvider(__DIR__ . '/../../.env.local.php')` en
+    dur au lieu de `$this->configProvider()`. Alignement possible
+    depuis #78 (la factory existe maintenant dans `AbstractController`,
+    mais `EquipementManager` n'hérite pas d'`AbstractController`).
   - Fix `limit <= 0` dans `JournalManager` (`LIMIT -5` → 500).
   - Fix `'u.nom, u.prenom ASC'` (ambiguïté multi-colonnes).
   - `AbstractManager::findOneByCriteria()` générique ? (attention à
@@ -208,22 +220,10 @@ séparés quand le temps le permet.
   de l'attribut `#[DataProvider]`.
 - Déjà corrigé sur `RootUrlValidatorTest` (#59).
 - Reste à corriger sur les autres tests qui utilisent `@dataProvider`.
-- Les tests #68 à #77 utilisent déjà l'attribut `#[DataProvider]` ou
+- Les tests #68 à #78 utilisent déjà l'attribut `#[DataProvider]` ou
   n'en ont pas besoin — pas d'ajout de dette.
 - **Ticket à ouvrir** : oui, un petit ticket « chore: migrer
   @dataProvider vers #[DataProvider] ».
-
-### Dette 5 — `encryptionService()` dupliqué dans les contrôleurs
-
-- `ControleController::encryptionService()` (#50b) et
-  `JournalController::encryptionService()` (#70) sont identiques :
-  `new EncryptionService($this->configProvider())`.
-- **Recommandation** : extraire une factory `protected
-  encryptionService()` dans `AbstractController`.
-- **Ticket à ouvrir** : oui, dans la continuité de la Vague 14.
-- Connexe : `EquipementManager::encryptionService()` (Dette 6) utilise
-  `new ConfigProvider(__DIR__ . '/../../.env.local.php')` en dur —
-  divergence à aligner sur `$this->configProvider()`.
 
 ### Dette 6 — `EquipementManager::encryptionService()` instancié à chaque appel
 
@@ -231,6 +231,9 @@ séparés quand le temps le permet.
   à chaque `getHistoriqueControles()`.
 - Acceptable vu l'usage peu fréquent.
 - Si le manager se met à déchiffrer en masse, prévoir un cache.
+- **Divergence** : utilise `new ConfigProvider(__DIR__ . '/../../.env.local.php')`
+  en dur au lieu de `$this->configProvider()` (cf. Dette 5, maintenant
+  soldée — mais `EquipementManager` n'hérite pas d'`AbstractController`).
 - Pas de ticket pour l'instant.
 
 ### Dette 7 — `JournalManager` : bornage `limit` et ambiguïté multi-colonnes
@@ -300,8 +303,7 @@ séparés quand le temps le permet.
   en test. Aligner sur `TestableJournalController` (Vague 14). Envisager
   une factorisation dans `AbstractManager`.
 - **Ticket à ouvrir** : oui, dans la continuité de la Vague 14.
-- Connexe : Dette 5 (`encryptionService()` dupliqué dans les
-  contrôleurs).
+- Connexe : Dette 5 (soldée en #78).
 
 ### Dette 11 — `AcquisitionLigneManager::findId()` reste à 2 requêtes
 
@@ -489,6 +491,13 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD~1 --
     `user['role'] = 'ROLE_USER'` dans la Session (pas un mock
     `isGranted` → false). Voir `Session::ROLE_LEVELS` pour la
     hiérarchie. Détecté sur #76.
+  - ⚠️ **Factory héritée dans `AbstractController` (#78)** : les
+    contrôleurs qui déclaraient une factory locale identique (ex :
+    `encryptionService()`) doivent la retirer, sinon la méthode locale
+    masque celle du parent. Le test unitaire dédié à la factory
+    parente (`ReflectionMethod(JournalController::class,
+    'encryptionService')`) continue de fonctionner — `ReflectionMethod`
+    résout les méthodes héritées. Détecté sur #78.
 - **Copier un contrôleur** : bien vérifier le `namespace` et le nom de
   classe. Un copier-coller raté peut mettre `class FournisseurController`
   dans `FournisseurManager.php` (incident #64).
@@ -542,11 +551,14 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD~1 --
 
 ## Contexte de la session précédente
 
+- **#78** (v0.24.1) : factorisation `encryptionService()` dans
+  `AbstractController`. Suppression des duplications dans
+  `ControleController` (#50b) et `JournalController` (#70).
+  Iso-comportement strict. Dette 5 soldée. 368 tests au total.
 - **#77** (v0.24.0) : suppression routes mortes `/mon_compte` et
   `/creer_compte` (`AppUserRegisterController::account()` et `::edit()`)
   + 2 tests Unit. Aucune référence dans l'UI → routes dormantes cassées.
   Doublons de `UtilisateurController`. Dette 14 soldée.
-  368 tests au total.
 - **#76** (v0.23.0) : `AppUserRegisterController` — 5 tests Unit
   sur les méthodes GET. Périmètre limité : les rendus de `account()`
   et `edit()` ne sont pas testés (templates manquants, Dette 14).
@@ -593,8 +605,7 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD~1 --
   ticket Vague 14**.
 
 **🎯 Vague 11 complète** (3 contrôleurs, 67 tests Unit).
-**🎯 Vague 14 en cours** (#68 à #77 livrés).
-**Prochaine session** : **Dette 5** — factoriser `encryptionService()`
-dans `AbstractController` (duplication `ControleController` /
-`JournalController`). Ou **Dette 10** — factories dans les Managers
-(`AcquisitionManager`, `AcquisitionLigneManager`).
+**🎯 Vague 14 en cours** (#68 à #78 livrés).
+**Prochaine session** : **Dette 10** — factories dans les Managers
+(`AcquisitionManager`, `AcquisitionLigneManager`) pour rendre mockables
+les managers imbriqués et permettre le comptage de requêtes en Unit.
