@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-14 (fin de session #80 — Vague 14 en cours)
-**Version courante** : v0.25.0
+**Dernière mise à jour** : 2026-10-14 (fin de session #81 — Vague 14 en cours)
+**Version courante** : v0.25.1
 **Branche** : `main` (travail direct sur main, pas de PR)
 
 ---
@@ -16,8 +16,9 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.25.0 | #80 | Factories Managers (Dette 10) — comptage de requêtes testable | `<hash>` |
-| v0.24.2 | #79 | AcquisitionLigneManager::findId() — 2 → 1 requête (Dette 11) | `<hash_79>` |
+| v0.25.1 | #81 | Fix IndexControllerRootUrlTest + cleanup tests/Domain/ | `<hash>` |
+| v0.25.0 | #80 | Factories Managers (Dette 10) — comptage de requêtes testable | `0c8456d` |
+| v0.24.2 | #79 | AcquisitionLigneManager::findId() — 2 → 1 requête (Dette 11) | `60548ee` |
 | v0.24.1 | #78 | Factoriser encryptionService() dans AbstractController (Dette 5) | `3b7b005` |
 | v0.24.0 | #77 | Suppression routes mortes `/mon_compte` et `/creer_compte` (Dette 14) | `1a6a162` |
 | v0.23.0 | #76 | AppUserRegisterController — tests GET | `5580996` |
@@ -43,6 +44,15 @@ lors du ticket suivant). Les versions antérieures portent leur hash réel.
 
 ### Chantiers soldés
 
+- **#81 — Fix 7 failures `IndexControllerRootUrlTest` + cleanup
+  `tests/Domain/`.** Les 7 tests échouaient car `admin` en base de
+  test n'a que `ROLE_ADMIN`, alors que `/admin/system-settings` et
+  `/admin/update` exigent `ROLE_SUPER_ADMIN`. Ajout d'une fixture
+  `promoteAdminToSuperAdmin()` dans
+  `AbstractControllerTestCase::setUp()`. **Dette 3 soldée**
+  (promotion automatique en test). Par ailleurs, `tests/Domain/`
+  (1 fichier) est déplacé vers `tests/Unit/Domain/` pour uniformiser
+  la nomenclature. Suite Integration : 102 tests verts (vs 95/102).
 - **#80 — Factories de Managers dans les Managers (Dette 10).**
   Extraction de `AcquisitionManager::fournisseurManager()`,
   `AcquisitionManager::utilisateurManager()` et
@@ -131,26 +141,19 @@ lors du ticket suivant). Les versions antérieures portent leur hash réel.
 - **#61, #62** : refactors ControleController (injection managers, test Integration edit view).
 
 ### État des tests
-- **371 tests** Unit/Domain verts, **874 assertions** (vs 368 / 861 en #79).
-- **3 tests Integration Domain** (nécessitent MySQL) :
-  `AcquisitionManagerFindAllIntegrationTest`,
-  `AcquisitionLigneManagerFindByAcquisitionIntegrationTest`,
-  `AcquisitionLigneManagerFindIdIntegrationTest` (#79).
-  Skippés si base indisponible.
-- **9 tests Integration Controller** (nécessitent serveur HTTP sur
-  `localhost:8000`), skippés si serveur absent :
-  `AcquisitionControllerTest`, `AcquisitionLineControllerTest`,
-  `ControleControllerEditViewTest`, `IndexControllerRootUrlTest`,
-  `QrRedirectControllerChoicePageTest`, et les 4 autres.
-- Commande : `php vendor/bin/phpunit` (Unit/Domain uniquement, cf.
-  `defaultTestSuite="Unit"` dans `phpunit.xml`).
-- Tests Integration : `php vendor/bin/phpunit --testsuite Integration`.
+- **371 tests** Unit/Domain verts, **874 assertions**.
+- **102 tests** Integration verts, **216 assertions** :
+  - 3 Integration Domain (MySQL requis).
+  - 9 Integration Controller (serveur HTTP requis) — **plus de failures**.
+- Commande Unit : `php vendor/bin/phpunit`
+  (`defaultTestSuite="Unit"` dans `phpunit.xml`).
+- Commande Integration : `php vendor/bin/phpunit --testsuite Integration`.
 - Avec Integration : démarrer `php -S localhost:8000 -t public` dans un autre terminal.
-- **Total avec serveur HTTP + MySQL actif** : 371 + 3 + 9 = **383 tests**.
+- **Total avec serveur HTTP + MySQL actif** : 371 + 102 = **473 tests**.
 
-⚠️ **7 tests Integration Controller en échec préexistant** :
-`IndexControllerRootUrlTest` (7 failures, redirection vers `/` au lieu
-de `/admin/system-settings`). À traiter dans un ticket dédié (#81).
+✅ ~~7 tests Integration Controller en échec préexistant :
+`IndexControllerRootUrlTest`~~ → **résolu en #81** (promotion
+`admin` → `ROLE_SUPER_ADMIN` dans `AbstractControllerTestCase`).
 
 ---
 
@@ -198,10 +201,9 @@ de `/admin/system-settings`). À traiter dans un ticket dédié (#81).
 - ✅ **#80** — Factories de Managers dans `AcquisitionManager` et
   `AcquisitionLigneManager`. Dette 10 soldée. Comptage de requêtes
   désormais testable en Unit.
+- ✅ **#81** — Fix 7 failures `IndexControllerRootUrlTest` + cleanup
+  `tests/Domain/` → `tests/Unit/Domain/`. Dette 3 soldée.
 - Candidats suivants (par ordre de pertinence) :
-  - **#81 (à ouvrir)** — Fix des 7 failures `IndexControllerRootUrlTest`
-    (bug préexistant, redirection vers `/` au lieu de
-    `/admin/system-settings`).
   - **Dette 6** — `EquipementManager::encryptionService()` divergent :
     utilise `new ConfigProvider(__DIR__ . '/../../.env.local.php')` en
     dur au lieu de `$this->configProvider()`. Alignement possible
@@ -242,19 +244,13 @@ séparés quand le temps le permet.
   seule fois.
 - **Ticket à ouvrir** : oui, si le sujet revient.
 
-### Dette 3 — `admin` de la base test locale en `ROLE_SUPER_ADMIN`
-
-- Setup de test, pas un changement projet.
-- En prod, la séparation `ROLE_ADMIN` / `ROLE_SUPER_ADMIN` reste en place.
-- **Pas de ticket** — c'est documenté ici.
-
 ### Dette 4 — Dépréciations PHPUnit `@dataProvider`
 
 - PHPUnit 11 déprécie les annotations docblock `@dataProvider` au profit
   de l'attribut `#[DataProvider]`.
 - Déjà corrigé sur `RootUrlValidatorTest` (#59).
 - Reste à corriger sur les autres tests qui utilisent `@dataProvider`.
-- Les tests #68 à #80 utilisent déjà l'attribut `#[DataProvider]` ou
+- Les tests #68 à #81 utilisent déjà l'attribut `#[DataProvider]` ou
   n'en ont pas besoin — pas d'ajout de dette.
 - **Ticket à ouvrir** : oui, un petit ticket « chore: migrer
   @dataProvider vers #[DataProvider] ».
@@ -394,7 +390,7 @@ Tests (depuis la racine du projet) :
 - `php vendor/bin/phpunit` — suite Unit/Domain (371 tests, cf.
   `defaultTestSuite="Unit"` dans `phpunit.xml`).
 - `php vendor/bin/phpunit --testsuite Integration` — suite Integration
-  (3 Integration Domain + 9 Integration Controller).
+  (102 tests : 3 Integration Domain + 9 Integration Controller).
 - `php vendor/bin/phpunit tests/Unit/Engine/FooTest.php` — un fichier.
 - `php vendor/bin/phpunit --filter testMethodName` — une méthode.
 - `php vendor/bin/phpunit --display-deprecations` — affiche le détail
@@ -403,6 +399,8 @@ Tests (depuis la racine du projet) :
 Serveur HTTP pour tests Integration Controller :
 
 - `php -S localhost:8000 -t public` (dans un second terminal).
+- ⚠️ Si tu modifies `.env.local.php` ou la base (rôle admin), **relance
+  le serveur** pour qu'il recharge la session.
 
 Base de données de test :
 
@@ -576,11 +574,23 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 - **`libelle` de `categorie` est UNIQUE** : `createCategorie()` doit
   y injecter un suffixe aléatoire (via `bin2hex(random_bytes(4))`)
   pour éviter les collisions entre tests. Détecté sur #79.
+- **`AbstractControllerTestCase::promoteAdminToSuperAdmin()`** : la
+  fixture promeut `admin` en `ROLE_SUPER_ADMIN` avant chaque test
+  Integration Controller. Nécessaire pour les routes
+  `/admin/system-settings` et `/admin/update`. Idempotent, robuste
+  aux nouvelles bases de test. Ajouté en #81.
+  ⚠️ Si tu modifies `.env.local.php` ou la base (rôle admin),
+  **relance le serveur HTTP** (`php -S localhost:8000 -t public`)
+  pour qu'il recharge la session.
 
 ---
 
 ## Contexte de la session précédente
 
+- **#81** (v0.25.1) : fix 7 failures `IndexControllerRootUrlTest`
+  (promotion `admin` → `ROLE_SUPER_ADMIN` dans `AbstractControllerTestCase`).
+  Cleanup `tests/Domain/` → `tests/Unit/Domain/`. Dette 3 soldée.
+  Suite Integration 102 tests verts (vs 95/102). 371 tests Unit.
 - **#80** (v0.25.0) : factories dans `AcquisitionManager` et
   `AcquisitionLigneManager` (Dette 10 soldée). Comptage de requêtes
   désormais testable en Unit. `AcquisitionManagerFindAllTest` renforcé
@@ -646,7 +656,7 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
   ticket Vague 14**.
 
 **🎯 Vague 11 complète** (3 contrôleurs, 67 tests Unit).
-**🎯 Vague 14 en cours** (#68 à #80 livrés).
-**Prochaine session** : **#81** — Fix des 7 failures
-`IndexControllerRootUrlTest` (redirection vers `/` au lieu de
-`/admin/system-settings`). Bug préexistant détecté en #79.
+**🎯 Vague 14 en cours** (#68 à #81 livrés).
+**Prochaine session** : **Dette 6** — `EquipementManager::encryptionService()`
+divergent (utilise `new ConfigProvider(...)` en dur). Ou **Dette 7**
+(`JournalManager` : `limit <= 0` + tri multi-colonnes).

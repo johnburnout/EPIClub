@@ -2,7 +2,6 @@
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd" bootstrap="vendor/autoload.php" colors="true" cacheDirectory=".phpunit.cache" failOnWarning="true" failOnRisky="true" beStrictAboutOutputDuringTests="true" defaultTestSuite="Unit">
   <testsuites>
     <testsuite name="Unit">
-      <directory>tests/Domain</directory>
       <directory>tests/Unit</directory>
     </testsuite>
     <testsuite name="Integration">

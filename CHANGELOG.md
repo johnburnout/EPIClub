@@ -10,38 +10,66 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v0.25.1] — 2026-10-14
+
+### Fixed
+
+- **7 tests Integration `IndexControllerRootUrlTest` en échec** :
+  `admin` en base de test n'a que `ROLE_ADMIN`, alors que
+  `/admin/system-settings` et `/admin/update` exigent
+  `ROLE_SUPER_ADMIN`. Ajout d'une fixture dans
+  `AbstractControllerTestCase::setUp()` qui promeut `admin` en
+  `ROLE_SUPER_ADMIN` avant chaque test. Idempotent, robuste aux
+  nouvelles bases de test.
+
+### Changed
+
+- **`tests/Domain/` supprimé** : le seul fichier
+  (`AcquisitionValidatorTest.php`) est déplacé vers
+  `tests/Unit/Domain/`. La config `phpunit.xml` n'a plus qu'une
+  seule entrée pour la suite Unit (`tests/Unit/`). Uniformise la
+  nomenclature des tests.
+
+### Notes
+
+- Suite Unit : 371 tests verts.
+- Suite Integration : 102 tests verts (0 failure, vs 7 avant).
+- Dette 3 (admin en `ROLE_SUPER_ADMIN`) est **soldée** : la promotion
+  est désormais automatique côté test, plus besoin de la faire
+  manuellement en base.
+
 ## [v0.25.0] — 2026-10-14
 
 ### Added
 
 - **Factory `AcquisitionManager::fournisseurManager()`** et
-**`AcquisitionManager::utilisateurManager()`** — mockables en test
-Unit. Alignent `findAll()`, `findId()` et `findOneByCriteria()` sur
-le pattern Vague 11.
+  **`AcquisitionManager::utilisateurManager()`** — mockables en test
+  Unit. Alignent `findAll()`, `findId()` et `findOneByCriteria()` sur
+  le pattern Vague 11.
 - **Factory `AcquisitionLigneManager::categorieManager()`** — mockable
-en test Unit. Aligne `findByAcquisition()` (#72) et `findId()` (#79).
+  en test Unit. Aligne `findByAcquisition()` (#72) et `findId()` (#79).
 - **Surcharges correspondantes** dans `TestableAcquisitionManager` et
-`TestableAcquisitionLigneManager` (`withFournisseurManager()`,
-`withUtilisateurManager()`, `withCategorieManager()`).
+  `TestableAcquisitionLigneManager` (`withFournisseurManager()`,
+  `withUtilisateurManager()`, `withCategorieManager()`).
 - **Nouveau test Unit `AcquisitionLigneManagerFindIdTest`** (3 tests) :
-vérifie `findId()` ligne trouvée, ligne introuvable, FK orpheline.
+  vérifie `fi ndId()` ligne trouvée, ligne introuvable, FK orpheline.
 
 ### Changed
 
 - `AcquisitionManager::findAll()`, `findId()` et `findOneByCriteria()`
-utilisent désormais les factories `$this->fournisseurManager()` et
-`$this->utilisateurManager()` au lieu de `new ...()` en dur.
+  utilisent désormais les factories `$this->fournisseurManager()` et
+  `$this->utilisateurManager()` au lieu de `new ...()` en dur.
 - `AcquisitionLigneManager::findByAcquisition()` et `findId()` idem
-avec `$this->categorieManager()`.
+  avec `$this->categorieManager()`.
 - `AcquisitionManagerFindAllTest` : 2 tests renforcés (comptage de
-requêtes + vérification des valeurs), 1 test ajouté.
+  requêtes + vérification des valeurs), 1 test ajouté.
 
 ### Notes
 
 - **Dette 10 soldée.** Le comptage de requêtes est désormais testable
-en Unit. Les optimisations #71 (2N+1 → 3), #72 (N+1 → 2) et
-#79 (2 → 1) sont maintenant vérifiables par test Unit, plus seulement
-par lecture du code.
+  en Unit. Les optimisations #71 (2N+1 → 3), #72 (N+1 → 2) et
+  #79 (2 → 1) sont maintenant vérifiables par test Unit, plus seulement
+  par lecture du code.
 
 ### Fixed
 
@@ -56,75 +84,75 @@ par lecture du code.
 ### Changed
 
 - `AcquisitionLigneManager::findId()` : 2 requêtes → 1 requête via
-`CategorieManager::findIds([$id])`. Alignement sur le pattern
-`findByAcquisition()` (#72). Iso-comportement strict (FK orpheline
-→ `categorie === null` conservé). Dette 11 soldée.
+  `CategorieManager::findIds([$id])`. Alignement sur le pattern
+  `findByAcquisition()` (#72). Iso-comportement strict (FK orpheline
+  → `categorie === null` conservé). Dette 11 soldée.
 
 ### Tests
 
 - `DatabaseFixture::createCategorie()` ajouté (avec suffixe aléatoire
-pour éviter les collisions sur `libelle` UNIQUE).
+  pour éviter les collisions sur `libelle` UNIQUE).
 - `DatabaseFixture::cleanupTestData()` : cleanup des catégories
-préfixées `TEST-`.
+  préfixées `TEST-`.
 - 3 tests Integration de caractérisation dans
 `AcquisitionLigneManagerFindIdIntegrationTest`.
 
 ### Notes
 
 - Le comptage de requêtes en test n'est pas réalisable tant que
-`AbstractManager::__construct()` ouvre sa propre connexion PDO :
-un `CountingPdo` injecté dans un Manager ne capte pas les requêtes
-des Managers instanciés en dur. Le gain est donc prouvé par lecture
-du code, pas par test. Déblocage prévu par Dette 10.
+  `AbstractManager::__construct()` ouvre sa propre connexion PDO :
+  un `CountingPdo` injecté dans un Manager ne capte pas les requêtes
+  des Managers instanciés en dur. Le gain est donc prouvé par lecture
+  du code, pas par test. Déblocage prévu par Dette 10.
 
 ## [v0.24.1] — 2026-10-14
 
 ### Changed
 
 - Factorisation de la factory `encryptionService()` dans
-`AbstractController`. Auparavant dupliquée à l'identique dans
-`ControleController` (#50b) et `JournalController` (#70), elle est
-désormais héritée par les 17 contrôleurs de l'application. Dette 5
-soldée. Aucun changement de comportement observable.
+  `AbstractController`. Auparavant dupliquée à l'identique dans
+  `ControleController` (#50b) et `JournalController` (#70), elle est
+  désormais héritée par les 17 contrôleurs de l'application. Dette 5
+  soldée. Aucun changement de comportement observable.
 
 ## [v0.24.0] — 2026-10-14
 
 ### Removed
 
 - Routes mortes `/mon_compte` et `/creer_compte` supprimées
-(`AppUserRegisterController::account()` et `::edit()`), ainsi que
-leur déclaration dans `ressources/routes.php`. Ces routes rendaient
-des templates inexistants (`user_account.twig`, `user_register.twig`)
-→ 500 si tapées directement. Aucune référence dans l'UI, les
-templates, ou les emails. Doublons fonctionnels de
-`UtilisateurController` (qui utilise les vrais templates
-`utilisateur_show.twig` / `utilisateur_form.twig`). Dette 14 soldée.
+  (`AppUserRegisterController::account()` et `::edit()`), ainsi que
+  leur déclaration dans `ressources/routes.php`. Ces routes rendaient
+  des templates inexistants (`user_account.twig`, `user_register.twig`)
+  → 500 si tapées directement. Aucune référence dans l'UI, les
+  templates, ou les emails. Doublons fonctionnels de
+  `UtilisateurController` (qui utilise les vrais templates
+  `utilisateur_show.twig` / `utilisateur_form.twig`). Dette 14 soldée.
 
 ## [0.23.0] — 2026-10-14
 
 ### Added (tests)
 
 - **`tests/Unit/Controller/AppUserRegisterControllerTest.php`** :
-5 tests Unit sur les méthodes GET d'`AppUserRegisterController`
-qui n'étaient pas couvertes par `HandlersTest` (qui couvre les POST) :
+  5 tests Unit sur les méthodes GET d'`AppUserRegisterController`
+  qui n'étaient pas couvertes par `HandlersTest` (qui couvre les POST) :
 - `account()` : garde `ROLE_USER` (accès refusé + flash) ;
 - `edit()` : garde `ROLE_ADMIN` (accès refusé + flash) ;
 - `forgotPassword()` GET : rendu du formulaire (200) ;
 - `forgotPasswordConfirm()` : rendu de la page de confirmation (200) ;
 - `resetPassword()` GET avec token valide : rendu du formulaire (200)
-(token manquant/invalide/expiré déjà couverts par `HandlersTest`).
+  (token manquant/invalide/expiré déjà couverts par `HandlersTest`).
 
 ### Notes
 
 - ⚠️ **Périmètre limité** : les rendus de `account()` et `edit()`
-**ne sont pas testés** car les templates `user_account.twig` et
-`user_register.twig` n'existent pas (cf. Dette 14). Seules les
-gardes d'accès sont testées.
+  **ne sont pas testés** car les templates `user_account.twig` et
+  `user_register.twig` n'existent pas (cf. Dette 14). Seules les
+  gardes d'accès sont testées.
 - **Dette 14 documentée** : les routes `/mon_compte` et
-`/creer_compte` sont déclarées dans `ressources/routes.php` mais
-rendent des templates manquants (renommés en `utilisateur_show.twig`
-et `utilisateur_form.twig`). Bug **dormant** : aucune référence
-dans l'UI ni les emails. Ticket #77 à ouvrir (corriger ou supprimer).
+  `/creer_compte` sont déclarées dans `ressources/routes.php` mais
+  rendent des templates manquants (renommés en `utilisateur_show.twig`
+  et `utilisateur_form.twig`). Bug **dormant** : aucune référence
+  dans l'UI ni les emails. Ticket #77 à ouvrir (corriger ou supprimer).
 
 ## [0.22.1] — 2026-10-13
 

@@ -20,29 +20,54 @@ abstract class AbstractControllerTestCase extends TestCase
     {
         $baseUrl = getenv('BASE_URL') ?: 'http://localhost:8000';
         $this->client = new HttpTestClient($baseUrl);
-
+        
         // Initialiser la fixture EN PREMIER
         $this->fixture = new DatabaseFixture($this->createPdo());
         $this->fixture->cleanupTestData();
-
+        
+        // [FIX #81] Promouvoir admin en ROLE_SUPER_ADMIN pour les tests.
+        // En base locale de dev, admin est souvent en ROLE_ADMIN (Dette 3).
+        // Les routes /admin/system-settings et /admin/update exigent
+        // ROLE_SUPER_ADMIN → sans cette fixture, 7 tests échouent en 302.
+        // La promotion est idempotente.
+        $this->promoteAdminToSuperAdmin();
+        
         // Vérifier que le serveur HTTP est accessible
         try {
             $response = $this->client->get('/');
             if ($response['status'] === 0) {
-                self::markTestSkipped('Serveur HTTP non accessible.');
+            self::markTestSkipped('Serveur HTTP non accessible.');
                 return;
             }
         } catch (\RuntimeException $e) {
-            self::markTestSkipped(
+        self::markTestSkipped(
                 "Serveur HTTP non accessible sur $baseUrl. "
                 . 'Lancez "php -S localhost:8000 -t public" avant les tests. '
                 . 'Erreur : ' . $e->getMessage()
             );
             return;
         }
-
+        
         // Login admin (username 'admin', mot de passe 'adminadmin')
         $this->client->loginAsAdmin('admin', 'adminadmin');
+    }
+    
+    /**
+    * [FIX #81] Promeut l'utilisateur admin en ROLE_SUPER_ADMIN.
+    *
+    * Nécessaire pour les routes qui exigent ROLE_SUPER_ADMIN
+    * (/admin/system-settings, /admin/update). En base locale de dev,
+    * admin est souvent en ROLE_ADMIN (cf. Dette 3 REPRISE.md).
+    *
+    * Idempotent : un UPDATE sans changement ne pose pas de problème.
+    */
+    private function promoteAdminToSuperAdmin(): void
+    {
+        $pdo = $this->createPdo();
+        $stmt = $pdo->prepare(
+            "UPDATE utilisateur SET role = 'ROLE_SUPER_ADMIN' WHERE username = 'admin'"
+        );
+        $stmt->execute();
     }
 
     protected function tearDown(): void

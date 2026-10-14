@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Epiclub\Tests\Domain;
+namespace Epiclub\Tests\Unit\Domain;
 
 use Epiclub\Domain\AcquisitionLigneManager;
 use Epiclub\Domain\AcquisitionManager;
