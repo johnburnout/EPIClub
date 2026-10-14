@@ -16,10 +16,10 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.25.2 | #82 | AbstractManager::configProvider() + alignement EquipementManager (Dette 6) | `<hash>` |
-| v0.25.1 | #81 | Fix IndexControllerRootUrlTest + cleanup tests/Domain/ | `<hash_81>` |
-| v0.25.0 | #80 | Factories Managers (Dette 10) — comptage de requêtes testable | `<hash_80>` |
-| v0.24.2 | #79 | AcquisitionLigneManager::findId() — 2 → 1 requête (Dette 11) | `<hash_79>` |
+| v0.25.2 | #82 | AbstractManager::configProvider() + alignement EquipementManager (Dette 6) | `38bb7dc` |
+| v0.25.1 | #81 | Fix IndexControllerRootUrlTest + cleanup tests/Domain/ | `8fd9087` |
+| v0.25.0 | #80 | Factories Managers (Dette 10) — comptage de requêtes testable | `0c8456d` |
+| v0.24.2 | #79 | AcquisitionLigneManager::findId() — 2 → 1 requête (Dette 11) | `60548ee` |
 | v0.24.1 | #78 | Factoriser encryptionService() dans AbstractController (Dette 5) | `3b7b005` |
 | v0.24.0 | #77 | Suppression routes mortes `/mon_compte` et `/creer_compte` (Dette 14) | `1a6a162` |
 | v0.23.0 | #76 | AppUserRegisterController — tests GET | `5580996` |
@@ -41,7 +41,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 | v0.18.0 | #50a-bis | getBaseUrl strict (ROOT_URL obligatoire) | — |
 
 **Règle hash** : la ligne de la version courante porte `<hash>` (rempli
-lors du ticket suivant). Les versions antérieures portent leur hash réel.
+lors du ticket suivant, ou immédiatement si le hash est connu au moment
+de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
 
 ### Chantiers soldés
 
