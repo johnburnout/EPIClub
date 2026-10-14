@@ -6,7 +6,6 @@ namespace Epiclub\Tests\Unit\Controller;
 
 use Epiclub\Domain\UtilisateurManager;
 use Epiclub\Engine\Session;
-use Epiclub\Exception\AccessDeniedException;
 use Epiclub\Tests\Unit\Controller\Support\TestableAppUserRegisterController;
 use Epiclub\Tests\Unit\Controller\Support\TestableAppUserRegisterControllerBuilder;
 use PHPUnit\Framework\TestCase;
@@ -14,71 +13,24 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 
 /**
- * [REFACTOR #76] Tests Unit des méthodes GET d'AppUserRegisterController.
- *
- * Périmètre : methods qui n'ont pas été couvertes par
- * AppUserRegisterControllerHandlersTest (qui couvre les POST) :
- *  - account()              : GET + garde ROLE_USER ;
- *  - edit()                 : GET + garde ROLE_ADMIN ;
- *  - forgotPassword()       : branche GET uniquement (POST couvert ailleurs) ;
- *  - forgotPasswordConfirm(): GET trivial ;
- *  - resetPassword()        : branche GET avec token valide uniquement
- *                             (token manquant/invalide/expiré déjà couverts).
- *
- * ⚠️ Les POST (validateCsrf, envoi d'email, save) sont couverts par
- * AppUserRegisterControllerHandlersTest — pas de doublon ici.
- *
- * ⚠️ On n'asserte PAS sur le contenu HTML exact (fragile, cf. REPRISE.md).
- * Seulement : statut HTTP + flash + contenu non vide.
- */
+* [REFACTOR #76] Tests Unit des méthodes GET d'AppUserRegisterController.
+*
+* Périmètre : methods qui n'ont pas été couvertes par
+* AppUserRegisterControllerHandlersTest (qui couvre les POST) :
+*  - forgotPassword()       : branche GET uniquement (POST couvert ailleurs) ;
+*  - forgotPasswordConfirm(): GET trivial ;
+*  - resetPassword()        : branche GET avec token valide uniquement
+*                             (token manquant/invalide/expiré déjà couverts).
+*
+* ⚠️ Les POST (validateCsrf, envoi d'email, save) sont couverts par
+* AppUserRegisterControllerHandlersTest — pas de doublon ici.
+*
+* ⚠️ On n'asserte PAS sur le contenu HTML exact (fragile, cf. REPRISE.md).
+* Seulement : statut HTTP + flash + contenu non vide.
+*/
+    
 final class AppUserRegisterControllerTest extends TestCase
 {
-    // ==================================================================
-    // account()
-    // ==================================================================
-
-    public function testAccountDeniesAccessWhenUserNotGranted(): void
-    {
-        // Pas de user en session → isGranted('ROLE_USER') → false.
-        $session = $this->makeSession(role: null);
-        $controller = $this->makeControllerWith(session: $session);
-
-        $this->expectException(AccessDeniedException::class);
-
-        try {
-            $controller->account(Request::create('/mon_compte', 'GET'));
-        } finally {
-            // Le flash doit avoir été ajouté avant le throw.
-            $flashes = $session->getFlashBag()->get('note');
-            self::assertContains(
-                'Vous n\'avez pas les autorisations nécessaires.',
-                $flashes
-            );
-        }
-    }
-
-    // ==================================================================
-    // edit()
-    // ==================================================================
-
-    public function testEditDeniesAccessWhenUserIsNotAdmin(): void
-    {
-        // ROLE_USER (niveau 1) < ROLE_ADMIN (niveau 3).
-        $session = $this->makeSession(role: 'ROLE_USER');
-        $controller = $this->makeControllerWith(session: $session);
-
-        $this->expectException(AccessDeniedException::class);
-
-        try {
-            $controller->edit(Request::create('/admin/utilisateurs/creer', 'GET'));
-        } finally {
-            $flashes = $session->getFlashBag()->get('note');
-            self::assertContains(
-                'Vous n\'avez pas les autorisations nécessaires.',
-                $flashes
-            );
-        }
-    }
 
     // ==================================================================
     // forgotPassword() — GET uniquement

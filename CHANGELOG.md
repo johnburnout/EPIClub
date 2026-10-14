@@ -10,6 +10,19 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v0.24.0] — 2026-10-14
+
+### Removed
+
+- Routes mortes `/mon_compte` et `/creer_compte` supprimées
+(`AppUserRegisterController::account()` et `::edit()`), ainsi que
+leur déclaration dans `ressources/routes.php`. Ces routes rendaient
+des templates inexistants (`user_account.twig`, `user_register.twig`)
+→ 500 si tapées directement. Aucune référence dans l'UI, les
+templates, ou les emails. Doublons fonctionnels de
+`UtilisateurController` (qui utilise les vrais templates
+`utilisateur_show.twig` / `utilisateur_form.twig`). Dette 14 soldée.
+
 ## [0.23.0] — 2026-10-14
 
 ### Added (tests)

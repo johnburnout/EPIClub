@@ -68,8 +68,6 @@ $routes->add('login',  new Route('/se_connecter',    ['_controller' => 'Epiclub\
 $routes->add('logout', new Route('/se_deconnecter',  ['_controller' => 'Epiclub\\Controller\\AppUserAuthController', 'action' => 'logout']));
 
 // ROLE_USER : compte utilisateur (création, consultation, mot de passe oublié)
-$routes->add('create_account',          new Route('/creer_compte',                       ['_controller' => 'Epiclub\\Controller\\AppUserRegisterController', 'action' => 'edit']));
-$routes->add('my_account',              new Route('/mon_compte',                          ['_controller' => 'Epiclub\\Controller\\AppUserRegisterController', 'action' => 'account']));
 $routes->add('forgot_password',         new Route('/mot_de_passe_oublie',                 ['_controller' => 'Epiclub\\Controller\\AppUserRegisterController', 'action' => 'forgotPassword']));
 $routes->add('forgot_password_confirm', new Route('/mot_de_passe_oublie/confirmation',    ['_controller' => 'Epiclub\\Controller\\AppUserRegisterController', 'action' => 'forgotPasswordConfirm']));
 $routes->add('reset_password',          new Route('/regenerer_mot_de_passe',              ['_controller' => 'Epiclub\\Controller\\AppUserRegisterController', 'action' => 'resetPassword']));

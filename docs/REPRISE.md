@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-14 (fin de session #76 — Vague 14 en cours)
-**Version courante** : v0.23.0
+**Dernière mise à jour** : 2026-10-14 (fin de session #77 — Vague 14 en cours)
+**Version courante** : v0.24.0
 **Branche** : `main` (travail direct sur main, pas de PR)
 
 ---
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.23.0 | #76 | AppUserRegisterController — tests GET | `<hash>` |
+| v0.24.0 | #77 | Suppression routes mortes `/mon_compte` et `/creer_compte` (Dette 14) | `<hash>` |
+| v0.23.0 | #76 | AppUserRegisterController — tests GET | `5580996` |
 | v0.22.1 | #75 | Fix chemin template qr/choice_page.twig | `fec9d66` |
 | v0.22.0 | #74 | IndexController — rattrapage Vague 11 | `537e2e8` |
 | v0.21.0 | #73 | QrRedirectController — rattrapage Vague 11 | `6a82b55` |
@@ -39,12 +40,20 @@ lors du ticket suivant). Les versions antérieures portent leur hash réel.
 
 ### Chantiers soldés
 
+- **#77 — Suppression routes mortes `/mon_compte` et `/creer_compte`.**
+  `AppUserRegisterController::account()` et `::edit()` rendaient des
+  templates inexistants (`user_account.twig`, `user_register.twig`),
+  d'où un 500 si tapées directement. Aucune référence dans l'UI,
+  les templates ou les emails. Doublons de `UtilisateurController`
+  (vrais templates `utilisateur_show.twig` / `utilisateur_form.twig`).
+  Dette 14 soldée. 2 tests Unit supprimés (`testAccountDeniesAccessWhenUserNotGranted`,
+  `testEditDeniesAccessWhenUserIsNotAdmin`).
 - **#76 — `AppUserRegisterController` : tests Unit sur les méthodes GET.**
   5 tests Unit : gardes d'accès `account()` (`ROLE_USER`) et `edit()`
   (`ROLE_ADMIN`), rendus `forgotPassword()` GET, `forgotPasswordConfirm()`,
   `resetPassword()` GET token valide. Périmètre limité : les rendus
   de `account()`/`edit()` ne sont pas testés (templates manquants,
-  Dette 14).
+  Dette 14 — désormais soldée par #77 qui a supprimé ces méthodes).
 - **#75 — Fix chemin template `qr/choice_page.twig`** : la route
   `/qr/choix/{id}` renvoyait 500 (`Twig\Error\LoaderError`). Le
   template existait dans `templates/qr/` mais le `render()` le
@@ -95,7 +104,7 @@ lors du ticket suivant). Les versions antérieures portent leur hash réel.
 - **#61, #62** : refactors ControleController (injection managers, test Integration edit view).
 
 ### État des tests
-- **365 tests** verts (Unit + Domain), **~855 assertions**.
+- **368 tests** verts (Unit + Domain), **861 assertions**.
 - **9 tests Integration Controller** (nécessitent serveur HTTP sur
   `localhost:8000`), skippés si serveur absent :
   `AcquisitionControllerTest`, `AcquisitionLineControllerTest`,
@@ -106,7 +115,7 @@ lors du ticket suivant). Les versions antérieures portent leur hash réel.
   MySQL), skippés si base indisponible.
 - Commande : `php vendor/bin/phpunit`
 - Avec Integration : démarrer `php -S localhost:8000 -t public` dans un autre terminal.
-- **Total avec serveur HTTP actif** : 365 Unit/Domain + 9 Integration Controller = **374 tests**.
+- **Total avec serveur HTTP actif** : 368 Unit/Domain + 9 Integration Controller = **377 tests**.
 
 ---
 
@@ -143,12 +152,15 @@ lors du ticket suivant). Les versions antérieures portent leur hash réel.
   restantes : `login`, `register`, `forgotPassword` GET,
   `resetPassword` GET). Le cœur (handlers POST) est déjà couvert
   par 13 tests Unit.
+- ✅ **#77** — Suppression routes mortes `/mon_compte` et `/creer_compte`
+  (`AppUserRegisterController::account()` et `::edit()`), Dette 14 soldée.
 - Candidats suivants (par ordre de pertinence) :
-  - Factoriser — `encryptionService()` dans `AbstractController`
-    (Dette 5 — duplication `ControleController` / `JournalController`).
-  - Factoriser `acquisitionManager()` / `categorieManager()` dans les
-    Managers (Dette 10 — pattern Vague 11 appliqué aux Managers, pas
-    seulement aux contrôleurs).
+  - **Dette 5** — factoriser `encryptionService()` dans
+    `AbstractController` (duplication `ControleController` /
+    `JournalController`).
+  - **Dette 10** — factoriser `acquisitionManager()` /
+    `categorieManager()` dans les Managers (pattern Vague 11 appliqué
+    aux Managers, pas seulement aux contrôleurs).
   - Fix `limit <= 0` dans `JournalManager` (`LIMIT -5` → 500).
   - Fix `'u.nom, u.prenom ASC'` (ambiguïté multi-colonnes).
   - `AbstractManager::findOneByCriteria()` générique ? (attention à
@@ -196,7 +208,7 @@ séparés quand le temps le permet.
   de l'attribut `#[DataProvider]`.
 - Déjà corrigé sur `RootUrlValidatorTest` (#59).
 - Reste à corriger sur les autres tests qui utilisent `@dataProvider`.
-- Les tests #68 à #73 utilisent déjà l'attribut `#[DataProvider]` ou
+- Les tests #68 à #77 utilisent déjà l'attribut `#[DataProvider]` ou
   n'en ont pas besoin — pas d'ajout de dette.
 - **Ticket à ouvrir** : oui, un petit ticket « chore: migrer
   @dataProvider vers #[DataProvider] ».
@@ -330,31 +342,6 @@ séparés quand le temps le permet.
   fonctionne, il n'a juste pas de filet Unit sur les actions.
 - Connexe : `QrCodeReader::read()` (avec `$outputDirectly = true`)
   utilise aussi `header()` + `exit`. Même problème.
-  
-### Dette 14 — `AppUserRegisterController::account()` et `edit()` : routes actives, templates manquants
-  
-- Routes **déclarées** dans `ressources/routes.php` :
-- `/mon_compte`   → `AppUserRegisterController::account()`
-- `/creer_compte` → `AppUserRegisterController::edit()`
-- Ces 2 méthodes rendent des templates qui **n'existent pas** :
-- `user_account.twig` → template réel : `utilisateur_show.twig`
-- `user_register.twig` → template réel : `utilisateur_form.twig`
-- **Conséquence** : les 2 routes renvoient **500** si on les tape
-  directement.
-- **Mais** : aucune référence à ces URLs dans les templates ni dans
-  l'UI (`grep -rn "mon_compte\|creer_compte" templates/ app/` →
-  aucun résultat). Aucune référence dans les emails (`grep` vide).
-  Donc le bug est **dormant**.
-- **Complexité** : `utilisateur_form.twig` attend des variables
-  (`utilisateur`, `roles`, `form_errors`) que `edit()` ne passe pas.
-  Un simple renommage ne suffit pas — il faut aussi passer les
-  variables.
-- **Sévérité** : basse (bug dormant, pas d'impact quotidien).
-- **Deux pistes** :
-  1. **Corriger** : renommer les templates + passer les variables.
-  2. **Supprimer** : retirer les 2 méthodes + les 2 routes si elles
-  sont obsolètes.
-- **Ticket à ouvrir** : oui, **#77**.
 
 ---
 
@@ -555,6 +542,11 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD~1 --
 
 ## Contexte de la session précédente
 
+- **#77** (v0.24.0) : suppression routes mortes `/mon_compte` et
+  `/creer_compte` (`AppUserRegisterController::account()` et `::edit()`)
+  + 2 tests Unit. Aucune référence dans l'UI → routes dormantes cassées.
+  Doublons de `UtilisateurController`. Dette 14 soldée.
+  368 tests au total.
 - **#76** (v0.23.0) : `AppUserRegisterController` — 5 tests Unit
   sur les méthodes GET. Périmètre limité : les rendus de `account()`
   et `edit()` ne sont pas testés (templates manquants, Dette 14).
@@ -601,10 +593,8 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD~1 --
   ticket Vague 14**.
 
 **🎯 Vague 11 complète** (3 contrôleurs, 67 tests Unit).
-**🎯 Vague 14 en cours** (#68, #69, #70, #71, #72 et #73 livrés).
-**Prochaine session** : **#77** — fix ou suppression de
-`AppUserRegisterController::account()` et `edit()`. Les routes
-`/mon_compte` et `/creer_compte` rendent des templates manquants
-(renommés en `utilisateur_show.twig` / `utilisateur_form.twig`).
-Décision : corriger (renommage + variables) ou supprimer les
-2 méthodes + 2 routes (code dormant). Dette 14.
+**🎯 Vague 14 en cours** (#68 à #77 livrés).
+**Prochaine session** : **Dette 5** — factoriser `encryptionService()`
+dans `AbstractController` (duplication `ControleController` /
+`JournalController`). Ou **Dette 10** — factories dans les Managers
+(`AcquisitionManager`, `AcquisitionLigneManager`).

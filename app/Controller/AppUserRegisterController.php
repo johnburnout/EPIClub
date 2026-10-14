@@ -42,20 +42,6 @@ class AppUserRegisterController extends AbstractController
     {
         return new MailerService($this->configProvider());
     }
-    
-    public function account(Request $request): Response
-    {
-        $this->deniAccessUnlessGranted('ROLE_USER');
-        
-        return $this->render('user_account.twig', []);
-    }
-
-    public function edit(Request $request): Response
-    {
-        $this->deniAccessUnlessGranted('ROLE_ADMIN');
-        
-        return $this->render('user_register.twig', []);
-    }
 
     public function forgotPassword(Request $request): Response
     {
