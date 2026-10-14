@@ -3,23 +3,22 @@
 namespace Epiclub\Domain;
 
 use Epiclub\Engine\AbstractManager;
-use Epiclub\Engine\ConfigProvider;
 use Epiclub\Engine\EncryptionService;
 
 class EquipementManager extends AbstractManager
 {
     /**
-    * [VAGUE 13 - #50b] Factory EncryptionService.
+    * [VAGUE 13 - #50b / REFACTOR #82 - Dette 6] Factory EncryptionService.
     *
-    * Instancie le service avec le ConfigProvider par défaut
-    * (.env.local.php). Surchargeable en test pour injecter une
-    * fixture ou un mock.
+    * Instancie le service avec le ConfigProvider par défaut. Depuis #82,
+    * utilise la factory configProvider() héritée d'AbstractManager —
+    * alignement sur AbstractController (#50a / #78).
+    *
+    * Surchargeable en test pour injecter une fixture ou un mock.
     */
     protected function encryptionService(): EncryptionService
     {
-        return new EncryptionService(
-            new ConfigProvider(__DIR__ . '/../../.env.local.php')
-        );
+        return new EncryptionService($this->configProvider());
     }
     
     public function findAll($order = '', $limit = -1, $offset = 0)

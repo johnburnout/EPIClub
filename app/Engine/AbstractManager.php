@@ -2,6 +2,8 @@
 
 namespace Epiclub\Engine;
 
+use Epiclub\Engine\ConfigProvider;
+
 abstract class AbstractManager
 {
     protected \PDO $db;
@@ -136,5 +138,17 @@ abstract class AbstractManager
         }
         
         return [' WHERE ' . implode(' AND ', $conditions), $criteria];
+    }
+    
+    /**
+    * [REFACTOR #82 - Dette 6] Factory ConfigProvider — mockable en test Unit.
+    *
+    * Aligne AbstractManager sur AbstractController (#50a).
+    * Les sous-classes de test peuvent surcharger cette factory pour
+    * injecter un ConfigProvider pré-rempli (sans lire .env.local.php).
+    */
+    protected function configProvider(): ConfigProvider
+    {
+        return new ConfigProvider(__DIR__ . '/../../.env.local.php');
     }
 }

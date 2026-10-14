@@ -10,6 +10,30 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v0.25.2] — 2026-10-14
+
+### Changed
+
+- **`AbstractManager::configProvider()`** : nouvelle factory
+  `protected` alignée sur `AbstractController::configProvider()`
+  (#50a / #78). Les sous-classes de test peuvent la surcharger
+  pour injecter un `ConfigProvider` pré-rempli.
+- **`EquipementManager::encryptionService()`** utilise désormais
+  `$this->configProvider()` (héritée d'`AbstractManager`) au lieu
+  de `new ConfigProvider(__DIR__ . '/../../.env.local.php')` en dur.
+  Import `ConfigProvider` retiré (orphelin). Dette 6 soldée.
+
+### Added
+
+- `TestableEquipementManager` (sous-classe de test, injecte un PDO mocké).
+- `EquipementManagerEncryptionServiceTest` (2 tests Unit) : contrat
+  de `configProvider()` sur `AbstractManager`, instanciation
+  d'`EncryptionService` via la factory.
+
+### Notes
+
+- Suite Unit : 373 tests verts, 877 assertions (vs 371/874).
+
 ## [v0.25.1] — 2026-10-14
 
 ### Fixed

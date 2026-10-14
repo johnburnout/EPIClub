@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-14 (fin de session #81 — Vague 14 en cours)
-**Version courante** : v0.25.1
+**Dernière mise à jour** : 2026-10-14 (fin de session #82 — Vague 14 en cours)
+**Version courante** : v0.25.2
 **Branche** : `main` (travail direct sur main, pas de PR)
 
 ---
@@ -16,9 +16,10 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.25.1 | #81 | Fix IndexControllerRootUrlTest + cleanup tests/Domain/ | `<hash>` |
-| v0.25.0 | #80 | Factories Managers (Dette 10) — comptage de requêtes testable | `0c8456d` |
-| v0.24.2 | #79 | AcquisitionLigneManager::findId() — 2 → 1 requête (Dette 11) | `60548ee` |
+| v0.25.2 | #82 | AbstractManager::configProvider() + alignement EquipementManager (Dette 6) | `<hash>` |
+| v0.25.1 | #81 | Fix IndexControllerRootUrlTest + cleanup tests/Domain/ | `<hash_81>` |
+| v0.25.0 | #80 | Factories Managers (Dette 10) — comptage de requêtes testable | `<hash_80>` |
+| v0.24.2 | #79 | AcquisitionLigneManager::findId() — 2 → 1 requête (Dette 11) | `<hash_79>` |
 | v0.24.1 | #78 | Factoriser encryptionService() dans AbstractController (Dette 5) | `3b7b005` |
 | v0.24.0 | #77 | Suppression routes mortes `/mon_compte` et `/creer_compte` (Dette 14) | `1a6a162` |
 | v0.23.0 | #76 | AppUserRegisterController — tests GET | `5580996` |
@@ -44,6 +45,13 @@ lors du ticket suivant). Les versions antérieures portent leur hash réel.
 
 ### Chantiers soldés
 
+- **#82 — `AbstractManager::configProvider()` + alignement
+  `EquipementManager` (Dette 6).** Ajout de la factory
+  `configProvider()` dans `AbstractManager`, alignée sur
+  `AbstractController` (#50a / #78). `EquipementManager::encryptionService()`
+  utilise désormais `$this->configProvider()` au lieu de
+  `new ConfigProvider(...)` en dur. Import `ConfigProvider` retiré
+  (orphelin). 2 tests Unit ajoutés. Dette 6 soldée.
 - **#81 — Fix 7 failures `IndexControllerRootUrlTest` + cleanup
   `tests/Domain/`.** Les 7 tests échouaient car `admin` en base de
   test n'a que `ROLE_ADMIN`, alors que `/admin/system-settings` et
@@ -141,7 +149,7 @@ lors du ticket suivant). Les versions antérieures portent leur hash réel.
 - **#61, #62** : refactors ControleController (injection managers, test Integration edit view).
 
 ### État des tests
-- **371 tests** Unit/Domain verts, **874 assertions**.
+- **373 tests** Unit/Domain verts, **877 assertions**.
 - **102 tests** Integration verts, **216 assertions** :
   - 3 Integration Domain (MySQL requis).
   - 9 Integration Controller (serveur HTTP requis) — **plus de failures**.
@@ -149,7 +157,7 @@ lors du ticket suivant). Les versions antérieures portent leur hash réel.
   (`defaultTestSuite="Unit"` dans `phpunit.xml`).
 - Commande Integration : `php vendor/bin/phpunit --testsuite Integration`.
 - Avec Integration : démarrer `php -S localhost:8000 -t public` dans un autre terminal.
-- **Total avec serveur HTTP + MySQL actif** : 371 + 102 = **473 tests**.
+- **Total avec serveur HTTP + MySQL actif** : 373 + 102 = **475 tests**.
 
 ✅ ~~7 tests Integration Controller en échec préexistant :
 `IndexControllerRootUrlTest`~~ → **résolu en #81** (promotion
@@ -203,21 +211,23 @@ lors du ticket suivant). Les versions antérieures portent leur hash réel.
   désormais testable en Unit.
 - ✅ **#81** — Fix 7 failures `IndexControllerRootUrlTest` + cleanup
   `tests/Domain/` → `tests/Unit/Domain/`. Dette 3 soldée.
+- ✅ **#82** — `AbstractManager::configProvider()` + alignement
+  `EquipementManager::encryptionService()`. Dette 6 soldée.
 - Candidats suivants (par ordre de pertinence) :
-  - **Dette 6** — `EquipementManager::encryptionService()` divergent :
-    utilise `new ConfigProvider(__DIR__ . '/../../.env.local.php')` en
-    dur au lieu de `$this->configProvider()`. Alignement possible
-    depuis #78 (la factory existe maintenant dans `AbstractController`,
-    mais `EquipementManager` n'hérite pas d'`AbstractController`).
-  - Fix `limit <= 0` dans `JournalManager` (`LIMIT -5` → 500).
-  - Fix `'u.nom, u.prenom ASC'` (ambiguïté multi-colonnes).
-  - `AbstractManager::findOneByCriteria()` générique ? (attention à
+  - **Dette 7** — `JournalManager` : bornage `limit`
+    (`LIMIT -5` → 500) + tri multi-colonnes
+    (`'u.nom, u.prenom ASC'` ambigu).
+  - **Dette 8** — Exposition du hash de mot de passe dans `redacteur`.
+  - Fix `AbstractManager::findOneByCriteria()` générique ? (attention à
     `EquipementManager` — cas particulier `deleted_at IS NULL` — et à
     l'hydratation spécifique d'`AcquisitionManager`).
   - Nouveaux tests Unit sur les `Manager` non couverts.
-  - `EncryptionService` : cache d'instance dans les factories.
   - Migration `@dataProvider` → `#[DataProvider]` sur les tests restants
     (cf. Dette 4).
+  - **Dette 12** — `QrRedirectController` méthodes privées mixtes
+    (basse priorité).
+  - **Dette 13** — `QrRedirectController` `header()` + `exit`
+    (refactor archi, basse priorité).
 
 ---
 
@@ -250,21 +260,10 @@ séparés quand le temps le permet.
   de l'attribut `#[DataProvider]`.
 - Déjà corrigé sur `RootUrlValidatorTest` (#59).
 - Reste à corriger sur les autres tests qui utilisent `@dataProvider`.
-- Les tests #68 à #81 utilisent déjà l'attribut `#[DataProvider]` ou
+- Les tests #68 à #82 utilisent déjà l'attribut `#[DataProvider]` ou
   n'en ont pas besoin — pas d'ajout de dette.
 - **Ticket à ouvrir** : oui, un petit ticket « chore: migrer
   @dataProvider vers #[DataProvider] ».
-
-### Dette 6 — `EquipementManager::encryptionService()` instancié à chaque appel
-
-- Factory `protected encryptionService()` crée une nouvelle instance
-  à chaque `getHistoriqueControles()`.
-- Acceptable vu l'usage peu fréquent.
-- Si le manager se met à déchiffrer en masse, prévoir un cache.
-- **Divergence** : utilise `new ConfigProvider(__DIR__ . '/../../.env.local.php')`
-  en dur au lieu de `$this->configProvider()` (cf. Dette 5, maintenant
-  soldée — mais `EquipementManager` n'hérite pas d'`AbstractController`).
-- Pas de ticket pour l'instant.
 
 ### Dette 7 — `JournalManager` : bornage `limit` et ambiguïté multi-colonnes
 
@@ -387,7 +386,7 @@ séparés quand le temps le permet.
 
 Tests (depuis la racine du projet) :
 
-- `php vendor/bin/phpunit` — suite Unit/Domain (371 tests, cf.
+- `php vendor/bin/phpunit` — suite Unit/Domain (373 tests, cf.
   `defaultTestSuite="Unit"` dans `phpunit.xml`).
 - `php vendor/bin/phpunit --testsuite Integration` — suite Integration
   (102 tests : 3 Integration Domain + 9 Integration Controller).
@@ -582,11 +581,20 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
   ⚠️ Si tu modifies `.env.local.php` ou la base (rôle admin),
   **relance le serveur HTTP** (`php -S localhost:8000 -t public`)
   pour qu'il recharge la session.
+- **`AbstractManager::configProvider()`** : factory `protected`
+  alignée sur `AbstractController::configProvider()` (#50a / #78),
+  ajoutée en #82. Les managers qui ont besoin d'un `ConfigProvider`
+  (ex : `EquipementManager::encryptionService()`) doivent passer
+  par cette factory plutôt que d'instancier `new ConfigProvider(...)`
+  en dur. Mockable en test.
 
 ---
 
 ## Contexte de la session précédente
 
+- **#82** (v0.25.2) : `AbstractManager::configProvider()` +
+  alignement `EquipementManager` (Dette 6 soldée). 2 tests Unit ajoutés.
+  373 tests Unit, 877 assertions.
 - **#81** (v0.25.1) : fix 7 failures `IndexControllerRootUrlTest`
   (promotion `admin` → `ROLE_SUPER_ADMIN` dans `AbstractControllerTestCase`).
   Cleanup `tests/Domain/` → `tests/Unit/Domain/`. Dette 3 soldée.
@@ -656,7 +664,7 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
   ticket Vague 14**.
 
 **🎯 Vague 11 complète** (3 contrôleurs, 67 tests Unit).
-**🎯 Vague 14 en cours** (#68 à #81 livrés).
-**Prochaine session** : **Dette 6** — `EquipementManager::encryptionService()`
-divergent (utilise `new ConfigProvider(...)` en dur). Ou **Dette 7**
-(`JournalManager` : `limit <= 0` + tri multi-colonnes).
+**🎯 Vague 14 en cours** (#68 à #82 livrés).
+**Prochaine session** : **Dette 7** — `JournalManager` : bornage
+`limit` (`LIMIT -5` → 500) + tri multi-colonnes
+(`'u.nom, u.prenom ASC'` ambigu). Pattern #69 (fix documenté).
