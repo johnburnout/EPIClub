@@ -34,7 +34,7 @@ class AcquisitionLigneManager extends AbstractManager
         
         $categories = $categorieIds === []
         ? []
-        : (new CategorieManager())->findIds(array_keys($categorieIds));
+        : $this->categorieManager()->findIds(array_keys($categorieIds));
         
         // [REFACTOR #72] ?? null : FK orpheline = clé présente + valeur
         // null (comportement historique de findId() qui retournait null).
@@ -59,7 +59,7 @@ class AcquisitionLigneManager extends AbstractManager
         // [REFACTOR #79] Alignement sur findByAcquisition() (#72) :
         // une seule requête pour la catégorie via findIds([$id]).
         // Avant : new CategorieManager() + findId() → 2 requêtes.
-        $categories = (new CategorieManager())->findIds([(int) $ligne['categorie_id']]);
+        $categories = $this->categorieManager()->findIds([(int) $ligne['categorie_id']]);
         
         // [REFACTOR #79] ?? null : FK orpheline = clé présente + valeur
         // null (comportement historique de findId() qui retournait null).
@@ -203,5 +203,16 @@ class AcquisitionLigneManager extends AbstractManager
     protected function acquisitionManager(): AcquisitionManager
     {
         return new AcquisitionManager();
+    }
+    
+    /**
+    * [REFACTOR #80 - Dette 10] Factory CategorieManager — mockable en test Unit.
+    *
+    * Aligne sur acquisitionManager() (#72). Permet de compter les
+    * requêtes en Unit pour findByAcquisition() (#72) et findId() (#79).
+    */
+    protected function categorieManager(): CategorieManager
+    {
+        return new CategorieManager();
     }
 }

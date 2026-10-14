@@ -38,11 +38,11 @@ class AcquisitionManager extends AbstractManager
         
         $fournisseurs = $fournisseurIds === []
         ? []
-        : (new FournisseurManager())->findIds(array_keys($fournisseurIds));
+        : $this->fournisseurManager()->findIds(array_keys($fournisseurIds));
         
         $utilisateurs = $utilisateurIds === []
         ? []
-        : (new UtilisateurManager())->findIds(array_keys($utilisateurIds));
+        : $this->utilisateurManager()->findIds(array_keys($utilisateurIds));
         
         // [REFACTOR #71] ?? null : FK orpheline = clé présente + valeur
         // null (comportement historique de findId() qui retournait null).
@@ -68,15 +68,12 @@ class AcquisitionManager extends AbstractManager
                 $acquisition['est_validee'] = 0;
             }
 
-            $fournisseurManager = new FournisseurManager();
-            $utilisateurManager = new UtilisateurManager();
-
             if (isset($acquisition['fournisseur_id'])) {
-                $acquisition['fournisseur'] = $fournisseurManager->findId($acquisition['fournisseur_id']);
+                $acquisition['fournisseur'] = $this->fournisseurManager()->findId($acquisition['fournisseur_id']);
             }
-
+            
             if (isset($acquisition['saisie_par'])) {
-                $acquisition['redacteur'] = $utilisateurManager->findId($acquisition['saisie_par']);
+                $acquisition['redacteur'] = $this->utilisateurManager()->findId($acquisition['saisie_par']);
             }
 
             return $acquisition;
@@ -94,15 +91,12 @@ class AcquisitionManager extends AbstractManager
         $stmt->execute($params);
 
         if ($acquisition = $stmt->fetch()) {
-            $fournisseurManager = new FournisseurManager();
-            $utilisateurManager = new UtilisateurManager();
-
             if (isset($acquisition['fournisseur_id'])) {
-                $acquisition['fournisseur'] = $fournisseurManager->findId($acquisition['fournisseur_id']);
+                $acquisition['fournisseur'] = $this->fournisseurManager()->findId($acquisition['fournisseur_id']);
             }
-
+            
             if (isset($acquisition['saisie_par'])) {
-                $acquisition['redacteur'] = $utilisateurManager->findId($acquisition['saisie_par']);
+                $acquisition['redacteur'] = $this->utilisateurManager()->findId($acquisition['saisie_par']);
             }
 
             return $acquisition;
@@ -152,5 +146,26 @@ class AcquisitionManager extends AbstractManager
         $result = $stmt->execute($filteredAcquisition);
 
         return $result;
+    }
+    
+    /**
+    * [REFACTOR #80 - Dette 10] Factory FournisseurManager — mockable en test Unit.
+    *
+    * Aligne AcquisitionManager sur le pattern Vague 11 (cf.
+    * AcquisitionLigneManager::acquisitionManager() #72).
+    * Les sous-classes de test peuvent surcharger cette factory pour
+    * injecter un mock et compter les requêtes.
+    */
+    protected function fournisseurManager(): FournisseurManager
+    {
+        return new FournisseurManager();
+    }
+    
+    /**
+    * [REFACTOR #80 - Dette 10] Factory UtilisateurManager — mockable en test Unit.
+    */
+    protected function utilisateurManager(): UtilisateurManager
+    {
+        return new UtilisateurManager();
     }
 }

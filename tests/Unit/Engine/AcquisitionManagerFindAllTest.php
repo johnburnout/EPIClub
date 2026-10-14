@@ -4,87 +4,129 @@ declare(strict_types=1);
 
 namespace Epiclub\Tests\Unit\Engine;
 
+use Epiclub\Domain\FournisseurManager;
+use Epiclub\Domain\UtilisateurManager;
 use Epiclub\Tests\Unit\Engine\Support\TestableAcquisitionManager;
 use PHPUnit\Framework\TestCase;
 
 /**
- * [REFACTOR #71] Tests Unit de AcquisitionManager::findAll().
+ * [REFACTOR #71 / #80] Tests Unit de AcquisitionManager::findAll().
  *
- * Objectif principal : vérifier le NOMBRE de requêtes SQL (2N+1 → 3)
- * et la FORME du résultat (clés présentes/absentes).
+ * Objectif : vérifier le NOMBRE de requêtes SQL (2N+1 → 3) ET la FORME
+ * du résultat (clés présentes/absentes, valeurs).
  *
- * ⚠️ Limite connue : findAll() fait `new FournisseurManager()` et
- * `new UtilisateurManager()` — instances réelles, non injectables.
- * Donc le mock PDO ne capte PAS les appels findIds(). Les assertions
- * portent donc sur la FORME (présence de clé) et non la VALEUR.
- *
- * Le contenu (F1 vs F2) et le dédoublonnage effectif sont couverts par :
- *  - test Integration : AcquisitionManagerFindAllIntegrationTest
- *  - test Unit isolé : FournisseurManagerFindIdsTest
+ * [REFACTOR #80 - Dette 10] Grâce aux factories fournisseurManager()
+ * et utilisateurManager() extraites dans AcquisitionManager, on peut
+ * désormais mocker les managers imbriqués et compter les requêtes
+ * ET vérifier les valeurs (plus seulement la forme).
  *
  * ⚠️ Piège documenté dans REPRISE.md : on discrimine les SQL par
- * str_contains($sql, 'FROM acquisition' | 'FROM fournisseur' |
- * 'FROM utilisateur'), JAMAIS par COUNT(*).
+ * str_contains($sql, 'FROM acquisition'), JAMAIS par COUNT(*).
  */
 final class AcquisitionManagerFindAllTest extends TestCase
 {
     /**
-     * @param array<int, array> $acquisitionRows
-     * @return array{0: TestableAcquisitionManager, 1: array<int, array<int>>}
-     */
-    private function makeManager(array $acquisitionRows): array
-    {
-        $captured = ['acquisition' => null];
-
+    * @param array<int, array> $acquisitionRows
+    * @param array<int, array> $fournisseurRows
+    * @param array<int, array> $utilisateurRows
+    * @return array{0: TestableAcquisitionManager, 1: \stdClass}
+    */
+    private function makeManagerWithMocks(
+        array $acquisitionRows,
+        array $fournisseurRows = [],
+        array $utilisateurRows = [],
+    ): array {
+        // [REFACTOR #80] Compteur sous forme d'objet (stdClass) :
+        // un tableau serait copié par valeur à la sortie de la méthode,
+        // alors que les closures capturent par handle. Les incrémentations
+        // restent donc visibles après findAll().
+        $counters = new \stdClass();
+        $counters->acquisition = 0;
+        $counters->fournisseur = 0;
+        $counters->utilisateur = 0;
+        
         $pdo = $this->createMock(\PDO::class);
         $pdo->method('prepare')->willReturnCallback(
-            function (string $sql) use ($acquisitionRows, &$captured) {
+            function (string $sql) use ($acquisitionRows, $counters) {
                 $stmt = $this->createMock(\PDOStatement::class);
-
                 if (str_contains($sql, 'FROM acquisition')) {
+                    $counters->acquisition++;
                     $stmt->method('fetchAll')->willReturn($acquisitionRows);
-                    // findAll() appelle execute() SANS argument → PHPUnit
-                    // passe null au callback. Paramètre nullable obligatoire.
-                    $stmt->method('execute')->willReturnCallback(
-                        function (?array $params = null) use (&$captured) {
-                            $captured['acquisition'] = $params ?? [];
-                            return true;
-                        }
-                    );
+                    $stmt->method('execute')->willReturn(true);
                 }
-                // Les branches 'FROM fournisseur' et 'FROM utilisateur' ne
-                // sont PAS mockées ici : findIds() est appelé sur une
-                // instance réelle (new FournisseurManager()), donc sur une
-                // vraie connexion PDO. Le mock ne les verra pas.
-
                 return $stmt;
             }
         );
-
-        return [new TestableAcquisitionManager($pdo), $captured];
+        
+        $fournisseurManager = $this->getMockBuilder(FournisseurManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $fournisseurManager->method('findIds')->willReturnCallback(
+            function (array $ids) use ($fournisseurRows, $counters) {
+                $counters->fournisseur++;
+                $indexed = [];
+                foreach ($fournisseurRows as $row) {
+                    if (in_array((int) $row['id'], $ids, true)) {
+                        $indexed[$row['id']] = $row;
+                    }
+                }
+                return $indexed;
+            }
+        );
+        
+        $utilisateurManager = $this->getMockBuilder(UtilisateurManager::class)
+        ->disableOriginalConstructor()
+        ->getMock();
+        $utilisateurManager->method('findIds')->willReturnCallback(
+            function (array $ids) use ($utilisateurRows, $counters) {
+                $counters->utilisateur++;
+                $indexed = [];
+                foreach ($utilisateurRows as $row) {
+                    if (in_array((int) $row['id'], $ids, true)) {
+                        $indexed[$row['id']] = $row;
+                    }
+                }
+                return $indexed;
+            }
+        );
+        
+        $manager = (new TestableAcquisitionManager($pdo))
+        ->withFournisseurManager($fournisseurManager)
+        ->withUtilisateurManager($utilisateurManager);
+        
+        return [$manager, $counters];
     }
 
     public function testFindAllMakesThreeQueriesForMultipleAcquisitions(): void
     {
-        [$manager] = $this->makeManager(
+        [$manager, $counters] = $this->makeManagerWithMocks(
             acquisitionRows: [
                 ['id' => 1, 'fournisseur_id' => 5, 'saisie_par' => 10],
                 ['id' => 2, 'fournisseur_id' => 5, 'saisie_par' => 10],
                 ['id' => 3, 'fournisseur_id' => 6, 'saisie_par' => 11],
+            ],
+            fournisseurRows: [
+                ['id' => 5, 'nom' => 'F5'],
+                ['id' => 6, 'nom' => 'F6'],
+            ],
+            utilisateurRows: [
+                ['id' => 10, 'nom' => 'U10'],
+                ['id' => 11, 'nom' => 'U11'],
             ],
         );
 
         $rows = $manager->findAll();
 
         self::assertCount(3, $rows);
+        self::assertSame(1, $counters->acquisition, '1 SELECT acquisition');
+        self::assertSame(1, $counters->fournisseur, '1 findIds fournisseur');
+        self::assertSame(1, $counters->utilisateur, '1 findIds utilisateur');
 
-        // On vérifie la FORME : les clés sont présentes, pas les valeurs
-        // (non mockables tant que findIds() est appelé sur une instance
-        // réelle — cf. Dette 10).
-        self::assertArrayHasKey('fournisseur', $rows[0]);
-        self::assertArrayHasKey('redacteur',   $rows[0]);
-        self::assertArrayHasKey('fournisseur', $rows[2]);
-        self::assertArrayHasKey('redacteur',   $rows[2]);
+        // [REFACTOR #80] Vérification des valeurs (possible depuis le mock)
+        self::assertSame('F5', $rows[0]['fournisseur']['nom']);
+        self::assertSame('U10', $rows[0]['redacteur']['nom']);
+        self::assertSame('F6', $rows[2]['fournisseur']['nom']);
+        self::assertSame('U11', $rows[2]['redacteur']['nom']);
     }
 
     public function testFindAllMakesOneQueryForZeroAcquisitions(): void
@@ -114,7 +156,7 @@ final class AcquisitionManagerFindAllTest extends TestCase
      */
     public function testFindAllOmitsFournisseurKeyWhenFournisseurIdIsNull(): void
     {
-        [$manager] = $this->makeManager(
+        [$manager] = $this->makeManagerWithMocks(
             acquisitionRows: [
                 ['id' => 1, 'fournisseur_id' => null, 'saisie_par' => null],
             ],
@@ -126,15 +168,15 @@ final class AcquisitionManagerFindAllTest extends TestCase
         self::assertArrayNotHasKey('redacteur', $rows[0]);
     }
 
-    public function testFindAllSetsFournisseurKeyWhenForeignKeyIsOrphan(): void
+    public function testFindAllSetsFournisseurKeyToNullWhenForeignKeyIsOrphan(): void
     {
-        // ⚠️ L'id 999999 est absent de la vraie base → findIds() retourne
-        // un tableau vide → ?? null s'applique → clé présente + null.
-        // Ce test reste valide malgré la dépendance à la vraie base,
-        // car on ne vérifie QUE la présence de la clé et sa nullité.
-        [$manager] = $this->makeManager(
+        [$manager, $counters] = $this->makeManagerWithMocks(
             acquisitionRows: [
                 ['id' => 1, 'fournisseur_id' => 999999, 'saisie_par' => 1],
+            ],
+            fournisseurRows: [], // pas de fournisseur 999999
+            utilisateurRows: [
+                ['id' => 1, 'nom' => 'U1'],
             ],
         );
 
@@ -142,5 +184,7 @@ final class AcquisitionManagerFindAllTest extends TestCase
 
         self::assertArrayHasKey('fournisseur', $rows[0]);
         self::assertNull($rows[0]['fournisseur']);
+        self::assertArrayHasKey('redacteur', $rows[0]);
+        self::assertSame('U1', $rows[0]['redacteur']['nom']);
     }
 }

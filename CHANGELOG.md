@@ -10,6 +10,47 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v0.25.0] — 2026-10-14
+
+### Added
+
+- **Factory `AcquisitionManager::fournisseurManager()`** et
+**`AcquisitionManager::utilisateurManager()`** — mockables en test
+Unit. Alignent `findAll()`, `findId()` et `findOneByCriteria()` sur
+le pattern Vague 11.
+- **Factory `AcquisitionLigneManager::categorieManager()`** — mockable
+en test Unit. Aligne `findByAcquisition()` (#72) et `findId()` (#79).
+- **Surcharges correspondantes** dans `TestableAcquisitionManager` et
+`TestableAcquisitionLigneManager` (`withFournisseurManager()`,
+`withUtilisateurManager()`, `withCategorieManager()`).
+- **Nouveau test Unit `AcquisitionLigneManagerFindIdTest`** (3 tests) :
+vérifie `findId()` ligne trouvée, ligne introuvable, FK orpheline.
+
+### Changed
+
+- `AcquisitionManager::findAll()`, `findId()` et `findOneByCriteria()`
+utilisent désormais les factories `$this->fournisseurManager()` et
+`$this->utilisateurManager()` au lieu de `new ...()` en dur.
+- `AcquisitionLigneManager::findByAcquisition()` et `findId()` idem
+avec `$this->categorieManager()`.
+- `AcquisitionManagerFindAllTest` : 2 tests renforcés (comptage de
+requêtes + vérification des valeurs), 1 test ajouté.
+
+### Notes
+
+- **Dette 10 soldée.** Le comptage de requêtes est désormais testable
+en Unit. Les optimisations #71 (2N+1 → 3), #72 (N+1 → 2) et
+#79 (2 → 1) sont maintenant vérifiables par test Unit, plus seulement
+par lecture du code.
+
+### Fixed
+
+- Aucun bug corrigé.
+
+### Removed
+
+- Aucune suppression.
+
 ## [v0.24.2] — 2026-10-14
 
 ### Changed

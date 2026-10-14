@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-14 (fin de session #79 — Vague 14 en cours)
-**Version courante** : v0.24.2
+**Dernière mise à jour** : 2026-10-14 (fin de session #80 — Vague 14 en cours)
+**Version courante** : v0.25.0
 **Branche** : `main` (travail direct sur main, pas de PR)
 
 ---
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.24.2 | #79 | AcquisitionLigneManager::findId() — 2 → 1 requête (Dette 11) | `<hash>` |
+| v0.25.0 | #80 | Factories Managers (Dette 10) — comptage de requêtes testable | `<hash>` |
+| v0.24.2 | #79 | AcquisitionLigneManager::findId() — 2 → 1 requête (Dette 11) | `<hash_79>` |
 | v0.24.1 | #78 | Factoriser encryptionService() dans AbstractController (Dette 5) | `3b7b005` |
 | v0.24.0 | #77 | Suppression routes mortes `/mon_compte` et `/creer_compte` (Dette 14) | `1a6a162` |
 | v0.23.0 | #76 | AppUserRegisterController — tests GET | `5580996` |
@@ -42,6 +43,16 @@ lors du ticket suivant). Les versions antérieures portent leur hash réel.
 
 ### Chantiers soldés
 
+- **#80 — Factories de Managers dans les Managers (Dette 10).**
+  Extraction de `AcquisitionManager::fournisseurManager()`,
+  `AcquisitionManager::utilisateurManager()` et
+  `AcquisitionLigneManager::categorieManager()`, mockables en test
+  Unit. Surcharges dans `TestableAcquisitionManager` et
+  `TestableAcquisitionLigneManager`. **Le comptage de requêtes est
+  désormais testable** : `AcquisitionManagerFindAllTest` renforcé
+  (comptage + valeurs), `AcquisitionLigneManagerFindIdTest` créé.
+  Les optimisations #71, #72 et #79 sont maintenant vérifiables par
+  test Unit, plus seulement par lecture du code.
 - **#79 — `AcquisitionLigneManager::findId()` : 2 → 1 requête.**
   Remplacement de `new CategorieManager()->findId()` par
   `(new CategorieManager())->findIds([(int) $ligne['categorie_id']])`.
@@ -120,11 +131,11 @@ lors du ticket suivant). Les versions antérieures portent leur hash réel.
 - **#61, #62** : refactors ControleController (injection managers, test Integration edit view).
 
 ### État des tests
-- **368 tests** Unit/Domain verts, **861 assertions**.
+- **371 tests** Unit/Domain verts, **874 assertions** (vs 368 / 861 en #79).
 - **3 tests Integration Domain** (nécessitent MySQL) :
   `AcquisitionManagerFindAllIntegrationTest`,
   `AcquisitionLigneManagerFindByAcquisitionIntegrationTest`,
-  `AcquisitionLigneManagerFindIdIntegrationTest` (nouveau #79).
+  `AcquisitionLigneManagerFindIdIntegrationTest` (#79).
   Skippés si base indisponible.
 - **9 tests Integration Controller** (nécessitent serveur HTTP sur
   `localhost:8000`), skippés si serveur absent :
@@ -135,11 +146,11 @@ lors du ticket suivant). Les versions antérieures portent leur hash réel.
   `defaultTestSuite="Unit"` dans `phpunit.xml`).
 - Tests Integration : `php vendor/bin/phpunit --testsuite Integration`.
 - Avec Integration : démarrer `php -S localhost:8000 -t public` dans un autre terminal.
-- **Total avec serveur HTTP + MySQL actif** : 368 + 3 + 9 = **380 tests**.
+- **Total avec serveur HTTP + MySQL actif** : 371 + 3 + 9 = **383 tests**.
 
 ⚠️ **7 tests Integration Controller en échec préexistant** :
 `IndexControllerRootUrlTest` (7 failures, redirection vers `/` au lieu
-de `/admin/system-settings`). À traiter dans un ticket dédié (#80).
+de `/admin/system-settings`). À traiter dans un ticket dédié (#81).
 
 ---
 
@@ -184,13 +195,11 @@ de `/admin/system-settings`). À traiter dans un ticket dédié (#80).
 - ✅ **#79** — `AcquisitionLigneManager::findId()` : 2 → 1 requête.
   Dette 11 soldée. Comptage de requêtes non testable (Dette 10
   réaffirmée comme prérequis).
+- ✅ **#80** — Factories de Managers dans `AcquisitionManager` et
+  `AcquisitionLigneManager`. Dette 10 soldée. Comptage de requêtes
+  désormais testable en Unit.
 - Candidats suivants (par ordre de pertinence) :
-  - **Dette 10** — factoriser `fournisseurManager()` /
-    `utilisateurManager()` / `categorieManager()` dans les Managers
-    (pattern Vague 11 appliqué aux Managers, pas seulement aux
-    contrôleurs). **Prérequis pour rendre le comptage de requêtes
-    testable** (cf. #79).
-  - **#80 (à ouvrir)** — Fix des 7 failures `IndexControllerRootUrlTest`
+  - **#81 (à ouvrir)** — Fix des 7 failures `IndexControllerRootUrlTest`
     (bug préexistant, redirection vers `/` au lieu de
     `/admin/system-settings`).
   - **Dette 6** — `EquipementManager::encryptionService()` divergent :
@@ -245,7 +254,7 @@ séparés quand le temps le permet.
   de l'attribut `#[DataProvider]`.
 - Déjà corrigé sur `RootUrlValidatorTest` (#59).
 - Reste à corriger sur les autres tests qui utilisent `@dataProvider`.
-- Les tests #68 à #79 utilisent déjà l'attribut `#[DataProvider]` ou
+- Les tests #68 à #80 utilisent déjà l'attribut `#[DataProvider]` ou
   n'en ont pas besoin — pas d'ajout de dette.
 - **Ticket à ouvrir** : oui, un petit ticket « chore: migrer
   @dataProvider vers #[DataProvider] ».
@@ -312,30 +321,6 @@ séparés quand le temps le permet.
   cela nécessite de nettoyer les orphelins existants avant.
 - **Ticket à ouvrir** : oui, mais **après** la Vague 14 (chantier
   schéma, à planifier avec migration de données).
-
-### Dette 10 — Instanciation en dur des managers dans les Managers
-
-- **`AcquisitionManager::findAll()`** fait `new FournisseurManager()` et
-  `new UtilisateurManager()` : instances réelles, non injectables. Le
-  mock PDO ne capte que la première requête (SELECT acquisition).
-- **`AcquisitionLigneManager::findByAcquisition()`** fait
-  `new CategorieManager()` — même problème.
-- **`AcquisitionLigneManager::findId()`** fait `new CategorieManager()`
-  — même problème (cf. #79).
-- Conséquence : la revendication « 3 requêtes au lieu de 2N+1 » (#71),
-  « 2 requêtes au lieu de N+1 » (#72) et « 1 requête au lieu de 2 »
-  (#79) n'est pas vérifiable en Unit **ni** en Integration avec un
-  `CountingPdo`. Elle ne l'est qu'en observant le `general_log` MySQL.
-- **Origine technique** : `AbstractManager::__construct()` fait
-  `new \PDO(...)` → chaque manager instancié en dur ouvre sa propre
-  connexion PDO, non partagée avec celle du manager appelant.
-- **Recommandation** : extraire des factories `protected
-  fournisseurManager()`, `utilisateurManager()`, `categorieManager()`
-  sur `AcquisitionManager` et `AcquisitionLigneManager`, surchargeables
-  en test. Aligner sur `TestableJournalController` (Vague 14). Envisager
-  une factorisation dans `AbstractManager`.
-- **Ticket à ouvrir** : oui, **priorité haute** — débloque le comptage
-  de requêtes pour #71, #72, #79 et tous les futurs tickets perf SQL.
 
 ### Dette 12 — `QrRedirectController` : méthodes privées mixtes
 
@@ -406,7 +391,7 @@ séparés quand le temps le permet.
 
 Tests (depuis la racine du projet) :
 
-- `php vendor/bin/phpunit` — suite Unit/Domain (368 tests, cf.
+- `php vendor/bin/phpunit` — suite Unit/Domain (371 tests, cf.
   `defaultTestSuite="Unit"` dans `phpunit.xml`).
 - `php vendor/bin/phpunit --testsuite Integration` — suite Integration
   (3 Integration Domain + 9 Integration Controller).
@@ -548,17 +533,22 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
     callback `willReturnCallback` avec `null`, pas `[]`. Typer
     `?array $params = null` puis `$params ?? []`. Sinon `TypeError`
     en `strict_types`. Détecté sur #71.
-  - **Instanciation en dur dans les Managers** : `new
-    FournisseurManager()` dans `AcquisitionManager::findAll()`,
-    `new CategorieManager()` dans
-    `AcquisitionLigneManager::findByAcquisition()` et
-    `AcquisitionLigneManager::findId()` ne sont pas mockables. Le mock
-    PDO ne capte que la première requête. Conséquence : impossible de
-    compter les requêtes en Unit **ni** en Integration avec un
-    `CountingPdo` — chaque manager instancié en dur ouvre sa propre
-    connexion PDO (`AbstractManager::__construct()` fait
-    `new \PDO(...)`). Cf. Dette 10. Pattern à surveiller pour les
-    prochains tickets. Détecté sur #79.
+  - **Factories de Managers (résolu en #80)** : `AcquisitionManager`
+    et `AcquisitionLigneManager` exposent désormais des factories
+    `fournisseurManager()`, `utilisateurManager()`, `categorieManager()`,
+    surchargeables en test via `TestableAcquisitionManager` et
+    `TestableAcquisitionLigneManager`. Le comptage de requêtes est
+    désormais possible en Unit.
+- **Compteur dans un closure PHPUnit** : les tableaux sont copiés par
+  valeur à la sortie d'une méthode, alors que les objets sont passés
+  par handle. Pour un compteur modifié dans un `willReturnCallback`
+  et lu après l'appel testé, utiliser un `stdClass` ou un `ArrayObject`,
+  **pas** un tableau. Détecté sur #80.
+- **`final class`** : `getMockBuilder(X::class)->getMock()` échoue sur
+  une classe `final`. Vérifier avec
+  `grep -n "^final class" app/Domain/X.php` avant de mocker.
+  `FournisseurManager`, `UtilisateurManager`, `CategorieManager` ne
+  sont **pas** final — mockables directement. Détecté sur #80.
 - **`header()` + `exit` dans un contrôleur** : non testable en Unit
   (le `exit` tue le processus PHP). Détecté sur
   `QrRedirectController` (#73). Si un autre contrôleur utilise ce
@@ -591,6 +581,11 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 
 ## Contexte de la session précédente
 
+- **#80** (v0.25.0) : factories dans `AcquisitionManager` et
+  `AcquisitionLigneManager` (Dette 10 soldée). Comptage de requêtes
+  désormais testable en Unit. `AcquisitionManagerFindAllTest` renforcé
+  (5 tests, valeurs + comptage), `AcquisitionLigneManagerFindIdTest`
+  créé (3 tests). 371 tests Unit au total, 874 assertions.
 - **#79** (v0.24.2) : `AcquisitionLigneManager::findId()` optimisé
   (2 → 1 requête via `CategorieManager::findIds()`). Ajout de
   `DatabaseFixture::createCategorie()` + cleanup des catégories
@@ -651,9 +646,7 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
   ticket Vague 14**.
 
 **🎯 Vague 11 complète** (3 contrôleurs, 67 tests Unit).
-**🎯 Vague 14 en cours** (#68 à #79 livrés).
-**Prochaine session** : **Dette 10** — factories de Managers dans les
-Managers (`AcquisitionManager::fournisseurManager()`,
-`AcquisitionManager::utilisateurManager()`,
-`AcquisitionLigneManager::categorieManager()`). Débloque le comptage
-de requêtes en test et rend vérifiables les optimisations #71, #72, #79.
+**🎯 Vague 14 en cours** (#68 à #80 livrés).
+**Prochaine session** : **#81** — Fix des 7 failures
+`IndexControllerRootUrlTest` (redirection vers `/` au lieu de
+`/admin/system-settings`). Bug préexistant détecté en #79.
