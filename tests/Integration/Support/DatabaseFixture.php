@@ -192,6 +192,11 @@ final class DatabaseFixture
             $this->pdo->prepare("DELETE FROM controle_ligne WHERE equipement_id = ?")->execute([$id]);
             $this->pdo->prepare("DELETE FROM club_equipement WHERE id = ?")->execute([$id]);
         }
+        
+        // [REFACTOR #79] Nettoyer les catégories de test.
+        // ⚠️ Après les acquisitions, pour éviter que des acquisition_ligne
+        //    ne pointent vers des catégories supprimées (pas de FK en base).
+        $this->pdo->exec("DELETE FROM categorie WHERE libelle LIKE 'TEST-%'");
     }
     
     /**
@@ -220,6 +225,37 @@ final class DatabaseFixture
             'statut' => $statut,
             'ctr'    => $controleurId,
             'hash'   => $hashRemarques,
+        ]);
+        
+        return (int) $this->pdo->lastInsertId();
+    }
+    
+    /**
+    * [REFACTOR #79 - Dette 11] Crée une catégorie de test.
+    *
+    * `libelle` est UNIQUE : on y injecte un suffixe aléatoire pour
+    * éviter les collisions entre tests. Le préfixe TEST- permet le
+    * cleanup via cleanupTestData().
+    *
+    * @param string $libelle Libellé (préfixe TEST- pour cleanup)
+    * @param int    $estEpi  1 = EPI, 0 = non-EPI
+    * @return int ID de la catégorie créée
+    */
+    public function createCategorie(
+        string $libelle = 'TEST-CATEGORIE',
+        int $estEpi = 1,
+    ): int {
+        // libelle est UNIQUE — on y injecte un suffixe pour éviter
+        // les collisions entre tests parallèles ou successifs.
+        $uniqueLibelle = $libelle . '-' . bin2hex(random_bytes(4));
+        
+        $stmt = $this->pdo->prepare(
+            "INSERT INTO categorie (libelle, est_epi)
+            VALUES (:lib, :epi)"
+        );
+        $stmt->execute([
+            'lib' => $uniqueLibelle,
+            'epi' => $estEpi,
         ]);
         
         return (int) $this->pdo->lastInsertId();

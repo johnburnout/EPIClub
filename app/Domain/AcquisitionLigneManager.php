@@ -52,13 +52,20 @@ class AcquisitionLigneManager extends AbstractManager
         $sql = "SELECT * FROM acquisition_ligne WHERE id=:id";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['id' => $id]);
-        if ($ligne = $stmt->fetch()) {
-            $categorieManager = new CategorieManager();
-            $ligne['categorie'] = $categorieManager->findId($ligne['categorie_id']);
-            return $ligne;
+        if (!$ligne = $stmt->fetch()) {
+            return null;
         }
-
-        return null;
+        
+        // [REFACTOR #79] Alignement sur findByAcquisition() (#72) :
+        // une seule requête pour la catégorie via findIds([$id]).
+        // Avant : new CategorieManager() + findId() → 2 requêtes.
+        $categories = (new CategorieManager())->findIds([(int) $ligne['categorie_id']]);
+        
+        // [REFACTOR #79] ?? null : FK orpheline = clé présente + valeur
+        // null (comportement historique de findId() qui retournait null).
+        $ligne['categorie'] = $categories[$ligne['categorie_id']] ?? null;
+        
+        return $ligne;
     }
 
     /**

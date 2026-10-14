@@ -10,6 +10,32 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v0.24.2] — 2026-10-14
+
+### Changed
+
+- `AcquisitionLigneManager::findId()` : 2 requêtes → 1 requête via
+`CategorieManager::findIds([$id])`. Alignement sur le pattern
+`findByAcquisition()` (#72). Iso-comportement strict (FK orpheline
+→ `categorie === null` conservé). Dette 11 soldée.
+
+### Tests
+
+- `DatabaseFixture::createCategorie()` ajouté (avec suffixe aléatoire
+pour éviter les collisions sur `libelle` UNIQUE).
+- `DatabaseFixture::cleanupTestData()` : cleanup des catégories
+préfixées `TEST-`.
+- 3 tests Integration de caractérisation dans
+`AcquisitionLigneManagerFindIdIntegrationTest`.
+
+### Notes
+
+- Le comptage de requêtes en test n'est pas réalisable tant que
+`AbstractManager::__construct()` ouvre sa propre connexion PDO :
+un `CountingPdo` injecté dans un Manager ne capte pas les requêtes
+des Managers instanciés en dur. Le gain est donc prouvé par lecture
+du code, pas par test. Déblocage prévu par Dette 10.
+
 ## [v0.24.1] — 2026-10-14
 
 ### Changed
