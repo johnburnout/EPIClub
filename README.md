@@ -45,6 +45,18 @@ Il refuse de s'exécuter depuis le navigateur (protection `PHP_SAPI !== 'cli'`).
 php -S localhost:8000 -t public public/router.php
 ```
 
+### Tests
+
+```bash
+vendor/bin/phpunit                # tests unitaires
+vendor/bin/phpunit --testsuite Integration   # tests d'intégration + sécurité
+```
+
+Les tests d'intégration démarrent automatiquement un serveur de dev sur
+`BASE_URL` (défaut : `http://localhost:8000`) si aucun serveur n'écoute,
+et l'arrêtent en fin de suite. Un serveur déjà lancé manuellement est
+réutilisé (et laissé intact).
+
 ## Licence
 
 LGPL-3.0-or-later — voir [licence.md](licence.md).

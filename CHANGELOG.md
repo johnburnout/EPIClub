@@ -10,6 +10,21 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Added
+
+- **`Epiclub\Tests\Support\WebServer` — serveur de test auto-démarré** :
+la suite `Integration` (tests HTTP + `AccessControlTest`) démarre
+automatiquement `php -S localhost:8000 -t public public/router.php`
+lorsque le port est libre, attend qu'il réponde (timeout 10 s, sortie
+du processus incluse dans le message d'échec), puis le tue via un
+shutdown handler en fin de processus PHPUnit. Idempotent et sans effet
+sur un serveur déjà en écoute (dev manuel ou CI) : celui-ci est
+réutilisé et n'est jamais arrêté par les tests. Hôte distant (`BASE_URL`
+non-local) : aucun démarrage, environnement géré à l'extérieur.
+Branché dans `AbstractControllerTestCase::setUp()` et
+`AccessControlTest::setUp()`. Fini les 64 faux échecs « connexion
+refusée » quand la suite était lancée sans serveur de dev.
+
 ## [v0.25.3] — 2026-10-15
 
 ### Fixed

@@ -6,6 +6,7 @@ namespace Epiclub\Tests\Integration\Controller;
 
 use Epiclub\Tests\Integration\Support\DatabaseFixture;
 use Epiclub\Tests\Integration\Support\HttpTestClient;
+use Epiclub\Tests\Support\WebServer;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -19,6 +20,11 @@ abstract class AbstractControllerTestCase extends TestCase
     protected function setUp(): void
     {
         $baseUrl = getenv('BASE_URL') ?: 'http://localhost:8000';
+
+        // Démarre automatiquement le serveur de dev si nécessaire
+        // (idempotent : réutilise un serveur déjà en écoute).
+        WebServer::ensureRunning($baseUrl);
+
         $this->client = new HttpTestClient($baseUrl);
         
         // Initialiser la fixture EN PREMIER

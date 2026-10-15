@@ -5,6 +5,7 @@ declare(strict_types=1);
 
 namespace Epiclub\Tests\Security;
 
+use Epiclub\Tests\Support\WebServer;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -25,6 +26,10 @@ final class AccessControlTest extends TestCase
     protected function setUp(): void
     {
         $this->baseUrl = rtrim(getenv('BASE_URL') ?: 'http://localhost:8000', '/');
+
+        // Démarre automatiquement le serveur de dev si nécessaire
+        // (idempotent : réutilise un serveur déjà en écoute).
+        WebServer::ensureRunning($this->baseUrl);
     }
 
     /**
