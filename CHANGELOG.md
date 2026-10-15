@@ -25,6 +25,42 @@ Branché dans `AbstractControllerTestCase::setUp()` et
 `AccessControlTest::setUp()`. Fini les 64 faux échecs « connexion
 refusée » quand la suite était lancée sans serveur de dev.
 
+## [v0.27.0] — 2026-10-15
+
+### Changed
+
+- **`AbstractManager::findOneByCriteria()` générique — factorisation
+des 7 copies dupliquées.** Les Managers Utilisateur, Fournisseur,
+Emplacement, Categorie et EquipementControle avaient une copie à
+l'identique de la recherche par critères d'égalité ; ils déclarent
+désormais uniquement `protected function tableName(): string`.
+`AbstractManager` expose aussi le hook `baseWhereClause()` (filtre
+WHERE permanent) :
+  - `EquipementManager` migre son `deleted_at IS NULL` (soft delete)
+    sur ce hook — iso-comportement strict.
+  - `AcquisitionManager` surcharge la méthode pour conserver
+    l'hydratation `fournisseur` / `redacteur` (projection publique,
+    Dette 8) en appelant `parent::findOneByCriteria()`.
+  - Manager sans `tableName()` → `RuntimeException` explicite au lieu
+    d'une erreur SQL opaque.
+
+### Fixed
+
+- **Injection SQL potentielle dans `EquipementManager::findOneByCriteria()`**
+: les clés du tableau `$criteria` étaient interpolées dans le SQL sans
+validation (contrairement aux autres Managers qui utilisent
+`buildWhereClause()` depuis #68). Désormais validées par regex —
+colonne invalide → `InvalidArgumentException`. Non démontré
+exploitable en l'état (tous les appelants passent des clés en dur),
+mais surface fermée.
+
+### Added
+
+- `AbstractManagerFindOneByCriteriaTest` (7 tests Unit) :
+caractérisation du contrat générique (SQL exact, `?: null`, colonne
+invalide, `tableName()` absent, combinaison `baseWhereClause()` +
+critères).
+
 ## [v0.26.1] — 2026-10-15
 
 ### Changed

@@ -30,19 +30,13 @@ class EmplacementManager extends AbstractManager
         return null;
     }
 
-    public function findOneByCriteria(array $criteria = [])
+    /**
+    * [REFACTOR #87] Table pour findOneByCriteria() générique
+    * (AbstractManager).
+    */
+    protected function tableName(): string
     {
-        [$where, $params] = $this->buildWhereClause($criteria);
-        
-        $sql = "SELECT * FROM emplacement$where";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
-        
-        if ($emplacement = $stmt->fetch()) {
-            return $emplacement;
-        }
-        
-        return null;
+        return 'emplacement';
     }
 
     public function save(array $emplacement)

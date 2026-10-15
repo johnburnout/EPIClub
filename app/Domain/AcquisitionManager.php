@@ -86,29 +86,38 @@ class AcquisitionManager extends AbstractManager
         return null;
     }
 
+    /**
+    * [REFACTOR #87] Recherche générique (AbstractManager) + hydratation
+    * spécifique acquisition : 'fournisseur' et 'redacteur' (projection
+    * publique Dette 8) sont ajoutés quand les FK sont présentes.
+    * Iso-comportement avec la copie historique.
+    */
     public function findOneByCriteria(array $criteria = [])
     {
-        [$where, $params] = $this->buildWhereClause($criteria);
-        
-        $sql = "SELECT * FROM acquisition$where";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
-
-        if ($acquisition = $stmt->fetch()) {
-            if (isset($acquisition['fournisseur_id'])) {
-                $acquisition['fournisseur'] = $this->fournisseurManager()->findId($acquisition['fournisseur_id']);
-            }
-            
-            if (isset($acquisition['saisie_par'])) {
-                // [SÉCURITÉ Dette 8] Projection publique (sans password /
-                // reset_token) : 'redacteur' est rendu dans les vues.
-                $acquisition['redacteur'] = $this->utilisateurManager()->findPublicId($acquisition['saisie_par']);
-            }
-
-            return $acquisition;
+        $acquisition = parent::findOneByCriteria($criteria);
+        if ($acquisition === null) {
+            return null;
         }
 
-        return null;
+        if (isset($acquisition['fournisseur_id'])) {
+            $acquisition['fournisseur'] = $this->fournisseurManager()->findId($acquisition['fournisseur_id']);
+        }
+
+        if (isset($acquisition['saisie_par'])) {
+            // [SÉCURITÉ Dette 8] Projection publique (sans password /
+            // reset_token) : 'redacteur' est rendu dans les vues.
+            $acquisition['redacteur'] = $this->utilisateurManager()->findPublicId($acquisition['saisie_par']);
+        }
+
+        return $acquisition;
+    }
+
+    /**
+    * [REFACTOR #87] Table pour parent::findOneByCriteria().
+    */
+    protected function tableName(): string
+    {
+        return 'acquisition';
     }
 
     public function save(array $acquisition)

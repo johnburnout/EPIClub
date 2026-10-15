@@ -46,22 +46,20 @@ class EquipementManager extends AbstractManager
         return null;
     }
 
-    public function findOneByCriteria(array $criteria = [])
+    /**
+    * [REFACTOR #87] Table + filtre permanent (soft delete) pour
+    * findOneByCriteria() générique (AbstractManager).
+    * Iso-comportement : 'WHERE deleted_at IS NULL' toujours appliqué,
+    * seul ou combiné aux critères.
+    */
+    protected function tableName(): string
     {
-        $params = 'deleted_at IS NULL';
-        foreach ($criteria as $key => $value) {
-            $params .= " AND $key=:$key";
-        }
+        return 'club_equipement';
+    }
 
-        $sql = "SELECT * FROM club_equipement WHERE $params";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($criteria);
-
-        if ($equipement = $stmt->fetch()) {
-            return $equipement;
-        }
-
-        return null;
+    protected function baseWhereClause(): string
+    {
+        return ' WHERE deleted_at IS NULL';
     }
 
     public function delete(int $id)

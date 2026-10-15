@@ -31,19 +31,13 @@ class EquipementControleManager extends AbstractManager
         return null;
     }
 
-    public function findOneByCriteria(array $criteria = [])
+    /**
+    * [REFACTOR #87] Table pour findOneByCriteria() générique
+    * (AbstractManager).
+    */
+    protected function tableName(): string
     {
-        [$where, $params] = $this->buildWhereClause($criteria);
-        
-        $sql = "SELECT * FROM club_equipement_controle$where";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
-        
-        if ($controle = $stmt->fetch()) {
-            return $controle;
-        }
-        
-        return null;
+        return 'club_equipement_controle';
     }
 
     public function save(array $controle)

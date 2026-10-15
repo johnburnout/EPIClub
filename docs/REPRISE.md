@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-15 (fin de session #86 — Vague 14 en cours)
-**Version courante** : v0.26.1
-**Branche** : `main` (travail direct, ticket #86)
+**Dernière mise à jour** : 2026-10-15 (fin de session #87 — Vague 14 en cours)
+**Version courante** : v0.27.0
+**Branche** : `main` (travail direct, ticket #87)
 
 ---
 
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.26.1 | #86 | Fin des @dataProvider — Dette 4 (chore PHPUnit) | `<hash>` |
+| v0.27.0 | #87 | findOneByCriteria générique dans AbstractManager — 7 copies factorisées | `<hash>` |
+| v0.26.1 | #86 | Fin des @dataProvider — Dette 4 (chore PHPUnit) | `c579669` |
 | v0.26.0 | #85 | FOREIGN KEY acquisition/acquisition_ligne (Dette 9) + gardes suppressions | `5df96b6` |
 | v0.25.4 | #84 | UtilisateurManager projection publique — Dette 8 (hash mdp dans redacteur) | `e630ef3` |
 | v0.25.3 | #83 | JournalManager bornage limit + tri multi-colonnes (Dette 7) | `5643fcd` |
@@ -50,6 +51,23 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
 
 ### Chantiers soldés
 
+- **#87 — `findOneByCriteria()` générique dans `AbstractManager`.**
+  7 copies à l'identique dans les Managers (Utilisateur, Fournisseur,
+  Emplacement, Categorie, EquipementControle + cas particuliers
+  Equipement/Acquisition). Factorisation : méthode générique +
+  factory `tableName()` (RuntimeException explicite si absente) +
+  hook `baseWhereClause()` (filtre permanent). EquipementManager :
+  soft delete migré sur le hook (iso-comportement). AcquisitionManager
+  : surcharge avec hydratation fournisseur/redacteur en appelant
+  `parent::findOneByCriteria()`. **Fix de bug documenté** :
+  EquipementManager interpolait les clés de critères sans validation
+  (injection SQL potentielle — non exploitable en l'état, clés en
+  dur chez tous les appelants ; surface fermée par buildWhereClause).
+  Piège rencontré : buildWhereClause préfixe ' WHERE ' (contrat #68)
+  → combiné à baseWhereClause, le 2e WHERE devient AND.
+  Test de caractérisation `AbstractManagerFindOneByCriteriaTest`
+  (7 tests Unit, SQL exact capturé). Tests rouges d'abord (5 erreurs
+  + 2 échecs). 395 tests Unit (965 assertions), 104 Integration.
 - **#86 — Fin des `@dataProvider` (Dette 4 soldée).** Dernier usage
   docblock retiré (`ControleControllerHandlersTest` — l'attribut
   `#[DataProvider]` y était déjà en doublon). `--display-deprecations`
@@ -222,7 +240,7 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
 - **#61, #62** : refactors ControleController (injection managers, test Integration edit view).
 
 ### État des tests
-- **388 tests** Unit/Domain verts, **953 assertions**.
+- **395 tests** Unit/Domain verts, **965 assertions**.
 - **104 tests** Integration verts, **245 assertions** :
   - 4 Integration Domain (MySQL requis, dont `ForeignKeysIntegrationTest`).
   - 10 Integration Controller (serveur HTTP auto-démarré) — **plus de failures**.
@@ -233,7 +251,7 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
   tests (classe `Epiclub\Tests\Support\WebServer`, cf. commit
   `d1e0bfa`) : inutile de lancer `php -S` dans un autre terminal.
   Un serveur déjà en écoute est réutilisé, jamais arrêté par les tests.
-- **Total avec MySQL actif** : 388 + 104 = **492 tests**.
+- **Total avec MySQL actif** : 395 + 104 = **499 tests**.
 
 ✅ ~~7 tests Integration Controller en échec préexistant :
 `IndexControllerRootUrlTest`~~ → **résolu en #81** (promotion
@@ -300,6 +318,9 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
   (0 orphelin).
 - ✅ **#86** — Fin des `@dataProvider` restants (Dette 4 soldée).
   1 doublon docblock/attribut retiré, zéro dépréciation PHPUnit.
+- ✅ **#87** — `findOneByCriteria()` générique dans `AbstractManager`
+  (candidat Vague 14). 7 copies factorisées, hook `baseWhereClause()`,
+  fix injection SQL EquipementManager.
 - Candidats suivants (par ordre de pertinence) :
   - Fix `AbstractManager::findOneByCriteria()` générique ? (attention à
     `EquipementManager` — cas particulier `deleted_at IS NULL` — et à
@@ -408,7 +429,7 @@ séparés quand le temps le permet.
 
 Tests (depuis la racine du projet) :
 
-- `php vendor/bin/phpunit` — suite Unit/Domain (388 tests, cf.
+- `php vendor/bin/phpunit` — suite Unit/Domain (395 tests, cf.
   `defaultTestSuite="Unit"` dans `phpunit.xml`).
 - `php vendor/bin/phpunit --testsuite Integration` — suite Integration
   (104 tests : 4 Integration Domain + 10 Integration Controller —
@@ -636,6 +657,15 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 
 ## Contexte de la session précédente
 
+- **#87** (v0.27.0) : `findOneByCriteria()` générique dans
+  `AbstractManager` — 7 copies factorisées. Managers simples :
+  `tableName()` uniquement. EquipementManager : soft delete sur
+  `baseWhereClause()`. AcquisitionManager : surcharge + hydratation
+  via `parent::`. Fix documenté : validation des clés de critères
+  EquipementManager (buildWhereClause #68). Piège : double WHERE
+  base+critères → AND. 7 tests Unit de caractérisation. 395 tests
+  Unit (965 assertions), 104 Integration (245). Travail direct sur
+  `main`.
 - **#86** (v0.26.1) : Dette 4 soldée — dernier `@dataProvider`
   (`ControleControllerHandlersTest`, doublon avec l'attribut existant).
   `--display-deprecations` vide. 492 tests verts inchangés. Travail
@@ -744,8 +774,8 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 
 **🎯 Vague 11 complète** (3 contrôleurs, 67 tests Unit).
 **🎯 Vague 14 en cours** (#68 à #85 livrés).
-**Prochaine session** : reprendre les candidats de la Vague 14 —
-`AbstractManager::findOneByCriteria()` générique (attention
-`EquipementManager` `deleted_at IS NULL` + hydratation spécifique
-`AcquisitionManager`), tests Unit sur les Managers non couverts,
-ou Dettes 12/13 (`QrRedirectController`, basse priorité).
+**Prochaine session** : tests Unit sur les Managers non couverts
+(JournalManager partiellement couvert, ControleManager,
+ClubManager…) ou Dettes 12/13 (`QrRedirectController`, basse
+priorité). Le `findOneByCriteria()` générique (candidat Vague 14)
+est livré en #87.

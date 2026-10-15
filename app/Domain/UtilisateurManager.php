@@ -128,14 +128,13 @@ class UtilisateurManager extends AbstractManager
         return array_column($stmt->fetchAll(), null, 'id');
     }
 
-    public function findOneByCriteria(array $criteria = [])
+    /**
+    * [REFACTOR #87] Table pour findOneByCriteria() générique
+    * (AbstractManager).
+    */
+    protected function tableName(): string
     {
-        [$where, $params] = $this->buildWhereClause($criteria);
-        
-        $sql = "SELECT * FROM utilisateur$where";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->fetch() ?: null;
+        return 'utilisateur';
     }
 
     /**

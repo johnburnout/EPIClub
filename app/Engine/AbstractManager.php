@@ -141,6 +141,72 @@ abstract class AbstractManager
     }
     
     /**
+    * [REFACTOR #87] Recherche générique d'UNE ligne par critères
+    * d'égalité — factorisation des copies identiques dans les Managers
+    * (Utilisateur, Fournisseur, Emplacement, Categorie,
+    * EquipementControle).
+    *
+    * Contrat :
+    *  - SELECT * FROM <tableName()> [+ baseWhereClause()]
+    *    [+ WHERE critères] — LIMIT 1 implicite du fetch()
+    *  - critères vides → pas de WHERE (sauf baseWhereClause())
+    *  - ligne absente → null (et non false)
+    *  - nom de colonne invalide → InvalidArgumentException
+    *    (buildWhereClause, #68)
+    *
+    * Les Managers à hydratation spécifique (AcquisitionManager) ou à
+    * filtre permanent (EquipementManager, soft delete) peuvent
+    * surcharger tableName() / baseWhereClause() ou la méthode elle-même
+    * en appelant parent::findOneByCriteria().
+    *
+    * @param array<string,mixed> $criteria
+    * @return array<string,mixed>|null
+    */
+    public function findOneByCriteria(array $criteria = [])
+    {
+        [$where, $params] = $this->buildWhereClause($criteria);
+        $base = $this->baseWhereClause();
+
+        // buildWhereClause préfixe ' WHERE ' (contrat #68) : combiné
+        // avec un filtre permanent, le second WHERE devient un AND.
+        if ($base !== '' && $where !== '') {
+            $where = ' AND ' . substr($where, strlen(' WHERE '));
+        }
+
+        $sql = 'SELECT * FROM ' . $this->tableName() . $base . $where;
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->fetch() ?: null;
+    }
+
+    /**
+    * Nom de la table SQL du Manager, utilisé par findOneByCriteria().
+    *
+    * Les Managers utilisant la recherche générique DOIVENT surcharger
+    * cette factory ; sinon une RuntimeException explicite est levée
+    * (plutôt qu'une erreur SQL opaque).
+    */
+    protected function tableName(): string
+    {
+        throw new \RuntimeException(
+            sprintf('%s doit surcharger tableName() pour utiliser findOneByCriteria().', static::class)
+        );
+    }
+
+    /**
+    * Filtre WHERE permanent appliqué avant les critères
+    * (findOneByCriteria). Chaîne vide par défaut.
+    *
+    * Exemple : EquipementManager retourne ' WHERE deleted_at IS NULL'
+    * (soft delete, iso-comportement historique).
+    */
+    protected function baseWhereClause(): string
+    {
+        return '';
+    }
+
+    /**
     * [REFACTOR #82 - Dette 6] Factory ConfigProvider — mockable en test Unit.
     *
     * Aligne AbstractManager sur AbstractController (#50a).
