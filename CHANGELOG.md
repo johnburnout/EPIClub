@@ -10,6 +10,38 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v0.25.3] — 2026-10-15
+
+### Fixed
+
+- **`JournalManager::getControlesClotures()` — bornage de la pagination**
+(Dette 7) : `limit &lt;= 0` produisait `LIMIT -5 OFFSET 0` (erreur MySQL
+500), `limit = 0` un `DivisionByZeroError` dans `ceil($total / $limit)`
+(prouvé en test), et `page &lt; 1` un offset négatif. Désormais
+`limit &lt; 1` → `DEFAULT_LIMIT` (10), `page &lt; 1` → `DEFAULT_PAGE` (1).
+Paramètres injectables par l'URL (`$_GET['limit']`, `$_GET['page']`)
+→ réellement atteignables.
+⚠️ Divergence assumée avec `AbstractManager::buildLimitClause()`
+(`limit &lt;= 0` = pas de limite) : la pagination exige une limite
+positive pour `totalPages`.
+- **`JournalManager::buildOrderByClause()` — tri multi-colonnes**
+(Dette 7) : `order_by='controleur'` générait `'u.nom, u.prenom ASC'`
+où l'`ASC` ne s'appliquait qu'à `u.prenom` (`u.nom` en ASC implicite).
+La direction est désormais appliquée à chaque colonne :
+`'u.nom ASC, u.prenom ASC'`.
+
+### Added
+
+- `JournalManagerTest` Bloc D : 6 cas de bornage limit/page
+(dataProvider, valeurs bindées capturées via `bindValue`).
+Bloc B mis à jour pour le tri multi-colonnes.
+
+### Notes
+
+- Suite Unit : 379 tests verts, 913 assertions (vs 373/877).
+- Suite Integration : 102 tests verts.
+- Dette 7 soldée.
+
 ## [v0.25.2] — 2026-10-14
 
 ### Changed
