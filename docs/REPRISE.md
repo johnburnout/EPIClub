@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-15 (fin de session #83 — Vague 14 en cours)
-**Version courante** : v0.25.3
-**Branche** : `main` (ticket #83 traité sur branche `feat/83-journal-manager-limit-tri-multicolonnes`, merge `--no-ff` sur main)
+**Dernière mise à jour** : 2026-10-15 (fin de session #84 — Vague 14 en cours)
+**Version courante** : v0.25.4
+**Branche** : `main` (travail direct, ticket #84)
 
 ---
 
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.25.3 | #83 | JournalManager bornage limit + tri multi-colonnes (Dette 7) | `<hash>` |
+| v0.25.4 | #84 | UtilisateurManager projection publique — Dette 8 (hash mdp dans redacteur) | `<hash>` |
+| v0.25.3 | #83 | JournalManager bornage limit + tri multi-colonnes (Dette 7) | `5643fcd` |
 | v0.25.2 | #82 | AbstractManager::configProvider() + alignement EquipementManager (Dette 6) | `38bb7dc` |
 | v0.25.1 | #81 | Fix IndexControllerRootUrlTest + cleanup tests/Domain/ | `8fd9087` |
 | v0.25.0 | #80 | Factories Managers (Dette 10) — comptage de requêtes testable | `0c8456d` |
@@ -47,6 +48,20 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
 
 ### Chantiers soldés
 
+- **#84 — `UtilisateurManager` : projection publique (Dette 8
+  soldée).** `AcquisitionManager::findAll()` / `findId()` /
+  `findOneByCriteria()` hydrataient `redacteur` via `findIds()` /
+  `findId()` (SELECT *) : les vues Twig recevaient `password`,
+  `reset_token`, `reset_token_expires`, `reset_email_sent_at`.
+  Nouvelle constante `UtilisateurManager::PUBLIC_FIELDS` (id, nom,
+  prenom, username, email, role, date_creation) + `findPublicId()` /
+  `findPublicIds()` (colonnes en dur dans le SQL, pas d'injection).
+  Les 3 points d'hydratation migrés. `findId()` / `findIds()` restent
+  pour la logique interne (authentification — ils servent le mot de
+  passe). Tests rouges d'abord : 5 erreurs Unit (méthodes absentes)
+  + 3 erreurs (mock `findPublicIds` sans réponse). Preuve par capture
+  du SQL (Unit) + test Integration sur base réelle (colonnes sensibles
+  absentes de `redacteur`). 5 tests Unit + 1 test Integration ajoutés.
 - **#83 — `JournalManager` : bornage `limit` + tri multi-colonnes
   (Dette 7 soldée).** Fix comportemental avec tests rouges d'abord
   (9 failures + 1 error prouvant les bugs) :
@@ -170,10 +185,10 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
 - **#61, #62** : refactors ControleController (injection managers, test Integration edit view).
 
 ### État des tests
-- **379 tests** Unit/Domain verts, **913 assertions**.
-- **102 tests** Integration verts, **216 assertions** :
+- **384 tests** Unit/Domain verts, **943 assertions**.
+- **103 tests** Integration verts, **225 assertions** :
   - 3 Integration Domain (MySQL requis).
-  - 9 Integration Controller (serveur HTTP requis) — **plus de failures**.
+  - 10 Integration Controller (serveur HTTP auto-démarré) — **plus de failures**.
 - Commande Unit : `php vendor/bin/phpunit`
   (`defaultTestSuite="Unit"` dans `phpunit.xml`).
 - Commande Integration : `php vendor/bin/phpunit --testsuite Integration`.
@@ -181,7 +196,7 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
   tests (classe `Epiclub\Tests\Support\WebServer`, cf. commit
   `d1e0bfa`) : inutile de lancer `php -S` dans un autre terminal.
   Un serveur déjà en écoute est réutilisé, jamais arrêté par les tests.
-- **Total avec MySQL actif** : 379 + 102 = **481 tests**.
+- **Total avec MySQL actif** : 384 + 103 = **487 tests**.
 
 ✅ ~~7 tests Integration Controller en échec préexistant :
 `IndexControllerRootUrlTest`~~ → **résolu en #81** (promotion
@@ -242,7 +257,6 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
   (`'u.nom, u.prenom ASC'` ambigu). Dette 7 soldée. Première branche
   feature + merge `--no-ff`.
 - Candidats suivants (par ordre de pertinence) :
-  - **Dette 8** — Exposition du hash de mot de passe dans `redacteur`.
   - Fix `AbstractManager::findOneByCriteria()` générique ? (attention à
     `EquipementManager` — cas particulier `deleted_at IS NULL` — et à
     l'hydratation spécifique d'`AcquisitionManager`).
@@ -289,21 +303,6 @@ séparés quand le temps le permet.
   n'en ont pas besoin — pas d'ajout de dette.
 - **Ticket à ouvrir** : oui, un petit ticket « chore: migrer
   @dataProvider vers #[DataProvider] ».
-
-### Dette 8 — Exposition du hash de mot de passe dans `redacteur`
-
-- `AcquisitionManager::findAll()` (et `findId()`, `findOneByCriteria()`)
-  hydrate `redacteur` via `UtilisateurManager::findId()`, qui fait un
-  `SELECT *` incluant `password`, `reset_token`, `reset_token_expires`,
-  `reset_email_sent_at`.
-- Conséquence : `$acquisition['redacteur']['password']` est accessible
-  dans toutes les vues Twig qui affichent une acquisition.
-- **Pas de correction dans #71** (iso-comportement strict) — le
-  refactor `findIds()` conserve ce `SELECT *` à dessein.
-- **Recommandation** : introduire un `UtilisateurManager::findPublicFields()`
-  (ou une projection SQL) qui exclut les colonnes sensibles, puis
-  migrer les appelants. À traiter dans un ticket dédié.
-- **Ticket à ouvrir** : oui.
 
 ### Dette 9 — Absence de contraintes FOREIGN KEY sur `acquisition` et `acquisition_ligne`
 
@@ -400,10 +399,11 @@ séparés quand le temps le permet.
 
 Tests (depuis la racine du projet) :
 
-- `php vendor/bin/phpunit` — suite Unit/Domain (379 tests, cf.
+- `php vendor/bin/phpunit` — suite Unit/Domain (384 tests, cf.
   `defaultTestSuite="Unit"` dans `phpunit.xml`).
 - `php vendor/bin/phpunit --testsuite Integration` — suite Integration
-  (102 tests : 3 Integration Domain + 9 Integration Controller).
+  (103 tests : 3 Integration Domain + 10 Integration Controller —
+  le serveur HTTP est auto-démarré par WebServer, cf. commit `d1e0bfa`).
 - `php vendor/bin/phpunit tests/Unit/Engine/FooTest.php` — un fichier.
 - `php vendor/bin/phpunit --filter testMethodName` — une méthode.
 - `php vendor/bin/phpunit --display-deprecations` — affiche le détail
@@ -627,6 +627,16 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 
 ## Contexte de la session précédente
 
+- **#84** (v0.25.4) : `UtilisateurManager` — projection publique
+  `PUBLIC_FIELDS` + `findPublicId()` / `findPublicIds()` (Dette 8
+  soldée). Les 3 hydratations de `redacteur` dans `AcquisitionManager`
+  migrées : les vues Twig ne reçoivent plus `password` ni
+  `reset_token`. Tests rouges d'abord (5 erreurs Unit + 3 erreurs
+  mock), preuve par capture du SQL + test Integration base réelle.
+  5 tests Unit + 1 test Integration ajoutés. 384 tests Unit (943
+  assertions), 103 tests Integration (225 assertions). Travail direct
+  sur `main`. Commits infra hors ticket cette session :
+  `d1e0bfa` (WebServer auto) + `464b2b7` (REPRISE.md #83).
 - **#83** (v0.25.3) : `JournalManager` — bornage `limit`/`page`
   (`limit < 1` → 10, `page < 1` → 1) + tri multi-colonnes
   (direction sur chaque colonne). Dette 7 soldée. Test rouge d'abord
@@ -707,7 +717,7 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
   ticket Vague 14**.
 
 **🎯 Vague 11 complète** (3 contrôleurs, 67 tests Unit).
-**🎯 Vague 14 en cours** (#68 à #83 livrés).
-**Prochaine session** : **Dette 8** — `UtilisateurManager::findPublicFields()`
-(ou projection SQL) pour stopper l'exposition du hash de mot de passe
-dans `redacteur`, accessible dans toutes les vues acquisition.
+**🎯 Vague 14 en cours** (#68 à #84 livrés).
+**Prochaine session** : **Dette 9** — contraintes FOREIGN KEY sur
+`acquisition` / `acquisition_ligne` (chantier schéma, à planifier avec
+migration de données : nettoyer les orphelins existants avant).

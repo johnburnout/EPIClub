@@ -93,6 +93,43 @@ final class AcquisitionManagerFindAllIntegrationTest extends TestCase
     }
 
     /**
+     * [SÉCURITÉ Dette 8] 'redacteur' est exposé dans les vues acquisition :
+     * il ne doit contenir AUCUNE colonne sensible (password, reset_token…).
+     * Avant la projection publique, findIds() faisait un SELECT * →
+     * ce test est ROUGE (redacteur.password présent).
+     */
+    public function testFindAllDoesNotExposeSensitiveColumnsInRedacteur(): void
+    {
+        $id = $this->fixture->createAcquisitionForFindAll(
+            reference: 'TEST-DETTE8',
+            fournisseurId: 1,
+            saisiePar: 1,
+        );
+
+        $rows = (new AcquisitionManager())->findAll('', -1, 0);
+        $byId = array_column($rows, null, 'id');
+
+        self::assertArrayHasKey($id, $byId);
+        self::assertArrayHasKey('redacteur', $byId[$id]);
+
+        $redacteur = $byId[$id]['redacteur'];
+        self::assertIsArray($redacteur);
+
+        // Champs publics toujours présents (utilisés par les vues)
+        self::assertArrayHasKey('nom', $redacteur);
+        self::assertArrayHasKey('prenom', $redacteur);
+
+        // Colonnes sensibles strictement absentes
+        foreach (['password', 'reset_token', 'reset_token_expires', 'reset_email_sent_at'] as $column) {
+            self::assertArrayNotHasKey(
+                $column,
+                $redacteur,
+                "Colonne sensible '$column' exposée dans redacteur (Dette 8)."
+            );
+        }
+    }
+
+    /**
      * Aligné sur AbstractControllerTestCase::createPdo()
      * (même mécanisme de lecture .env.local.php, mêmes options PDO).
      */

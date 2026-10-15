@@ -77,7 +77,11 @@ final class AcquisitionManagerFindAllTest extends TestCase
         $utilisateurManager = $this->getMockBuilder(UtilisateurManager::class)
         ->disableOriginalConstructor()
         ->getMock();
-        $utilisateurManager->method('findIds')->willReturnCallback(
+        // [SÉCURITÉ Dette 8] findPublicIds (projection sans colonnes
+        // sensibles), et non findIds (SELECT *) : si AcquisitionManager
+        // rappelle findIds(), ce mock ne répond pas → redacteur null →
+        // les assertions de valeurs ci-dessous échouent.
+        $utilisateurManager->method('findPublicIds')->willReturnCallback(
             function (array $ids) use ($utilisateurRows, $counters) {
                 $counters->utilisateur++;
                 $indexed = [];
@@ -120,7 +124,7 @@ final class AcquisitionManagerFindAllTest extends TestCase
         self::assertCount(3, $rows);
         self::assertSame(1, $counters->acquisition, '1 SELECT acquisition');
         self::assertSame(1, $counters->fournisseur, '1 findIds fournisseur');
-        self::assertSame(1, $counters->utilisateur, '1 findIds utilisateur');
+        self::assertSame(1, $counters->utilisateur, '1 findPublicIds utilisateur');
 
         // [REFACTOR #80] Vérification des valeurs (possible depuis le mock)
         self::assertSame('F5', $rows[0]['fournisseur']['nom']);

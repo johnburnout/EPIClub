@@ -21,6 +21,20 @@ class UtilisateurManager extends AbstractManager
     */
     public const MIN_PASSWORD_LENGTH = 12;
 
+    /**
+    * [SÉCURITÉ Dette 8] Colonnes exposables à l'affichage (vues Twig,
+    * hydratation 'redacteur', etc.). Exclut strictement les colonnes
+    * sensibles : password, reset_token, reset_token_expires,
+    * reset_email_sent_at (et les colonnes internes last_activity,
+    * controle_en_cours_id).
+    *
+    * Utiliser findPublicId()/findPublicIds() dès que les données ont
+    * vocation à être rendues — jamais findId()/findIds() (SELECT *).
+    */
+    public const PUBLIC_FIELDS = [
+        'id', 'nom', 'prenom', 'username', 'email', 'role', 'date_creation',
+    ];
+
     public function findAll($order = '', $limit = -1, $offset = 0)
     {
         $params = $this->buildOrderClause($order)
@@ -44,8 +58,9 @@ class UtilisateurManager extends AbstractManager
     * [REFACTOR #71] Récupère plusieurs utilisateurs par leurs IDs en une requête.
     *
     * Iso-comportement avec findId() appliqué en boucle.
-    * ⚠️ SELECT * : inclut password, reset_token, etc. — comportement
-    * historique conservé (cf. Dette 8, exposition préexistante).
+    * ⚠️ SELECT * : inclut password, reset_token, etc. — à réserver
+    * à la logique interne (authentification). Pour tout affichage,
+    * utiliser findPublicIds() (Dette 8 soldée).
     *
     * @param int[] $ids
     * @return array<int, array> Tableau indexé par id.
@@ -63,6 +78,53 @@ class UtilisateurManager extends AbstractManager
         $stmt = $this->db->prepare($sql);
         $stmt->execute($ids);
         
+        return array_column($stmt->fetchAll(), null, 'id');
+    }
+
+    /**
+    * [SÉCURITÉ Dette 8] Récupère un utilisateur par son ID, SANS les
+    * colonnes sensibles (projection PUBLIC_FIELDS).
+    *
+    * ⚠️ findId() (SELECT *) inclut password et reset_token — ne
+    * l'utiliser que pour de la logique interne (authentification, etc.).
+    * Pour tout affichage, utiliser findPublicId().
+    *
+    * Iso-forme avec findId() : même clé 'id', fetch unique, null si absent.
+    */
+    public function findPublicId(int $id): ?array
+    {
+        $columns = implode(', ', self::PUBLIC_FIELDS);
+        $sql = "SELECT $columns FROM utilisateur WHERE id=:id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['id' => $id]);
+        return $stmt->fetch() ?: null;
+    }
+
+    /**
+    * [SÉCURITÉ Dette 8] Batch de findPublicId() : plusieurs utilisateurs
+    * par leurs IDs, SANS les colonnes sensibles.
+    *
+    * ⚠️ findIds() (SELECT *) inclut password et reset_token — cf. Dette 8
+    * pour l'exposition historique dans 'redacteur'. Pour tout affichage,
+    * utiliser findPublicIds().
+    *
+    * @param int[] $ids
+    * @return array<int, array> Tableau indexé par id.
+    */
+    public function findPublicIds(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+
+        $columns = implode(', ', self::PUBLIC_FIELDS);
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $sql = "SELECT $columns FROM utilisateur WHERE id IN ($placeholders)";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($ids);
+
         return array_column($stmt->fetchAll(), null, 'id');
     }
 

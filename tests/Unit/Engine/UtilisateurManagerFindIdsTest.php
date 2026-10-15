@@ -17,7 +17,9 @@ use PHPUnit\Framework\TestCase;
  *
  * ⚠️ findIds() fait un SELECT * (comportement historique de findId()),
  * donc les colonnes sensibles (password, reset_token) sont incluses.
- * C'est volontaire (iso-comportement #71) — cf. Dette 8 dans REPRISE.md.
+ * C'est volontaire (iso-comportement #71) — réserver findIds() à la
+ * logique interne ; pour l'affichage, utiliser findPublicIds()
+ * (Dette 8 soldée en #84).
  */
 final class UtilisateurManagerFindIdsTest extends TestCase
 {

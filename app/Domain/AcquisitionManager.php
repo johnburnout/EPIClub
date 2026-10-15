@@ -42,7 +42,9 @@ class AcquisitionManager extends AbstractManager
         
         $utilisateurs = $utilisateurIds === []
         ? []
-        : $this->utilisateurManager()->findIds(array_keys($utilisateurIds));
+        // [SÉCURITÉ Dette 8] Projection publique : 'redacteur' est rendu
+        // dans les vues Twig, sans password / reset_token.
+        : $this->utilisateurManager()->findPublicIds(array_keys($utilisateurIds));
         
         // [REFACTOR #71] ?? null : FK orpheline = clé présente + valeur
         // null (comportement historique de findId() qui retournait null).
@@ -73,7 +75,9 @@ class AcquisitionManager extends AbstractManager
             }
             
             if (isset($acquisition['saisie_par'])) {
-                $acquisition['redacteur'] = $this->utilisateurManager()->findId($acquisition['saisie_par']);
+                // [SÉCURITÉ Dette 8] Projection publique (sans password /
+                // reset_token) : 'redacteur' est rendu dans les vues.
+                $acquisition['redacteur'] = $this->utilisateurManager()->findPublicId($acquisition['saisie_par']);
             }
 
             return $acquisition;
@@ -96,7 +100,9 @@ class AcquisitionManager extends AbstractManager
             }
             
             if (isset($acquisition['saisie_par'])) {
-                $acquisition['redacteur'] = $this->utilisateurManager()->findId($acquisition['saisie_par']);
+                // [SÉCURITÉ Dette 8] Projection publique (sans password /
+                // reset_token) : 'redacteur' est rendu dans les vues.
+                $acquisition['redacteur'] = $this->utilisateurManager()->findPublicId($acquisition['saisie_par']);
             }
 
             return $acquisition;

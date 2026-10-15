@@ -25,6 +25,35 @@ Branché dans `AbstractControllerTestCase::setUp()` et
 `AccessControlTest::setUp()`. Fini les 64 faux échecs « connexion
 refusée » quand la suite était lancée sans serveur de dev.
 
+## [v0.25.4] — 2026-10-15
+
+### Security
+
+- **Dette 8 soldée — exposition du hash de mot de passe dans
+`redacteur`.** `AcquisitionManager::findAll()`, `findId()` et
+`findOneByCriteria()` hydrataient `redacteur` via
+`UtilisateurManager::findIds()` / `findId()` (SELECT *) : les vues
+Twig d'acquisition recevaient `password`, `reset_token`,
+`reset_token_expires` et `reset_email_sent_at`. Nouvelle projection
+publique `UtilisateurManager::PUBLIC_FIELDS` +
+`findPublicId()` / `findPublicIds()` (id, nom, prenom, username,
+email, role, date_creation — colonnes en dur, pas d'injection
+possible) ; les trois points d'hydratation de `redacteur` sont
+migrés. `findId()` / `findIds()` (SELECT *) restent disponibles
+pour la logique interne (authentification) et sont documentés
+comme tels.
+
+### Added
+
+- `UtilisateurManagerFindPublicTest` (5 tests Unit, 30 assertions) :
+preuve par capture du SQL que la projection exclut les colonnes
+sensibles ; constante `PUBLIC_FIELDS` contrôlée.
+- `AcquisitionManagerFindAllIntegrationTest` : 1 test Integration
+prouvant sur base réelle que `redacteur` ne contient aucune colonne
+sensible. `AcquisitionManagerFindAllTest` : le mock utilisateur
+cible désormais `findPublicIds()` (régression si `findIds()`
+SELECT * rappelé).
+
 ## [v0.25.3] — 2026-10-15
 
 ### Fixed
