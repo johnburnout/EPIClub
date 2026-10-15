@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-14 (fin de session #82 — Vague 14 en cours)
-**Version courante** : v0.25.2
-**Branche** : `main` (travail direct sur main, pas de PR)
+**Dernière mise à jour** : 2026-10-15 (fin de session #83 — Vague 14 en cours)
+**Version courante** : v0.25.3
+**Branche** : `main` (ticket #83 traité sur branche `feat/83-journal-manager-limit-tri-multicolonnes`, merge `--no-ff` sur main)
 
 ---
 
@@ -16,6 +16,7 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
+| v0.25.3 | #83 | JournalManager bornage limit + tri multi-colonnes (Dette 7) | `<hash>` |
 | v0.25.2 | #82 | AbstractManager::configProvider() + alignement EquipementManager (Dette 6) | `38bb7dc` |
 | v0.25.1 | #81 | Fix IndexControllerRootUrlTest + cleanup tests/Domain/ | `8fd9087` |
 | v0.25.0 | #80 | Factories Managers (Dette 10) — comptage de requêtes testable | `0c8456d` |
@@ -46,6 +47,25 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
 
 ### Chantiers soldés
 
+- **#83 — `JournalManager` : bornage `limit` + tri multi-colonnes
+  (Dette 7 soldée).** Fix comportemental avec tests rouges d'abord
+  (9 failures + 1 error prouvant les bugs) :
+  - `getControlesClotures()` : `limit < 1` → `DEFAULT_LIMIT` (10),
+    `page < 1` → `DEFAULT_PAGE` (1). Avant : `LIMIT -5 OFFSET 0`
+    (erreur MySQL 500), `DivisionByZeroError` sur `limit=0` (prouvé
+    en test), offset négatif sur `page<1`. Paramètres injectables
+    via `$_GET` → réellement atteignables.
+    ⚠️ Divergence assumée avec `AbstractManager::buildLimitClause()`
+    (`limit <= 0` = pas de limite) : la pagination exige une limite
+    positive pour `totalPages`.
+  - `buildOrderByClause()` : direction appliquée à **chaque** colonne
+    d'un tri multi-colonnes. Avant : `'u.nom, u.prenom ASC'` (ASC
+    implicite sur `u.nom` — ambiguïté de tri contrôleur).
+  - 6 tests Unit ajoutés (Bloc D, valeurs bindées capturées via
+    `bindValue` — piège identifié : LIMIT/OFFSET sont bindés, pas
+    interpolés, ils n'apparaissent jamais littéralement dans le SQL).
+    Bloc B mis à jour (3 cas 'controleur').
+  - Premier ticket avec branche feature + merge `--no-ff` sur main.
 - **#82 — `AbstractManager::configProvider()` + alignement
   `EquipementManager` (Dette 6).** Ajout de la factory
   `configProvider()` dans `AbstractManager`, alignée sur
@@ -150,15 +170,18 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
 - **#61, #62** : refactors ControleController (injection managers, test Integration edit view).
 
 ### État des tests
-- **373 tests** Unit/Domain verts, **877 assertions**.
+- **379 tests** Unit/Domain verts, **913 assertions**.
 - **102 tests** Integration verts, **216 assertions** :
   - 3 Integration Domain (MySQL requis).
   - 9 Integration Controller (serveur HTTP requis) — **plus de failures**.
 - Commande Unit : `php vendor/bin/phpunit`
   (`defaultTestSuite="Unit"` dans `phpunit.xml`).
 - Commande Integration : `php vendor/bin/phpunit --testsuite Integration`.
-- Avec Integration : démarrer `php -S localhost:8000 -t public` dans un autre terminal.
-- **Total avec serveur HTTP + MySQL actif** : 373 + 102 = **475 tests**.
+- Le serveur HTTP est désormais **démarré automatiquement** par les
+  tests (classe `Epiclub\Tests\Support\WebServer`, cf. commit
+  `d1e0bfa`) : inutile de lancer `php -S` dans un autre terminal.
+  Un serveur déjà en écoute est réutilisé, jamais arrêté par les tests.
+- **Total avec MySQL actif** : 379 + 102 = **481 tests**.
 
 ✅ ~~7 tests Integration Controller en échec préexistant :
 `IndexControllerRootUrlTest`~~ → **résolu en #81** (promotion
@@ -214,10 +237,11 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
   `tests/Domain/` → `tests/Unit/Domain/`. Dette 3 soldée.
 - ✅ **#82** — `AbstractManager::configProvider()` + alignement
   `EquipementManager::encryptionService()`. Dette 6 soldée.
+- ✅ **#83** — `JournalManager` : bornage `limit` (`LIMIT -5` → 500,
+  `limit=0` → DivisionByZeroError) + tri multi-colonnes
+  (`'u.nom, u.prenom ASC'` ambigu). Dette 7 soldée. Première branche
+  feature + merge `--no-ff`.
 - Candidats suivants (par ordre de pertinence) :
-  - **Dette 7** — `JournalManager` : bornage `limit`
-    (`LIMIT -5` → 500) + tri multi-colonnes
-    (`'u.nom, u.prenom ASC'` ambigu).
   - **Dette 8** — Exposition du hash de mot de passe dans `redacteur`.
   - Fix `AbstractManager::findOneByCriteria()` générique ? (attention à
     `EquipementManager` — cas particulier `deleted_at IS NULL` — et à
@@ -261,23 +285,10 @@ séparés quand le temps le permet.
   de l'attribut `#[DataProvider]`.
 - Déjà corrigé sur `RootUrlValidatorTest` (#59).
 - Reste à corriger sur les autres tests qui utilisent `@dataProvider`.
-- Les tests #68 à #82 utilisent déjà l'attribut `#[DataProvider]` ou
+- Les tests #68 à #83 utilisent déjà l'attribut `#[DataProvider]` ou
   n'en ont pas besoin — pas d'ajout de dette.
 - **Ticket à ouvrir** : oui, un petit ticket « chore: migrer
   @dataProvider vers #[DataProvider] ».
-
-### Dette 7 — `JournalManager` : bornage `limit` et ambiguïté multi-colonnes
-
-- **Fix reportés** identifiés pendant #69 :
-  - `limit <= 0` produit `LIMIT -5 OFFSET 0` → erreur MySQL 500.
-    `AbstractManager::buildLimitClause()` retourne `''` pour
-    `limit <= 0` (pas de limite) — divergence à trancher.
-  - `order_by='controleur'` + `order_dir='asc'` produit
-    `'u.nom, u.prenom ASC'` : le `ASC` ne s'applique qu'à `u.prenom`,
-    `u.nom` reste en `ASC` implicite — ambiguïté multi-colonnes.
-- **Ticket à ouvrir** : oui, un ticket « fix bornage limit + tri
-  multi-colonnes JournalManager » — même pattern que #69 (fix
-  documenté en `### Fixed`).
 
 ### Dette 8 — Exposition du hash de mot de passe dans `redacteur`
 
@@ -363,7 +374,9 @@ séparés quand le temps le permet.
   - le message de commit mentionne le fix (`refactor + fix: ...`).
 - **Test rouge d'abord** : écrire le test qui échoue, puis implémenter.
   Pour les refactors iso-comportement : **test de caractérisation**
-  (vert avant, vert après) — cf. #71, #72 et #79.
+  (vert avant, vert après) — cf. #71, #72 et #79. Pour les fixes
+  comportementaux : tests rouges prouvant les bugs — cf. #83
+  (9 failures + 1 error, dont `DivisionByZeroError` réel).
 - **Commit unique par ticket** : un commit = un ticket = une version.
 - **Tag annoté** : `git tag -a vX.Y.Z -m "..."`.
 - **Release GitHub** + **clôture issue** après chaque tag.
@@ -373,7 +386,7 @@ séparés quand le temps le permet.
   sur `main`. Évite l'étape manuelle.
 - **Travail direct sur `main`** : pas de branche feature pour les petits
   tickets. Branche feature (`feat/XX-...`) pour les tickets plus gros
-  (comme #59).
+  (comme #59 et #83) — merge via `--no-ff` sur main.
 - **CHANGELOG + version.txt** mis à jour à chaque release.
 - **`version.txt` sans newline final** (iso-comportement).
 - **Hash dans `docs/REPRISE.md`** : la ligne de la **version courante**
@@ -387,7 +400,7 @@ séparés quand le temps le permet.
 
 Tests (depuis la racine du projet) :
 
-- `php vendor/bin/phpunit` — suite Unit/Domain (373 tests, cf.
+- `php vendor/bin/phpunit` — suite Unit/Domain (379 tests, cf.
   `defaultTestSuite="Unit"` dans `phpunit.xml`).
 - `php vendor/bin/phpunit --testsuite Integration` — suite Integration
   (102 tests : 3 Integration Domain + 9 Integration Controller).
@@ -398,9 +411,14 @@ Tests (depuis la racine du projet) :
 
 Serveur HTTP pour tests Integration Controller :
 
-- `php -S localhost:8000 -t public` (dans un second terminal).
-- ⚠️ Si tu modifies `.env.local.php` ou la base (rôle admin), **relance
-  le serveur** pour qu'il recharge la session.
+- **Aucun démarrage manuel nécessaire** : `WebServer::ensureRunning()`
+  (dans `setUp()` de `AbstractControllerTestCase` et
+  `AccessControlTest`) démarre `php -S localhost:8000 -t public
+  public/router.php` si le port est libre, et l'arrête en fin de
+  processus PHPUnit. Un serveur déjà lancé manuellement est réutilisé.
+- ⚠️ Avec un serveur lancé manuellement : si tu modifies
+  `.env.local.php` ou la base (rôle admin), **relance le serveur**
+  pour qu'il recharge la session.
 
 Base de données de test :
 
@@ -418,6 +436,14 @@ Pattern release Git :
 - `git push origin main`
 - `git tag -a vX.Y.Z -m "vX.Y.Z — #ticket description"`
 - `git push origin vX.Y.Z`
+
+Pattern branche feature (tickets plus gros, ex. #83) :
+
+- `git checkout -b feat/XX-description`
+- …commits…
+- `git push -u origin feat/XX-description`
+- `git checkout main && git merge --no-ff feat/XX-description`
+- puis tag + push comme ci-dessus.
 
 Pattern non-régression (refactor iso-comportement) :
 
@@ -547,7 +573,7 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
   `grep -n "^final class" app/Domain/X.php` avant de mocker.
   `FournisseurManager`, `UtilisateurManager`, `CategorieManager` ne
   sont **pas** final — mockables directement. Détecté sur #80.
-- **`header()` + `exit` dans un contrôleur** : non testable en Unit
+- **header() + `exit` dans un contrôleur** : non testable en Unit
   (le `exit` tue le processus PHP). Détecté sur
   `QrRedirectController` (#73). Si un autre contrôleur utilise ce
   pattern, mêmes limites. Cf. Dette 13.
@@ -581,18 +607,34 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
   aux nouvelles bases de test. Ajouté en #81.
   ⚠️ Si tu modifies `.env.local.php` ou la base (rôle admin),
   **relance le serveur HTTP** (`php -S localhost:8000 -t public`)
-  pour qu'il recharge la session.
+  pour qu'il recharge la session. Sans serveur manuel, le serveur
+  auto-démarré par `WebServer` recharge `.env.local.php` à chaque
+  run de suite — rien à faire.
 - **`AbstractManager::configProvider()`** : factory `protected`
   alignée sur `AbstractController::configProvider()` (#50a / #78),
   ajoutée en #82. Les managers qui ont besoin d'un `ConfigProvider`
   (ex : `EquipementManager::encryptionService()`) doivent passer
   par cette factory plutôt que d'instancier `new ConfigProvider(...)`
   en dur. Mockable en test.
+- **Valeurs bindées, pas interpolées (#83)** : `JournalManager::getControlesClotures()`
+  binde `:limit`/`:offset` via `bindValue` — les valeurs n'apparaissent
+  **jamais littéralement** dans le SQL. Pour tester le bornage, capturer
+  les appels `bindValue` via `willReturnCallback` (cf. Bloc D de
+  `JournalManagerTest`). Une assertion sur la chaîne SQL resterait
+  rouge même après fix.
 
 ---
 
 ## Contexte de la session précédente
 
+- **#83** (v0.25.3) : `JournalManager` — bornage `limit`/`page`
+  (`limit < 1` → 10, `page < 1` → 1) + tri multi-colonnes
+  (direction sur chaque colonne). Dette 7 soldée. Test rouge d'abord
+  : 9 failures + 1 error (DivisionByZeroError réel sur limit=0).
+  6 tests Unit ajoutés (Bloc D), Bloc B mis à jour. 379 tests Unit,
+  913 assertions. 102 tests Integration. Première branche feature
+  (`feat/83-journal-manager-limit-tri-multicolonnes`) + merge
+  `--no-ff`.
 - **#82** (v0.25.2) : `AbstractManager::configProvider()` +
   alignement `EquipementManager` (Dette 6 soldée). 2 tests Unit ajoutés.
   373 tests Unit, 877 assertions.
@@ -665,7 +707,7 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
   ticket Vague 14**.
 
 **🎯 Vague 11 complète** (3 contrôleurs, 67 tests Unit).
-**🎯 Vague 14 en cours** (#68 à #82 livrés).
-**Prochaine session** : **Dette 7** — `JournalManager` : bornage
-`limit` (`LIMIT -5` → 500) + tri multi-colonnes
-(`'u.nom, u.prenom ASC'` ambigu). Pattern #69 (fix documenté).
+**🎯 Vague 14 en cours** (#68 à #83 livrés).
+**Prochaine session** : **Dette 8** — `UtilisateurManager::findPublicFields()`
+(ou projection SQL) pour stopper l'exposition du hash de mot de passe
+dans `redacteur`, accessible dans toutes les vues acquisition.
