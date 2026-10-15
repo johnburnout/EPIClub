@@ -25,6 +25,16 @@ Branché dans `AbstractControllerTestCase::setUp()` et
 `AccessControlTest::setUp()`. Fini les 64 faux échecs « connexion
 refusée » quand la suite était lancée sans serveur de dev.
 
+## [v0.26.1] — 2026-10-15
+
+### Changed
+
+- **Dette 4 soldée — fin des annotations docblock `@dataProvider`.**
+Dernier usage retiré (`ControleControllerHandlersTest`, qui portait
+déjà l'attribut `#[DataProvider]` en doublon). Toute la suite utilise
+désormais l'attribut natif PHPUnit 11 — `--display-deprecations` ne
+rapporte plus rien.
+
 ## [v0.26.0] — 2026-10-15
 
 ### Security

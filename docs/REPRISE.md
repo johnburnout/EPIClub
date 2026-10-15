@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-15 (fin de session #85 — Vague 14 en cours)
-**Version courante** : v0.26.0
-**Branche** : `main` (travail direct, ticket #85)
+**Dernière mise à jour** : 2026-10-15 (fin de session #86 — Vague 14 en cours)
+**Version courante** : v0.26.1
+**Branche** : `main` (travail direct, ticket #86)
 
 ---
 
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.26.0 | #85 | FOREIGN KEY acquisition/acquisition_ligne (Dette 9) + gardes suppressions | `<hash>` |
+| v0.26.1 | #86 | Fin des @dataProvider — Dette 4 (chore PHPUnit) | `<hash>` |
+| v0.26.0 | #85 | FOREIGN KEY acquisition/acquisition_ligne (Dette 9) + gardes suppressions | `5df96b6` |
 | v0.25.4 | #84 | UtilisateurManager projection publique — Dette 8 (hash mdp dans redacteur) | `e630ef3` |
 | v0.25.3 | #83 | JournalManager bornage limit + tri multi-colonnes (Dette 7) | `5643fcd` |
 | v0.25.2 | #82 | AbstractManager::configProvider() + alignement EquipementManager (Dette 6) | `38bb7dc` |
@@ -49,6 +50,11 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
 
 ### Chantiers soldés
 
+- **#86 — Fin des `@dataProvider` (Dette 4 soldée).** Dernier usage
+  docblock retiré (`ControleControllerHandlersTest` — l'attribut
+  `#[DataProvider]` y était déjà en doublon). `--display-deprecations`
+  ne rapporte plus aucune dépréciation de métadonnées docblock.
+  Aucune autre annotation dépréciée détectée (`@depends`, `@covers`…).
 - **#85 — FOREIGN KEY sur `acquisition` / `acquisition_ligne`
   (Dette 9 soldée).** Aucune FK n'existait sur ces tables (orphelins
   réellement atteignables, d'où les `?? null` défensifs #71/#72/#79).
@@ -292,6 +298,8 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
   `hasAcquisitionsSaisies()`. Migration 005. Chantier schéma prévu
   « après la Vague 14 » : anticipé d'une version, base de dev propre
   (0 orphelin).
+- ✅ **#86** — Fin des `@dataProvider` restants (Dette 4 soldée).
+  1 doublon docblock/attribut retiré, zéro dépréciation PHPUnit.
 - Candidats suivants (par ordre de pertinence) :
   - Fix `AbstractManager::findOneByCriteria()` générique ? (attention à
     `EquipementManager` — cas particulier `deleted_at IS NULL` — et à
@@ -328,17 +336,6 @@ séparés quand le temps le permet.
 - **Recommandation** : ajouter `setAll(array $values)` qui écrit une
   seule fois.
 - **Ticket à ouvrir** : oui, si le sujet revient.
-
-### Dette 4 — Dépréciations PHPUnit `@dataProvider`
-
-- PHPUnit 11 déprécie les annotations docblock `@dataProvider` au profit
-  de l'attribut `#[DataProvider]`.
-- Déjà corrigé sur `RootUrlValidatorTest` (#59).
-- Reste à corriger sur les autres tests qui utilisent `@dataProvider`.
-- Les tests #68 à #83 utilisent déjà l'attribut `#[DataProvider]` ou
-  n'en ont pas besoin — pas d'ajout de dette.
-- **Ticket à ouvrir** : oui, un petit ticket « chore: migrer
-  @dataProvider vers #[DataProvider] ».
 
 ### Dette 12 — `QrRedirectController` : méthodes privées mixtes
 
@@ -639,6 +636,10 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 
 ## Contexte de la session précédente
 
+- **#86** (v0.26.1) : Dette 4 soldée — dernier `@dataProvider`
+  (`ControleControllerHandlersTest`, doublon avec l'attribut existant).
+  `--display-deprecations` vide. 492 tests verts inchangés. Travail
+  direct sur `main`.
 - **#85** (v0.26.0) : FOREIGN KEY sur `acquisition` /
   `acquisition_ligne` (Dette 9 soldée). Migration
   `005_foreign_keys.sql` : 4 contraintes (RESTRICT sauf
@@ -743,7 +744,8 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 
 **🎯 Vague 11 complète** (3 contrôleurs, 67 tests Unit).
 **🎯 Vague 14 en cours** (#68 à #85 livrés).
-**Prochaine session** : **Dette 4** — migrer les `@dataProvider`
-restants vers `#[DataProvider]` (chore, petit ticket) ou reprendre
-les candidats de la Vague 14 (`findOneByCriteria()` générique,
-tests Unit sur les Managers non couverts).
+**Prochaine session** : reprendre les candidats de la Vague 14 —
+`AbstractManager::findOneByCriteria()` générique (attention
+`EquipementManager` `deleted_at IS NULL` + hydratation spécifique
+`AcquisitionManager`), tests Unit sur les Managers non couverts,
+ou Dettes 12/13 (`QrRedirectController`, basse priorité).

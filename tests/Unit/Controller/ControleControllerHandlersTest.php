@@ -255,9 +255,6 @@ final class ControleControllerHandlersTest extends TestCase
         ];
     }
     
-    /**
-    * @dataProvider statutMappingProvider
-    */
     #[DataProvider('statutMappingProvider')]
     public function testCloturerMapsStatutToEquipementStatut(
         string $statutLigne,
