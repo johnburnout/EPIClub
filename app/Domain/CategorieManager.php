@@ -94,6 +94,20 @@ class CategorieManager extends AbstractManager
         return $stmt->fetchColumn() > 0;
     }
 
+    /**
+    * [SÉCURITÉ Dette 9] La catégorie est-elle référencée par des lignes
+    * d'acquisition ? Garde applicative du FOREIGN KEY
+    * acquisition_ligne.categorie_id (RESTRICT) : la suppression doit
+    * être refusée proprement, pas en 500 ni en orphelin.
+    */
+    public function hasLignesAcquisition(int $id): bool
+    {
+        $sql = "SELECT COUNT(*) FROM acquisition_ligne WHERE categorie_id = :id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['id' => $id]);
+        return $stmt->fetchColumn() > 0;
+    }
+
     private function _create(array $categorie)
     {
         $defaults = [

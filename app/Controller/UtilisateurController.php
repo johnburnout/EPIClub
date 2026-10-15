@@ -287,6 +287,12 @@ class UtilisateurController extends AbstractController
             return new RedirectResponse("/admin/utilisateurs");
         }
 
+        // [SÉCURITÉ Dette 9] Garde du FOREIGN KEY acquisition.saisie_par
+        if ($utilisateurManager->hasAcquisitionsSaisies($id)) {
+            $this->session->getFlashBag()->add('error', "Impossible de supprimer cet utilisateur car il a saisi des acquisitions.");
+            return new RedirectResponse("/admin/utilisateurs");
+        }
+
         $utilisateurManager->delete($id);
 
         $this->session->getFlashBag()->add('success', "L'utilisateur {$utilisateur['prenom']} {$utilisateur['nom']} a été supprimé.");

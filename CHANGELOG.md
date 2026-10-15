@@ -25,6 +25,53 @@ Branché dans `AbstractControllerTestCase::setUp()` et
 `AccessControlTest::setUp()`. Fini les 64 faux échecs « connexion
 refusée » quand la suite était lancée sans serveur de dev.
 
+## [v0.26.0] — 2026-10-15
+
+### Security
+
+- **Dette 9 soldée — intégrité référentielle `acquisition` /
+`acquisition_ligne`.** Aucune contrainte FOREIGN KEY n'existait sur
+ces tables : rien n'empêchait un `fournisseur_id = 999999` ou un
+`categorie_id = 999999` orphelin (d'où les `?? null` défensifs de
+#71/#72/#79, réellement atteignables). Migration
+`005_foreign_keys.sql` :
+  - `fk_acquisition_fournisseur` → `fournisseur(id)` — RESTRICT
+  - `fk_acquisition_saisie_par` → `utilisateur(id)` — RESTRICT
+  - `fk_acquisition_ligne_acquisition` → `acquisition(id)` —
+    **ON DELETE CASCADE** (les lignes n'ont pas d'existence
+    indépendante ; le contrôleur supprime déjà les lignes avant
+    l'acquisition, CASCADE est un filet de sécurité)
+  - `fk_acquisition_ligne_categorie` → `categorie(id)` — RESTRICT
+  Purge automatique dans la migration des lignes d'acquisition
+  orphelines (inaccessibles applicativement) ; contrôles préalables
+  documentés en tête de fichier pour les acquisitions orphelines
+  (l'ALTER échoue franchement si des données violent la contrainte).
+
+### Fixed
+
+- **Suppression de catégorie référencée par des lignes d'acquisition**
+: créait des lignes orphelines (garde `hasEquipements()` existante,
+mais aucune garde côté lignes). Ajout de
+`CategorieManager::hasLignesAcquisition()` + refus propre dans le
+contrôleur (flash d'erreur au lieu d'un orphelin silencieux, et d'un
+500 une fois la FK en place).
+- **Suppression d'utilisateur ayant saisi des acquisitions** : même
+trait. Ajout de `UtilisateurManager::hasAcquisitionsSaisies()` +
+garde dans le contrôleur. (`FournisseurManager::hasAcquisitions()`
+existait déjà.)
+
+### Added
+
+- `ForeignKeysIntegrationTest` : les 4 FK vérifiées via
+information_schema (cible + DELETE_RULE). Skippé si MySQL
+indisponible ou si la migration 005 n'est pas encore appliquée.
+- `CategorieManagerHasLignesAcquisitionTest` (2 tests Unit),
+  `UtilisateurManagerHasAcquisitionsSaisiesTest` (2 tests Unit).
+- `AcquisitionLigneManagerFindIdIntegrationTest` : le cas « catégorie
+orpheline » (inatteignable depuis la migration 005) devient un test
+du refus d'insertion par la contrainte FK. Les `?? null` défensifs
+restent couverts en Unit.
+
 ## [v0.25.4] — 2026-10-15
 
 ### Security

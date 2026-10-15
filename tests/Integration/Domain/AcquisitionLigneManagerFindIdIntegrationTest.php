@@ -80,21 +80,34 @@ final class AcquisitionLigneManagerFindIdIntegrationTest extends TestCase
         self::assertNull($manager->findId(999999999));
     }
 
-    public function testFindIdReturnsNullCategorieWhenOrphanFk(): void
+    /**
+    * [SÉCURITÉ Dette 9] Avant la migration 005, ce test insérait une
+    * ligne avec un categorie_id orphelin (999999999) et vérifiait le
+    * `?? null` défensif de findId(). Désormais la FOREIGN KEY
+    * fk_acquisition_ligne_categorie (RESTRICT) rend ce cas
+    * **inatteignable** : la base refuse l'insertion. Ce test documente
+    * le nouveau contrat ; le `?? null` défensif reste couvert en Unit
+    * (AcquisitionLigneManagerFindIdTest, mocks).
+    */
+    public function testInsertWithOrphanCategorieIsRejectedByForeignKey(): void
     {
         $acquisitionId = $this->fixture->createDraftAcquisition('TEST-79-ORPHAN-ACQ');
         $orphanCategorieId = 999999999;
-        $ligneId = $this->fixture->createLigne(
-            $acquisitionId,
-            'TEST-79-ORPHAN-LIGNE',
-            'Ligne orpheline #79',
-            $orphanCategorieId
-        );
 
-        $manager = new AcquisitionLigneManager();
-        $ligne = $manager->findId($ligneId);
-
-        self::assertIsArray($ligne);
-        self::assertNull($ligne['categorie']);
+        try {
+            $this->fixture->createLigne(
+                $acquisitionId,
+                'TEST-79-ORPHAN-LIGNE',
+                'Ligne orpheline #79',
+                $orphanCategorieId
+            );
+            self::fail(
+                "L'insertion d'une ligne avec categorie_id orphelin aurait dû être refusée "
+                . "par la contrainte FOREIGN KEY (Dette 9)."
+            );
+        } catch (\PDOException $e) {
+            self::assertSame('23000', $e->getCode(), 'Integrity constraint violation attendue (23000)');
+            self::assertStringContainsString('fk_acquisition_ligne_categorie', $e->getMessage());
+        }
     }
 }

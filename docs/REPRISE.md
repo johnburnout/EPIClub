@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-15 (fin de session #84 — Vague 14 en cours)
-**Version courante** : v0.25.4
-**Branche** : `main` (travail direct, ticket #84)
+**Dernière mise à jour** : 2026-10-15 (fin de session #85 — Vague 14 en cours)
+**Version courante** : v0.26.0
+**Branche** : `main` (travail direct, ticket #85)
 
 ---
 
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.25.4 | #84 | UtilisateurManager projection publique — Dette 8 (hash mdp dans redacteur) | `<hash>` |
+| v0.26.0 | #85 | FOREIGN KEY acquisition/acquisition_ligne (Dette 9) + gardes suppressions | `<hash>` |
+| v0.25.4 | #84 | UtilisateurManager projection publique — Dette 8 (hash mdp dans redacteur) | `e630ef3` |
 | v0.25.3 | #83 | JournalManager bornage limit + tri multi-colonnes (Dette 7) | `5643fcd` |
 | v0.25.2 | #82 | AbstractManager::configProvider() + alignement EquipementManager (Dette 6) | `38bb7dc` |
 | v0.25.1 | #81 | Fix IndexControllerRootUrlTest + cleanup tests/Domain/ | `8fd9087` |
@@ -48,6 +49,36 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
 
 ### Chantiers soldés
 
+- **#85 — FOREIGN KEY sur `acquisition` / `acquisition_ligne`
+  (Dette 9 soldée).** Aucune FK n'existait sur ces tables (orphelins
+  réellement atteignables, d'où les `?? null` défensifs #71/#72/#79).
+  Migration `005_foreign_keys.sql` : `fk_acquisition_fournisseur`
+  (RESTRICT), `fk_acquisition_saisie_par` (RESTRICT),
+  `fk_acquisition_ligne_acquisition` (**CASCADE** — les lignes n'ont
+  pas d'existence indépendante, le contrôleur supprimait déjà les
+  lignes avant l'acquisition), `fk_acquisition_ligne_categorie`
+  (RESTRICT). Conventions de nommage alignées sur `controle`/
+  `controle_ligne` (`fk_<table>_<colonne>`). Purge auto des lignes
+  orphelines ; contrôles préalables documentés en tête de migration
+  (l'ALTER échoue franchement si des acquisitions violent la
+  contrainte — vérifié : 0 orphelin sur la base de dev).
+  **Fix de bug documenté** (garde applicative) : suppression d'une
+  catégorie référencée par des lignes → orphelin silencieux ;
+  suppression d'un utilisateur ayant saisi des acquisitions → idem.
+  Ajout `CategorieManager::hasLignesAcquisition()` +
+  `UtilisateurManager::hasAcquisitionsSaisies()` + gardes flash dans
+  les contrôleurs (`FournisseurManager::hasAcquisitions()` existait).
+  Tests rouges d'abord : 4 erreurs Unit (méthodes absentes). Test
+  Integration `ForeignKeysIntegrationTest` (4 FK via
+  information_schema, skip si migration 005 non appliquée — InnoDB
+  rapporte RESTRICT implicite comme NO ACTION, les deux acceptés).
+  Le test de caractérisation #79 « catégorie orpheline » devient un
+  test du refus d'insertion par la contrainte (cas devenu
+  inatteignable ; `?? null` défensif toujours couvert en Unit).
+  4 tests Unit + 1 Integration ajoutés, 1 Integration réécrit.
+  ⚠️ Base locale migrée (004 + 005 appliquées) ; une installation qui
+  saute la migration 005 n'a pas les FK — le test Integration skip
+  proprement dans ce cas.
 - **#84 — `UtilisateurManager` : projection publique (Dette 8
   soldée).** `AcquisitionManager::findAll()` / `findId()` /
   `findOneByCriteria()` hydrataient `redacteur` via `findIds()` /
@@ -185,9 +216,9 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
 - **#61, #62** : refactors ControleController (injection managers, test Integration edit view).
 
 ### État des tests
-- **384 tests** Unit/Domain verts, **943 assertions**.
-- **103 tests** Integration verts, **225 assertions** :
-  - 3 Integration Domain (MySQL requis).
+- **388 tests** Unit/Domain verts, **953 assertions**.
+- **104 tests** Integration verts, **245 assertions** :
+  - 4 Integration Domain (MySQL requis, dont `ForeignKeysIntegrationTest`).
   - 10 Integration Controller (serveur HTTP auto-démarré) — **plus de failures**.
 - Commande Unit : `php vendor/bin/phpunit`
   (`defaultTestSuite="Unit"` dans `phpunit.xml`).
@@ -196,7 +227,7 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
   tests (classe `Epiclub\Tests\Support\WebServer`, cf. commit
   `d1e0bfa`) : inutile de lancer `php -S` dans un autre terminal.
   Un serveur déjà en écoute est réutilisé, jamais arrêté par les tests.
-- **Total avec MySQL actif** : 384 + 103 = **487 tests**.
+- **Total avec MySQL actif** : 388 + 104 = **492 tests**.
 
 ✅ ~~7 tests Integration Controller en échec préexistant :
 `IndexControllerRootUrlTest`~~ → **résolu en #81** (promotion
@@ -256,6 +287,11 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
   `limit=0` → DivisionByZeroError) + tri multi-colonnes
   (`'u.nom, u.prenom ASC'` ambigu). Dette 7 soldée. Première branche
   feature + merge `--no-ff`.
+- ✅ **#85** — FOREIGN KEY `acquisition` / `acquisition_ligne`
+  (Dette 9 soldée) + gardes `hasLignesAcquisition()` /
+  `hasAcquisitionsSaisies()`. Migration 005. Chantier schéma prévu
+  « après la Vague 14 » : anticipé d'une version, base de dev propre
+  (0 orphelin).
 - Candidats suivants (par ordre de pertinence) :
   - Fix `AbstractManager::findOneByCriteria()` générique ? (attention à
     `EquipementManager` — cas particulier `deleted_at IS NULL` — et à
@@ -303,30 +339,6 @@ séparés quand le temps le permet.
   n'en ont pas besoin — pas d'ajout de dette.
 - **Ticket à ouvrir** : oui, un petit ticket « chore: migrer
   @dataProvider vers #[DataProvider] ».
-
-### Dette 9 — Absence de contraintes FOREIGN KEY sur `acquisition` et `acquisition_ligne`
-
-- `SHOW CREATE TABLE acquisition` et `SHOW CREATE TABLE acquisition_ligne`
-  ne déclarent aucune `CONSTRAINT ... FOREIGN KEY`. Or :
-  - `acquisition.fournisseur_id` → `fournisseur.id`
-  - `acquisition.saisie_par` → `utilisateur.id`
-  - `acquisition_ligne.acquisition_id` → `acquisition.id`
-  - `acquisition_ligne.categorie_id` → `categorie.id`
-  sont tous `int NOT NULL` et référencent logiquement une autre table.
-- Conséquence : rien n'empêche un `fournisseur_id = 999999` ou un
-  `categorie_id = 999999` orphelin. D'où les `?? null` défensifs dans
-  `AcquisitionManager::findAll()` (#71),
-  `AcquisitionLigneManager::findByAcquisition()` (#72) et
-  `AcquisitionLigneManager::findId()` (#79) — **réellement
-  atteignables**, pas du code mort.
-- **Impact** : intégrité référentielle non garantie au niveau SGBD ;
-  les FK orphelines doivent être gérées applicativement (ce que font
-  déjà les `?? null`).
-- **Recommandation** : ajouter les contraintes FK + `ON DELETE
-  RESTRICT` (ou `SET NULL` avec colonne nullable, à trancher), mais
-  cela nécessite de nettoyer les orphelins existants avant.
-- **Ticket à ouvrir** : oui, mais **après** la Vague 14 (chantier
-  schéma, à planifier avec migration de données).
 
 ### Dette 12 — `QrRedirectController` : méthodes privées mixtes
 
@@ -399,10 +411,10 @@ séparés quand le temps le permet.
 
 Tests (depuis la racine du projet) :
 
-- `php vendor/bin/phpunit` — suite Unit/Domain (384 tests, cf.
+- `php vendor/bin/phpunit` — suite Unit/Domain (388 tests, cf.
   `defaultTestSuite="Unit"` dans `phpunit.xml`).
 - `php vendor/bin/phpunit --testsuite Integration` — suite Integration
-  (103 tests : 3 Integration Domain + 10 Integration Controller —
+  (104 tests : 4 Integration Domain + 10 Integration Controller —
   le serveur HTTP est auto-démarré par WebServer, cf. commit `d1e0bfa`).
 - `php vendor/bin/phpunit tests/Unit/Engine/FooTest.php` — un fichier.
 - `php vendor/bin/phpunit --filter testMethodName` — une méthode.
@@ -627,6 +639,19 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 
 ## Contexte de la session précédente
 
+- **#85** (v0.26.0) : FOREIGN KEY sur `acquisition` /
+  `acquisition_ligne` (Dette 9 soldée). Migration
+  `005_foreign_keys.sql` : 4 contraintes (RESTRICT sauf
+  `acquisition_ligne.acquisition_id` en CASCADE). Gardes applicatives
+  ajoutées : `CategorieManager::hasLignesAcquisition()`,
+  `UtilisateurManager::hasAcquisitionsSaisies()` + refus propre dans
+  les contrôleurs (avant : orphelins silencieux). Base locale migrée
+  (004 + 005). Tests rouges d'abord (4 erreurs Unit). Pièges
+  documentés : InnoDB rapporte RESTRICT implicite comme NO ACTION ;
+  le test de caractérisation #79 « catégorie orpheline » réécrit en
+  test du refus d'insertion. 4 tests Unit + 1 Integration ajoutés,
+  1 réécrit. 388 tests Unit (953 assertions), 104 Integration (245).
+  Travail direct sur `main`.
 - **#84** (v0.25.4) : `UtilisateurManager` — projection publique
   `PUBLIC_FIELDS` + `findPublicId()` / `findPublicIds()` (Dette 8
   soldée). Les 3 hydratations de `redacteur` dans `AcquisitionManager`
@@ -717,7 +742,8 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
   ticket Vague 14**.
 
 **🎯 Vague 11 complète** (3 contrôleurs, 67 tests Unit).
-**🎯 Vague 14 en cours** (#68 à #84 livrés).
-**Prochaine session** : **Dette 9** — contraintes FOREIGN KEY sur
-`acquisition` / `acquisition_ligne` (chantier schéma, à planifier avec
-migration de données : nettoyer les orphelins existants avant).
+**🎯 Vague 14 en cours** (#68 à #85 livrés).
+**Prochaine session** : **Dette 4** — migrer les `@dataProvider`
+restants vers `#[DataProvider]` (chore, petit ticket) ou reprendre
+les candidats de la Vague 14 (`findOneByCriteria()` générique,
+tests Unit sur les Managers non couverts).

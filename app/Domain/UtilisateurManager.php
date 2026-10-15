@@ -183,6 +183,20 @@ class UtilisateurManager extends AbstractManager
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['id' => $userId]);
     }
+
+    /**
+     * [SÉCURITÉ Dette 9] L'utilisateur a-t-il saisi des acquisitions ?
+     * Garde applicative du FOREIGN KEY acquisition.saisie_par (RESTRICT)
+     * : la suppression doit être refusée proprement, pas en 500 ni en
+     * orphelin ('redacteur' inaccessible).
+     */
+    public function hasAcquisitionsSaisies(int $id): bool
+    {
+        $sql = "SELECT COUNT(*) FROM acquisition WHERE saisie_par = :id";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['id' => $id]);
+        return $stmt->fetchColumn() > 0;
+    }
     
     /**
     * [REFACTOR #51] Enregistre un token de reset password.

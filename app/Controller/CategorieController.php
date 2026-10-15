@@ -202,6 +202,12 @@ class CategorieController extends AbstractController
             return new RedirectResponse('/admin/categories');
         }
 
+        // [SÉCURITÉ Dette 9] Garde du FOREIGN KEY acquisition_ligne.categorie_id
+        if ($categorieManager->hasLignesAcquisition($id)) {
+            $this->session->getFlashBag()->add('error', "Impossible de supprimer cette catégorie car elle est utilisée par des lignes d'acquisition.");
+            return new RedirectResponse('/admin/categories');
+        }
+
         // [MÉTIER] Hard delete => on supprime aussi le fichier image associé
         $imageToDelete = null;
         if (!empty($categorie['image'])) {
