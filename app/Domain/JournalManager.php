@@ -27,6 +27,8 @@ class JournalManager extends AbstractManager
 
     private const ORDER_BY_DEFAULT_COLUMN = 'c.date_debut';
     private const ORDER_BY_DEFAULT_DIR    = 'DESC';
+    private const DEFAULT_LIMIT = 10;
+    private const DEFAULT_PAGE  = 1;
 
     // ------------------------------------------------------------
     //  Construction de la clause ORDER BY (pure, testable)
@@ -58,7 +60,15 @@ class JournalManager extends AbstractManager
             $direction = strtoupper($orderDir);
         }
 
-        return "{$column} {$direction}";
+        // Fix #83 : un tri multi-colonnes ('u.nom, u.prenom') doit recevoir
+        // la direction sur CHAQUE colonne. Avant : 'u.nom, u.prenom ASC' —
+        // l'ASC ne s'appliquait qu'à u.prenom (ambiguïté de tri contrôleur).
+        $columns = array_map(
+            static fn (string $col): string => trim($col) . " {$direction}",
+            explode(',', $column),
+        );
+        
+        return implode(', ', $columns);
     }
 
     // ------------------------------------------------------------
@@ -90,8 +100,21 @@ class JournalManager extends AbstractManager
             $filtres['order_dir'] ?? null,
         );
 
-        $limit = (int)($filtres['limit'] ?? 10);
-        $page = (int)($filtres['page'] ?? 1);
+        // Fix #83 : bornage de la pagination. Avant, limit <= 0 produisait
+        // 'LIMIT -5 OFFSET 0' (erreur MySQL 500), limit = 0 un
+        // DivisionByZeroError dans ceil($total / $limit), page < 1 un
+        // offset négatif. Paramètres injectables via $_GET → atteignable.
+        // ⚠️ Divergence assumée avec AbstractManager::buildLimitClause()
+        // ('limit <= 0' = pas de limite) : la pagination exige une limite
+        // positive pour totalPages.
+        $limit = (int)($filtres['limit'] ?? self::DEFAULT_LIMIT);
+        if ($limit < 1) {
+            $limit = self::DEFAULT_LIMIT;
+        }
+        $page = (int)($filtres['page'] ?? self::DEFAULT_PAGE);
+        if ($page < 1) {
+            $page = self::DEFAULT_PAGE;
+        }
         $offset = ($page - 1) * $limit;
 
         // Comptage total

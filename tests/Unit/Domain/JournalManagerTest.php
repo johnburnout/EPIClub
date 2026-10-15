@@ -48,9 +48,9 @@ final class JournalManagerTest extends TestCase
             'vide + desc'                => [null,             'desc', 'c.date_debut DESC'],
 
             // Whitelist contrôlé (direction par défaut DESC)
-            'controleur + vide'          => ['controleur',     null,   'u.nom, u.prenom DESC'],
-            'controleur + asc'           => ['controleur',     'asc',  'u.nom, u.prenom ASC'],
-            'controleur + desc'          => ['controleur',     'desc', 'u.nom, u.prenom DESC'],
+            'controleur + vide'          => ['controleur',     null,   'u.nom DESC, u.prenom DESC'],
+            'controleur + asc'           => ['controleur',     'asc',  'u.nom ASC, u.prenom ASC'],
+            'controleur + desc'          => ['controleur',     'desc', 'u.nom DESC, u.prenom DESC'],
 
             'date_debut + vide'          => ['date_debut',     null,   'c.date_debut DESC'],
             'date_debut + asc'           => ['date_debut',     'asc',  'c.date_debut ASC'],
@@ -148,7 +148,7 @@ final class JournalManagerTest extends TestCase
 
         self::assertNotNull($capturedSql);
         self::assertStringContainsString(
-            'ORDER BY u.nom, u.prenom ASC',
+            'ORDER BY u.nom ASC, u.prenom ASC',
             $capturedSql,
         );
     }
@@ -187,5 +187,65 @@ final class JournalManagerTest extends TestCase
         self::assertNotNull($capturedSql);
         self::assertStringContainsString('ORDER BY c.date_debut ASC', $capturedSql);
         self::assertStringNotContainsString('DROP TABLE', $capturedSql);
+    }
+    
+    // ---------------------------------------------------------------
+    // Bloc D — bornage limit/page (fix Dette 7)
+    // ---------------------------------------------------------------
+    
+    /**
+    * @return array<string, array{0:array, 1:int, 2:int}>
+    */
+    public static function paginationProvider(): array
+    {
+        return [
+            'limit -5 → 10/0 (défaut)'      => [['limit' => -5], 10, 0],
+            'limit 0 → 10/0 (défaut)'       => [['limit' => 0], 10, 0],
+            'page -3 → 10/0'                => [['page' => -3], 10, 0],
+            'page 0 → 10/0'                 => [['page' => 0], 10, 0],
+            'page 3 × limit 10 → 10/20'     => [['page' => 3, 'limit' => 10], 10, 20],
+            'nominal limit 25 → 25/0'       => [['limit' => 25], 25, 0],
+        ];
+    }
+    
+    #[DataProvider('paginationProvider')]
+    public function testGetControlesCloturesBoundsPagination(
+        array $filtres,
+        int $expectedLimit,
+        int $expectedOffset,
+    ): void {
+        $pdo = $this->createMock(\PDO::class);
+        $countStmt = $this->createMock(\PDOStatement::class);
+        $countStmt->method('fetch')->willReturnCallback(fn() => ['total' => 0]);
+        $dataStmt = $this->createMock(\PDOStatement::class);
+        $dataStmt->method('fetchAll')->willReturnCallback(fn() => []);
+        
+        // Les valeurs LIMIT/OFFSET sont bindées (:limit/:offset), pas
+        // interpolées dans le SQL → on capture les bindValue.
+        $bound = [];
+        $dataStmt->method('bindValue')->willReturnCallback(
+            function (string $param, mixed $value) use (&$bound): bool {
+                $bound[$param] = $value;
+                return true;
+            }
+        );
+        
+        $pdo->expects(self::exactly(2))
+        ->method('prepare')
+        ->willReturnCallback(
+            static fn (string $sql): \PDOStatement => str_contains($sql, 'ORDER BY')
+            ? $dataStmt
+            : $countStmt
+        );
+        
+        $manager = new TestableJournalManager($pdo);
+        $manager->injectDb();
+        
+        $result = $manager->getControlesClotures($filtres);
+        
+        self::assertSame($expectedLimit, $result['limit'], 'limit bornée dans le retour');
+        self::assertSame($expectedLimit, $bound[':limit'] ?? null, 'limit bindée');
+        self::assertSame($expectedOffset, $bound[':offset'] ?? null, 'offset bindé');
+        self::assertGreaterThanOrEqual(1, $bound[':limit'] ?? 0, 'limit >= 1 (jamais négative)');
     }
 }
