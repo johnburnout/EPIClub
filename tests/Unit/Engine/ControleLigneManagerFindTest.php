@@ -15,8 +15,8 @@ use PHPUnit\Framework\TestCase;
  *  - findByControle / findByEquipement joignent respectivement
  *    club_equipement (référence/libelle) et controle (statut).
  *  - findByControleAndEquipement : `?: null` quand absente.
- *  - findId retourne le fetch() BRUT : false quand absente (et non
- *    null — divergence assumée avec les autres Managers).
+ *  - findId retourne `null` quand absent (contrat uniformisé #89 —
+ *    auparavant fetch() brut → false, divergence corrigée).
  */
 final class ControleLigneManagerFindTest extends TestCase
 {
@@ -80,7 +80,7 @@ final class ControleLigneManagerFindTest extends TestCase
         );
     }
 
-    public function testFindIdReturnsRawFetchWhenNotFound(): void
+    public function testFindIdReturnsNullWhenNotFound(): void
     {
         $pdo = $this->createMock(\PDO::class);
         $pdo->method('prepare')->willReturnCallback(function () {
@@ -91,6 +91,6 @@ final class ControleLigneManagerFindTest extends TestCase
 
         $result = (new TestableControleLigneManager($pdo))->findId(999);
 
-        self::assertFalse($result, 'Caractérisation : fetch() brut (false), pas null.');
+        self::assertNull($result, 'Contrat uniformisé (#89) : null quand absent.');
     }
 }

@@ -72,12 +72,17 @@ class ControleLigneManager extends AbstractManager
         ]);
     }
 
+    /**
+    * [REFACTOR #89] Retourne `null` quand la ligne est absente
+    * (uniformisation du contrat findId, divergence #88 corrigée).
+    * Tous les appelants testent `!$ligne` (falsy) : iso-comportement.
+    */
     public function findId(int $id)
     {
         $sql = "SELECT * FROM controle_ligne WHERE id = :id";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['id' => $id]);
-        return $stmt->fetch();
+        return $stmt->fetch() ?: null;
     }
 
     public function save(array $ligne)

@@ -20,12 +20,17 @@ class ControleManager extends AbstractManager
         return $stmt->fetchAll();
     }
 
+    /**
+    * [REFACTOR #89] Retourne `null` quand le contrôle est absent
+    * (uniformisation du contrat findId, divergence #88 corrigée).
+    * Tous les appelants testent `!$controle` (falsy) : iso-comportement.
+    */
     public function findId(int $id)
     {
         $sql = "SELECT * FROM controle WHERE id = :id";
         $stmt = $this->db->prepare($sql);
         $stmt->execute(['id' => $id]);
-        return $stmt->fetch();
+        return $stmt->fetch() ?: null;
     }
 
     public function save(array $controle)

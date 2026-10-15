@@ -25,6 +25,18 @@ Branché dans `AbstractControllerTestCase::setUp()` et
 `AccessControlTest::setUp()`. Fini les 64 faux échecs « connexion
 refusée » quand la suite était lancée sans serveur de dev.
 
+## [v0.27.2] — 2026-10-15
+
+### Changed
+
+- **Contrat `findId()` uniformisé — divergence #88 corrigée.**
+`ControleManager::findId()` et `ControleLigneManager::findId()`
+retournaient le `fetch()` brut (`false` quand l'enregistrement est
+absent), contrairement à tous les autres Managers (`null`). Désormais
+`?: null` partout. Iso-comportement vérifié : tous les appelants
+testent `!$controle` / `!$ligne` (falsy — `false` et `null` se
+comportent identiquement). Tests de caractérisation #88 mis à jour.
+
 ## [v0.27.1] — 2026-10-15
 
 ### Added

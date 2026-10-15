@@ -14,9 +14,8 @@ use PHPUnit\Framework\TestCase;
  * ⚠️ Caractérisation stricte, iso-comportement :
  *  - findAll joint le prénom/nom du contrôleur (LEFT JOIN utilisateur)
  *    et applique l'ordre 'date_debut DESC' par défaut.
- *  - findId retourne le fetch() BRUT : false quand le contrôle est
- *    absent (et non null — divergence assumée avec les autres
- *    Managers, à ne pas « corriger » sans ticket dédié).
+ *  - findId retourne `null` quand absent (contrat uniformisé #89 —
+ *    auparavant fetch() brut → false, divergence corrigée).
  *  - findActiveByUser : statut 'ouvert' + LIMIT 1, `?: null`.
  */
 final class ControleManagerFindTest extends TestCase
@@ -59,7 +58,7 @@ final class ControleManagerFindTest extends TestCase
         self::assertStringContainsString('LIMIT 5 OFFSET 10', $captured);
     }
 
-    public function testFindIdReturnsRawFetchWhenNotFound(): void
+    public function testFindIdReturnsNullWhenNotFound(): void
     {
         $captured = null;
         $pdo = $this->createMock(\PDO::class);
@@ -73,7 +72,7 @@ final class ControleManagerFindTest extends TestCase
         $result = (new TestableControleManager($pdo))->findId(999);
 
         self::assertStringContainsString('FROM controle WHERE id = :id', $captured);
-        self::assertFalse($result, 'Caractérisation : fetch() brut (false), pas null.');
+        self::assertNull($result, 'Contrat uniformisé (#89) : null quand absent.');
     }
 
     public function testFindActiveByUserQueriesOpenControle(): void
