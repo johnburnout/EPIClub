@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-15 (fin de session #87 — Vague 14 en cours)
-**Version courante** : v0.27.0
-**Branche** : `main` (travail direct, ticket #87)
+**Dernière mise à jour** : 2026-10-15 (fin de session #88 — Vague 14 en cours)
+**Version courante** : v0.27.1
+**Branche** : `main` (travail direct, ticket #88)
 
 ---
 
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.27.0 | #87 | findOneByCriteria générique dans AbstractManager — 7 copies factorisées | `<hash>` |
+| v0.27.1 | #88 | Couverture Unit Managers (Club, Controle, ControleLigne, Emplacement, EquipementControle) — 17 tests | `<hash>` |
+| v0.27.0 | #87 | findOneByCriteria générique dans AbstractManager — 7 copies factorisées | `4bd1d19` |
 | v0.26.1 | #86 | Fin des @dataProvider — Dette 4 (chore PHPUnit) | `c579669` |
 | v0.26.0 | #85 | FOREIGN KEY acquisition/acquisition_ligne (Dette 9) + gardes suppressions | `5df96b6` |
 | v0.25.4 | #84 | UtilisateurManager projection publique — Dette 8 (hash mdp dans redacteur) | `e630ef3` |
@@ -51,6 +52,18 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
 
 ### Chantiers soldés
 
+- **#88 — Couverture Unit des Managers non testés.** 17 tests de
+  caractérisation (SQL capturé via mock PDO, pattern TestableXxx) :
+  ClubManager (findParameters, singleton id=1), ControleManager
+  (findAll JOIN utilisateur + ordre par défaut, findId, findActiveByUser),
+  ControleLigneManager (findByControle, findByEquipement,
+  findByControleAndEquipement, findId), EmplacementManager,
+  EquipementControleManager. Verts du premier run (pas de refactor —
+  caractérisation pure, filet pour les vagues futures).
+  **Divergence caractérisée (pas corrigée, ticket dédié si besoin) :**
+  `ControleManager::findId()` et `ControleLigneManager::findId()`
+  retournent `fetch()` brut → `false` quand absent, là où tous les
+  autres Managers retournent `null`.
 - **#87 — `findOneByCriteria()` générique dans `AbstractManager`.**
   7 copies à l'identique dans les Managers (Utilisateur, Fournisseur,
   Emplacement, Categorie, EquipementControle + cas particuliers
@@ -240,7 +253,7 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
 - **#61, #62** : refactors ControleController (injection managers, test Integration edit view).
 
 ### État des tests
-- **395 tests** Unit/Domain verts, **965 assertions**.
+- **412 tests** Unit/Domain verts, **1005 assertions**.
 - **104 tests** Integration verts, **245 assertions** :
   - 4 Integration Domain (MySQL requis, dont `ForeignKeysIntegrationTest`).
   - 10 Integration Controller (serveur HTTP auto-démarré) — **plus de failures**.
@@ -251,7 +264,7 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
   tests (classe `Epiclub\Tests\Support\WebServer`, cf. commit
   `d1e0bfa`) : inutile de lancer `php -S` dans un autre terminal.
   Un serveur déjà en écoute est réutilisé, jamais arrêté par les tests.
-- **Total avec MySQL actif** : 395 + 104 = **499 tests**.
+- **Total avec MySQL actif** : 412 + 104 = **516 tests**.
 
 ✅ ~~7 tests Integration Controller en échec préexistant :
 `IndexControllerRootUrlTest`~~ → **résolu en #81** (promotion
@@ -321,6 +334,9 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
 - ✅ **#87** — `findOneByCriteria()` générique dans `AbstractManager`
   (candidat Vague 14). 7 copies factorisées, hook `baseWhereClause()`,
   fix injection SQL EquipementManager.
+- ✅ **#88** — 17 tests de caractérisation sur les 5 Managers non
+  couverts (Club, Controle, ControleLigne, Emplacement,
+  EquipementControle). Divergence findId false/null documentée.
 - Candidats suivants (par ordre de pertinence) :
   - Fix `AbstractManager::findOneByCriteria()` générique ? (attention à
     `EquipementManager` — cas particulier `deleted_at IS NULL` — et à
@@ -429,7 +445,7 @@ séparés quand le temps le permet.
 
 Tests (depuis la racine du projet) :
 
-- `php vendor/bin/phpunit` — suite Unit/Domain (395 tests, cf.
+- `php vendor/bin/phpunit` — suite Unit/Domain (412 tests, cf.
   `defaultTestSuite="Unit"` dans `phpunit.xml`).
 - `php vendor/bin/phpunit --testsuite Integration` — suite Integration
   (104 tests : 4 Integration Domain + 10 Integration Controller —
@@ -657,6 +673,10 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 
 ## Contexte de la session précédente
 
+- **#88** (v0.27.1) : couverture Unit des Managers non testés — 17
+  tests de caractérisation (5 Managers). Divergence findId
+  false/null caractérisée, non corrigée. 412 tests Unit (1005
+  assertions), 104 Integration (245). Travail direct sur `main`.
 - **#87** (v0.27.0) : `findOneByCriteria()` générique dans
   `AbstractManager` — 7 copies factorisées. Managers simples :
   `tableName()` uniquement. EquipementManager : soft delete sur
@@ -774,8 +794,9 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 
 **🎯 Vague 11 complète** (3 contrôleurs, 67 tests Unit).
 **🎯 Vague 14 en cours** (#68 à #85 livrés).
-**Prochaine session** : tests Unit sur les Managers non couverts
-(JournalManager partiellement couvert, ControleManager,
-ClubManager…) ou Dettes 12/13 (`QrRedirectController`, basse
-priorité). Le `findOneByCriteria()` générique (candidat Vague 14)
-est livré en #87.
+**Prochaine session** : tous les Managers sont désormais couverts
+en Unit (minimum : méthodes de lecture caractérisées en #88).
+Candidats : divergence `findId()` false/null sur Controle/
+ControleLigne (uniformiser vers `?: null` — vérifier les appelants),
+hydratation des méthodes save(), ou Dettes 12/13 (`QrRedirectController`,
+basse priorité).

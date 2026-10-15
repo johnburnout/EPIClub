@@ -25,6 +25,38 @@ Branché dans `AbstractControllerTestCase::setUp()` et
 `AccessControlTest::setUp()`. Fini les 64 faux échecs « connexion
 refusée » quand la suite était lancée sans serveur de dev.
 
+## [v0.27.1] — 2026-10-15
+
+### Added
+
+- **Couverture Unit des Managers auparavant non testés — 17 tests de
+caractérisation** (SQL capturé par mock PDO, style `TestableXxx`) :
+  - `ClubManagerTest` : `findParameters()` (singleton `club` id=1,
+    `?: null`).
+  - `ControleManagerFindTest` : `findAll()` (LEFT JOIN utilisateur,
+    ordre `date_debut DESC` par défaut, LIMIT/OFFSET),
+    `findId()` — **caractérisé : retourne `fetch()` brut (false), pas
+    null**, divergence assumée avec les autres Managers — et
+    `findActiveByUser()`.
+  - `ControleLigneManagerFindTest` : `findByControle()` (JOIN
+    club_equipement), `findByEquipement()` (JOIN controle, statut),
+    `findByControleAndEquipement()` (`?: null`), `findId()` (fetch()
+    brut, même divergence).
+  - `EmplacementManagerFindTest` : `findAll()`, `findId()`,
+    `hasEquipements()`.
+  - `EquipementControleManagerFindTest` : `findAll()`, `findId()`.
+- 5 sous-classes de test `Testable{Club,Controle,ControleLigne,
+Emplacement,EquipementControle}Manager` (injection PDO mockée).
+
+### Notes
+
+- Tests de caractérisation purs (aucun refactor associé) : verts dès
+le premier run, ils figent le contrat avant les futures vagues.
+- Divergence documentée à traiter en ticket dédié si souhaité :
+`ControleManager::findId()` et `ControleLigneManager::findId()`
+retournent `false` quand l'enregistrement est absent, alors que tous
+les autres Managers retournent `null`.
+
 ## [v0.27.0] — 2026-10-15
 
 ### Changed
