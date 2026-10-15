@@ -62,4 +62,56 @@ final class EmplacementManagerFindTest extends TestCase
         self::assertStringContainsString('FROM club_equipement', $captured);
         self::assertStringContainsString('emplacement_id', $captured);
     }
+
+    // ==================================================================
+    // save() — caractérisation INSERT/UPDATE (refactor #90)
+    // ==================================================================
+
+    public function testSaveWithoutIdInsertsAndReturnsLastInsertId(): void
+    {
+        [$pdo, $captured] = $this->makePdoCapturingInsertUpdate();
+
+        $result = (new TestableEmplacementManager($pdo))->save(['nom' => 'Salle B']);
+
+        self::assertStringStartsWith('INSERT INTO emplacement', $captured->sql);
+        self::assertSame('42', (string) $result);
+    }
+
+    public function testSaveWithIdUpdates(): void
+    {
+        [$pdo, $captured] = $this->makePdoCapturingInsertUpdate();
+
+        $result = (new TestableEmplacementManager($pdo))->save(['id' => 2, 'nom' => 'Salle C']);
+
+        self::assertStringStartsWith('UPDATE emplacement', $captured->sql);
+        self::assertTrue($result);
+    }
+
+    /**
+    * PDO mock pour save() : capture le SQL et les params de la
+    * première requête, simule lastInsertId.
+    *
+    * @return array{0: \PDO, 1: \stdClass}
+    */
+    private function makePdoCapturingInsertUpdate(): array
+    {
+        $captured = new \stdClass();
+        $captured->sql = null;
+        $captured->params = null;
+
+        $pdo = $this->createMock(\PDO::class);
+        $pdo->method('prepare')->willReturnCallback(function (string $sql) use ($captured) {
+            $captured->sql = $sql;
+            $stmt = $this->createMock(\PDOStatement::class);
+            $stmt->method('execute')->willReturnCallback(function (?array $params = null) use ($captured) {
+                $captured->params = $params ?? [];
+                return true;
+            });
+            return $stmt;
+        });
+        $pdo->method('lastInsertId')->willReturn('42');
+
+        return [$pdo, $captured];
+    }
+
 }

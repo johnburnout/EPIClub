@@ -44,4 +44,56 @@ final class ClubManagerTest extends TestCase
 
         self::assertNull((new TestableClubManager($pdo))->findParameters());
     }
+
+    // ==================================================================
+    // save() — caractérisation INSERT/UPDATE (refactor #90)
+    // ==================================================================
+
+    public function testSaveWithoutIdInsertsAndReturnsLastInsertId(): void
+    {
+        [$pdo, $captured] = $this->makePdoCapturingInsertUpdate();
+
+        $result = (new TestableClubManager($pdo))->save(['nom' => 'Club X']);
+
+        self::assertStringStartsWith('INSERT INTO club', $captured->sql);
+        self::assertSame('42', (string) $result);
+    }
+
+    public function testSaveWithIdUpdates(): void
+    {
+        [$pdo, $captured] = $this->makePdoCapturingInsertUpdate();
+
+        $result = (new TestableClubManager($pdo))->save(['id' => 1, 'nom' => 'Club Y']);
+
+        self::assertStringStartsWith('UPDATE club', $captured->sql);
+        self::assertTrue($result);
+    }
+
+    /**
+    * PDO mock pour save() : capture le SQL et les params de la
+    * première requête, simule lastInsertId.
+    *
+    * @return array{0: \PDO, 1: \stdClass}
+    */
+    private function makePdoCapturingInsertUpdate(): array
+    {
+        $captured = new \stdClass();
+        $captured->sql = null;
+        $captured->params = null;
+
+        $pdo = $this->createMock(\PDO::class);
+        $pdo->method('prepare')->willReturnCallback(function (string $sql) use ($captured) {
+            $captured->sql = $sql;
+            $stmt = $this->createMock(\PDOStatement::class);
+            $stmt->method('execute')->willReturnCallback(function (?array $params = null) use ($captured) {
+                $captured->params = $params ?? [];
+                return true;
+            });
+            return $stmt;
+        });
+        $pdo->method('lastInsertId')->willReturn('42');
+
+        return [$pdo, $captured];
+    }
+
 }

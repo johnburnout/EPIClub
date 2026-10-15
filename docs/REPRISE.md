@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-15 (fin de session #89 — Vague 14 en cours)
-**Version courante** : v0.27.2
-**Branche** : `main` (travail direct, ticket #89)
+**Dernière mise à jour** : 2026-10-15 (fin de session #90 — Vague 14 en cours)
+**Version courante** : v0.27.3
+**Branche** : `main` (travail direct, ticket #90)
 
 ---
 
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.27.2 | #89 | Contrat findId() uniformisé (false → null) — divergence #88 corrigée | `<hash>` |
+| v0.27.3 | #90 | Caractérisation des save() — 11 tests (5 Managers) | `<hash>` |
+| v0.27.2 | #89 | Contrat findId() uniformisé (false → null) — divergence #88 corrigée | `5bd9392` |
 | v0.27.1 | #88 | Couverture Unit Managers (Club, Controle, ControleLigne, Emplacement, EquipementControle) — 17 tests | `4ab5514` |
 | v0.27.0 | #87 | findOneByCriteria générique dans AbstractManager — 7 copies factorisées | `4bd1d19` |
 | v0.26.1 | #86 | Fin des @dataProvider — Dette 4 (chore PHPUnit) | `c579669` |
@@ -53,6 +54,14 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
 
 ### Chantiers soldés
 
+- **#90 — Caractérisation des `save()`.** 11 tests sur les 5 Managers
+  de #88 : INSERT (sans id → `lastInsertId`), UPDATE (avec id →
+  `_patch`), filtrage des champs non autorisés par `_patch`, défaut
+  `hash_remarques = null` (ControleManager::_create). Helper partagé
+  `makePdoCapturingInsertUpdate()` (SQL + params capturés) dupliqué
+  dans les 5 fichiers — factorisation envisageable dans Support/.
+  Contrat figé avant toute factorisation save() (pattern ALLOWED_FIELDS
+  très proche entre Managers, candidat Vague 15).
 - **#89 — Contrat `findId()` uniformisé.** `ControleManager::findId()`
   et `ControleLigneManager::findId()` retournaient `fetch()` brut
   (`false` absent), divergence caractérisée en #88. Désormais `?: null`,
@@ -258,7 +267,7 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
 - **#61, #62** : refactors ControleController (injection managers, test Integration edit view).
 
 ### État des tests
-- **412 tests** Unit/Domain verts, **1005 assertions**.
+- **423 tests** Unit/Domain verts, **1030 assertions**.
 - **104 tests** Integration verts, **245 assertions** :
   - 4 Integration Domain (MySQL requis, dont `ForeignKeysIntegrationTest`).
   - 10 Integration Controller (serveur HTTP auto-démarré) — **plus de failures**.
@@ -269,7 +278,7 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
   tests (classe `Epiclub\Tests\Support\WebServer`, cf. commit
   `d1e0bfa`) : inutile de lancer `php -S` dans un autre terminal.
   Un serveur déjà en écoute est réutilisé, jamais arrêté par les tests.
-- **Total avec MySQL actif** : 412 + 104 = **516 tests**.
+- **Total avec MySQL actif** : 423 + 104 = **527 tests**.
 
 ✅ ~~7 tests Integration Controller en échec préexistant :
 `IndexControllerRootUrlTest`~~ → **résolu en #81** (promotion
@@ -344,6 +353,8 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
   EquipementControle). Divergence findId false/null documentée.
 - ✅ **#89** — Uniformisation `findId()` (`?: null` partout) :
   divergence #88 corrigée, appelants vérifiés (tests falsy).
+- ✅ **#90** — 11 tests de caractérisation des `save()` (INSERT /
+  UPDATE / filtrage _patch / défaut hash_remarques).
 - Candidats suivants (par ordre de pertinence) :
   - Fix `AbstractManager::findOneByCriteria()` générique ? (attention à
     `EquipementManager` — cas particulier `deleted_at IS NULL` — et à
@@ -452,7 +463,7 @@ séparés quand le temps le permet.
 
 Tests (depuis la racine du projet) :
 
-- `php vendor/bin/phpunit` — suite Unit/Domain (412 tests, cf.
+- `php vendor/bin/phpunit` — suite Unit/Domain (423 tests, cf.
   `defaultTestSuite="Unit"` dans `phpunit.xml`).
 - `php vendor/bin/phpunit --testsuite Integration` — suite Integration
   (104 tests : 4 Integration Domain + 10 Integration Controller —
@@ -680,6 +691,11 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 
 ## Contexte de la session précédente
 
+- **#90** (v0.27.3) : caractérisation des `save()` — 11 tests sur les
+  5 Managers de #88 (INSERT/UPDATE, filtrage _patch, défaut
+  hash_remarques). Helper de capture dupliqué x5 (factorisable).
+  423 tests Unit (1030 assertions), 104 Integration (245). Travail
+  direct sur `main`.
 - **#89** (v0.27.2) : uniformisation du contrat `findId()` —
   `ControleManager` / `ControleLigneManager` passent de `fetch()` brut
   (`false`) à `?: null`. Appelants audités : tous en test falsy, donc
@@ -806,8 +822,8 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 
 **🎯 Vague 11 complète** (3 contrôleurs, 67 tests Unit).
 **🎯 Vague 14 en cours** (#68 à #85 livrés).
-**Prochaine session** : tous les Managers sont couverts en Unit et
-le contrat findId est uniforme. Candidats : caractérisation des
-méthodes `save()` (INSERT/UPDATE dynamiques), hydratation `findAll`
-restée sur `SELECT *`, ou Dettes 12/13 (`QrRedirectController`, basse
-priorité).
+**Prochaine session** : les méthodes de lecture ET d'écriture des
+Managers principaux sont caractérisées. Candidats : factorisation
+des `_patch`/`_create` (pattern ALLOWED_FIELDS quasi identique partout
+— Vague 15), hydratation `findAll` restée sur `SELECT *`, ou Dettes
+12/13 (`QrRedirectController`, basse priorité).

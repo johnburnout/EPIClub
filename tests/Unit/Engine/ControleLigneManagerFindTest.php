@@ -93,4 +93,61 @@ final class ControleLigneManagerFindTest extends TestCase
 
         self::assertNull($result, 'Contrat uniformisé (#89) : null quand absent.');
     }
+
+    // ==================================================================
+    // save() — caractérisation INSERT/UPDATE (refactor #90)
+    // ==================================================================
+
+    public function testSaveWithoutIdInsertsAndReturnsLastInsertId(): void
+    {
+        [$pdo, $captured] = $this->makePdoCapturingInsertUpdate();
+
+        $result = (new TestableControleLigneManager($pdo))->save([
+            'controle_id' => 1, 'equipement_id' => 2,
+        ]);
+
+        self::assertStringStartsWith('INSERT INTO controle_ligne', $captured->sql);
+        self::assertSame('42', (string) $result);
+    }
+
+    public function testSaveWithIdUpdatesViaPatch(): void
+    {
+        [$pdo, $captured] = $this->makePdoCapturingInsertUpdate();
+
+        $result = (new TestableControleLigneManager($pdo))->save([
+            'id' => 3, 'statut' => 'controle_ok', 'intrus' => 'x',
+        ]);
+
+        self::assertStringStartsWith('UPDATE controle_ligne', $captured->sql);
+        self::assertArrayNotHasKey('intrus', $captured->params);
+        self::assertTrue($result);
+    }
+
+    /**
+    * PDO mock pour save() : capture le SQL et les params de la
+    * première requête, simule lastInsertId.
+    *
+    * @return array{0: \PDO, 1: \stdClass}
+    */
+    private function makePdoCapturingInsertUpdate(): array
+    {
+        $captured = new \stdClass();
+        $captured->sql = null;
+        $captured->params = null;
+
+        $pdo = $this->createMock(\PDO::class);
+        $pdo->method('prepare')->willReturnCallback(function (string $sql) use ($captured) {
+            $captured->sql = $sql;
+            $stmt = $this->createMock(\PDOStatement::class);
+            $stmt->method('execute')->willReturnCallback(function (?array $params = null) use ($captured) {
+                $captured->params = $params ?? [];
+                return true;
+            });
+            return $stmt;
+        });
+        $pdo->method('lastInsertId')->willReturn('42');
+
+        return [$pdo, $captured];
+    }
+
 }

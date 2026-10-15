@@ -25,6 +25,19 @@ Branché dans `AbstractControllerTestCase::setUp()` et
 `AccessControlTest::setUp()`. Fini les 64 faux échecs « connexion
 refusée » quand la suite était lancée sans serveur de dev.
 
+## [v0.27.3] — 2026-10-15
+
+### Added
+
+- **Caractérisation des `save()` — 11 tests** sur les 5 Managers du
+ticket #88 (ClubManager, ControleManager, ControleLigneManager,
+EmplacementManager, EquipementControleManager) : chemin INSERT
+(sans `id` → `INSERT INTO` + `lastInsertId`), chemin UPDATE (avec
+`id` → `UPDATE`), filtrage des champs non autorisés par `_patch`,
+défaut `hash_remarques = null` sur le `_create` de ControleManager.
+Tests de caractérisation purs : verts du premier run, ils figent le
+contrat des requêtes d'écriture avant toute factorisation éventuelle.
+
 ## [v0.27.2] — 2026-10-15
 
 ### Changed

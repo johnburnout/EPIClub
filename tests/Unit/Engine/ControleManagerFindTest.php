@@ -110,4 +110,77 @@ final class ControleManagerFindTest extends TestCase
 
         self::assertNull((new TestableControleManager($pdo))->findActiveByUser(42));
     }
+
+    // ==================================================================
+    // save() — caractérisation INSERT/UPDATE (refactor #90)
+    // ==================================================================
+
+    public function testSaveWithoutIdInsertsAndReturnsLastInsertId(): void
+    {
+        [$pdo, $captured] = $this->makePdoCapturingInsertUpdate();
+
+        $result = (new TestableControleManager($pdo))->save([
+            'libelle' => 'C1', 'date_debut' => '2026-01-01', 'date_fin' => null,
+            'statut' => 'ouvert', 'controleur_id' => 1, 'cree_par' => 1,
+        ]);
+
+        self::assertStringStartsWith('INSERT INTO controle', $captured->sql);
+        self::assertStringContainsString('cree_par', $captured->sql);
+        self::assertSame('42', (string) $result);
+    }
+
+    public function testSaveCreateDefaultsHashRemarquesToNullWhenAbsent(): void
+    {
+        [$pdo, $captured] = $this->makePdoCapturingInsertUpdate();
+
+        (new TestableControleManager($pdo))->save([
+            'libelle' => 'C1', 'date_debut' => '2026-01-01', 'date_fin' => null,
+            'statut' => 'ouvert', 'controleur_id' => 1, 'cree_par' => 1,
+        ]);
+
+        self::assertArrayHasKey('hash_remarques', $captured->params);
+        self::assertNull($captured->params['hash_remarques']);
+    }
+
+    public function testSaveWithIdUpdatesViaPatch(): void
+    {
+        [$pdo, $captured] = $this->makePdoCapturingInsertUpdate();
+
+        $result = (new TestableControleManager($pdo))->save([
+            'id' => 5, 'statut' => 'cloture', 'champ_inconnu' => 'ignore',
+        ]);
+
+        self::assertStringStartsWith('UPDATE controle', $captured->sql);
+        // _patch filtre les champs non autorisés
+        self::assertArrayNotHasKey('champ_inconnu', $captured->params);
+        self::assertTrue($result);
+    }
+
+    /**
+    * PDO mock pour save() : capture le SQL et les params de la
+    * première requête, simule lastInsertId.
+    *
+    * @return array{0: \PDO, 1: \stdClass}
+    */
+    private function makePdoCapturingInsertUpdate(): array
+    {
+        $captured = new \stdClass();
+        $captured->sql = null;
+        $captured->params = null;
+
+        $pdo = $this->createMock(\PDO::class);
+        $pdo->method('prepare')->willReturnCallback(function (string $sql) use ($captured) {
+            $captured->sql = $sql;
+            $stmt = $this->createMock(\PDOStatement::class);
+            $stmt->method('execute')->willReturnCallback(function (?array $params = null) use ($captured) {
+                $captured->params = $params ?? [];
+                return true;
+            });
+            return $stmt;
+        });
+        $pdo->method('lastInsertId')->willReturn('42');
+
+        return [$pdo, $captured];
+    }
+
 }
