@@ -103,38 +103,26 @@ class CategorieManager extends AbstractManager
         return $stmt->fetchColumn() > 0;
     }
 
+    /**
+     * [REFACTOR #91] Défauts historiques de _create()/_patch()
+     * (filteredInsert / filteredUpdate). Sur _patch, les défauts sont
+     * appliqués comme avant : le SET couvre toujours les 4 colonnes
+     * (iso-comportement du merge avec $defaults).
+     */
+    private const FIELD_DEFAULTS = [
+        'libelle' => '',
+        'description' => null,
+        'image' => null,
+        'est_epi' => 1,
+    ];
+
     private function _create(array $categorie)
     {
-        $defaults = [
-            'libelle' => '',
-            'description' => null,
-            'image' => null,
-            'est_epi' => 1
-        ];
-
-        $filteredCategorie = array_intersect_key($categorie, $defaults);
-        $filteredCategorie = array_merge($defaults, $filteredCategorie);
-
-        $sql = "INSERT INTO categorie (libelle, description, image, est_epi) VALUES (:libelle, :description, :image, :est_epi)";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute($filteredCategorie);
+        return $this->filteredInsert($categorie, array_keys(self::FIELD_DEFAULTS), self::FIELD_DEFAULTS);
     }
 
     private function _patch(array $categorie)
     {
-        $defaults = [
-            'libelle' => '',
-            'description' => null,
-            'image' => null,
-            'est_epi' => 1,
-            'id' => null
-        ];
-
-        $filteredCategorie = array_intersect_key($categorie, $defaults);
-        $filteredCategorie = array_merge($defaults, $filteredCategorie);
-
-        $sql = "UPDATE categorie SET libelle=:libelle, description=:description, image=:image, est_epi=:est_epi WHERE id=:id";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute($filteredCategorie);
+        return $this->filteredUpdate($categorie, array_keys(self::FIELD_DEFAULTS), self::FIELD_DEFAULTS);
     }
 }

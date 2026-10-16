@@ -6,6 +6,13 @@ use Epiclub\Engine\AbstractManager;
 
 class ControleLigneManager extends AbstractManager
 {
+    /**
+     * [REFACTOR #91] Champs autorisés en écriture.
+     * controle_id / equipement_id : insertion seule.
+     */
+    private const CREATE_FIELDS = ['controle_id', 'equipement_id', 'remarque', 'date_controle', 'statut'];
+    private const PATCH_FIELDS = ['remarque', 'date_controle', 'statut'];
+
     public function findByControle(int $controle_id)
     {
         $sql = "SELECT cl.*, ce.reference, ce.libelle 
@@ -103,20 +110,21 @@ class ControleLigneManager extends AbstractManager
 
     private function _create(array $ligne)
     {
-        $sql = "INSERT INTO controle_ligne (controle_id, equipement_id, remarque, date_controle, statut)
-                VALUES (:controle_id, :equipement_id, :remarque, :date_controle, :statut)";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute($ligne);
+        return $this->filteredInsert($ligne, self::CREATE_FIELDS);
     }
 
     private function _patch(array $ligne)
     {
-        $allowedFields = ['remarque', 'date_controle', 'statut', 'id'];
-        $filteredLigne = array_intersect_key($ligne, array_flip($allowedFields));
-        
-        $sql = "UPDATE controle_ligne SET remarque=:remarque, date_controle=:date_controle, statut=:statut
-                WHERE id=:id";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute($filteredLigne);
+        // controle_id / equipement_id ne sont pas modifiables après création
+        return $this->filteredUpdate($ligne, self::PATCH_FIELDS);
+    }
+
+    /**
+     * [REFACTOR #91] Table pour filteredInsert()/filteredUpdate()
+     * (AbstractManager).
+     */
+    protected function tableName(): string
+    {
+        return 'controle_ligne';
     }
 }

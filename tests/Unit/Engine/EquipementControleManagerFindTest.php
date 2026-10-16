@@ -66,8 +66,10 @@ final class EquipementControleManagerFindTest extends TestCase
     {
         [$pdo, $captured] = $this->makePdoCapturingInsertUpdate();
 
+        // #91 : la fixture utilise les vraies colonnes — les clés
+        // arbitraires sont désormais filtrées par filteredInsert().
         $result = (new TestableEquipementControleManager($pdo))->save([
-            'equipement_id' => 1, 'resultat' => 'ok',
+            'club_equipement_id' => 1, 'etat' => 'ok',
         ]);
 
         self::assertStringStartsWith('INSERT INTO club_equipement_controle', $captured->sql);
@@ -78,7 +80,7 @@ final class EquipementControleManagerFindTest extends TestCase
     {
         [$pdo, $captured] = $this->makePdoCapturingInsertUpdate();
 
-        $result = (new TestableEquipementControleManager($pdo))->save(['id' => 4, 'resultat' => 'ko']);
+        $result = (new TestableEquipementControleManager($pdo))->save(['id' => 4, 'etat' => 'ko']);
 
         self::assertStringStartsWith('UPDATE club_equipement_controle', $captured->sql);
         self::assertTrue($result);

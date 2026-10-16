@@ -6,6 +6,9 @@ use Epiclub\Engine\AbstractManager;
 
 class EquipementControleManager extends AbstractManager
 {
+    /** [REFACTOR #91] Champs autorisés en écriture (filteredInsert / filteredUpdate). */
+    private const ALLOWED_FIELDS = ['controleur_id', 'club_equipement_id', 'etat', 'remarques', 'date_controle'];
+
     public function findAll($order = '', $limit = -1, $offset = 0)
     {
         $params = $this->buildOrderClause($order)
@@ -59,20 +62,11 @@ class EquipementControleManager extends AbstractManager
 
     private function _create(array $controle)
     {
-        $sql = "INSERT INTO club_equipement_controle (controleur_id, club_equipement_id, etat, remarques, date_controle)
-            VALUES (:controleur_id, :club_equipement_id, :etat, :remarques, :date_controle)";
-        $stmt = $this->db->prepare($sql);
-
-        return $stmt->execute($controle);
+        return $this->filteredInsert($controle, self::ALLOWED_FIELDS);
     }
 
     private function _patch(array $controle)
     {
-        $sql = "UPDATE club_equipement_controle
-            SET controleur_id=:controleur_id, club_equipement_id=:club_equipement_id, etat=:etat, remarques=:remarques, date_controle=:date_controle
-            WHERE id=:id";
-        $stmt = $this->db->prepare($sql);
-
-        return $stmt->execute($controle);
+        return $this->filteredUpdate($controle, self::ALLOWED_FIELDS);
     }
 }

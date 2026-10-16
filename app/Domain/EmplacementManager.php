@@ -6,6 +6,9 @@ use Epiclub\Engine\AbstractManager;
 
 class EmplacementManager extends AbstractManager
 {
+    /** [REFACTOR #91] Champs autorisés en écriture (filteredInsert / filteredUpdate). */
+    private const ALLOWED_FIELDS = ['libelle', 'description', 'image'];
+
     public function findAll($order = '', $limit = -1, $offset = 0)
     {
         $params = $this->buildOrderClause($order)
@@ -66,15 +69,11 @@ class EmplacementManager extends AbstractManager
 
     private function _create(array $emplacement)
     {
-        $sql = "INSERT INTO emplacement (libelle, description, image) VALUES (:libelle, :description, :image)";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute($emplacement);
+        return $this->filteredInsert($emplacement, self::ALLOWED_FIELDS);
     }
 
     private function _patch(array $emplacement)
     {
-        $sql = "UPDATE emplacement SET libelle=:libelle, description=:description, image=:image WHERE id=:id";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute($emplacement);
+        return $this->filteredUpdate($emplacement, self::ALLOWED_FIELDS);
     }
 }

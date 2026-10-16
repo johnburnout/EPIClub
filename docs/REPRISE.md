@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-15 (fin de session #90 — Vague 14 en cours)
-**Version courante** : v0.27.3
-**Branche** : `main` (travail direct, ticket #90)
+**Dernière mise à jour** : 2026-10-16 (fin de session #91 — Vague 15 ouverte)
+**Version courante** : v0.28.0
+**Branche** : `main` (travail direct, ticket #91)
 
 ---
 
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.27.3 | #90 | Caractérisation des save() — 11 tests (5 Managers) | `<hash>` |
+| v0.28.0 | #91 | filteredInsert()/filteredUpdate() génériques — 7 Managers migrés (Vague 15) | `<hash>` |
+| v0.27.3 | #90 | Caractérisation des save() — 11 tests (5 Managers) | `2c2d9ca` |
 | v0.27.2 | #89 | Contrat findId() uniformisé (false → null) — divergence #88 corrigée | `5bd9392` |
 | v0.27.1 | #88 | Couverture Unit Managers (Club, Controle, ControleLigne, Emplacement, EquipementControle) — 17 tests | `4ab5514` |
 | v0.27.0 | #87 | findOneByCriteria générique dans AbstractManager — 7 copies factorisées | `4bd1d19` |
@@ -267,7 +268,7 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
 - **#61, #62** : refactors ControleController (injection managers, test Integration edit view).
 
 ### État des tests
-- **423 tests** Unit/Domain verts, **1030 assertions**.
+- **432 tests** Unit/Domain verts, **1049 assertions**.
 - **104 tests** Integration verts, **245 assertions** :
   - 4 Integration Domain (MySQL requis, dont `ForeignKeysIntegrationTest`).
   - 10 Integration Controller (serveur HTTP auto-démarré) — **plus de failures**.
@@ -278,7 +279,7 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
   tests (classe `Epiclub\Tests\Support\WebServer`, cf. commit
   `d1e0bfa`) : inutile de lancer `php -S` dans un autre terminal.
   Un serveur déjà en écoute est réutilisé, jamais arrêté par les tests.
-- **Total avec MySQL actif** : 423 + 104 = **527 tests**.
+- **Total avec MySQL actif** : 432 + 104 = **536 tests**.
 
 ✅ ~~7 tests Integration Controller en échec préexistant :
 `IndexControllerRootUrlTest`~~ → **résolu en #81** (promotion
@@ -288,7 +289,7 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
 
 ## Prochaines cibles
 
-### Vague 14 — en cours (refactors Engine + perf SQL + rattrapage Vague 11)
+### Vague 14 — ✅ complète (refactors Engine + perf SQL + rattrapage Vague 11)
 
 - ✅ **#68** — `buildWhereClause()` dans `AbstractManager`.
 - ✅ **#69** — `JournalManager` : suppression `getPdo()`, extraction
@@ -355,13 +356,28 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
   divergence #88 corrigée, appelants vérifiés (tests falsy).
 - ✅ **#90** — 11 tests de caractérisation des `save()` (INSERT /
   UPDATE / filtrage _patch / défaut hash_remarques).
-- Candidats suivants (par ordre de pertinence) :
-  - Fix `AbstractManager::findOneByCriteria()` générique ? (attention à
-    `EquipementManager` — cas particulier `deleted_at IS NULL` — et à
-    l'hydratation spécifique d'`AcquisitionManager`).
-  - Nouveaux tests Unit sur les `Manager` non couverts.
-  - Migration `@dataProvider` → `#[DataProvider]` sur les tests restants
-    (cf. Dette 4).
+- ✅ **#91** — **Vague 15 ouverte** : `filteredInsert()` /
+  `filteredUpdate()` génériques dans `AbstractManager` (SQL dynamique,
+  filtrage, défauts, hook `tableName()` #87, validation regex #68).
+  7 Managers migrés (Acquisition, Categorie, Controle, ControleLigne,
+  Fournisseur, Emplacement, EquipementControle) ; `tableName()` ajouté
+  à Controle et ControleLigne. Changement de comportement documenté :
+  clés supplémentaires ignorées (au lieu de PDOException) sur les
+  ex-« bruts », mise à jour partielle possible sur `_patch`. 4 fixtures
+  #90 corrigées (clés arbitraires → vraies colonnes). 9 tests Unit
+  sur les helpers.
+
+### Vague 15 — en cours (factorisation des écritures)
+
+Candidats suivants (par ordre de pertinence) :
+  - **#92** — Migrer les 4 restants : `EquipementManager` (9 défauts +
+    remplissage null → exprimables en `$defaults` complets),
+    `ClubManager` (`WHERE id=1`, singleton — paramètre where ?),
+    `AcquisitionLigneManager` (valeur forcée `equipements_generes=0` +
+    traduction duplicate key — garder le try/catch, déléguer le SQL),
+    `UtilisateurManager` (aligner sur les helpers, son propre SQL
+    dynamique devient redondant).
+  - Hydratation `findAll` restée sur `SELECT *` (projection publique).
   - **Dette 12** — `QrRedirectController` méthodes privées mixtes
     (basse priorité).
   - **Dette 13** — `QrRedirectController` `header()` + `exit`
@@ -463,7 +479,7 @@ séparés quand le temps le permet.
 
 Tests (depuis la racine du projet) :
 
-- `php vendor/bin/phpunit` — suite Unit/Domain (423 tests, cf.
+- `php vendor/bin/phpunit` — suite Unit/Domain (432 tests, cf.
   `defaultTestSuite="Unit"` dans `phpunit.xml`).
 - `php vendor/bin/phpunit --testsuite Integration` — suite Integration
   (104 tests : 4 Integration Domain + 10 Integration Controller —
@@ -691,6 +707,17 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 
 ## Contexte de la session précédente
 
+- **#91** (v0.28.0) : **Vague 15 ouverte** — `filteredInsert()` /
+  `filteredUpdate()` génériques dans `AbstractManager` (SQL dynamique
+  façon UtilisateurManager, filtrage + défauts + hook `tableName()`).
+  7 Managers migrés (Acquisition, Categorie, Controle, ControleLigne,
+  Fournisseur, Emplacement, EquipementControle) ; `tableName()` ajouté
+  à Controle/ControleLigne. Changement documenté : clés supplémentaires
+  ignorées (ex-PDOException) et `_patch` partiel possible. 4 fixtures
+  #90 (Emplacement, EquipementControle) corrigées — elles utilisaient
+  des clés arbitraires impossibles en production. 9 tests Unit sur les
+  helpers. 432 tests Unit (1049 assertions), 104 Integration (245).
+  Travail direct sur `main`.
 - **#90** (v0.27.3) : caractérisation des `save()` — 11 tests sur les
   5 Managers de #88 (INSERT/UPDATE, filtrage _patch, défaut
   hash_remarques). Helper de capture dupliqué x5 (factorisable).
@@ -821,9 +848,9 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
   ticket Vague 14**.
 
 **🎯 Vague 11 complète** (3 contrôleurs, 67 tests Unit).
-**🎯 Vague 14 en cours** (#68 à #85 livrés).
-**Prochaine session** : les méthodes de lecture ET d'écriture des
-Managers principaux sont caractérisées. Candidats : factorisation
-des `_patch`/`_create` (pattern ALLOWED_FIELDS quasi identique partout
-— Vague 15), hydratation `findAll` restée sur `SELECT *`, ou Dettes
-12/13 (`QrRedirectController`, basse priorité).
+**🎯 Vague 14 complète** (#68 à #90 livrés).
+**🎯 Vague 15 ouverte** (#91 : écritures génériques, 7 Managers migrés).
+**Prochaine session** : ticket #92 — migrer les 4 Managers restants
+aux helpers d'écriture (`EquipementManager`, `ClubManager`,
+`AcquisitionLigneManager`, `UtilisateurManager`), puis hydratation
+`findAll` (SELECT * → projection) ou Dettes 12/13 (basse priorité).

@@ -6,6 +6,13 @@ use Epiclub\Engine\AbstractManager;
 
 class ControleManager extends AbstractManager
 {
+    /**
+     * [REFACTOR #91] Champs autorisés en écriture.
+     * cree_par : insertion seule ; jamais modifiable via _patch.
+     */
+    private const CREATE_FIELDS = ['libelle', 'date_debut', 'date_fin', 'statut', 'controleur_id', 'cree_par', 'hash_remarques'];
+    private const PATCH_FIELDS = ['libelle', 'date_debut', 'date_fin', 'statut', 'controleur_id', 'hash_remarques'];
+
     public function findAll($order = 'date_debut DESC', $limit = -1, $offset = 0)
     {
         $params = $this->buildOrderClause($order)
@@ -33,6 +40,15 @@ class ControleManager extends AbstractManager
         return $stmt->fetch() ?: null;
     }
 
+    /**
+     * [REFACTOR #91] Table pour filteredInsert()/filteredUpdate()
+     * (AbstractManager).
+     */
+    protected function tableName(): string
+    {
+        return 'controle';
+    }
+
     public function save(array $controle)
     {
         if (isset($controle['id'])) {
@@ -44,28 +60,14 @@ class ControleManager extends AbstractManager
 
     private function _create(array $controle)
     {
-        // S'assurer que les clés existent
-        if (!isset($controle['hash_remarques'])) {
-            $controle['hash_remarques'] = null;
-        }
-
-        $sql = "INSERT INTO controle (libelle, date_debut, date_fin, statut, controleur_id, cree_par, hash_remarques)
-                VALUES (:libelle, :date_debut, :date_fin, :statut, :controleur_id, :cree_par, :hash_remarques)";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute($controle);
+        // hash_remarques : défaut null historique (caractérisé en #90)
+        return $this->filteredInsert($controle, self::CREATE_FIELDS, ['hash_remarques' => null]);
     }
 
     private function _patch(array $controle)
     {
-        // Filtrer les champs pour éviter les erreurs
-        $allowedFields = ['libelle', 'date_debut', 'date_fin', 'statut', 'controleur_id', 'hash_remarques', 'id'];
-        $filteredControle = array_intersect_key($controle, array_flip($allowedFields));
-
-        $sql = "UPDATE controle SET libelle=:libelle, date_debut=:date_debut, date_fin=:date_fin,
-                statut=:statut, controleur_id=:controleur_id, hash_remarques=:hash_remarques
-                WHERE id=:id";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute($filteredControle);
+        // cree_par n'est jamais modifiable après création
+        return $this->filteredUpdate($controle, self::PATCH_FIELDS);
     }
 
     /**

@@ -25,6 +25,39 @@ Branché dans `AbstractControllerTestCase::setUp()` et
 `AccessControlTest::setUp()`. Fini les 64 faux échecs « connexion
 refusée » quand la suite était lancée sans serveur de dev.
 
+## [v0.28.0] — 2026-10-16
+
+### Added
+
+- **`AbstractManager::filteredInsert()` / `filteredUpdate()` — écritures
+génériques factorisées (Vague 15, #91).** Les `_create()`/`_patch()`
+quasi identiques des Managers sont remplacés par deux helpers protégés :
+SQL construit dynamiquement à partir des champs fournis (même approche
+que `UtilisateurManager`), filtrage par liste de champs autorisés,
+défauts via `array_merge`, table via le hook `tableName()` (#87),
+validation des noms de colonnes (regex #68), gardes `RuntimeException`
+(aucun champ valide, id manquant). **9 tests Unit** sur les helpers.
+- 7 Managers migrés : `AcquisitionManager`, `CategorieManager`
+(défauts préservés), `ControleManager`, `ControleLigneManager`,
+`FournisseurManager`, `EmplacementManager`, `EquipementControleManager`.
+`tableName()` ajouté à `ControleManager` et `ControleLigneManager`.
+Hors périmètre (ticket suivant) : `ClubManager` (`WHERE id=1`),
+`AcquisitionLigneManager` (valeur forcée + duplicate key),
+`EquipementManager` (9 défauts + remplissage null), `UtilisateurManager`
+(déjà dynamique).
+
+### Changed
+
+- **Changement de comportement documenté (#91)** — les `_create()` et
+`_patch()` qui exécutaient le tableau brut filtrent désormais les clés :
+une clé supplémentaire est ignorée au lieu de lever une PDOException
+« Invalid parameter number » ; et le `_patch` dynamique permet la mise
+à jour partielle (auparavant un champ manquant levait HY093), aligné
+sur le contrat de `UtilisateurManager::_patch`. Les fixtures de 4 tests
+de caractérisation #90 (Emplacement, EquipementControle) utilisaient
+des clés arbitraires impossibles en production : corrigées avec les
+vraies colonnes.
+
 ## [v0.27.3] — 2026-10-15
 
 ### Added

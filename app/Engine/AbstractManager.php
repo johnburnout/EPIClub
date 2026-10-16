@@ -181,16 +181,17 @@ abstract class AbstractManager
     }
 
     /**
-    * Nom de la table SQL du Manager, utilisé par findOneByCriteria().
+    * Nom de la table SQL du Manager, utilisé par findOneByCriteria() (#87)
+    * et par filteredInsert()/filteredUpdate() (#91).
     *
-    * Les Managers utilisant la recherche générique DOIVENT surcharger
+    * Les Managers utilisant ces méthodes génériques DOIVENT surcharger
     * cette factory ; sinon une RuntimeException explicite est levée
     * (plutôt qu'une erreur SQL opaque).
     */
     protected function tableName(): string
     {
         throw new \RuntimeException(
-            sprintf('%s doit surcharger tableName() pour utiliser findOneByCriteria().', static::class)
+            sprintf('%s doit surcharger tableName() pour utiliser les méthodes génériques.', static::class)
         );
     }
 
@@ -204,6 +205,129 @@ abstract class AbstractManager
     protected function baseWhereClause(): string
     {
         return '';
+    }
+
+    /**
+    * [REFACTOR #91 - Vague 15] INSERT générique avec filtrage des champs.
+    *
+    * Factorisation des _create() quasi identiques des Managers. Le SQL
+    * est construit dynamiquement à partir des champs réellement fournis
+    * (même approche que UtilisateurManager::_create) :
+    *  - seules les clés de $data listées dans $fields sont insérées
+    *    (les clés supplémentaires sont ignorées silencieusement) ;
+    *  - $defaults complète les clés absentes de $data (array_merge) ;
+    *  - la table vient du hook tableName() (#87) ;
+    *  - aucun champ valide → RuntimeException (jamais de SQL vide).
+    *
+    * ⚠️ Changement de comportement documenté pour les _create() qui
+    * exécutaient le tableau brut (Controle, ControleLigne, Fournisseur,
+    * Emplacement, EquipementControle) : une clé supplémentaire est
+    * désormais ignorée au lieu de lever une PDOException
+    * « Invalid parameter number ».
+    *
+    * @param array<string,mixed> $data     Données d'entrée (brutes)
+    * @param string[]            $fields   Colonnes autorisées
+    * @param array<string,mixed> $defaults Valeurs par défaut des clés absentes
+    * @throws \InvalidArgumentException si un nom de colonne est invalide
+    * @throws \RuntimeException si aucun champ valide à insérer
+    */
+    protected function filteredInsert(array $data, array $fields, array $defaults = []): bool
+    {
+        $filtered = array_merge($defaults, array_intersect_key($data, array_flip($fields)));
+
+        if ($filtered === []) {
+            throw new \RuntimeException(
+                sprintf('%s : aucun champ valide à insérer.', static::class)
+            );
+        }
+
+        $columns = array_keys($filtered);
+        $this->assertValidColumnNames($columns);
+
+        $placeholders = array_map(static fn(string $c): string => ':' . $c, $columns);
+        $sql = sprintf(
+            'INSERT INTO %s (%s) VALUES (%s)',
+            $this->tableName(),
+            implode(', ', $columns),
+            implode(', ', $placeholders)
+        );
+
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute($filtered);
+    }
+
+    /**
+    * [REFACTOR #91 - Vague 15] UPDATE générique avec filtrage des champs.
+    *
+    * Factorisation des _patch() quasi identiques des Managers. Même
+    * contrat que filteredInsert(), avec en plus :
+    *  - clause WHERE id=:id — l'id est pris dans $data['id'] et n'a
+    *    pas à figurer dans $fields (il n'est jamais écrit dans le SET) ;
+    *  - seuls les champs fournis (ou couverts par $defaults) figurent
+    *    dans le SET : une mise à jour partielle ne touche pas les
+    *    autres colonnes.
+    *
+    * ⚠️ Changement de comportement documenté : auparavant, le SQL
+    * statique exigeait TOUTES les colonnes — un champ manquant levait
+    * une PDOException « Invalid parameter number » (HY093). Désormais
+    * la mise à jour partielle est possible (alignement sur le contrat
+    * de UtilisateurManager::_patch).
+    *
+    * @param array<string,mixed> $data     Données d'entrée (doit contenir 'id')
+    * @param string[]            $fields   Colonnes autorisées (hors 'id')
+    * @param array<string,mixed> $defaults Valeurs par défaut des clés absentes
+    * @throws \InvalidArgumentException si un nom de colonne est invalide
+    * @throws \RuntimeException si id manquant ou aucun champ à mettre à jour
+    */
+    protected function filteredUpdate(array $data, array $fields, array $defaults = []): bool
+    {
+        $filtered = array_merge($defaults, array_intersect_key($data, array_flip($fields)));
+
+        if ($filtered === []) {
+            throw new \RuntimeException(
+                sprintf('%s : aucun champ valide à mettre à jour.', static::class)
+            );
+        }
+
+        if (empty($data['id'])) {
+            throw new \RuntimeException(
+                sprintf('%s : ID manquant pour la mise à jour.', static::class)
+            );
+        }
+
+        $columns = array_keys($filtered);
+        $this->assertValidColumnNames($columns);
+
+        $sets = array_map(static fn(string $c): string => "{$c}=:{$c}", $columns);
+        $sql = sprintf(
+            'UPDATE %s SET %s WHERE id=:id',
+            $this->tableName(),
+            implode(', ', $sets)
+        );
+
+        $filtered['id'] = $data['id'];
+
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute($filtered);
+    }
+
+    /**
+    * [REFACTOR #91] Validation des noms de colonnes pour
+    * filteredInsert()/filteredUpdate() — même regex que
+    * buildWhereClause() (#68).
+    *
+    * @param string[] $columns
+    * @throws \InvalidArgumentException
+    */
+    private function assertValidColumnNames(array $columns): void
+    {
+        foreach ($columns as $column) {
+            if (!preg_match('/^[a-zA-Z_][a-zA-Z0-9_]*$/', (string) $column)) {
+                throw new \InvalidArgumentException(
+                    sprintf('Nom de colonne invalide pour l\'écriture : "%s"', $column)
+                );
+            }
+        }
     }
 
     /**

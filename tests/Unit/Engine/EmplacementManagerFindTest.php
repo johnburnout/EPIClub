@@ -71,7 +71,9 @@ final class EmplacementManagerFindTest extends TestCase
     {
         [$pdo, $captured] = $this->makePdoCapturingInsertUpdate();
 
-        $result = (new TestableEmplacementManager($pdo))->save(['nom' => 'Salle B']);
+        // #91 : la fixture utilise la vraie colonne 'libelle' — les clés
+        // arbitraires ('nom') sont désormais filtrées par filteredInsert().
+        $result = (new TestableEmplacementManager($pdo))->save(['libelle' => 'Salle B']);
 
         self::assertStringStartsWith('INSERT INTO emplacement', $captured->sql);
         self::assertSame('42', (string) $result);
@@ -81,7 +83,7 @@ final class EmplacementManagerFindTest extends TestCase
     {
         [$pdo, $captured] = $this->makePdoCapturingInsertUpdate();
 
-        $result = (new TestableEmplacementManager($pdo))->save(['id' => 2, 'nom' => 'Salle C']);
+        $result = (new TestableEmplacementManager($pdo))->save(['id' => 2, 'libelle' => 'Salle C']);
 
         self::assertStringStartsWith('UPDATE emplacement', $captured->sql);
         self::assertTrue($result);

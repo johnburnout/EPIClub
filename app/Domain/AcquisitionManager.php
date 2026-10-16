@@ -137,30 +137,20 @@ class AcquisitionManager extends AbstractManager
         return $stmt->execute(['id' => $id]);
     }
 
+    /**
+     * [REFACTOR #91] Champs autorisés en écriture (filteredInsert /
+     * filteredUpdate — le '_patch' n'ajoute que 'id', géré par le helper).
+     */
+    private const ALLOWED_FIELDS = ['fournisseur_id', 'facture_reference', 'facture_date', 'facture_document', 'saisie_par', 'est_validee'];
+
     private function _create(array $acquisition)
     {
-        $allowedFields = ['fournisseur_id', 'facture_reference', 'facture_date', 'facture_document', 'saisie_par', 'est_validee'];
-        $filteredAcquisition = array_intersect_key($acquisition, array_flip($allowedFields));
-
-        $sql = "INSERT INTO acquisition (fournisseur_id, facture_reference, facture_date, facture_document, saisie_par, est_validee)
-                VALUES (:fournisseur_id, :facture_reference, :facture_date, :facture_document, :saisie_par, :est_validee)";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute($filteredAcquisition);
+        return $this->filteredInsert($acquisition, self::ALLOWED_FIELDS);
     }
 
     private function _patch(array $acquisition)
     {
-        $allowedFields = ['fournisseur_id', 'facture_reference', 'facture_date', 'facture_document', 'saisie_par', 'est_validee', 'id'];
-        $filteredAcquisition = array_intersect_key($acquisition, array_flip($allowedFields));
-
-        $sql = "UPDATE acquisition
-                SET fournisseur_id=:fournisseur_id, facture_reference=:facture_reference, facture_date=:facture_date,
-                    facture_document=:facture_document, saisie_par=:saisie_par, est_validee=:est_validee
-                WHERE id=:id";
-        $stmt = $this->db->prepare($sql);
-        $result = $stmt->execute($filteredAcquisition);
-
-        return $result;
+        return $this->filteredUpdate($acquisition, self::ALLOWED_FIELDS);
     }
     
     /**

@@ -6,6 +6,9 @@ use Epiclub\Engine\AbstractManager;
 
 class FournisseurManager extends AbstractManager
 {
+    /** [REFACTOR #91] Champs autorisés en écriture (filteredInsert / filteredUpdate). */
+    private const ALLOWED_FIELDS = ['nom', 'email', 'phone'];
+
     public function findAll($order = '', $limit = -1, $offset = 0)
     {
         $params = $this->buildOrderClause($order)
@@ -93,31 +96,12 @@ class FournisseurManager extends AbstractManager
 
     private function _create(array $fournisseur)
     {
-        // S'assurer que les clés existent
-        if (!isset($fournisseur['email'])) {
-            $fournisseur['email'] = null;
-        }
-        if (!isset($fournisseur['phone'])) {
-            $fournisseur['phone'] = null;
-        }
-
-        $sql = "INSERT INTO fournisseur (nom, email, phone) VALUES (:nom, :email, :phone)";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute($fournisseur);
+        // email / phone : défaut null historique
+        return $this->filteredInsert($fournisseur, self::ALLOWED_FIELDS, ['email' => null, 'phone' => null]);
     }
 
     private function _patch(array $fournisseur)
     {
-        // S'assurer que les clés existent
-        if (!isset($fournisseur['email'])) {
-            $fournisseur['email'] = null;
-        }
-        if (!isset($fournisseur['phone'])) {
-            $fournisseur['phone'] = null;
-        }
-
-        $sql = "UPDATE fournisseur SET nom=:nom, email=:email, phone=:phone WHERE id=:id";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute($fournisseur);
+        return $this->filteredUpdate($fournisseur, self::ALLOWED_FIELDS, ['email' => null, 'phone' => null]);
     }
 }
