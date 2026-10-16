@@ -29,7 +29,28 @@ class EnvironmentFileParser
         $this->_dump();
     }
 
-    private function _dump()
+    /**
+     * [REFACTOR #98 - Dette 2 soldée] Écrit plusieurs clés en UNE seule
+     * réécriture du fichier. set() réécrivait à chaque appel — 3 à 4
+     * écritures disque successives dans
+     * IndexController::updateSystemSettings() (MAILER_DSN, MAILER_FROM,
+     * MAILER_NAME, ± ROOT_URL).
+     *
+     * Même normalisation que set() : clés passées en majuscules.
+     *
+     * @param array<string,mixed> $values
+     */
+    public function setAll(array $values): void
+    {
+        foreach ($values as $key => $value) {
+            $this->env[strtoupper((string) $key)] = $value;
+        }
+        $this->_dump();
+    }
+
+    // [#98] protected (au lieu de private) : permet à une sous-classe
+    // de test de compter les écritures disque (pattern projet).
+    protected function _dump()
     {
         $file = fopen($this->filePath, "wb");
 
@@ -46,7 +67,7 @@ class EnvironmentFileParser
         // [SÉCURITÉ] Échappement via var_export : gère ', \, $, ", \n, etc.
         // Évite qu'une valeur contenant ' ne casse la syntaxe PHP du
         // fichier généré, ou qu'un POST forgé n'injecte du code arbitraire
-        // via une clé contrôlée (ex. MAILER_FROM dans updateSmtp).
+        // via une clé contrôlée (ex. MAILER_FROM dans updateSystemSettings).
         foreach ($this->env as $key => $value) {
             $safeKey = var_export((string) $key, true);
             $safeValue = var_export((string) $value, true);

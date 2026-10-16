@@ -24,7 +24,8 @@
                     <i class="fas fa-cog"></i> Configuration système
                 </div>
                 <div class="card-body">
-                    <form method="post" action="/update-smtp" id="smtpForm">
+                    {# [#97 - Dette 1] Route canonique /update-system-settings (alias /update-smtp conservé) #}
+                    <form method="post" action="/update-system-settings" id="smtpForm">
                         {# Champ CSRF si votre système l'utilise #}
                         {% if csrf_token is defined %}
                             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

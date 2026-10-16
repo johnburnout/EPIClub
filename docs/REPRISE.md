@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-16 (fin de session #96 — plus aucun header()+exit dans app/)
-**Version courante** : v0.29.1
-**Branche** : `main` (travail direct, ticket #96)
+**Dernière mise à jour** : 2026-10-16 (fin de session #97-98 — TOUTES les dettes soldées)
+**Version courante** : v0.29.3
+**Branche** : `main` (travail direct, tickets #97 + #98)
 
 ---
 
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.29.1 | #96 | QrCodeReader supprimé (classe morte) — plus aucun header()+exit dans app/ | `<hash>` |
+| v0.29.3 | #97-98 | Dettes 1+2 soldées — updateSystemSettings() + alias route, setAll() (1 écriture) | `<hash>` |
+| v0.29.1 | #96 | QrCodeReader supprimé (classe morte) — plus aucun header()+exit dans app/ | `9f2934f` |
 | v0.29.0 | #95 | Dette 13 soldée — QrRedirectController en Response, actions testables | `7052801` |
 | v0.28.3 | #94 | Dette 12 soldée — code mort QrRedirectController + fix flash perdu | `4220d61` |
 | v0.28.2 | #93 | findAll utilisateur projeté sur PUBLIC_FIELDS — Dette 8 étendue | `5fa82d0` |
@@ -273,8 +274,8 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
 - **#61, #62** : refactors ControleController (injection managers, test Integration edit view).
 
 ### État des tests
-- **455 tests** Unit/Domain verts, **1114 assertions**.
-- **104 tests** Integration verts, **245 assertions** :
+- **458 tests** Unit/Domain verts, **1122 assertions**.
+- **105 tests** Integration verts, **248 assertions** :
   - 4 Integration Domain (MySQL requis, dont `ForeignKeysIntegrationTest`).
   - 10 Integration Controller (serveur HTTP auto-démarré) — **plus de failures**.
 - Commande Unit : `php vendor/bin/phpunit`
@@ -284,7 +285,7 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
   tests (classe `Epiclub\Tests\Support\WebServer`, cf. commit
   `d1e0bfa`) : inutile de lancer `php -S` dans un autre terminal.
   Un serveur déjà en écoute est réutilisé, jamais arrêté par les tests.
-- **Total avec MySQL actif** : 455 + 104 = **559 tests**.
+- **Total avec MySQL actif** : 458 + 105 = **563 tests**.
 
 ✅ ~~7 tests Integration Controller en échec préexistant :
 `IndexControllerRootUrlTest`~~ → **résolu en #81** (promotion
@@ -405,23 +406,21 @@ Candidats suivants (par ordre de pertinence) :
 Ces points ne sont **pas bloquants** mais à traiter dans des tickets
 séparés quand le temps le permet.
 
-### Dette 1 — Renommage `updateSmtp()` → `updateSystemSettings()`
+### Dette 1 — ✅ SOLDÉE (#97, v0.29.2)
 
-- `IndexController::updateSmtp()` gère désormais SMTP **et** ROOT_URL.
-- Le nom est imparfait, mais le renommer casse la route `/update-smtp`
-  et les bookmarks.
-- **Recommandation** : créer un alias `/update-system-settings` (double
-  mapping), mettre à jour le Twig, garder `/update-smtp` en redirection.
-- **Ticket à ouvrir** : oui, quand on aura du temps.
+- `IndexController::updateSmtp()` renommée `updateSystemSettings()` ;
+  route canonique `POST /update-system-settings`.
+- L'ancienne `/update-smtp` est conservée en alias (double mapping
+  POST vers la même action — une redirection perdrait le corps POST).
+  Twig mis à jour ; 1 test Integration ajouté sur la route canonique.
 
-### Dette 2 — `EnvironmentFileParser::set()` réécrit à chaque appel
+### Dette 2 — ✅ SOLDÉE (#98, v0.29.3)
 
-- Chaque `set()` déclenche un `_dump()` (écriture disque).
-- `IndexController::updateSmtp()` fait 3-4 `set()` successifs → 3-4
-  écritures.
-- **Recommandation** : ajouter `setAll(array $values)` qui écrit une
-  seule fois.
-- **Ticket à ouvrir** : oui, si le sujet revient.
+- `EnvironmentFileParser::setAll(array $values)` ajouté : une seule
+  réécriture du fichier pour N clés (clés en majuscules, comme set()).
+- `IndexController::updateSystemSettings()` migré : 3-4 écritures → 1.
+- `_dump()` passé protected : une sous-classe de test compte les
+  écritures (test : setAll = 1 dump pour 4 clés, set inchangé).
 
 ### Dette 12 — ✅ SOLDÉE (#94, v0.28.3)
 
@@ -497,7 +496,7 @@ séparés quand le temps le permet.
 
 Tests (depuis la racine du projet) :
 
-- `php vendor/bin/phpunit` — suite Unit/Domain (455 tests, cf.
+- `php vendor/bin/phpunit` — suite Unit/Domain (458 tests, cf.
   `defaultTestSuite="Unit"` dans `phpunit.xml`).
 - `php vendor/bin/phpunit --testsuite Integration` — suite Integration
   (104 tests : 4 Integration Domain + 10 Integration Controller —
@@ -725,6 +724,16 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 
 ## Contexte de la session précédente
 
+- **#97 + #98** (v0.29.3) : **Dettes 1 et 2 soldées — toutes les
+  dettes documentées sont désormais soldées.** #97 :
+  `IndexController::updateSmtp()` → `updateSystemSettings()`, route
+  canonique `/update-system-settings`, `/update-smtp` conservée en
+  alias POST (une redirection perdrait le corps POST), Twig à jour,
+  1 test Integration (route canonique). #98 :
+  `EnvironmentFileParser::setAll()` — 3-4 écritures disque → 1 dans
+  `updateSystemSettings()` ; `_dump()` protected pour le comptage en
+  test. 3 tests Unit. 458 tests Unit (1122 assertions), 105
+  Integration (248). Travail direct sur `main`.
 - **#96** (v0.29.1) : `QrCodeReader` supprimé — classe entièrement
   morte (zéro appelant de `read`/`readAsBase64`/`exists`/`getFilePath`,
   factory `qrCodeReader()` jamais appelée). Elle contenait le dernier
@@ -916,6 +925,7 @@ actions testables, 12 tests Unit).
 **🎯 #96 : plus aucun `header()`/`exit` dans `app/`** (QrCodeReader,
 classe morte, supprimée) — substrat propre pour les chantiers
 fonctionnels.
-**Prochaine session** : toutes les dettes documentées sont soldées
-(1, 2 et 14 restent des améliorations optionnelles). Terrain libre
-pour une nouvelle vague fonctionnelle.
+**🎯 Dettes 1 et 2 soldées** (#97 + #98, v0.29.3) — **TOUTES les
+dettes documentées du projet sont soldées** (1 à 14).
+**Prochaine session** : terrain entièrement libre pour une nouvelle
+vague fonctionnelle.

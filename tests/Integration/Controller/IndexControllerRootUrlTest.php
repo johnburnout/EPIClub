@@ -205,17 +205,42 @@ final class IndexControllerRootUrlTest extends AbstractControllerTestCase
     }
 
     // ==================================================================
+    // POST /update-system-settings — route canonique (#97, Dette 1)
+    // (les cas ci-dessus couvrent l'alias historique /update-smtp)
+    // ==================================================================
+
+    /**
+     * [#97] La route canonique /update-system-settings remplace
+     * /update-smtp (conservée en alias POST, même action) : ROOT_URL
+     * est persistée pareil.
+     */
+    public function testUpdateSystemSettingsCanonicalRoutePersistsRootUrl(): void
+    {
+        $response = $this->postUpdateSmtp([
+            'root_url' => 'https://epiclub.example.com/',
+        ], '/update-system-settings');
+
+        $this->assertRedirectsTo(self::SETTINGS_PATH, $response);
+        self::assertSame(
+            'https://epiclub.example.com',
+            $this->readRootUrlFromEnv(),
+            'La route canonique doit persister ROOT_URL sans slash final.'
+        );
+    }
+
+    // ==================================================================
     // Helpers
     // ==================================================================
 
     /**
-     * POST /update-smtp avec les champs SMTP obligatoires renseignés
+     * POST /update-smtp (alias historique) ou /update-system-settings
+     * (route canonique #97) avec les champs SMTP obligatoires renseignés
      * (sinon la validation SMTP rejette avant même de regarder ROOT_URL)
      * et les surcharges passées en argument.
      *
      * @param array<string,string> $overrides
      */
-    private function postUpdateSmtp(array $overrides = []): array
+    private function postUpdateSmtp(array $overrides = [], string $path = '/update-smtp'): array
     {
         $defaults = [
             'smtp_host'       => 'smtp.example.com',
@@ -226,12 +251,12 @@ final class IndexControllerRootUrlTest extends AbstractControllerTestCase
             'mail_from'       => 'test@example.com',
             'mail_from_name'  => 'EPIClub Test',
         ];
-        
+
         $payload = array_merge($defaults, $overrides);
-        
+
         // HttpTestClient::post() injecte automatiquement le CSRF token
         // (getCsrfToken() le charge depuis /se_connecter si nécessaire).
-        return $this->client->post('/update-smtp', $payload);
+        return $this->client->post($path, $payload);
     }
 
     /**

@@ -47,9 +47,21 @@ $routes->add('system_settings', new Route(
     ['_controller' => 'Epiclub\\Controller\\IndexController', 'action' => 'systemSettings']
 ));
 
+// [#97 - Dette 1] Route canonique renommée : l'action gère SMTP ET
+// ROOT_URL. L'ancienne /update-smtp est conservée en alias (même
+// action, POST) pour ne pas casser les bookmarks — une redirection
+// perdrait le corps POST.
+
+$routes->add('update_system_settings', new Route(
+    '/update-system-settings',
+    ['_controller' => 'Epiclub\\Controller\\IndexController', 'action' => 'updateSystemSettings'],
+    [], [], '', [], ['POST']
+));
+
+// Alias historique (Dette 1) — même action que /update-system-settings.
 $routes->add('update_smtp', new Route(
     '/update-smtp',
-    ['_controller' => 'Epiclub\\Controller\\IndexController', 'action' => 'updateSmtp'],
+    ['_controller' => 'Epiclub\\Controller\\IndexController', 'action' => 'updateSystemSettings'],
     [], [], '', [], ['POST']
 ));
 

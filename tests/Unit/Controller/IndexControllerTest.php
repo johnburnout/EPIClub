@@ -17,9 +17,10 @@ use Symfony\Component\HttpFoundation\Request;
  * ⚠️ Périmètre :
  *  - index()      : 2 branches (authentifié / non authentifié) ;
  *  - dashboard()  : 1 branche (render) ;
- *  - updateSmtp() : branches SMTP non couvertes par les 7 tests
- *                   Integration (IndexControllerRootUrlTest) :
- *                   champs vides, ROOT_URL invalide, mot de passe vide.
+ *  - updateSystemSettings() : branches SMTP non couvertes par les 7
+ *    tests Integration (IndexControllerRootUrlTest) : champs vides,
+ *    ROOT_URL invalide, mot de passe vide. (Renommée depuis
+ *    updateSmtp() en #97 — Dette 1.)
  *
  * ⚠️ Hors périmètre :
  *  - systemSettings() : couvert en Integration (pré-remplissage ROOT_URL).
@@ -65,7 +66,7 @@ final class IndexControllerTest extends TestCase
     self::assertNotEmpty($response->getContent());
     }
 
-    public function testUpdateSmtpRejectsWhenRequiredFieldsEmpty(): void
+    public function testUpdateSystemSettingsRejectsWhenRequiredFieldsEmpty(): void
     {
         $session = $this->makeSessionMock(granted: true);
         $controller = new TestableIndexController($session);
@@ -77,7 +78,7 @@ final class IndexControllerTest extends TestCase
             'mail_from'     => 'from@test.fr',
         ]);
 
-        $response = $controller->updateSmtp($request);
+        $response = $controller->updateSystemSettings($request);
 
         self::assertSame(302, $response->getStatusCode());
         self::assertSame('/admin/system-settings', $response->headers->get('Location'));
@@ -89,7 +90,7 @@ final class IndexControllerTest extends TestCase
         );
     }
 
-    public function testUpdateSmtpRejectsInvalidRootUrl(): void
+    public function testUpdateSystemSettingsRejectsInvalidRootUrl(): void
     {
         $session = $this->makeSessionMock(granted: true);
         $controller = new TestableIndexController($session);
@@ -102,7 +103,7 @@ final class IndexControllerTest extends TestCase
             'root_url'      => 'not-a-url',  // invalide
         ]);
 
-        $response = $controller->updateSmtp($request);
+        $response = $controller->updateSystemSettings($request);
 
         self::assertSame(302, $response->getStatusCode());
         self::assertSame('/admin/system-settings', $response->headers->get('Location'));
@@ -144,7 +145,7 @@ final class IndexControllerTest extends TestCase
     {
         // ⚠️ Pattern CSRF : replace() PUIS set('csrf_token', ...)
         // (cf. Points de vigilance REPRISE.md).
-        $request = Request::create('/update-smtp', 'POST');
+        $request = Request::create('/update-system-settings', 'POST');
         $request->request->replace($params);
         $request->request->set('csrf_token', self::CSRF_TOKEN);
         return $request;

@@ -90,7 +90,13 @@ class IndexController extends AbstractController
         ]);
     }
 
-    public function updateSmtp(Request $request): Response
+    /**
+     * [REFACTOR #97 - Dette 1 soldée] Renommée updateSystemSettings() :
+     * l'action gère SMTP **et** ROOT_URL depuis #59. L'ancienne route
+     * /update-smtp est conservée en alias (double mapping POST, cf.
+     * ressources/routes.php) pour ne pas casser les bookmarks.
+     */
+    public function updateSystemSettings(Request $request): Response
     {
         // ⚠️ Configuration système (SMTP + ROOT_URL) : réservée au SUPER_ADMIN
         $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
@@ -160,15 +166,22 @@ class IndexController extends AbstractController
         // [VAGUE 13 - #59] Migration vers EnvironmentFileParser
         // (bénéficie de l'échappement var_export() de l'issue #49).
         // [REFACTOR #74] Factory protected — mockable en test Unit.
+        // [REFACTOR #98 - Dette 2] setAll() : UNE seule réécriture du
+        // fichier au lieu de 3-4 (une par set()).
         $parser = $this->environmentFileParser($envFile);
-        $parser->set('MAILER_DSN', $dsn);
-        $parser->set('MAILER_FROM', $from);
-        $parser->set('MAILER_NAME', $fromName);
-        
+
+        $values = [
+            'MAILER_DSN'  => $dsn,
+            'MAILER_FROM' => $from,
+            'MAILER_NAME' => $fromName,
+        ];
+
         // [VAGUE 13 - #59] Persister ROOT_URL uniquement si fournie et valide
         if ($normalizedRootUrl !== null) {
-            $parser->set('ROOT_URL', $normalizedRootUrl);
+            $values['ROOT_URL'] = $normalizedRootUrl;
         }
+
+        $parser->setAll($values);
         
         $this->session->getFlashBag()->add('success', 'Configuration mise à jour avec succès.');
         return $this->redirectTo('/admin/system-settings');

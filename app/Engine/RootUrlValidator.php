@@ -18,7 +18,7 @@ namespace Epiclub\Engine;
  * - slash final normalisé (rtrim)
  *
  * Note : la règle « champ vide = no-op » n'est PAS dans ce validateur.
- * C'est une décision du contrôleur (updateSmtp), pas du validateur.
+ * C'est une décision du contrôleur (updateSystemSettings), pas du validateur.
  *
  * @see \Epiclub\Engine\CsrfValidator Pour le pattern d'extraction.
  */

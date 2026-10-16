@@ -8,6 +8,21 @@ use Epiclub\Engine\EnvironmentFileParser;
 use PHPUnit\Framework\TestCase;
 
 /**
+ * [#98] Sous-classe de test : compte les appels à _dump() pour
+ * vérifier que setAll() n'écrit le fichier qu'une fois.
+ */
+final class CountingEnvironmentFileParser extends EnvironmentFileParser
+{
+    public int $dumpCount = 0;
+
+    protected function _dump()
+    {
+        $this->dumpCount++;
+        parent::_dump();
+    }
+}
+
+/**
  * Tests unitaires de EnvironmentFileParser (issue #49).
  *
  * ⚠️ Utilise un fichier temporaire réel (sys_get_temp_dir()) pour
@@ -146,6 +161,50 @@ final class EnvironmentFileParserTest extends TestCase
         $included = require($this->tmpFile);
         self::assertSame('one', $included['FIRST']);
         self::assertSame('two', $included['SECOND']);
+    }
+
+    // ==================================================================
+    // setAll() — Dette 2 (#98) : une seule réécriture du fichier
+    // ==================================================================
+
+    public function testSetAllWritesAllKeysUppercased(): void
+    {
+        $parser = new EnvironmentFileParser($this->tmpFile);
+        $parser->setAll([
+            'mailer_dsn'  => 'smtp://u:p@host:587',
+            'MAILER_FROM' => 'from@test.fr',
+        ]);
+
+        $included = require($this->tmpFile);
+
+        self::assertSame('smtp://u:p@host:587', $included['MAILER_DSN']);
+        self::assertSame('from@test.fr', $included['MAILER_FROM']);
+        self::assertArrayNotHasKey('mailer_dsn', $included);
+    }
+
+    public function testSetAllPreservesExistingEntries(): void
+    {
+        file_put_contents($this->tmpFile, "<?php\nreturn [\n    'FIRST' => 'one',\n];\n");
+
+        $parser = new EnvironmentFileParser($this->tmpFile);
+        $parser->setAll(['SECOND' => 'two', 'THIRD' => 'three']);
+
+        $included = require($this->tmpFile);
+        self::assertSame('one', $included['FIRST']);
+        self::assertSame('two', $included['SECOND']);
+        self::assertSame('three', $included['THIRD']);
+    }
+
+    public function testSetAllDumpsOnceForMultipleKeys(): void
+    {
+        $parser = new CountingEnvironmentFileParser($this->tmpFile);
+        $parser->setAll(['A' => 1, 'B' => 2, 'C' => 3, 'D' => 4]);
+
+        self::assertSame(1, $parser->dumpCount, 'setAll() ne doit réécrire le fichier qu\'une fois.');
+
+        $parser->set('E', 5);
+        $parser->set('F', 6);
+        self::assertSame(3, $parser->dumpCount, 'set() réécrit à chaque appel (contrat inchangé).');
     }
 
     // ==================================================================

@@ -25,6 +25,26 @@ Branché dans `AbstractControllerTestCase::setUp()` et
 `AccessControlTest::setUp()`. Fini les 64 faux échecs « connexion
 refusée » quand la suite était lancée sans serveur de dev.
 
+## [v0.29.3] — 2026-10-16
+
+### Changed
+
+- **`IndexController::updateSmtp()` renommée `updateSystemSettings()`
+(#97, Dette 1 soldée).** L'action gère SMTP **et** ROOT_URL depuis #59 :
+le nom est enfin raccord. Route canonique `POST /update-system-settings`
+; l'ancienne `/update-smtp` est conservée en **alias** (double mapping
+POST vers la même action — une redirection perdrait le corps POST) pour
+ne pas casser les bookmarks. Formulaire `system_settings.twig` mis à
+jour. 1 test Integration ajouté (route canonique) ; les 7 tests
+existants continuent de couvrir l'alias historique.
+- **`EnvironmentFileParser::setAll()` — une écriture pour N clés (#98,
+Dette 2 soldée).** `set()` réécrivait le fichier à chaque appel :
+`updateSystemSettings()` faisait 3-4 écritures disque successives
+(MAILER_DSN, MAILER_FROM, MAILER_NAME, ± ROOT_URL) → désormais **1
+seule** via `setAll()`. `_dump()` passé `protected` pour permettre le
+comptage d'écritures en test (pattern projet). 3 tests Unit ajoutés
+(clés en majuscules, préservation des entrées, 1 dump pour 4 clés).
+
 ## [v0.29.1] — 2026-10-16
 
 ### Removed
