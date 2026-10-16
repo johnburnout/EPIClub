@@ -19,11 +19,12 @@ use Epiclub\Engine\Session;
  *    → PDO) ;
  *  - injecte des mocks des managers via surcharge des factories.
  *
- * QrCodeGenerator et QrCodeReader ne sont pas surchargés : ils ne
- * sont pas mockables (pas d'interface).
+ * QrCodeGenerator n'est pas surchargé : il n'est pas mockable
+ * (pas d'interface).
  *
  * [#94] La factory utilisateurManager() a disparu du contrôleur
  * (code mort) — le mock correspondant est retiré du constructeur.
+ * [#96] QrCodeReader supprimé (classe entièrement morte).
  *
  * [#95 - Dette 13] Les actions retournent désormais des Response :
  * elles sont testables en Unit (plus de header()+exit).

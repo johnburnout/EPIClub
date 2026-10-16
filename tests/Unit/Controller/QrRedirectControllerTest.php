@@ -128,6 +128,10 @@ final class QrRedirectControllerTest extends TestCase
      * getUtilisateurById() (chaînes method_exists sur les managers)
      * étaient du code mort : zéro appel dans tout le projet.
      * Elles ont été supprimées — ce test fige la suppression.
+     * [#96] Même traitement pour la factory qrCodeReader() : la classe
+     * QrCodeReader était entièrement morte (zéro appelant de read /
+     * readAsBase64 / exists / getFilePath) et contenait le dernier
+     * header()+exit du projet.
      */
     public function testDeadMethodExistsHelpersAreRemoved(): void
     {
@@ -138,6 +142,14 @@ final class QrRedirectControllerTest extends TestCase
         self::assertFalse(
             method_exists(QrRedirectController::class, 'getUtilisateurById'),
             'getUtilisateurById() : code mort supprimé (#94)'
+        );
+        self::assertFalse(
+            method_exists(QrRedirectController::class, 'qrCodeReader'),
+            'qrCodeReader() : classe morte supprimée (#96)'
+        );
+        self::assertFalse(
+            class_exists(\Epiclub\Engine\QrCodeReader::class, false),
+            'QrCodeReader : classe morte supprimée (#96)'
         );
     }
 

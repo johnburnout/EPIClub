@@ -7,7 +7,6 @@ use Epiclub\Domain\ControleManager;
 use Epiclub\Domain\ControleLigneManager;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\QrCodeGenerator;
-use Epiclub\Engine\QrCodeReader;
 use Epiclub\Engine\Session;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -28,12 +27,15 @@ class QrRedirectController extends AbstractController
     // Les sous-classes de test peuvent surcharger ces factories pour
     // injecter des managers mockés (TestableQrRedirectController).
     //
-    // QrCodeGenerator et QrCodeReader ne sont pas mockables (pas
-    // d'interface), donc laissés en réel — comme FactureUploader dans
+    // QrCodeGenerator n'est pas mockable (pas d'interface), donc
+    // laissé en réel — comme FactureUploader dans
     // TestableAcquisitionController.
     //
     // [#94] La factory utilisateurManager() a été retirée : elle ne
     // servait qu'à getUtilisateurById(), code mort supprimé.
+    // [#96] QrCodeReader supprimé : classe entièrement morte
+    // (zéro appelant de read/readAsBase64/exists/getFilePath), elle
+    // contenait le dernier header()+exit du projet.
     // ==================================================================
 
     protected function equipementManager(): EquipementManager
@@ -54,11 +56,6 @@ class QrRedirectController extends AbstractController
     protected function qrCodeGenerator(): QrCodeGenerator
     {
         return new QrCodeGenerator();
-    }
-
-    protected function qrCodeReader(): QrCodeReader
-    {
-        return new QrCodeReader();
     }
 
     /**

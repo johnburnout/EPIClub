@@ -25,6 +25,20 @@ Branché dans `AbstractControllerTestCase::setUp()` et
 `AccessControlTest::setUp()`. Fini les 64 faux échecs « connexion
 refusée » quand la suite était lancée sans serveur de dev.
 
+## [v0.29.1] — 2026-10-16
+
+### Removed
+
+- **`QrCodeReader` supprimé — classe entièrement morte (#96).** Zéro
+appelant pour `read()`, `readAsBase64()`, `exists()` et
+`getFilePath()` ; la factory `qrCodeReader()` de
+`QrRedirectController` n'était elle-même jamais appelée. C'est dans
+`read($outputDirectly: true)` que vivait le **dernier `header()` +
+`exit` du projet** : `app/` est désormais intégralement sur objets
+`Response` (seuls `exit()` restants : le garde-fou d'installation et
+le helper de debug `dd()` de `bootstrap.php`, hors dispatcher).
+Suppression figée par les tests (`QrRedirectControllerTest`).
+
 ## [v0.29.0] — 2026-10-16
 
 ### Changed

@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-16 (fin de session #95 — Dette 13 soldée)
-**Version courante** : v0.29.0
-**Branche** : `main` (travail direct, ticket #95)
+**Dernière mise à jour** : 2026-10-16 (fin de session #96 — plus aucun header()+exit dans app/)
+**Version courante** : v0.29.1
+**Branche** : `main` (travail direct, ticket #96)
 
 ---
 
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.29.0 | #95 | Dette 13 soldée — QrRedirectController en Response, actions testables | `<hash>` |
+| v0.29.1 | #96 | QrCodeReader supprimé (classe morte) — plus aucun header()+exit dans app/ | `<hash>` |
+| v0.29.0 | #95 | Dette 13 soldée — QrRedirectController en Response, actions testables | `7052801` |
 | v0.28.3 | #94 | Dette 12 soldée — code mort QrRedirectController + fix flash perdu | `4220d61` |
 | v0.28.2 | #93 | findAll utilisateur projeté sur PUBLIC_FIELDS — Dette 8 étendue | `5fa82d0` |
 | v0.28.1 | #92 | 4 derniers Managers migrés (Club, Utilisateur, AcquisitionLigne, Equipement) — Vague 15 « écritures » terminée | `9055912` |
@@ -272,7 +273,7 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
 - **#61, #62** : refactors ControleController (injection managers, test Integration edit view).
 
 ### État des tests
-- **455 tests** Unit/Domain verts, **1112 assertions**.
+- **455 tests** Unit/Domain verts, **1114 assertions**.
 - **104 tests** Integration verts, **245 assertions** :
   - 4 Integration Domain (MySQL requis, dont `ForeignKeysIntegrationTest`).
   - 10 Integration Controller (serveur HTTP auto-démarré) — **plus de failures**.
@@ -447,8 +448,11 @@ séparés quand le temps le permet.
 - Extraction de l'id factorisée (`extractId()`, 7 copies) ; factory
   `utilisateurManager()` retirée (ne servait qu'au code mort #94) ;
   `error_log()` de debug nettoyés.
-- Reste connu (non bloquant) : `QrCodeReader::read()` (avec
-  `$outputDirectly = true`) utilise encore `header()` + `exit`.
+- Reste connu : ~~`QrCodeReader::read()` (avec
+  `$outputDirectly = true`) utilise encore `header()` + `exit`~~ →
+  **#96 : classe entièrement morte, supprimée**. Plus aucun
+  `header()`/`exit` dans `app/` hors `bootstrap.php` (garde-fou
+  d'installation + `dd()`), qui précède le dispatcher.
 
 ---
 
@@ -721,6 +725,12 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 
 ## Contexte de la session précédente
 
+- **#96** (v0.29.1) : `QrCodeReader` supprimé — classe entièrement
+  morte (zéro appelant de `read`/`readAsBase64`/`exists`/`getFilePath`,
+  factory `qrCodeReader()` jamais appelée). Elle contenait le dernier
+  `header()`+`exit` du projet : **`app/` est 100 % Response** (hors
+  bootstrap.php, qui précède le dispatcher). Suppression figée par
+  test. 455 tests Unit (1114 assertions), 104 Integration (245).
 - **#95** (v0.29.0) : **Dette 13 soldée** — les 7 actions de
   `QrRedirectController` retournent des Response/RedirectResponse/
   JsonResponse (le dispatcher faisait déjà `->send()`). Actions
@@ -903,8 +913,9 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 **🎯 Dette 12 soldée** (#94 : code mort supprimé, flash QR réparé).
 **🎯 Dette 13 soldée** (#95 : QrRedirectController en Response —
 actions testables, 12 tests Unit).
+**🎯 #96 : plus aucun `header()`/`exit` dans `app/`** (QrCodeReader,
+classe morte, supprimée) — substrat propre pour les chantiers
+fonctionnels.
 **Prochaine session** : toutes les dettes documentées sont soldées
-(1, 2 et 14 restent des améliorations optionnelles). Candidats :
-balayer les `header()`/`exit` restants hors QrRedirectController
-(ex : `QrCodeReader::read()` avec $outputDirectly), ou nouvelle vague
-fonctionnelle.
+(1, 2 et 14 restent des améliorations optionnelles). Terrain libre
+pour une nouvelle vague fonctionnelle.
