@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-16 (fin de session #93 — findAll utilisateur projeté)
-**Version courante** : v0.28.2
-**Branche** : `main` (travail direct, ticket #93)
+**Dernière mise à jour** : 2026-10-16 (fin de session #94 — Dette 12 soldée)
+**Version courante** : v0.28.3
+**Branche** : `main` (travail direct, ticket #94)
 
 ---
 
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.28.2 | #93 | findAll utilisateur projeté sur PUBLIC_FIELDS — Dette 8 étendue | `<hash>` |
+| v0.28.3 | #94 | Dette 12 soldée — code mort QrRedirectController + fix flash perdu | `<hash>` |
+| v0.28.2 | #93 | findAll utilisateur projeté sur PUBLIC_FIELDS — Dette 8 étendue | `5fa82d0` |
 | v0.28.1 | #92 | 4 derniers Managers migrés (Club, Utilisateur, AcquisitionLigne, Equipement) — Vague 15 « écritures » terminée | `9055912` |
 | v0.28.0 | #91 | filteredInsert()/filteredUpdate() génériques — 7 Managers migrés (Vague 15) | `cf3da50` |
 | v0.27.3 | #90 | Caractérisation des save() — 11 tests (5 Managers) | `2c2d9ca` |
@@ -270,7 +271,7 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
 - **#61, #62** : refactors ControleController (injection managers, test Integration edit view).
 
 ### État des tests
-- **441 tests** Unit/Domain verts, **1086 assertions**.
+- **443 tests** Unit/Domain verts, **1090 assertions**.
 - **104 tests** Integration verts, **245 assertions** :
   - 4 Integration Domain (MySQL requis, dont `ForeignKeysIntegrationTest`).
   - 10 Integration Controller (serveur HTTP auto-démarré) — **plus de failures**.
@@ -281,7 +282,7 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
   tests (classe `Epiclub\Tests\Support\WebServer`, cf. commit
   `d1e0bfa`) : inutile de lancer `php -S` dans un autre terminal.
   Un serveur déjà en écoute est réutilisé, jamais arrêté par les tests.
-- **Total avec MySQL actif** : 441 + 104 = **545 tests**.
+- **Total avec MySQL actif** : 443 + 104 = **547 tests**.
 
 ✅ ~~7 tests Integration Controller en échec préexistant :
 `IndexControllerRootUrlTest`~~ → **résolu en #81** (promotion
@@ -389,10 +390,11 @@ Candidats suivants (par ordre de pertinence) :
     `UtilisateurManager::findAll()` projeté sur `PUBLIC_FIELDS`.
     Audit des autres findAll : toutes les colonnes sont consommées
     (templates / hydratation PHP), SELECT * justifié — rien à faire.
-  - **Dette 12** — `QrRedirectController` méthodes privées mixtes
-    (basse priorité).
+  - ~~**Dette 12**~~ → **#94 soldé** (code mort supprimé + fix flash).
   - **Dette 13** — `QrRedirectController` `header()` + `exit`
     (refactor archi, basse priorité).
+  - Nettoyage des `error_log()` de debug dans `QrRedirectController::
+    generateQr()` (cosmétique).
 
 ---
 
@@ -419,16 +421,17 @@ séparés quand le temps le permet.
   seule fois.
 - **Ticket à ouvrir** : oui, si le sujet revient.
 
-### Dette 12 — `QrRedirectController` : méthodes privées mixtes
+### Dette 12 — ✅ SOLDÉE (#94, v0.28.3)
 
-- Le contrôleur a des méthodes privées qui ne sont pas toutes pures
-  (`getControleById`, `getUtilisateurById`) : elles délèguent à des
-  managers via `method_exists()`, ce qui est un pattern fragile.
-- **Recommandation** : aligner sur les méthodes de manager standard
-  (`findId()` est présent partout) et supprimer les `method_exists()`.
-  Vérifier ensuite que les 2 méthodes ne sont pas mortes (aucun appel
-  apparent).
-- **Ticket à ouvrir** : oui, **basse priorité** — non bloquant.
+- `getControleById()` / `getUtilisateurById()` étaient du **code mort**
+  (zéro appel, méthodes privées) : supprimées, suppression figée par
+  un test.
+- Bonus : fix documenté d'`addFlash()` — `method_exists($session,
+  'addFlashBag')` toujours faux + écriture dans `$_SESSION['flash_bag']`
+  (clé jamais lue par les templates) : les flashs QR étaient perdus.
+  Aligné sur `getFlashBag()->add()`.
+- Reste connu (non bloquant) : `error_log()` de debug dans
+  `generateQr()` à nettoyer quand le sujet revient.
 
 ### Dette 13 — `QrRedirectController` utilise `header()` + `exit`
 
@@ -490,7 +493,7 @@ séparés quand le temps le permet.
 
 Tests (depuis la racine du projet) :
 
-- `php vendor/bin/phpunit` — suite Unit/Domain (441 tests, cf.
+- `php vendor/bin/phpunit` — suite Unit/Domain (443 tests, cf.
   `defaultTestSuite="Unit"` dans `phpunit.xml`).
 - `php vendor/bin/phpunit --testsuite Integration` — suite Integration
   (104 tests : 4 Integration Domain + 10 Integration Controller —
@@ -718,6 +721,13 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 
 ## Contexte de la session précédente
 
+- **#94** (v0.28.3) : **Dette 12 soldée** — `getControleById()` /
+  `getUtilisateurById()` étaient du code mort (chaînes method_exists,
+  zéro appel) : supprimées. Fix documenté d'`addFlash()` : les flashs
+  QR étaient perdus (method_exists toujours faux + écriture dans
+  `$_SESSION['flash_bag']`, jamais lu par `session.getFlashBag.all`) →
+  `getFlashBag()->add()`. 2 tests Unit. 443 tests Unit (1090
+  assertions), 104 Integration (245). Travail direct sur `main`.
 - **#93** (v0.28.2) : `UtilisateurManager::findAll()` projeté sur
   `PUBLIC_FIELDS` (Dette 8 étendue) — fin du SELECT * qui exposait le
   hash password aux vues Twig. Consommateurs audités (list,
@@ -882,6 +892,9 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 **🎯 Vague 14 complète** (#68 à #90 livrés).
 **🎯 Vague 15 « écritures » terminée** (#91 + #92 : tous les
 `_create`/`_patch` passent par `filteredInsert()`/`filteredUpdate()`).
-**Prochaine session** : Dettes 12/13 (`QrRedirectController`, basse
-priorité) — le chantier `findAll` SELECT * est soldé par #93 (audit :
-projection impossible ailleurs sans perte fonctionnelle).
+**🎯 Dette 12 soldée** (#94 : code mort supprimé, flash QR réparé).
+**Prochaine session** : Dette 13 (`QrRedirectController` `header()` +
+`exit`, refactor archi, basse priorité) ou nettoyage des `error_log()`
+de debug de `generateQr()` (cosmétique) — le chantier `findAll`
+SELECT * est soldé par #93 (audit : projection impossible ailleurs
+sans perte fonctionnelle).

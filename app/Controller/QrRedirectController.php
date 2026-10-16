@@ -467,38 +467,6 @@ class QrRedirectController extends AbstractController
     }
     
     /**
-     * Récupère un contrôle par son ID
-     */
-    private function getControleById(int $id): ?array
-    {
-        $manager = $this->controleManager();
-        if (method_exists($manager, 'find')) {
-            return $manager->find($id);
-        } elseif (method_exists($manager, 'findId')) {
-            return $manager->findId($id);
-        } elseif (method_exists($manager, 'getById')) {
-            return $manager->getById($id);
-        }
-        return null;
-    }
-    
-    /**
-     * Récupère un utilisateur par son ID
-     */
-    private function getUtilisateurById(int $id): ?array
-    {
-        $manager = $this->utilisateurManager();
-        if (method_exists($manager, 'find')) {
-            return $manager->find($id);
-        } elseif (method_exists($manager, 'findId')) {
-            return $manager->findId($id);
-        } elseif (method_exists($manager, 'getById')) {
-            return $manager->getById($id);
-        }
-        return null;
-    }
-    
-    /**
      * Récupère l'utilisateur actuellement connecté
      */
     private function getCurrentUser(): ?array
@@ -513,21 +481,19 @@ class QrRedirectController extends AbstractController
     }
     
     /**
-     * Ajoute un message flash
+     * Ajoute un message flash.
+     *
+     * [FIX #94 - Dette 12] L'ancienne implémentation testait
+     * method_exists($this->session, 'addFlashBag') — méthode absente de
+     * Epiclub\Engine\Session, donc TOUJOURS fausse — puis écrivait dans
+     * $_SESSION['flash_bag'], une clé jamais lue par les templates
+     * (qui consomment session.getFlashBag.all). Les messages flash des
+     * écrans QR (« Équipement non trouvé ») étaient silencieusement
+     * perdus. Alignement sur le reste du projet : getFlashBag()->add().
      */
     private function addFlash(string $type, string $message): void
     {
-        if (method_exists($this->session, 'addFlashBag')) {
-            $this->session->addFlashBag($type, $message);
-        } else {
-            if (!isset($_SESSION['flash_bag'])) {
-                $_SESSION['flash_bag'] = [];
-            }
-            if (!isset($_SESSION['flash_bag'][$type])) {
-                $_SESSION['flash_bag'][$type] = [];
-            }
-            $_SESSION['flash_bag'][$type][] = $message;
-        }
+        $this->session->getFlashBag()->add($type, $message);
     }
     
     /**

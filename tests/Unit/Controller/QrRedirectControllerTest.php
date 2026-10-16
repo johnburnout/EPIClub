@@ -103,6 +103,45 @@ final class QrRedirectControllerTest extends TestCase
     }
 
     /**
+     * [FIX #94 - Dette 12] addFlash() écrit dans le FlashBag Symfony
+     * (lu par session.getFlashBag.all dans les templates) — et plus
+     * dans $_SESSION['flash_bag'], clé jamais consommée : les messages
+     * des écrans QR étaient silencieusement perdus.
+     */
+    public function testAddFlashWritesToSymfonyFlashBag(): void
+    {
+        $flashBag = new \Symfony\Component\HttpFoundation\Session\Flash\FlashBag();
+        $session = $this->makeSessionMock();
+        $session->method('getFlashBag')->willReturn($flashBag);
+
+        $controller = new TestableQrRedirectController($session);
+
+        $reflection = new \ReflectionMethod(QrRedirectController::class, 'addFlash');
+        $reflection->invoke($controller, 'danger', 'Équipement non trouvé');
+
+        self::assertSame(['Équipement non trouvé'], $flashBag->peek('danger'));
+        self::assertArrayNotHasKey('flash_bag', $_SESSION ?? []);
+    }
+
+    /**
+     * [Dette 12] Les méthodes privées mixtes getControleById() /
+     * getUtilisateurById() (chaînes method_exists sur les managers)
+     * étaient du code mort : zéro appel dans tout le projet.
+     * Elles ont été supprimées — ce test fige la suppression.
+     */
+    public function testDeadMethodExistsHelpersAreRemoved(): void
+    {
+        self::assertFalse(
+            method_exists(QrRedirectController::class, 'getControleById'),
+            'getControleById() : code mort supprimé (#94)'
+        );
+        self::assertFalse(
+            method_exists(QrRedirectController::class, 'getUtilisateurById'),
+            'getUtilisateurById() : code mort supprimé (#94)'
+        );
+    }
+
+    /**
      * Construit un mock Session tolérant : retourne la valeur fournie
      * pour 'user', null pour toute autre clé (dont 'csrf_token' appelé
      * par AbstractController::__construct()).

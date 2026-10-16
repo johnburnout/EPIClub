@@ -25,6 +25,28 @@ Branché dans `AbstractControllerTestCase::setUp()` et
 `AccessControlTest::setUp()`. Fini les 64 faux échecs « connexion
 refusée » quand la suite était lancée sans serveur de dev.
 
+## [v0.28.3] — 2026-10-16
+
+### Fixed
+
+- **Messages flash des écrans QR silencieusement perdus (#94, Dette
+12).** `QrRedirectController::addFlash()` testait
+`method_exists($this->session, 'addFlashBag')` — méthode absente de
+`Epiclub\Engine\Session`, donc toujours fausse — puis écrivait dans
+`$_SESSION['flash_bag']`, une clé jamais lue par les templates (qui
+consomment `session.getFlashBag.all`). « Équipement non trouvé » et
+consorts n'étaient jamais affichés. Alignement sur le reste du projet :
+`getFlashBag()->add()`.
+
+### Removed
+
+- **`QrRedirectController::getControleById()` et
+`getUtilisateurById()` supprimées (#94, Dette 12 soldée).** Chaînes
+`method_exists($manager, 'find'|'findId'|'getById')` fragiles —
+et surtout **code mort** : zéro appel dans tout le projet (méthodes
+privées, aucun appelant interne). 2 tests Unit ajoutés (flash →
+FlashBag Symfony, suppression figée).
+
 ## [v0.28.2] — 2026-10-16
 
 ### Security
