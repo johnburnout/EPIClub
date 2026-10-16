@@ -35,12 +35,30 @@ class UtilisateurManager extends AbstractManager
         'id', 'nom', 'prenom', 'username', 'email', 'role', 'date_creation',
     ];
 
+    /**
+    * [SÉCURITÉ #93 - Dette 8 étendue] findAll() projette PUBLIC_FIELDS :
+    * la liste ne ramène plus password, reset_token, reset_token_expires,
+    * reset_email_sent_at, last_activity ni controle_en_cours_id.
+    *
+    * Consommateurs audités (tous couverts par PUBLIC_FIELDS) :
+    *  - UtilisateurController::list() → id, nom, prenom, username,
+    *    email, role (rolelabel calculé en PHP) ;
+    *  - UtilisateurController::isLastSuperAdmin() → id, role ;
+    *  - ControleController (liste des contrôles) → id, nom, prenom.
+    *
+    * ⚠️ Une ligne findAll() n'est plus apte à être ré-enregistrée via
+    * save() : les flux d'édition passent par findId() (SELECT *).
+    */
     public function findAll($order = '', $limit = -1, $offset = 0)
     {
         $params = $this->buildOrderClause($order)
                 . $this->buildLimitClause($limit, $offset);
 
-        $sql = "SELECT * FROM utilisateur $params";
+        $sql = sprintf(
+            'SELECT %s FROM utilisateur %s',
+            implode(', ', self::PUBLIC_FIELDS),
+            $params
+        );
         $stmt = $this->db->prepare($sql);
         $stmt->execute();
         return $stmt->fetchAll();

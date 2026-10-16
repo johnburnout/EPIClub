@@ -25,6 +25,28 @@ Branché dans `AbstractControllerTestCase::setUp()` et
 `AccessControlTest::setUp()`. Fini les 64 faux échecs « connexion
 refusée » quand la suite était lancée sans serveur de dev.
 
+## [v0.28.2] — 2026-10-16
+
+### Security
+
+- **`UtilisateurManager::findAll()` projeté sur `PUBLIC_FIELDS` (#93,
+Dette 8 étendue).** La liste des utilisateurs ne ramène plus
+`password` (hash), `reset_token`, `reset_token_expires`,
+`reset_email_sent_at`, `last_activity` ni `controle_en_cours_id` —
+fin du `SELECT *` qui exposait le hash de mot de passe aux vues Twig.
+Consommateurs audités : `UtilisateurController::list()` (id, nom,
+prenom, username, email, role), `isLastSuperAdmin()` (id, role),
+`ControleController` (contrôleurs : id, nom, prenom) — tous couverts
+par `PUBLIC_FIELDS`. Les flux d'édition passent par `findId()`, sans
+ré-enregistrement d'une ligne `findAll()`. 2 tests Unit
+(`UtilisateurManagerFindAllTest`).
+- **Audit `findAll()` des autres Managers (#93)** : `categorie`,
+`emplacement`, `fournisseur`, `acquisition`, `club_equipement`,
+`controle` consomment toutes leurs colonnes dans les templates ou
+l'hydratation PHP (sous-objets `equipement.categorie`,
+`acquisition.fournisseur`, …) — pas de projection possible sans perte
+fonctionnelle, `SELECT *` justifié et documenté.
+
 ## [v0.28.1] — 2026-10-16
 
 ### Changed

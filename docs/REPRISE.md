@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-16 (fin de session #92 — Vague 15 « écritures » terminée)
-**Version courante** : v0.28.1
-**Branche** : `main` (travail direct, ticket #92)
+**Dernière mise à jour** : 2026-10-16 (fin de session #93 — findAll utilisateur projeté)
+**Version courante** : v0.28.2
+**Branche** : `main` (travail direct, ticket #93)
 
 ---
 
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.28.1 | #92 | 4 derniers Managers migrés (Club, Utilisateur, AcquisitionLigne, Equipement) — Vague 15 « écritures » terminée | `<hash>` |
+| v0.28.2 | #93 | findAll utilisateur projeté sur PUBLIC_FIELDS — Dette 8 étendue | `<hash>` |
+| v0.28.1 | #92 | 4 derniers Managers migrés (Club, Utilisateur, AcquisitionLigne, Equipement) — Vague 15 « écritures » terminée | `9055912` |
 | v0.28.0 | #91 | filteredInsert()/filteredUpdate() génériques — 7 Managers migrés (Vague 15) | `cf3da50` |
 | v0.27.3 | #90 | Caractérisation des save() — 11 tests (5 Managers) | `2c2d9ca` |
 | v0.27.2 | #89 | Contrat findId() uniformisé (false → null) — divergence #88 corrigée | `5bd9392` |
@@ -269,7 +270,7 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
 - **#61, #62** : refactors ControleController (injection managers, test Integration edit view).
 
 ### État des tests
-- **439 tests** Unit/Domain verts, **1077 assertions**.
+- **441 tests** Unit/Domain verts, **1086 assertions**.
 - **104 tests** Integration verts, **245 assertions** :
   - 4 Integration Domain (MySQL requis, dont `ForeignKeysIntegrationTest`).
   - 10 Integration Controller (serveur HTTP auto-démarré) — **plus de failures**.
@@ -280,7 +281,7 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
   tests (classe `Epiclub\Tests\Support\WebServer`, cf. commit
   `d1e0bfa`) : inutile de lancer `php -S` dans un autre terminal.
   Un serveur déjà en écoute est réutilisé, jamais arrêté par les tests.
-- **Total avec MySQL actif** : 439 + 104 = **543 tests**.
+- **Total avec MySQL actif** : 441 + 104 = **545 tests**.
 
 ✅ ~~7 tests Integration Controller en échec préexistant :
 `IndexControllerRootUrlTest`~~ → **résolu en #81** (promotion
@@ -384,7 +385,10 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
   helpers #91.**
 
 Candidats suivants (par ordre de pertinence) :
-  - Hydratation `findAll` restée sur `SELECT *` (projection publique).
+  - ~~Hydratation `findAll` restée sur `SELECT *`~~ → **#93 soldé** :
+    `UtilisateurManager::findAll()` projeté sur `PUBLIC_FIELDS`.
+    Audit des autres findAll : toutes les colonnes sont consommées
+    (templates / hydratation PHP), SELECT * justifié — rien à faire.
   - **Dette 12** — `QrRedirectController` méthodes privées mixtes
     (basse priorité).
   - **Dette 13** — `QrRedirectController` `header()` + `exit`
@@ -486,7 +490,7 @@ séparés quand le temps le permet.
 
 Tests (depuis la racine du projet) :
 
-- `php vendor/bin/phpunit` — suite Unit/Domain (439 tests, cf.
+- `php vendor/bin/phpunit` — suite Unit/Domain (441 tests, cf.
   `defaultTestSuite="Unit"` dans `phpunit.xml`).
 - `php vendor/bin/phpunit --testsuite Integration` — suite Integration
   (104 tests : 4 Integration Domain + 10 Integration Controller —
@@ -714,6 +718,14 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 
 ## Contexte de la session précédente
 
+- **#93** (v0.28.2) : `UtilisateurManager::findAll()` projeté sur
+  `PUBLIC_FIELDS` (Dette 8 étendue) — fin du SELECT * qui exposait le
+  hash password aux vues Twig. Consommateurs audités (list,
+  isLastSuperAdmin, contrôleurs ControleController) : tous couverts.
+  Audit des autres findAll : toutes colonnes consommées, SELECT *
+  justifié. 2 tests Unit (`UtilisateurManagerFindAllTest`).
+  441 tests Unit (1086 assertions), 104 Integration (245).
+  Travail direct sur `main`.
 - **#92** (v0.28.1) : migration des 4 derniers Managers aux helpers
   d'écriture #91 — `UtilisateurManager` (alignement),
   `ClubManager` (`id=1` forcé, singleton), `AcquisitionLigneManager`
@@ -870,6 +882,6 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 **🎯 Vague 14 complète** (#68 à #90 livrés).
 **🎯 Vague 15 « écritures » terminée** (#91 + #92 : tous les
 `_create`/`_patch` passent par `filteredInsert()`/`filteredUpdate()`).
-**Prochaine session** : hydratation `findAll` restée sur `SELECT *`
-(projection publique, cf. Dette 8 pour Utilisateur), ou Dettes 12/13
-(`QrRedirectController`, basse priorité).
+**Prochaine session** : Dettes 12/13 (`QrRedirectController`, basse
+priorité) — le chantier `findAll` SELECT * est soldé par #93 (audit :
+projection impossible ailleurs sans perte fonctionnelle).
