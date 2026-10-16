@@ -25,6 +25,28 @@ Branché dans `AbstractControllerTestCase::setUp()` et
 `AccessControlTest::setUp()`. Fini les 64 faux échecs « connexion
 refusée » quand la suite était lancée sans serveur de dev.
 
+## [v0.29.0] — 2026-10-16
+
+### Changed
+
+- **`QrRedirectController` : `header()` + `exit` → objets `Response`
+(#95, Dette 13 soldée).** Les 7 actions (`redirect`, `choicePage`,
+`generateQr`, `downloadQr`, `viewQr`, `saveQr`, `apiGenerateQr`)
+retournent désormais `RedirectResponse` / `Response` / `JsonResponse` —
+le `->send()` est fait par le dispatcher (`public/index.php`), comme
+partout ailleurs. **Les actions sont désormais testables en Unit** :
+12 tests ajoutés (`QrRedirectControllerActionsTest`) couvrant les
+aiguillages de `redirect()` (id absent, équipement inconnu + flash,
+utilisateur non connecté, sans contrôle, ligne existante, ligne créée
+après ajout) et les 400/404 JSON de `saveQr`/`apiGenerateQr`/
+`generateQr`/`choicePage`.
+- Extraction de l'id de route factorisée (`extractId()`, 7 copies).
+- Factory `utilisateurManager()` retirée : elle ne servait qu'à
+`getUtilisateurById()`, code mort supprimé en #94.
+- `error_log()` de debug retirés de `generateQr()` et
+`findControleEnCours()` (bruit) ; seuls les logs d'erreur réels sont
+conservés.
+
 ## [v0.28.3] — 2026-10-16
 
 ### Fixed

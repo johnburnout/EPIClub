@@ -5,12 +5,13 @@ namespace Epiclub\Controller;
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\ControleManager;
 use Epiclub\Domain\ControleLigneManager;
-use Epiclub\Domain\UtilisateurManager;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\QrCodeGenerator;
 use Epiclub\Engine\QrCodeReader;
 use Epiclub\Engine\Session;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class QrRedirectController extends AbstractController
 {
@@ -29,8 +30,10 @@ class QrRedirectController extends AbstractController
     //
     // QrCodeGenerator et QrCodeReader ne sont pas mockables (pas
     // d'interface), donc laissés en réel — comme FactureUploader dans
-    // TestableAcquisitionController. Leurs méthodes ne sont pas
-    // exercées par les tests Unit #73.
+    // TestableAcquisitionController.
+    //
+    // [#94] La factory utilisateurManager() a été retirée : elle ne
+    // servait qu'à getUtilisateurById(), code mort supprimé.
     // ==================================================================
 
     protected function equipementManager(): EquipementManager
@@ -48,11 +51,6 @@ class QrRedirectController extends AbstractController
         return new ControleLigneManager();
     }
 
-    protected function utilisateurManager(): UtilisateurManager
-    {
-        return new UtilisateurManager();
-    }
-
     protected function qrCodeGenerator(): QrCodeGenerator
     {
         return new QrCodeGenerator();
@@ -66,99 +64,83 @@ class QrRedirectController extends AbstractController
     /**
     * Point d'entrée pour le scan du QR code
     * URL: /qr/{id}
+    *
+    * [REFACTOR #95 - Dette 13] Retourne des RedirectResponse au lieu de
+    * header()+exit : l'action est désormais testable en Unit et le
+    * dispatcher (public/index.php) fait le ->send().
     */
-    public function redirect(Request $request)
+    public function redirect(Request $request): Response
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
-        
+
         // 1. Récupérer l'ID de l'équipement
-        $id = $request->attributes->get('id');
+        $id = $this->extractId($request, '/\/qr\/(\d+)/');
         if (!$id) {
-            $path = $request->getPathInfo();
-            preg_match('/\/qr\/(\d+)/', $path, $matches);
-            $id = $matches[1] ?? null;
+            return $this->redirectTo('/equipements');
         }
-        if (!$id) {
-            header('Location: /equipements');
-            exit;
-        }
-        
+
         // 2. Vérifier que l'équipement existe
-        $equipement = $this->equipementManager()->findId((int)$id);
+        $equipement = $this->equipementManager()->findId($id);
         if (!$equipement) {
             $this->addFlash('danger', 'Équipement non trouvé');
-            header('Location: /equipements');
-            exit;
+            return $this->redirectTo('/equipements');
         }
-        
+
         // 3. Vérifier que l'utilisateur est connecté
         $user = $this->getCurrentUser();
         if (!$user) {
-            header('Location: /se_connecter?redirect=/qr/' . $id);
-            exit;
+            return $this->redirectTo('/se_connecter?redirect=/qr/' . $id);
         }
-        
+
         // 4. Vérifier si l'utilisateur a un contrôle en cours
-        $controleEnCours = $this->findControleEnCours((int)$id, $user['id']);
+        $controleEnCours = $this->findControleEnCours($id, $user['id']);
         if ($controleEnCours) {
-            $controleLigne = $this->findControleLigneByEquipement($controleEnCours['id'], (int)$id);
+            $controleLigne = $this->findControleLigneByEquipement($controleEnCours['id'], $id);
             if ($controleLigne) {
-                header('Location: /admin/controles/update-ligne/' . $controleLigne['id']);
-                exit;
+                return $this->redirectTo('/admin/controles/update-ligne/' . $controleLigne['id']);
             }
-            $this->addEquipementToControle((int)$id, $controleEnCours['id']);
-            $newLigne = $this->findControleLigneByEquipement($controleEnCours['id'], (int)$id);
+            $this->addEquipementToControle($id, $controleEnCours['id']);
+            $newLigne = $this->findControleLigneByEquipement($controleEnCours['id'], $id);
             if ($newLigne) {
-                header('Location: /admin/controles/update-ligne/' . $newLigne['id']);
-                exit;
+                return $this->redirectTo('/admin/controles/update-ligne/' . $newLigne['id']);
             }
-            header('Location: /admin/controles/edit/' . $controleEnCours['id']);
-            exit;
+            return $this->redirectTo('/admin/controles/edit/' . $controleEnCours['id']);
         }
-        
+
         // 5. Aucun contrôle en cours → fiche de l'équipement
-        header('Location: /equipements/equipement-' . $id);
-        exit;
+        return $this->redirectTo('/equipements/equipement-' . $id);
     }
-    
+
     /**
     * Page d'aiguillage avec interface (choix)
     * URL: /qr/choix/{id}
     */
-    public function choicePage(Request $request)
+    public function choicePage(Request $request): Response
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
-        
-        $id = $request->attributes->get('id');
+
+        $id = $this->extractId($request, '/\/qr\/choix\/(\d+)/');
         if (!$id) {
-            $path = $request->getPathInfo();
-            preg_match('/\/qr\/choix\/(\d+)/', $path, $matches);
-            $id = $matches[1] ?? null;
+            return $this->redirectTo('/equipements');
         }
-        
-        if (!$id) {
-            header('Location: /equipements');
-            exit;
-        }
-        
-        $equipement = $this->equipementManager()->findId((int)$id);
-        
+
+        $equipement = $this->equipementManager()->findId($id);
+
         if (!$equipement) {
             $this->addFlash('danger', 'Équipement non trouvé');
-            header('Location: /equipements');
-            exit;
+            return $this->redirectTo('/equipements');
         }
-        
+
         $user = $this->getCurrentUser();
         $peutCreerControle = $user ? ($this->isGranted('ROLE_CONTROLLEUR') || $this->isGranted('ROLE_ADMIN')) : false;
-        
+
         $controleEnCours = null;
         if ($user && $peutCreerControle) {
-            $controleEnCours = $this->findControleEnCours((int)$id, $user['id']);
+            $controleEnCours = $this->findControleEnCours($id, $user['id']);
         }
-        
-        $historique = $this->equipementManager()->getHistoriqueControles((int)$id);
-        
+
+        $historique = $this->equipementManager()->getHistoriqueControles($id);
+
         return $this->render('qr/choice_page.twig', [
             'equipement' => $equipement,
             'controleEnCours' => $controleEnCours,
@@ -168,164 +150,129 @@ class QrRedirectController extends AbstractController
             'qrCodeFilename' => 'equipement_' . $id
         ]);
     }
-    
+
     /**
     * Génère et affiche le QR code
     * URL: /qr/generate/{id}
+    *
+    * [REFACTOR #95] Les error_log() de debug ont été retirés (bruit) ;
+    * seul le log d'erreur réel est conservé.
     */
-    public function generateQr(Request $request)
+    public function generateQr(Request $request): Response
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
-        error_log("=== QR GENERATE ===");
-        
-        $id = $request->attributes->get('id');
-        error_log("ID depuis attributes: " . ($id ?? 'null'));
-        
+
+        $id = $this->extractId($request, '/\/qr\/generate\/(\d+)/');
         if (!$id) {
-            $path = $request->getPathInfo();
-            error_log("Path: " . $path);
-            preg_match('/\/qr\/generate\/(\d+)/', $path, $matches);
-            $id = $matches[1] ?? null;
-            error_log("ID extrait: " . ($id ?? 'null'));
+            return new Response('QR introuvable', Response::HTTP_NOT_FOUND);
         }
-        
-        if (!$id) {
-            error_log("❌ Aucun ID trouvé");
-            http_response_code(404);
-            exit;
-        }
-        
-        error_log("✅ ID trouvé: " . $id);
-        
-        $equipement = $this->equipementManager()->findId((int)$id);
-        
+
+        $equipement = $this->equipementManager()->findId($id);
+
         if (!$equipement) {
-            error_log("❌ Équipement non trouvé - ID: " . $id);
-            http_response_code(404);
-            exit;
+            return new Response('Équipement non trouvé', Response::HTTP_NOT_FOUND);
         }
-        
-        error_log("✅ Équipement trouvé: " . $equipement['reference']);
-        
+
         $baseUrl = $this->getBaseUrl();
         $qrUrl = $baseUrl . '/qr/' . $id;
-        
-        error_log("📊 URL encodée: " . $qrUrl);
-        
+
         if (!class_exists('Endroid\QrCode\Builder\Builder')) {
-            error_log("❌ Endroid QR Code non trouvé");
-            http_response_code(500);
-            exit;
+            error_log('[QrRedirectController] Endroid QR Code non trouvé');
+            return new Response('Génération impossible', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-        
+
         try {
-            error_log("🔄 Génération du QR...");
-            
             $qrCodeContent = $this->qrCodeGenerator()->generateFromData($qrUrl, 400, false);
-            
+
             if (empty($qrCodeContent)) {
                 throw new \Exception('QR code généré est vide');
             }
-            
-            error_log("✅ QR généré - Taille: " . strlen($qrCodeContent) . " octets");
-            
-            header('Content-Type: image/png');
-            header('Content-Length: ' . strlen($qrCodeContent));
-            header('Cache-Control: public, max-age=86400');
-            echo $qrCodeContent;
-            exit;
-            
+
+            return new Response($qrCodeContent, Response::HTTP_OK, [
+                'Content-Type' => 'image/png',
+                'Content-Length' => (string) strlen($qrCodeContent),
+                'Cache-Control' => 'public, max-age=86400',
+            ]);
+
         } catch (\Exception $e) {
-            error_log("❌ Erreur: " . $e->getMessage());
-            http_response_code(500);
-            exit;
+            error_log('[QrRedirectController] Generate QR failed: ' . $e->getMessage());
+            return new Response('Erreur serveur', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     /**
     * Télécharge le QR code
     * URL: /qr/download/{id}
     */
-    public function downloadQr(Request $request)
+    public function downloadQr(Request $request): Response
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
-        
-        $id = $request->attributes->get('id');
+
+        $id = $this->extractId($request, '/\/qr\/download\/(\d+)/');
         if (!$id) {
-            $path = $request->getPathInfo();
-            preg_match('/\/qr\/download\/(\d+)/', $path, $matches);
-            $id = $matches[1] ?? null;
+            return new Response('QR introuvable', Response::HTTP_NOT_FOUND);
         }
-        
-        if (!$id) {
-            http_response_code(404);
-            exit;
-        }
-        
-        $equipement = $this->equipementManager()->findId((int)$id);
-        
+
+        $equipement = $this->equipementManager()->findId($id);
+
         if (!$equipement) {
-            http_response_code(404);
-            exit;
+            return new Response('Équipement non trouvé', Response::HTTP_NOT_FOUND);
         }
-        
+
         $baseUrl = $this->getBaseUrl();
         $qrUrl = $baseUrl . '/qr/' . $id;
-        
+
         try {
             $filename = 'equipement_' . $id;
             $filePath = $this->qrCodeGenerator()->generateAndSave($filename, $qrUrl, 400);
-            
-            if (file_exists($filePath)) {
-                header('Content-Type: image/png');
-                header('Content-Disposition: attachment; filename="QR_' . $equipement['reference'] . '.png"');
-                header('Content-Length: ' . filesize($filePath));
-                readfile($filePath);
-                exit;
+
+            if (!file_exists($filePath)) {
+                throw new \Exception('Fichier non trouvé');
             }
-            
-            throw new \Exception('Fichier non trouvé');
-            
+
+            return new Response((string) file_get_contents($filePath), Response::HTTP_OK, [
+                'Content-Type' => 'image/png',
+                'Content-Disposition' => 'attachment; filename="QR_' . $equipement['reference'] . '.png"',
+                'Content-Length' => (string) filesize($filePath),
+            ]);
+
         } catch (\Exception $e) {
             error_log('[QrRedirectController] Download QR failed: ' . $e->getMessage());
-            http_response_code(500);
-            exit;
+            return new Response('Erreur serveur', Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     /**
      * Affiche un QR code pré-généré
      * URL: /qr/view/{filename}
      */
-    public function viewQr(Request $request)
+    public function viewQr(Request $request): Response
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
-        
+
         $filename = $request->attributes->get('filename');
         if (!$filename) {
             $path = $request->getPathInfo();
             preg_match('/\/qr\/view\/([^\/]+)/', $path, $matches);
             $filename = $matches[1] ?? null;
         }
-        
+
         if (!$filename) {
-            http_response_code(404);
-            exit;
+            return new Response('QR introuvable', Response::HTTP_NOT_FOUND);
         }
-        
+
         $filePath = __DIR__ . '/../../public/images/qrcodes/' . $filename . '.png';
-        
-        if (file_exists($filePath)) {
-            header('Content-Type: image/png');
-            header('Cache-Control: public, max-age=86400');
-            readfile($filePath);
-            exit;
+
+        if (!file_exists($filePath)) {
+            return new Response('QR introuvable', Response::HTTP_NOT_FOUND);
         }
-        
-        http_response_code(404);
-        exit;
+
+        return new Response((string) file_get_contents($filePath), Response::HTTP_OK, [
+            'Content-Type' => 'image/png',
+            'Cache-Control' => 'public, max-age=86400',
+        ]);
     }
-    
+
     /**
     * Génère le QR code d'un équipement et le sauvegarde (API JSON)
     * URL: /qr/save/{id}
@@ -340,95 +287,70 @@ class QrRedirectController extends AbstractController
     * Choix volontaire de ne pas exiger POST+CSRF pour préserver la simplicité
     * du fetch JS côté fiche équipement.
     */
-    public function saveQr(Request $request)
+    public function saveQr(Request $request): Response
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
-        header('Content-Type: application/json');
-        
-        $id = $request->attributes->get('id');
+
+        $id = $this->extractId($request, '/\/qr\/save\/(\d+)/');
         if (!$id) {
-            $path = $request->getPathInfo();
-            preg_match('/\/qr\/save\/(\d+)/', $path, $matches);
-            $id = $matches[1] ?? null;
+            return new JsonResponse(['error' => 'Requête invalide'], Response::HTTP_BAD_REQUEST);
         }
-        
-        if (!$id) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Requête invalide']);
-            exit;
-        }
-        
-        $equipement = $this->equipementManager()->findId((int)$id);
-        
+
+        $equipement = $this->equipementManager()->findId($id);
+
         if (!$equipement) {
-            http_response_code(404);
-            echo json_encode(['error' => 'Ressource non trouvée']);
-            exit;
+            return new JsonResponse(['error' => 'Ressource non trouvée'], Response::HTTP_NOT_FOUND);
         }
-        
+
         $baseUrl = $this->getBaseUrl();
         $qrUrl = $baseUrl . '/qr/' . $id;
-        
+
         $qrData = json_encode([
             'id' => (int)$equipement['id'],
             'reference' => $equipement['reference'],
             'libelle' => $equipement['libelle'],
             'url' => $qrUrl
         ]);
-        
+
         try {
             $filename = 'equipement_' . $id;
             $filePath = $this->qrCodeGenerator()->generateAndSave($filename, $qrData, 300);
-            
-            echo json_encode([
+
+            return new JsonResponse([
                 'success' => true,
                 'filename' => $filename . '.png',
                 'path' => $filePath,
                 'url' => '/qr/view/' . $filename
             ]);
-            exit;
         } catch (\Exception $e) {
             error_log('[QrRedirectController] Save QR failed: ' . $e->getMessage());
-            http_response_code(500);
-            echo json_encode(['error' => 'Erreur serveur']);
-            exit;
+            return new JsonResponse(['error' => 'Erreur serveur'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
-    
+
     /**
-    * API pour générer un QR code (retourne l'URL du QR)
-    * URL: /api/qr/generate/{id}
-    */
-    public function apiGenerateQr(Request $request)
+     * API pour générer un QR code (retourne l'URL du QR)
+     * URL: /api/qr/generate/{id}
+     */
+    public function apiGenerateQr(Request $request): Response
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
-        header('Content-Type: application/json');
-        
-        $id = $request->attributes->get('id');
+
+        $id = $this->extractId($request, '/\/api\/qr\/generate\/(\d+)/');
         if (!$id) {
-            $path = $request->getPathInfo();
-            preg_match('/\/api\/qr\/generate\/(\d+)/', $path, $matches);
-            $id = $matches[1] ?? null;
+            return new JsonResponse(['error' => 'Requête invalide'], Response::HTTP_BAD_REQUEST);
         }
-        
-        if (!$id) {
-            http_response_code(400);
-            echo json_encode(['error' => 'Requête invalide']);
-            exit;
-        }
-        
-        $equipement = $this->equipementManager()->findId((int)$id);
-        
+
+        $equipement = $this->equipementManager()->findId($id);
+
         if (!$equipement) {
-            http_response_code(404);
-            echo json_encode(['error' => 'Ressource non trouvée']);
-            exit;
+            return new JsonResponse(['error' => 'Ressource non trouvée'], Response::HTTP_NOT_FOUND);
         }
-        
+
         $baseUrl = $this->getBaseUrl();
         $qrUrl = $baseUrl . '/qr/' . $id;
-        
-        echo json_encode([
+
+        return new JsonResponse([
             'success' => true,
             'equipement' => [
                 'id' => $equipement['id'],
@@ -439,47 +361,37 @@ class QrRedirectController extends AbstractController
             'qr_image_url' => $baseUrl . '/qr/generate/' . $id,
             'qr_download_url' => $baseUrl . '/qr/download/' . $id
         ]);
-        exit;
     }
-    
+
     /**
      * Trouve un contrôle en cours pour un équipement et un utilisateur
+     *
+     * [REFACTOR #95] error_log() de debug retirés (bruit).
      */
     private function findControleEnCours(?int $equipementId, int $userId): ?array
     {
-        error_log("=== findControleEnCours ===");
-        error_log("User ID: " . $userId);
-        
-        $controle = $this->controleManager()->findActiveByUser($userId);
-        
-        if ($controle) {
-            error_log("✅ Contrôle en cours trouvé: " . $controle['id']);
-            return $controle;
-        }
-        
-        error_log("❌ Aucun contrôle en cours trouvé");
-        return null;
+        return $this->controleManager()->findActiveByUser($userId) ?: null;
     }
-    
+
     private function addEquipementToControle(int $equipementId, int $controleId): bool
     {
         return $this->controleLigneManager()->addEquipement($controleId, $equipementId);
     }
-    
+
     /**
      * Récupère l'utilisateur actuellement connecté
      */
     private function getCurrentUser(): ?array
     {
         $user = $this->session->get('user');
-        
+
         if ($user && isset($user['id'])) {
             return $user;
         }
-        
+
         return null;
     }
-    
+
     /**
      * Ajoute un message flash.
      *
@@ -495,12 +407,29 @@ class QrRedirectController extends AbstractController
     {
         $this->session->getFlashBag()->add($type, $message);
     }
-    
+
     /**
      * Récupère la ligne de contrôle pour un équipement dans un contrôle donné
      */
     private function findControleLigneByEquipement(int $controleId, int $equipementId): ?array
     {
         return $this->controleLigneManager()->findByControleAndEquipement($controleId, $equipementId);
+    }
+
+    /**
+     * [REFACTOR #95 - Dette 13] Extraction de l'id de route, factorisée
+     * (7 copies quasi identiques) : attribut de route prioritaire,
+     * sinon regex sur le path. Retourne null si introuvable.
+     */
+    private function extractId(Request $request, string $pattern): ?int
+    {
+        $id = $request->attributes->get('id');
+
+        if (!$id) {
+            preg_match($pattern, $request->getPathInfo(), $matches);
+            $id = $matches[1] ?? null;
+        }
+
+        return $id ? (int) $id : null;
     }
 }

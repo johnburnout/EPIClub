@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-16 (fin de session #94 — Dette 12 soldée)
-**Version courante** : v0.28.3
-**Branche** : `main` (travail direct, ticket #94)
+**Dernière mise à jour** : 2026-10-16 (fin de session #95 — Dette 13 soldée)
+**Version courante** : v0.29.0
+**Branche** : `main` (travail direct, ticket #95)
 
 ---
 
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.28.3 | #94 | Dette 12 soldée — code mort QrRedirectController + fix flash perdu | `<hash>` |
+| v0.29.0 | #95 | Dette 13 soldée — QrRedirectController en Response, actions testables | `<hash>` |
+| v0.28.3 | #94 | Dette 12 soldée — code mort QrRedirectController + fix flash perdu | `4220d61` |
 | v0.28.2 | #93 | findAll utilisateur projeté sur PUBLIC_FIELDS — Dette 8 étendue | `5fa82d0` |
 | v0.28.1 | #92 | 4 derniers Managers migrés (Club, Utilisateur, AcquisitionLigne, Equipement) — Vague 15 « écritures » terminée | `9055912` |
 | v0.28.0 | #91 | filteredInsert()/filteredUpdate() génériques — 7 Managers migrés (Vague 15) | `cf3da50` |
@@ -271,7 +272,7 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
 - **#61, #62** : refactors ControleController (injection managers, test Integration edit view).
 
 ### État des tests
-- **443 tests** Unit/Domain verts, **1090 assertions**.
+- **455 tests** Unit/Domain verts, **1112 assertions**.
 - **104 tests** Integration verts, **245 assertions** :
   - 4 Integration Domain (MySQL requis, dont `ForeignKeysIntegrationTest`).
   - 10 Integration Controller (serveur HTTP auto-démarré) — **plus de failures**.
@@ -282,7 +283,7 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
   tests (classe `Epiclub\Tests\Support\WebServer`, cf. commit
   `d1e0bfa`) : inutile de lancer `php -S` dans un autre terminal.
   Un serveur déjà en écoute est réutilisé, jamais arrêté par les tests.
-- **Total avec MySQL actif** : 443 + 104 = **547 tests**.
+- **Total avec MySQL actif** : 455 + 104 = **559 tests**.
 
 ✅ ~~7 tests Integration Controller en échec préexistant :
 `IndexControllerRootUrlTest`~~ → **résolu en #81** (promotion
@@ -430,25 +431,24 @@ séparés quand le temps le permet.
   'addFlashBag')` toujours faux + écriture dans `$_SESSION['flash_bag']`
   (clé jamais lue par les templates) : les flashs QR étaient perdus.
   Aligné sur `getFlashBag()->add()`.
-- Reste connu (non bloquant) : `error_log()` de debug dans
-  `generateQr()` à nettoyer quand le sujet revient.
+- Reste connu (non bloquant) : ~~`error_log()` de debug dans
+  `generateQr()`~~ → nettoyés en #95.
 
-### Dette 13 — `QrRedirectController` utilise `header()` + `exit`
+### Dette 13 — ✅ SOLDÉE (#95, v0.29.0)
 
-- Les 7 méthodes publiques (`redirect`, `choicePage`, `generateQr`,
-  `downloadQr`, `viewQr`, `saveQr`, `apiGenerateQr`) appellent
-  `header('Location: ...')` + `exit` (ou `echo` + `exit` pour les QR).
-- Conséquence : **non testables en Unit** (le `exit` tue le processus
-  PHP). Seul le constructeur et quelques méthodes privées pures sont
-  testables (couverts par #73).
-- **Recommandation** : refactor architectural — retourner des objets
-  `Response` (Symfony HttpFoundation) au lieu d'appeler `header()` +
-  `exit`. Nécessite d'adapter le front controller (`public/index.php`)
-  pour faire `$response->send()`.
-- **Ticket à ouvrir** : oui, mais **basse priorité** — le contrôleur
-  fonctionne, il n'a juste pas de filet Unit sur les actions.
-- Connexe : `QrCodeReader::read()` (avec `$outputDirectly = true`)
-  utilise aussi `header()` + `exit`. Même problème.
+- Les 7 actions de `QrRedirectController` retournent désormais des
+  objets `Response` / `RedirectResponse` / `JsonResponse` ; le
+  `->send()` est fait par le dispatcher (`public/index.php`) — aucune
+  adaptation nécessaire, il attendait déjà une Response.
+- **Actions désormais testables en Unit** : 12 tests
+  (`QrRedirectControllerActionsTest`) — aiguillages de `redirect()`,
+  400/404 JSON de `saveQr`/`apiGenerateQr`, 404 de `generateQr` et
+  `choicePage`.
+- Extraction de l'id factorisée (`extractId()`, 7 copies) ; factory
+  `utilisateurManager()` retirée (ne servait qu'au code mort #94) ;
+  `error_log()` de debug nettoyés.
+- Reste connu (non bloquant) : `QrCodeReader::read()` (avec
+  `$outputDirectly = true`) utilise encore `header()` + `exit`.
 
 ---
 
@@ -493,7 +493,7 @@ séparés quand le temps le permet.
 
 Tests (depuis la racine du projet) :
 
-- `php vendor/bin/phpunit` — suite Unit/Domain (443 tests, cf.
+- `php vendor/bin/phpunit` — suite Unit/Domain (455 tests, cf.
   `defaultTestSuite="Unit"` dans `phpunit.xml`).
 - `php vendor/bin/phpunit --testsuite Integration` — suite Integration
   (104 tests : 4 Integration Domain + 10 Integration Controller —
@@ -721,6 +721,14 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 
 ## Contexte de la session précédente
 
+- **#95** (v0.29.0) : **Dette 13 soldée** — les 7 actions de
+  `QrRedirectController` retournent des Response/RedirectResponse/
+  JsonResponse (le dispatcher faisait déjà `->send()`). Actions
+  désormais testables en Unit : 12 tests (`QrRedirectControllerActionsTest`).
+  `extractId()` factorisé (7 copies), factory `utilisateurManager()`
+  retirée (code mort #94), `error_log()` de debug nettoyés.
+  455 tests Unit (1112 assertions), 104 Integration (245).
+  Travail direct sur `main`.
 - **#94** (v0.28.3) : **Dette 12 soldée** — `getControleById()` /
   `getUtilisateurById()` étaient du code mort (chaînes method_exists,
   zéro appel) : supprimées. Fix documenté d'`addFlash()` : les flashs
@@ -893,8 +901,10 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 **🎯 Vague 15 « écritures » terminée** (#91 + #92 : tous les
 `_create`/`_patch` passent par `filteredInsert()`/`filteredUpdate()`).
 **🎯 Dette 12 soldée** (#94 : code mort supprimé, flash QR réparé).
-**Prochaine session** : Dette 13 (`QrRedirectController` `header()` +
-`exit`, refactor archi, basse priorité) ou nettoyage des `error_log()`
-de debug de `generateQr()` (cosmétique) — le chantier `findAll`
-SELECT * est soldé par #93 (audit : projection impossible ailleurs
-sans perte fonctionnelle).
+**🎯 Dette 13 soldée** (#95 : QrRedirectController en Response —
+actions testables, 12 tests Unit).
+**Prochaine session** : toutes les dettes documentées sont soldées
+(1, 2 et 14 restent des améliorations optionnelles). Candidats :
+balayer les `header()`/`exit` restants hors QrRedirectController
+(ex : `QrCodeReader::read()` avec $outputDirectly), ou nouvelle vague
+fonctionnelle.
