@@ -5,6 +5,9 @@ use Epiclub\Engine\AbstractManager;
 
 class ClubManager extends AbstractManager
 {
+    /** [REFACTOR #92] Champs autorisés en écriture (filteredInsert / filteredUpdate). */
+    private const ALLOWED_FIELDS = ['nom', 'activite', 'description', 'email', 'phone'];
+
     public function findParameters()
     {
         $sql = "SELECT * FROM club WHERE id=1";
@@ -26,28 +29,26 @@ class ClubManager extends AbstractManager
         return $this->db->lastInsertId('club');
     }
 
+    /**
+     * [REFACTOR #92] Table pour filteredInsert()/filteredUpdate()
+     * (AbstractManager).
+     */
+    protected function tableName(): string
+    {
+        return 'club';
+    }
+
     private function _create(array $club)
     {
-        // On filtre les champs pour l'insertion
-        $allowedFields = ['nom', 'activite', 'description', 'email', 'phone'];
-        $filteredClub = array_intersect_key($club, array_flip($allowedFields));
-        
-        $sql = "INSERT INTO club (nom, activite, description, email, phone) 
-            VALUES (:nom, :activite, :description, :email, :phone)";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute($filteredClub);
+        return $this->filteredInsert($club, self::ALLOWED_FIELDS);
     }
 
     private function _patch(array $club)
     {
-        // On filtre les champs pour la mise à jour
-        $allowedFields = ['nom', 'activite', 'description', 'email', 'phone'];
-        $filteredClub = array_intersect_key($club, array_flip($allowedFields));
-        
-        $sql = "UPDATE club 
-            SET nom=:nom, activite=:activite, description=:description, email=:email, phone=:phone
-            WHERE id=1";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute($filteredClub);
+        // Singleton : la fiche club est toujours la ligne id=1, quelle
+        // que soit la valeur de 'id' reçue (iso-comportement : l'ancien
+        // SQL était WHERE id=1 littéral, sans paramètre bindé).
+        $club['id'] = 1;
+        return $this->filteredUpdate($club, self::ALLOWED_FIELDS);
     }
 }

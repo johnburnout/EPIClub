@@ -268,52 +268,14 @@ class UtilisateurManager extends AbstractManager
 
     private function _patch(array $utilisateur): bool
     {
-        $filtered = array_intersect_key($utilisateur, array_flip(self::ALLOWED_FIELDS));
-
-        if (empty($filtered)) {
-            throw new \RuntimeException('Aucun champ valide à mettre à jour.');
-        }
-
-        if (empty($utilisateur['id'])) {
-            throw new \RuntimeException('ID utilisateur manquant pour la mise à jour.');
-        }
-
-        // Construire dynamiquement SET col = :col
-        $sets = [];
-        foreach (array_keys($filtered) as $col) {
-            $sets[] = "$col = :$col";
-        }
-
-        $sql = sprintf(
-            'UPDATE utilisateur SET %s WHERE id = :id',
-            implode(', ', $sets)
-        );
-
-        $filtered['id'] = $utilisateur['id'];
-
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute($filtered);
+        // [REFACTOR #92] Délégué au helper générique — même contrat :
+        // filtrage ALLOWED_FIELDS, SET dynamique, gardes RuntimeException.
+        return $this->filteredUpdate($utilisateur, self::ALLOWED_FIELDS);
     }
 
     private function _create(array $utilisateur): bool
     {
-        $filtered = array_intersect_key($utilisateur, array_flip(self::ALLOWED_FIELDS));
-
-        if (empty($filtered)) {
-            throw new \RuntimeException('Aucun champ valide à insérer.');
-        }
-
-        $columns = array_keys($filtered);
-        $placeholders = array_map(fn($c) => ':' . $c, $columns);
-
-        $sql = sprintf(
-            'INSERT INTO utilisateur (%s) VALUES (%s)',
-            implode(', ', $columns),
-            implode(', ', $placeholders)
-        );
-
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute($filtered);
+        return $this->filteredInsert($utilisateur, self::ALLOWED_FIELDS);
     }
 
     public function getDb()

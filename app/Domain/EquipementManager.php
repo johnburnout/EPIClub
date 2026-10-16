@@ -87,8 +87,28 @@ class EquipementManager extends AbstractManager
         return $stmt->fetchColumn() > 0;
     }
 
+    /**
+     * [REFACTOR #92] Champs autorisés en écriture (filteredInsert /
+     * filteredUpdate).
+     */
+    private const ALLOWED_FIELDS = [
+        'acquisition_id', 'categorie_id', 'reference', 'libelle', 'code',
+        'statut', 'remarques', 'date_dernier_controle', 'controle_en_cours',
+        'emplacement_id', 'date_mise_en_service', 'date_fin_utilisation',
+        'nombre', 'photo', 'est_epi'
+    ];
+
+    /** [REFACTOR #92] Défaut null des colonnes sans coercition spécifique. */
+    private const CREATE_NULL_DEFAULTS = [
+        'acquisition_id' => null, 'categorie_id' => null, 'reference' => null,
+        'libelle' => null, 'code' => null, 'statut' => null,
+    ];
+
     private function _create(array $equipement)
     {
+        // Coercitions historiques (?? = null explicite compris) conservées
+        // telles quelles : le remplissage null des autres colonnes est
+        // délégué à CREATE_NULL_DEFAULTS (#92).
         $equipement['remarques'] = $equipement['remarques'] ?? null;
         $equipement['date_dernier_controle'] = $equipement['date_dernier_controle'] ?? null;
         $equipement['controle_en_cours'] = $equipement['controle_en_cours'] ?? 0;
@@ -99,60 +119,12 @@ class EquipementManager extends AbstractManager
         $equipement['photo'] = $equipement['photo'] ?? null;
         $equipement['est_epi'] = $equipement['est_epi'] ?? 1;
 
-        $allowedFields = [
-            'acquisition_id', 'categorie_id', 'reference', 'libelle', 'code',
-            'statut', 'remarques', 'date_dernier_controle', 'controle_en_cours',
-            'emplacement_id', 'date_mise_en_service', 'date_fin_utilisation',
-            'nombre', 'photo', 'est_epi'
-        ];
-
-        $filtered = array_intersect_key($equipement, array_flip($allowedFields));
-
-        $sql = "INSERT INTO club_equipement
-        (acquisition_id, categorie_id, reference, libelle, code, statut, remarques,
-            date_dernier_controle, controle_en_cours, emplacement_id,
-            date_mise_en_service, date_fin_utilisation, nombre, photo, est_epi)
-        VALUES
-        (:acquisition_id, :categorie_id, :reference, :libelle, :code, :statut, :remarques,
-            :date_dernier_controle, :controle_en_cours, :emplacement_id,
-            :date_mise_en_service, :date_fin_utilisation, :nombre, :photo, :est_epi)";
-
-        $stmt = $this->db->prepare($sql);
-
-        foreach ($allowedFields as $field) {
-            if (!array_key_exists($field, $filtered)) {
-                $filtered[$field] = null;
-            }
-        }
-
-        return $stmt->execute($filtered);
+        return $this->filteredInsert($equipement, self::ALLOWED_FIELDS, self::CREATE_NULL_DEFAULTS);
     }
 
     private function _patch(array $equipement)
     {
-        $allowedFields = [
-            'acquisition_id', 'categorie_id', 'reference', 'libelle', 'code',
-            'statut', 'remarques', 'date_dernier_controle', 'controle_en_cours',
-            'emplacement_id', 'id', 'date_mise_en_service', 'date_fin_utilisation',
-            'nombre', 'photo', 'est_epi'
-        ];
-        $filtered = array_intersect_key($equipement, array_flip($allowedFields));
-
-        $sql = "UPDATE club_equipement
-                SET acquisition_id=:acquisition_id, categorie_id=:categorie_id,
-                    reference=:reference, libelle=:libelle, code=:code,
-                    statut=:statut, remarques=:remarques,
-                    date_dernier_controle=:date_dernier_controle,
-                    controle_en_cours=:controle_en_cours,
-                    emplacement_id=:emplacement_id,
-                    date_mise_en_service=:date_mise_en_service,
-                    date_fin_utilisation=:date_fin_utilisation,
-                    nombre=:nombre,
-                    photo=:photo,
-                    est_epi=:est_epi
-                WHERE id=:id";
-        $stmt = $this->db->prepare($sql);
-        return $stmt->execute($filtered);
+        return $this->filteredUpdate($equipement, self::ALLOWED_FIELDS);
     }
 
     /**

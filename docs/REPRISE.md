@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-16 (fin de session #91 — Vague 15 ouverte)
-**Version courante** : v0.28.0
-**Branche** : `main` (travail direct, ticket #91)
+**Dernière mise à jour** : 2026-10-16 (fin de session #92 — Vague 15 « écritures » terminée)
+**Version courante** : v0.28.1
+**Branche** : `main` (travail direct, ticket #92)
 
 ---
 
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.28.0 | #91 | filteredInsert()/filteredUpdate() génériques — 7 Managers migrés (Vague 15) | `<hash>` |
+| v0.28.1 | #92 | 4 derniers Managers migrés (Club, Utilisateur, AcquisitionLigne, Equipement) — Vague 15 « écritures » terminée | `<hash>` |
+| v0.28.0 | #91 | filteredInsert()/filteredUpdate() génériques — 7 Managers migrés (Vague 15) | `cf3da50` |
 | v0.27.3 | #90 | Caractérisation des save() — 11 tests (5 Managers) | `2c2d9ca` |
 | v0.27.2 | #89 | Contrat findId() uniformisé (false → null) — divergence #88 corrigée | `5bd9392` |
 | v0.27.1 | #88 | Couverture Unit Managers (Club, Controle, ControleLigne, Emplacement, EquipementControle) — 17 tests | `4ab5514` |
@@ -268,7 +269,7 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
 - **#61, #62** : refactors ControleController (injection managers, test Integration edit view).
 
 ### État des tests
-- **432 tests** Unit/Domain verts, **1049 assertions**.
+- **439 tests** Unit/Domain verts, **1077 assertions**.
 - **104 tests** Integration verts, **245 assertions** :
   - 4 Integration Domain (MySQL requis, dont `ForeignKeysIntegrationTest`).
   - 10 Integration Controller (serveur HTTP auto-démarré) — **plus de failures**.
@@ -279,7 +280,7 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
   tests (classe `Epiclub\Tests\Support\WebServer`, cf. commit
   `d1e0bfa`) : inutile de lancer `php -S` dans un autre terminal.
   Un serveur déjà en écoute est réutilisé, jamais arrêté par les tests.
-- **Total avec MySQL actif** : 432 + 104 = **536 tests**.
+- **Total avec MySQL actif** : 439 + 104 = **543 tests**.
 
 ✅ ~~7 tests Integration Controller en échec préexistant :
 `IndexControllerRootUrlTest`~~ → **résolu en #81** (promotion
@@ -367,16 +368,22 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
   #90 corrigées (clés arbitraires → vraies colonnes). 9 tests Unit
   sur les helpers.
 
-### Vague 15 — en cours (factorisation des écritures)
+### Vague 15 — ✅ écritures terminées (#91 + #92)
+
+- ✅ **#91** — `filteredInsert()` / `filteredUpdate()` dans
+  `AbstractManager` ; 7 Managers migrés (cf. section Vague 14 ci-dessus
+  pour l'entrée détaillée).
+- ✅ **#92** — 4 derniers Managers migrés : `UtilisateurManager`
+  (alignement, son SQL dynamique faisait doublon), `ClubManager`
+  (`id=1` forcé en `_patch` — singleton), `AcquisitionLigneManager`
+  (`equipements_generes` forcé à 0, `regrouper_en_lot ?? 0`, traduction
+  duplicate key conservée), `EquipementManager` (9 coercitions `??`
+  conservées). `tableName()` ajouté à Club et AcquisitionLigne.
+  7 tests de caractérisation `save()` ajoutés (Equipement,
+  AcquisitionLigne). **Tous les `_create`/`_patch` passent par les
+  helpers #91.**
 
 Candidats suivants (par ordre de pertinence) :
-  - **#92** — Migrer les 4 restants : `EquipementManager` (9 défauts +
-    remplissage null → exprimables en `$defaults` complets),
-    `ClubManager` (`WHERE id=1`, singleton — paramètre where ?),
-    `AcquisitionLigneManager` (valeur forcée `equipements_generes=0` +
-    traduction duplicate key — garder le try/catch, déléguer le SQL),
-    `UtilisateurManager` (aligner sur les helpers, son propre SQL
-    dynamique devient redondant).
   - Hydratation `findAll` restée sur `SELECT *` (projection publique).
   - **Dette 12** — `QrRedirectController` méthodes privées mixtes
     (basse priorité).
@@ -479,7 +486,7 @@ séparés quand le temps le permet.
 
 Tests (depuis la racine du projet) :
 
-- `php vendor/bin/phpunit` — suite Unit/Domain (432 tests, cf.
+- `php vendor/bin/phpunit` — suite Unit/Domain (439 tests, cf.
   `defaultTestSuite="Unit"` dans `phpunit.xml`).
 - `php vendor/bin/phpunit --testsuite Integration` — suite Integration
   (104 tests : 4 Integration Domain + 10 Integration Controller —
@@ -707,6 +714,18 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 
 ## Contexte de la session précédente
 
+- **#92** (v0.28.1) : migration des 4 derniers Managers aux helpers
+  d'écriture #91 — `UtilisateurManager` (alignement),
+  `ClubManager` (`id=1` forcé, singleton), `AcquisitionLigneManager`
+  (règles métier conservées : `equipements_generes` forcé à 0,
+  traduction duplicate key), `EquipementManager` (9 coercitions `??`
+  conservées, défauts null délégués à `CREATE_NULL_DEFAULTS`).
+  `tableName()` ajouté à Club et AcquisitionLigne. 7 tests de
+  caractérisation `save()` ajoutés (PDOException par réflexion pour
+  le SQLSTATE chaîne '23000'). **Vague 15 « écritures » terminée :
+  tous les _create/_patch passent par les helpers.**
+  439 tests Unit (1077 assertions), 104 Integration (245).
+  Travail direct sur `main`.
 - **#91** (v0.28.0) : **Vague 15 ouverte** — `filteredInsert()` /
   `filteredUpdate()` génériques dans `AbstractManager` (SQL dynamique
   façon UtilisateurManager, filtrage + défauts + hook `tableName()`).
@@ -849,8 +868,8 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 
 **🎯 Vague 11 complète** (3 contrôleurs, 67 tests Unit).
 **🎯 Vague 14 complète** (#68 à #90 livrés).
-**🎯 Vague 15 ouverte** (#91 : écritures génériques, 7 Managers migrés).
-**Prochaine session** : ticket #92 — migrer les 4 Managers restants
-aux helpers d'écriture (`EquipementManager`, `ClubManager`,
-`AcquisitionLigneManager`, `UtilisateurManager`), puis hydratation
-`findAll` (SELECT * → projection) ou Dettes 12/13 (basse priorité).
+**🎯 Vague 15 « écritures » terminée** (#91 + #92 : tous les
+`_create`/`_patch` passent par `filteredInsert()`/`filteredUpdate()`).
+**Prochaine session** : hydratation `findAll` restée sur `SELECT *`
+(projection publique, cf. Dette 8 pour Utilisateur), ou Dettes 12/13
+(`QrRedirectController`, basse priorité).

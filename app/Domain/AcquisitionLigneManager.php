@@ -125,23 +125,27 @@ class AcquisitionLigneManager extends AbstractManager
     }
 
     /**
+     * [REFACTOR #92] Champs autorisés en écriture (filteredInsert /
+     * filteredUpdate).
+     */
+    private const ALLOWED_FIELDS = ['acquisition_id', 'reference', 'designation', 'categorie_id', 'nombre', 'equipements_generes', 'regrouper_en_lot'];
+
+    /**
      * @throws DuplicateReferenceException
      */
     private function _create(array $ligne)
     {
-        $sql = "INSERT INTO acquisition_ligne (acquisition_id, reference, designation, categorie_id, nombre, equipements_generes, regrouper_en_lot)
-                VALUES (:acquisition_id, :reference, :designation, :categorie_id, :nombre, :equipements_generes, :regrouper_en_lot)";
-        $stmt = $this->db->prepare($sql);
+        // [REFACTOR #92] SQL délégué au helper générique ; les règles
+        // métier historiques sont conservées en pré-traitement :
+        //  - equipements_generes TOUJOURS forcé à 0 à la création,
+        //    même si fourni par l'appelant ;
+        //  - regrouper_en_lot : défaut 0 (isset() historique : une
+        //    valeur null explicite retombait aussi sur 0).
+        $ligne['equipements_generes'] = 0;
+        $ligne['regrouper_en_lot'] = $ligne['regrouper_en_lot'] ?? 0;
+
         try {
-            return $stmt->execute([
-                'acquisition_id'     => $ligne['acquisition_id'],
-                'reference'          => $ligne['reference'],
-                'designation'        => $ligne['designation'],
-                'categorie_id'       => $ligne['categorie_id'],
-                'nombre'             => $ligne['nombre'],
-                'equipements_generes' => 0,
-                'regrouper_en_lot'   => isset($ligne['regrouper_en_lot']) ? $ligne['regrouper_en_lot'] : 0,
-            ]);
+            return $this->filteredInsert($ligne, self::ALLOWED_FIELDS);
         } catch (\PDOException $e) {
             // [ROBUSTESSE] La contrainte UNIQUE sur `reference` protège
             // contre la race condition entre findByReference() et l'INSERT.
@@ -161,18 +165,8 @@ class AcquisitionLigneManager extends AbstractManager
      */
     private function _patch(array $ligne)
     {
-        // Filtrer les champs pour éviter les erreurs
-        $allowedFields = ['acquisition_id', 'reference', 'designation', 'categorie_id', 'nombre', 'equipements_generes', 'regrouper_en_lot', 'id'];
-        $filteredLigne = array_intersect_key($ligne, array_flip($allowedFields));
-
-        $sql = "UPDATE acquisition_ligne
-                SET acquisition_id=:acquisition_id, reference=:reference, designation=:designation,
-                    categorie_id=:categorie_id, nombre=:nombre, equipements_generes=:equipements_generes,
-                    regrouper_en_lot=:regrouper_en_lot
-                WHERE id=:id";
-        $stmt = $this->db->prepare($sql);
         try {
-            return $stmt->execute($filteredLigne);
+            return $this->filteredUpdate($ligne, self::ALLOWED_FIELDS);
         } catch (\PDOException $e) {
             if ($this->isDuplicateKey($e)) {
                 throw new DuplicateReferenceException(
@@ -194,6 +188,15 @@ class AcquisitionLigneManager extends AbstractManager
             && (int) ($e->errorInfo[1] ?? 0) === 1062;
     }
     
+    /**
+    * [REFACTOR #92] Table pour filteredInsert()/filteredUpdate()
+    * (AbstractManager).
+    */
+    protected function tableName(): string
+    {
+        return 'acquisition_ligne';
+    }
+
     /**
     * [REFACTOR #72] Factory AcquisitionManager — mockable en test Unit.
     *

@@ -25,6 +25,33 @@ Branché dans `AbstractControllerTestCase::setUp()` et
 `AccessControlTest::setUp()`. Fini les 64 faux échecs « connexion
 refusée » quand la suite était lancée sans serveur de dev.
 
+## [v0.28.1] — 2026-10-16
+
+### Changed
+
+- **Migration des 4 derniers Managers aux écritures génériques (#92,
+fin de la Vague 15 pour les `save()`).** `UtilisateurManager` aligné
+sur `filteredInsert()`/`filteredUpdate()` (son SQL dynamique fait
+désormais doublon) ; `ClubManager` migré avec `id=1` forcé en `_patch`
+(singleton, iso-comportement du `WHERE id=1` littéral) ;
+`AcquisitionLigneManager` migré en conservant les règles métier
+(`equipements_generes` toujours forcé à 0 à la création,
+`regrouper_en_lot ?? 0`, traduction duplicate key 1062 →
+`DuplicateReferenceException`) ; `EquipementManager` migré en
+conservant ses 9 coercitions `??` (un `null` explicite retombe sur
+`0`/`1`/`null` comme avant). `tableName()` ajouté à `ClubManager` et
+`AcquisitionLigneManager`. **Tous les `_create`/`_patch` du projet
+passent désormais par les helpers #91.**
+
+### Added
+
+- **7 tests de caractérisation `save()`** (#92) :
+`EquipementManagerSaveTest` (coercitions historiques, `null` explicite,
+UPDATE partiel) et `AcquisitionLigneManagerSaveTest` (forçage
+`equipements_generes=0`, traduction duplicate key INSERT/UPDATE —
+PDOException construite par réflexion pour porter le SQLSTATE
+`'23000'` en chaîne comme le driver).
+
 ## [v0.28.0] — 2026-10-16
 
 ### Added
