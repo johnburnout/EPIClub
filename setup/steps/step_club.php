@@ -46,10 +46,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $clubManager->save($club);
 
-        if (isset($_POST['install_default_activity_data'])) {
-            /** @todo installer les données par défaut */
-        }
-
         header('Location: ?step=final');
         exit();
     }
@@ -96,15 +92,8 @@ require __DIR__ . '/../includes/header.php';
         <label for="phone" class="form-label">N° téléphone</label>
         <input type="text" class="form-control" name="phone" id="phone" value="<?= htmlspecialchars($club['phone']); ?>">
     </div>
-    <div class="mb-3 form-check">
-        <input type="checkbox" class="form-check-input" name="install_default_activity_data" id="install_default_activity_data">
-        <label class="form-check-label" for="install_default_activity_data">Installer les données par défaut* ?</label>
-    </div>
     <button type="submit" class="btn btn-primary">Valider</button>
     <?= setup_csrf_field() ?>
-    <div class="mt-3">
-        <p class="text-muted">* Initialise la database avec des données (catégories, fournisseurs) pour l'activité sélectionnée.</p>
-    </div>
 </form>
 
 <?php require __DIR__ . '/../includes/footer.php'; ?>

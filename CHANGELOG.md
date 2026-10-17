@@ -25,6 +25,28 @@ Branché dans `AbstractControllerTestCase::setUp()` et
 `AccessControlTest::setUp()`. Fini les 64 faux échecs « connexion
 refusée » quand la suite était lancée sans serveur de dev.
 
+## [v0.29.12] — 2026-10-17
+
+### Removed
+
+- **Dette 28 (#108)** : suppression de `setup/demo/` (1,3 Mo de CSV et
+  images d'escalade jamais utilisés) et de la checkbox « Installer les
+  données par défaut » de `step_club` dont le handler n'était qu'un
+  `@todo` mort — la case ne faisait strictement rien.
+
+### Fixed
+
+- **Dette 28 (#108)** : `setup/includes/footer.php` affichait
+  « Epiclub 0.9.3 (beta) », version fantaisiste — il affiche désormais
+  la version réelle lue dans `version.txt` (fallback `0.0.0`). Même
+  correctif dans `templates/user_login.twig` (la page de login
+  utilisait le global `app_version` existant, comme `_layout.twig`).
+- **Dette 28 (#108)** : `setup/steps/step_smtp.php` ré-affichait le mot
+  de passe saisi dans le formulaire après un POST en échec — cohérent
+  avec step_dbms et la politique « jamais de mot de passe en clair »,
+  le champ est désormais rendu vide et la clé `password` sort du
+  tableau de ré-affichage.
+
 ## [v0.29.11] — 2026-10-17
 
 ### Security

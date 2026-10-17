@@ -49,8 +49,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $smtp = [
         'domain' => $_POST['domain'] ?? '',
         'port' => $_POST['port'] ?? 587,
-        'user' => $_POST['user'] ?? '',
-        'password' => $_POST['password'] ?? ''
+        'user' => $_POST['user'] ?? ''
+        // [#108 - Dette 28] 'password' volontairement absent : jamais ré-affiché après un POST en échec.
     ];
 }
 
@@ -92,7 +92,8 @@ require __DIR__ . '/../includes/header.php';
     </div>
     <div class="mb-3">
         <label for="password" class="form-label">Mot de passe</label>
-        <input type="password" class="form-control" name="password" id="password" value="<?= htmlspecialchars($smtp['password']); ?>">
+        <!-- [#108 - Dette 28] Jamais ré-affiché : cohérent avec step_dbms et la politique « pas de mot de passe en clair ». -->
+        <input type="password" class="form-control" name="password" id="password" value="">
     </div>
     <button type="submit" class="btn btn-primary">Valider</button>
     <?= setup_csrf_field() ?>

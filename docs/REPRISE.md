@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-17 (session #108 — Dettes 25-27 soldées, installeur durci)
-**Version courante** : v0.29.11
+**Dernière mise à jour** : 2026-10-17 (session #108 — Dettes 25-28 soldées, audit setup/ terminé)
+**Version courante** : v0.29.12
 **Branche** : `main` (travail direct, ticket #108)
 
 ---
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.29.11 | #108 | Dettes 25-27 soldées — durcissement installeur (chmod 0600, admin non re-exécutable, garde accès setup) | `<hash>` |
+| v0.29.12 | #108 | Dette 28 soldée — code mort setup/ (demo/ + checkbox @todo, footer version dynamique, mdp SMTP masqué) | `<hash>` |
+| v0.29.11 | #108 | Dettes 25-27 soldées — durcissement installeur (chmod 0600, admin non re-exécutable, garde accès setup) | `8118f23` |
 | v0.29.10 | #106+#107 | Dettes 23+24 soldées — setup sécurisé (doublon parser supprimé, CSRF installateur) + 6 tests Unit | `25d2868` |
 | v0.29.9 | #99 | Dette 19 soldée — AcquisitionLineController migré Vague 11 (4 factories, 7 'new' retirés) + 6 tests Unit | `75b96f7` |
 | v0.29.8 | #102 | Dette 21 soldée — AppUserAuthController return Response (2 bugs send()) + factory authenticator + 5 tests Unit | `f5ba114` |
@@ -685,17 +686,28 @@ croisées avec `app/bootstrap.php` et `app/Engine/EnvironmentFileParser`.
   votre serveur. ». Le flux normal n'est pas affecté (le bootstrap ne
   requiert install.php que si l'install est incomplète).
 
-#### Dette 28 — 🟢 : code mort et cosmétique
+#### Dette 28 — ✅ SOLDÉE (#108, v0.29.12)
 
-- `setup/demo/` (CSV + images) **jamais utilisé** : la checkbox
-  « Installer les données par défaut » de step_club contient un
-  `@todo` mort → la case ne fait rien. Soit livrer l'import, soit
-  retirer demo/ + la checkbox.
-- `setup/includes/footer.php` affiche « Epiclub 0.9.3 (beta) » —
-  version fantaisiste vs version.txt (cosmétique).
-- step_smtp ré-affiche le mot de passe saisi dans le formulaire
-  (`value="<?= … $smtp['password'] ?>"`) — incohérent avec la politique
-  « jamais de mot de passe en clair » de step_dbms (cosmétique/UX).
+- `setup/demo/` (CSV + images, 1,3 Mo) **jamais utilisé** : la checkbox
+  « Installer les données par défaut » de step_club contenait un
+  `@todo` mort → la case ne faisait rien. Décision (audit) : retirer
+  plutôt que livrer l'import — dossier supprimé, checkbox + handler +
+  note de bas de formulaire retirés de step_club.
+- `setup/includes/footer.php` affichait « Epiclub 0.9.3 (beta) »,
+  version fantaisiste vs version.txt. Correctif : version lue
+  dynamiquement dans `version.txt` (`__DIR__/../../version.txt`,
+  fallback 0.0.0). Le même « 0.9.3 (beta) » figé traînait dans
+  `templates/user_login.twig` → remplacé par `{{ app_version }}`, le
+  global déjà exposé par TwigRenderer (convention de `_layout.twig`).
+- step_smtp ré-affichait le mot de passe saisi (`value="<?= … $smtp
+  ['password'] ?>"`) après un POST en échec — incohérent avec step_dbms.
+  Correctif : champ rendu vide + clé `password` retirée du tableau de
+  ré-affichage.
+- Smoke tests /tmp : checkbox absente du HTML de step_club, footer
+  « Epiclub 0.29.11 (beta) » rendu (fallback 0.0.0 vérifié quand
+  version.txt est absent), champ password SMTP vide.
+- Suites : 485 Unit (1208 assertions) + 106 Integration (250
+  assertions) — baseline inchangée.
 
 ---
 
