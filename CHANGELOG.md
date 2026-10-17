@@ -25,6 +25,27 @@ Branché dans `AbstractControllerTestCase::setUp()` et
 `AccessControlTest::setUp()`. Fini les 64 faux échecs « connexion
 refusée » quand la suite était lancée sans serveur de dev.
 
+## [v0.29.9] — 2026-10-17
+
+### Changed
+
+- **Dette 19 (#99)** : `AcquisitionLineController`, **dernier contrôleur
+  migré Vague 11** — les 7 `new` en dur (`AcquisitionLigneManager`,
+  `CategorieManager`, `AcquisitionManager`, `AcquisitionProcess` dans
+  `modifyLine()`/`deleteLine()`/validator) sont remplacés par 4
+  factories `protected` (pattern des 16 autres contrôleurs). Vérifié
+  par grep exhaustif : tous les `new XxxManager()/Process` restants
+  dans `app/Controller/` vivent désormais dans des corps de factory.
+  Iso-comportement strict.
+
+### Added
+
+- **Tests** : 6 tests Unit (`AcquisitionLineControllerTest` +
+  `TestableAcquisitionLineController`) — modification réussie
+  (save + redirection, `categorie_process` injecté), refus si
+  acquisition validée, ré-affichage du formulaire avec erreurs,
+  suppression réussie, refus si équipements générés, garde ROLE_ADMIN.
+
 ## [v0.29.8] — 2026-10-17
 
 ### Fixed

@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-17 (session #102 — Dette 21 soldée)
-**Version courante** : v0.29.8
-**Branche** : `main` (travail direct, ticket #102)
+**Dernière mise à jour** : 2026-10-17 (session #99 — Dette 19 soldée, Vague 11 complète)
+**Version courante** : v0.29.9
+**Branche** : `main` (travail direct, ticket #99)
 
 ---
 
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.29.8 | #102 | Dette 21 soldée — AppUserAuthController return Response (2 bugs send()) + factory authenticator + 5 tests Unit | `<hash>` |
+| v0.29.9 | #99 | Dette 19 soldée — AcquisitionLineController migré Vague 11 (4 factories, 7 'new' retirés) + 6 tests Unit | `<hash>` |
+| v0.29.8 | #102 | Dette 21 soldée — AppUserAuthController return Response (2 bugs send()) + factory authenticator + 5 tests Unit | `f5ba114` |
 | v0.29.7 | #100 | Dette 15 soldée — JournalController::index(Request) + query->get() (dernier $_GET de app/) + 3 tests Unit | `c37753d` |
 | v0.29.6 | #101 | Dettes 16+17 soldées — ConfigProvider partout (systemSettings SMTP, PDO migrations) + 4 tests Unit | `3448799` |
 | v0.29.5 | #104 | Dette 22 soldée — /guide réservé ROLE_USER (décision produit) + 2 tests Unit | `f3bd90b` |
@@ -517,16 +518,19 @@ allégations : les dettes 4 et 12 **sont** soldées (#86, #94), et le
   grep exhaustif). Supprimée, figée par
   `tests/Unit/Engine/DatabaseConnectionRemovedTest.php`.
 
-#### Dette 19 — 🔴 OUVERTE : `AcquisitionLineController` non migré Vague 11
+#### Dette 19 — ✅ SOLDÉE (#99, v0.29.9)
 
 - **Seul contrôleur** avec `new AcquisitionLigneManager()`,
   `new CategorieManager()`, `new AcquisitionManager()`,
-  `new AcquisitionProcess()` en dur (non mockable).
-  La Vague 11 était annoncée complète — elle ne l'est pas.
-- Candidat #99 (priorité audit, argument cohérence ; la revue
-  croisée suggère #104 d'abord, cf. Dette 22). Effort 1,5-2 h **avec**
-  les tests unitaires qui justifient la migration (l'estimation « 1 h »
-  de l'audit est optimiste).
+  `new AcquisitionProcess()` en dur (non mockable). La Vague 11
+  était annoncée complète — elle l'est réellement désormais.
+- 4 factories `protected` extraites ; `validator()` (private) passe
+  par `acquisitionProcess()`. Grep exhaustif post-migration : tous
+  les `new XxxManager()/Process` de `app/Controller/` vivent dans des
+  corps de factory (restent des utilitaires hors scope : ZipArchive,
+  Dompdf, QrCodeGenerator, Spreadsheet — pas de dette déclarée dessus).
+- Iso-comportement strict. 6 tests Unit : `AcquisitionLineControllerTest`
+  (rouge d'abord : 5 échecs prouvant les mocks ignorés avant migration).
 
 #### Dette 20 — ✅ SOLDÉE (#103, v0.29.4)
 

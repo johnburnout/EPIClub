@@ -16,6 +16,32 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 
 class AcquisitionLineController extends AbstractController
 {
+    // ==================================================================
+    // [#99 - Dette 19] Factories Vague 11 — mockables en test Unit.
+    // Dernier contrôleur migré : les `new` en dur disparus des méthodes
+    // publiques (pattern des 16 autres contrôleurs).
+    // ==================================================================
+
+    protected function acquisitionLigneManager(): AcquisitionLigneManager
+    {
+        return new AcquisitionLigneManager();
+    }
+
+    protected function categorieManager(): CategorieManager
+    {
+        return new CategorieManager();
+    }
+
+    protected function acquisitionManager(): AcquisitionManager
+    {
+        return new AcquisitionManager();
+    }
+
+    protected function acquisitionProcess(): AcquisitionProcess
+    {
+        return new AcquisitionProcess();
+    }
+
     /**
      * Instancie le validator (issue #34).
      *
@@ -29,7 +55,7 @@ class AcquisitionLineController extends AbstractController
         return new AcquisitionValidator(
             $ligneManager,
             $acquisitionManager,
-            new AcquisitionProcess(),
+            $this->acquisitionProcess(),
         );
     }
 
@@ -37,8 +63,8 @@ class AcquisitionLineController extends AbstractController
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
 
-        $acquisitionLigneManager = new AcquisitionLigneManager();
-        $categorieManager = new CategorieManager();
+        $acquisitionLigneManager = $this->acquisitionLigneManager();
+        $categorieManager = $this->categorieManager();
 
         $id = $this->getValidId($request);
         if ($id === null) {
@@ -52,7 +78,7 @@ class AcquisitionLineController extends AbstractController
         }
 
         // Vérifier si l'acquisition est validée
-        $acquisitionManager = new AcquisitionManager();
+        $acquisitionManager = $this->acquisitionManager();
         $acquisition = $acquisitionManager->findId($ligne['acquisition_id']);
         if ($acquisition && $acquisition['est_validee'] == 1) {
             $this->session->getFlashBag()->add('error', 'Cette acquisition est validée, les lignes ne peuvent plus être modifiées.');
@@ -82,7 +108,7 @@ class AcquisitionLineController extends AbstractController
 
             if (empty($form_errors)) {
                 // Traiter la catégorie
-                $acquisitionProcess = new AcquisitionProcess();
+                $acquisitionProcess = $this->acquisitionProcess();
                 $categorie_id = $acquisitionProcess->categorie_process([
                     'categorie_libelle' => $ligneData['categorie_libelle'],
                 ]);
@@ -144,7 +170,7 @@ class AcquisitionLineController extends AbstractController
             return new RedirectResponse('/admin/acquisitions');
         }
 
-        $acquisitionLigneManager = new AcquisitionLigneManager();
+        $acquisitionLigneManager = $this->acquisitionLigneManager();
         $ligne = $acquisitionLigneManager->findId($id);
         if (!$ligne) {
             $this->session->getFlashBag()->add('error', 'Ligne non trouvée.');
@@ -152,7 +178,7 @@ class AcquisitionLineController extends AbstractController
         }
 
         // Vérifier si l'acquisition est validée
-        $acquisitionManager = new AcquisitionManager();
+        $acquisitionManager = $this->acquisitionManager();
         $acquisition = $acquisitionManager->findId($ligne['acquisition_id']);
         if ($acquisition && $acquisition['est_validee'] == 1) {
             $this->session->getFlashBag()->add('error', 'Cette acquisition est validée, les lignes ne peuvent plus être supprimées.');
