@@ -25,6 +25,33 @@ Branché dans `AbstractControllerTestCase::setUp()` et
 `AccessControlTest::setUp()`. Fini les 64 faux échecs « connexion
 refusée » quand la suite était lancée sans serveur de dev.
 
+## [v0.29.8] — 2026-10-17
+
+### Fixed
+
+- **Dette 21 (#102)** : `AppUserAuthController` — deux bugs de sortie
+  HTTP, correctifs documentés :
+  - `login()` appelait `$response->send()` sans `return` puis continuait
+    : le formulaire de login était rendu **en plus** de la redirection
+    (double sortie, warnings « headers already sent »). Désormais
+    `return new RedirectResponse('.')`.
+  - `logout()` appelait `$response->send()` puis retournait `null` → le
+    dispatcher exécutait `send()` sur `null` (**Error fatale**, masquée
+    car le header Location partait avant le crash). Désormais
+    `return new RedirectResponse('/')`.
+  - `$_SERVER['REMOTE_ADDR']` migré vers `$request->server->get()`
+    (dernière superglobale de lecture dans les contrôleurs).
+  - Types de retour `: Response` ajoutés sur `login()`/`logout()`.
+
+### Changed
+
+- **Tests** : 5 tests Unit ajoutés (`AppUserAuthControllerTest` +
+  `TestableAppUserAuthController`) — rendu GET, succès POST →
+  redirection (avec régénération du token CSRF), échec → erreur
+  affichée, CSRF invalide → authenticator jamais appelé, logout →
+  redirection + session vidée. Factory `authenticator()` extraite
+  (pattern Vague 11, mockable).
+
 ## [v0.29.7] — 2026-10-17
 
 ### Fixed

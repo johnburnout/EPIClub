@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-17 (session #100 — Dette 15 soldée)
-**Version courante** : v0.29.7
-**Branche** : `main` (travail direct, ticket #100)
+**Dernière mise à jour** : 2026-10-17 (session #102 — Dette 21 soldée)
+**Version courante** : v0.29.8
+**Branche** : `main` (travail direct, ticket #102)
 
 ---
 
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.29.7 | #100 | Dette 15 soldée — JournalController::index(Request) + query->get() (dernier $_GET de app/) + 3 tests Unit | `<hash>` |
+| v0.29.8 | #102 | Dette 21 soldée — AppUserAuthController return Response (2 bugs send()) + factory authenticator + 5 tests Unit | `<hash>` |
+| v0.29.7 | #100 | Dette 15 soldée — JournalController::index(Request) + query->get() (dernier $_GET de app/) + 3 tests Unit | `c37753d` |
 | v0.29.6 | #101 | Dettes 16+17 soldées — ConfigProvider partout (systemSettings SMTP, PDO migrations) + 4 tests Unit | `3448799` |
 | v0.29.5 | #104 | Dette 22 soldée — /guide réservé ROLE_USER (décision produit) + 2 tests Unit | `f3bd90b` |
 | v0.29.4 | #103+#105 | Dettes 20+18 soldées (@deprecated actifs retirés, DatabaseConnection supprimé) + 2 templates email orphelins | `acfd84a` |
@@ -536,12 +537,21 @@ allégations : les dettes 4 et 12 **sont** soldées (#86, #94), et le
   impact routage : l'ancienne route `utilisateur_update` était déjà
   désactivée (commentée dans routes.php).
 
-#### Dette 21 — 🔴 OUVERTE : `AppUserAuthController` envoie sans retourner
+#### Dette 21 — ✅ SOLDÉE (#102, v0.29.8)
 
-- `login()` et `logout()` font `$response->send()` puis laissent le
-  code continuer (bug latent) ; `new AppUserAuthenticator($this->session)`
+- `login()` et `logout()` faisaient `$response->send()` puis laissaient
+  le code continuer (bug latent) ; `new AppUserAuthenticator($this->session)`
   en dur sans factory.
-- Candidat #102. Effort ~30 min. Alignement pattern Response (#95).
+- **Fix de bug documenté n°1** : login() rendait le formulaire EN PLUS
+  de la redirection (double sortie, « headers already sent »).
+- **Fix de bug documenté n°2** : logout() retournait null → send() sur
+  null dans le dispatcher (Error fatale après envoi du header — la
+  déconnexion « marchait » par accident).
+- Factory `authenticator()` extraite (pattern Vague 11) ;
+  `$_SERVER['REMOTE_ADDR']` → `$request->server->get()` (dernière
+  superglobale de lecture dans les contrôleurs) ; `: Response` ajoutés.
+- 5 tests Unit : `AppUserAuthControllerTest`. Plus aucun `->send()`
+  dans `app/` hors commentaire (pattern #95 complet).
 
 #### Dette 22 — ✅ SOLDÉE (#104, v0.29.5)
 
