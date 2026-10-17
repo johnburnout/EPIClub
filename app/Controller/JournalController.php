@@ -25,20 +25,25 @@ class JournalController extends AbstractController
 
     /**
      * Page de liste des journaux
+     *
+     * [#100 - Dette 15] Accepte désormais le Request du dispatcher et lit
+     * les filtres via $request->query au lieu de $_GET (testable en
+     * Unit). Garde « redirect vers /se_connecter » conservée
+     * volontairement (iso-comportement, cf. docblock du test).
      */
-    public function index(): Response
+    public function index(Request $request): Response
     {
         if (!$this->isGranted('ROLE_USER')) {
             return $this->redirectTo('/se_connecter');
         }
 
         $filtres = [
-            'controleur_id' => $_GET['controleur'] ?? null,
-            'annee' => $_GET['annee'] ?? null,
-            'order_by' => $_GET['order_by'] ?? 'date_debut',
-            'order_dir' => $_GET['order_dir'] ?? 'desc',
-            'limit' => (int)($_GET['limit'] ?? 10),
-            'page' => (int)($_GET['page'] ?? 1)
+            'controleur_id' => $request->query->get('controleur'),
+            'annee' => $request->query->get('annee'),
+            'order_by' => $request->query->get('order_by', 'date_debut'),
+            'order_dir' => $request->query->get('order_dir', 'desc'),
+            'limit' => (int) $request->query->get('limit', 10),
+            'page' => (int) $request->query->get('page', 1)
         ];
 
         $resultat = $this->journalManager->getControlesClotures($filtres);

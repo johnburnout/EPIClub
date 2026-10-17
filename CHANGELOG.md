@@ -25,6 +25,27 @@ Branché dans `AbstractControllerTestCase::setUp()` et
 `AccessControlTest::setUp()`. Fini les 64 faux échecs « connexion
 refusée » quand la suite était lancée sans serveur de dev.
 
+## [v0.29.7] — 2026-10-17
+
+### Fixed
+
+- **Dette 15 (#100)** : `JournalController::index()` — dernier contrôleur
+  à lire `$_GET` directement et à refuser le `Request` du dispatcher.
+  Signature migrée en `index(Request $request)` avec lecture des
+  filtres via `$request->query` (valeurs et défauts strictement
+  identiques). `index()` est désormais testable en Unit.
+
+### Changed
+
+- **Tests** : 3 tests Unit ajoutés (`JournalControllerIndexTest`) —
+  filtres capturés depuis la query string, défauts sans paramètres,
+  redirection anonyme vers `/se_connecter` (caractérisation).
+  ⚠️ Sous-point de l'audit écarté documenté : la garde
+  `if (!isGranted) redirectTo(/se_connecter)` est conservée
+  (iso-comportement ; `deniAccessUnlessGranted` renverrait vers `/`,
+  régression UX partagée avec `voir()`/`pdf()` et
+  `IndexController::index()`).
+
 ## [v0.29.6] — 2026-10-17
 
 ### Fixed

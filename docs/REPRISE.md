@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-17 (session #101 — Dettes 16+17 soldées)
-**Version courante** : v0.29.6
-**Branche** : `main` (travail direct, ticket #101)
+**Dernière mise à jour** : 2026-10-17 (session #100 — Dette 15 soldée)
+**Version courante** : v0.29.7
+**Branche** : `main` (travail direct, ticket #100)
 
 ---
 
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.29.6 | #101 | Dettes 16+17 soldées — ConfigProvider partout (systemSettings SMTP, PDO migrations) + 4 tests Unit | `<hash>` |
+| v0.29.7 | #100 | Dette 15 soldée — JournalController::index(Request) + query->get() (dernier $_GET de app/) + 3 tests Unit | `<hash>` |
+| v0.29.6 | #101 | Dettes 16+17 soldées — ConfigProvider partout (systemSettings SMTP, PDO migrations) + 4 tests Unit | `3448799` |
 | v0.29.5 | #104 | Dette 22 soldée — /guide réservé ROLE_USER (décision produit) + 2 tests Unit | `f3bd90b` |
 | v0.29.4 | #103+#105 | Dettes 20+18 soldées (@deprecated actifs retirés, DatabaseConnection supprimé) + 2 templates email orphelins | `acfd84a` |
 | v0.29.3 | #97-98 | Dettes 1+2 soldées — updateSystemSettings() + alias route, setAll() (1 écriture) | `d992ef4` |
@@ -466,12 +467,23 @@ d'être tracées ici. La revue croisée a par ailleurs réfuté deux
 allégations : les dettes 4 et 12 **sont** soldées (#86, #94), et le
 « Symfony 7.3 » est exact (composer.json `^7.3`).
 
-#### Dette 15 — 🔴 OUVERTE : `JournalController` lit `$_GET` direct
+#### Dette 15 — ✅ SOLDÉE (#100, v0.29.7)
 
-- `index()` sans `Request` en signature ; lit `$_GET['controleur']`,
+- `index()` sans `Request` en signature ; lisait `$_GET['controleur']`,
   `annee`, `order_by`, `order_dir`, `limit`, `page` ; garde
   `if (!$this->isGranted(...))` au lieu de `deniAccessUnlessGranted()`.
-- Candidat #100. Effort ~30 min. Testabilité + cohérence HttpFoundation.
+- Migré : `index(Request $request)` + `$request->query->get()` (valeurs
+  et défauts strictement identiques ; dispatcher passe toujours le
+  Request). Dernier `$_GET` de `app/` — il n'en reste aucun en lecture
+  (un seul commentaire dans AcquisitionController mentionne $_POST).
+- **Sous-point de l'audit écarté, documenté** : la garde
+  `if (!isGranted) redirectTo(/se_connecter)` est CONSERVÉE. Ce n'est
+  pas de l'incohérence : c'est le pattern de `voir()`/`pdf()` et
+  d'`IndexController::index()` (redirect UX anonyme vers le login).
+  `deniAccessUnlessGranted` renverrait vers `/` avec flash — régression
+  UX sans gain de sécurité. Pas un fix de bug → iso-comportement prime.
+- 3 tests Unit : `JournalControllerIndexTest` (rouge d'abord : filtres
+  ignorés du Request avant migration).
 
 #### Dette 16 — ✅ SOLDÉE (#101, v0.29.6)
 
