@@ -84,11 +84,13 @@
 									</div>
 								</li>
 							{% endif %}
+							{% if isGranted('ROLE_USER') %}
 							<li class="nav-item">
 								<a class="nav-link" href="/guide" target="_blank">
 									<i class="fas fa-book"></i> Guide
 								</a>
 							</li>
+							{% endif %}
 						</ul>
 						<div class="d-flex align-items-center">
 							{% if isAuthenticated() %}

@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-17 (session #103/#105 + documentation dettes 15-22)
-**Version courante** : v0.29.4
-**Branche** : `main` (travail direct, tickets #103 + #105)
+**Dernière mise à jour** : 2026-10-17 (session #104 — Dette 22 soldée)
+**Version courante** : v0.29.5
+**Branche** : `main` (travail direct, ticket #104)
 
 ---
 
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.29.4 | #103+#105 | Dettes 20+18 soldées (@deprecated actifs retirés, DatabaseConnection supprimé) + 2 templates email orphelins | `<hash>` |
+| v0.29.5 | #104 | Dette 22 soldée — /guide réservé ROLE_USER (décision produit) + 2 tests Unit | `<hash>` |
+| v0.29.4 | #103+#105 | Dettes 20+18 soldées (@deprecated actifs retirés, DatabaseConnection supprimé) + 2 templates email orphelins | `acfd84a` |
 | v0.29.3 | #97-98 | Dettes 1+2 soldées — updateSystemSettings() + alias route, setAll() (1 écriture) | `d992ef4` |
 | v0.29.1 | #96 | QrCodeReader supprimé (classe morte) — plus aucun header()+exit dans app/ | `9f2934f` |
 | v0.29.0 | #95 | Dette 13 soldée — QrRedirectController en Response, actions testables | `7052801` |
@@ -518,14 +519,17 @@ allégations : les dettes 4 et 12 **sont** soldées (#86, #94), et le
   en dur sans factory.
 - Candidat #102. Effort ~30 min. Alignement pattern Response (#95).
 
-#### Dette 22 — 🟡 À TRANCHER (décision produit) : accès `/guide`
+#### Dette 22 — ✅ SOLDÉE (#104, v0.29.5)
 
 - `GuideController::index()` sans aucune garde. Le lien est dans
   `_layout.twig`, qui sert aussi `user_forgot_password.twig` (publique,
-  hors connexion) → le guide est aujourd'hui atteignable anonymement.
-- Soit `deniAccessUnlessGranted('ROLE_USER')`, soit volonté explicite
-  de le garder public (documentation) → à documenter dans routes.php.
-- Candidat #104. Effort ~5 min une fois tranché.
+  hors connexion) → le guide était atteignable anonymement, et
+  AccessControlTest le figeait comme « seule ressource publique ».
+- **Décision produit 2026-10-17** : réservé aux connectés.
+  `deniAccessUnlessGranted('ROLE_USER')` ajouté, lien de nav masqué
+  pour les anonymes, `tests/public_routes.php` mis à jour, test
+  anonyme remplacé (302 → /), 2 tests Unit ajoutés
+  (`GuideControllerTest` + `TestableGuideController`).
 
 ### Découvertes annexes de l'audit (hors numérotation)
 

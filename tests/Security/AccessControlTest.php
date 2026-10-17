@@ -149,22 +149,24 @@ final class AccessControlTest extends TestCase
     }
 
     /**
-     * Vérifie spécifiquement que /guide est accessible en anonyme.
+     * Vérifie spécifiquement que /guide refuse un anonyme (#104,
+     * décision produit 2026-10-17) : deniAccessUnlessGranted() lève
+     * AccessDeniedException, le dispatcher répond 302 vers /.
      */
-    public function test_guide_is_publicly_accessible(): void
+    public function test_guide_redirects_anonymous_to_login(): void
     {
         $response = $this->requestWithoutAuth('/guide');
 
         $this->assertSame(
-            200,
+            302,
             $response['status'],
-            "Le guide doit être accessible sans connexion (statut reçu : {$response['status']})."
+            "Le guide doit refuser un anonyme (statut reçu : {$response['status']})."
         );
 
-        $this->assertStringContainsString(
-            'guide',
-            strtolower($response['body']),
-            "La page /guide ne semble pas contenir le guide attendu."
+        $this->assertSame(
+            '/',
+            $response['headers']['location'] ?? null,
+            "La redirection d'un anonyme doit viser / (reçu : " . ($response['headers']['location'] ?? 'absent') . ")."
         );
     }
 

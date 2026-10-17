@@ -13,6 +13,6 @@ return [
     '/mot_de_passe_oublie',
     '/mot_de_passe_oublie/confirmation',
     '/regenerer_mot_de_passe',
-    // Guide utilisateur — seule ressource documentaire publique
-    '/guide',
+    // Note (#104) : /guide est désormais réservé aux utilisateurs connectés
+    // (décision produit 2026-10-17) — volontairement absent de cette liste.
 ];

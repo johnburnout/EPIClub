@@ -25,6 +25,28 @@ Branché dans `AbstractControllerTestCase::setUp()` et
 `AccessControlTest::setUp()`. Fini les 64 faux échecs « connexion
 refusée » quand la suite était lancée sans serveur de dev.
 
+## [v0.29.5] — 2026-10-17
+
+### Security
+
+- **Dette 22 (#104)** : `/guide` désormais réservé aux utilisateurs
+  connectés. Décision produit du 2026-10-17 : la page était jusqu'ici
+  la seule ressource publique hors authentification (atteignable
+  anonymement via le lien du layout sur la page « mot de passe
+  oublié »). Garde `deniAccessUnlessGranted('ROLE_USER')` dans
+  `GuideController::index()` ; le lien de navigation n'apparaît plus
+  aux anonymes ; le commentaire « public ? à vérifier » de routes.php
+  est tranché.
+
+### Changed
+
+- **Tests** : `test_guide_is_publicly_accessible` remplacé par
+  `test_guide_redirects_anonymous_to_login` (302 → /) ;
+  `/guide` retiré de `tests/public_routes.php` avec note explicative ;
+  2 tests Unit ajoutés (`GuideControllerTest` : refus anonyme →
+  `AccessDeniedException`, rendu pour un utilisateur connecté) via
+  `TestableGuideController`.
+
 ## [v0.29.4] — 2026-10-17
 
 Suite à l'audit externe du 2026-10-16 (re-vérifié ligne à ligne contre

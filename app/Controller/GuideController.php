@@ -10,6 +10,10 @@ class GuideController extends AbstractController
 {
     public function index(Request $request): Response
     {
+        // [SÉCURITÉ #104] Décision produit 2026-10-17 : le guide est
+        // réservé aux utilisateurs connectés (il était public par défaut).
+        $this->deniAccessUnlessGranted('ROLE_USER');
+
         // Chemin vers le fichier Markdown
         $mdFile = __DIR__ . '/../../docs/guide_utilisateur.md';
 

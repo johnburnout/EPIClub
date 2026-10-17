@@ -384,7 +384,8 @@ $routes->add('qr_api_generate', new Route(
 // =====================================================================
 // GUIDE UTILISATEUR
 // =====================================================================
-// ROLE_USER (public ? à vérifier dans GuideController)
+// ROLE_USER — décision produit 2026-10-17 (#104) : réservé aux
+// utilisateurs connectés (garde dans GuideController::index()).
 
 $routes->add('guide_utilisateur', new Route(
     '/guide',
