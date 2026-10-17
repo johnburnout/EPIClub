@@ -585,6 +585,8 @@ allégations : les dettes 4 et 12 **sont** soldées (#86, #94), et le
   credentials BDD, crée le compte admin) n'a jamais été audité —
   permissions du fichier `.env`, échappement des saisies, suppression
   post-install. Zone d'ombre déclarée, à planifier en audit dédié.
+  → **Audit réalisé le 2026-10-17**, voir section ci-dessous
+  (« Audit setup/ — dettes 23+ »).
 - **`ControleController::edit()`** ~400 lignes et N+1 connus déjà
   listés en Priorité 4 de l'audit (backlog, non bloquant).
 - **Accès `$_ENV` résiduels** (constatés en #101, hors périmètre du
@@ -592,6 +594,83 @@ allégations : les dettes 4 et 12 **sont** soldées (#86, #94), et le
   `TwigRenderer` (~ligne 25, `APP_ENV` dev). Candidats à un futur
   ticket ConfigProvider ; tous les `$_ENV` de *config métier* sont
   désormais migrés.
+
+### Audit `setup/` — 2026-10-17 (dettes 23+)
+
+Périmètre : 13 fichiers PHP, ~950 lignes (install.php, requierements.php,
+includes/, steps/, demo/). Méthode : lecture intégrale + vérifications
+croisées avec `app/bootstrap.php` et `app/Engine/EnvironmentFileParser`.
+
+**Points sains (vérifiés)** :
+- Validation regex stricte host/base/user en step_dbms ; refus d'installer
+  sur une base non vide ; mot de passe jamais ré-affiché en cas d'erreur.
+- Migrations exécutées par `MigrationManager` (aucun SQL à la main).
+- Compte admin : `password_hash`, 12 caractères min, double saisie,
+  rôle SUPER_ADMIN documenté. Requêtes préparées partout (managers).
+- `SECRET_KEY` (32 octets aléatoires) et `SETUP_COMPLETE` écrits via
+  `var_export` (step_admin, step_final). Bootstrap : fallback propre qui
+  repose SETUP_COMPLETE si la base contient déjà des utilisateurs.
+- `install.php` : whitelist stricte des étapes (`in_array`) — pas de LFI.
+- XSS : sorties systématiquement `htmlspecialchars`.
+
+#### Dette 23 — 🔴 CRITIQUE : doublon non échappé d'EnvironmentFileParser
+
+- `setup/includes/EnvironmentFileParser.php` redéclare
+  `Epiclub\Engine\EnvironmentFileParser` (même namespace !) et est
+  chargé en premier par `step_1.php` (`require_once`) → **c'est la
+  version legacy pré-#49 qui gagne** pour toute la session d'install.
+- Son `_dump()` écrit `'$key' => '$value'` **sans échappement** :
+  un `DB_PASS` contenant `'` ou `\` produit un `.env.local.php`
+  **invalide** (site hors service) ou permet d'injecter des clés
+  arbitraires dans un fichier PHP exécuté. La version `app/Engine`
+  échappe via `var_export` depuis #49 (commentaire [SÉCURITÉ]).
+- Correctif : supprimer le doublon setup et utiliser la classe app
+  (autoloadée ; son constructeur `?string $filePath = null` est déjà
+  compatible avec les appels existants `new EnvironmentFileParser()`).
+
+#### Dette 24 — 🔴 CRITIQUE : aucun token CSRF dans l'installeur
+
+- Aucun des formulaires setup (step_1, dbms, admin, smtp, club) ne
+  vérifie de jeton. Pendant la fenêtre d'installation (l'installeur est
+  servi sur TOUTES les URLs par bootstrap), un site tiers peut forger
+  les POST — en particulier **créer le compte SUPER_ADMIN avec les
+  identifiants de l'attaquant** (détournement d'installation).
+- Correctif : token CSRF par étape (session native déjà démarrée dans
+  step_final ; à généraliser dès install.php).
+
+#### Dette 25 — 🟡 : `.env.local.php` en chmod 0664
+
+- `step_1.php` crée le fichier avec `chmod($envFile, 0664)` → lisible
+  par **tous les utilisateurs locaux** (credentials BDD en clair).
+  Correctif : 0600 (ou 0640), mention dans le README.
+
+#### Dette 26 — 🟡 : step_admin re-exécutable (doublons admin + clé)
+
+- Chaque POST insère un NOUVEL admin SUPER_ADMIN (aucune garde « un
+  utilisateur existe déjà ») et régénère SECRET_KEY (ré-écriture silencieuse
+  : les données chiffrées existantes deviendraient indéchiffrables en
+  re-run post-usage). Correctif : refuser si la table utilisateur n'est
+  pas vide ; ne pas régénérer SECRET_KEY s'il existe déjà.
+
+#### Dette 27 — 🟡 : setup/ non supprimé post-install (pas de garde)
+
+- step_final AFFICHE « supprimez setup/ » mais rien n'empêche de
+  relancer l'installeur si le docroot inclut le dossier projet (le
+  bootstrap protège le flux normal via SETUP_COMPLETE, pas l'accès
+  direct au fichier). Correctif minimal : garde en tête d'install.php
+  (refus si SETUP_COMPLETE) — défense en profondeur.
+
+#### Dette 28 — 🟢 : code mort et cosmétique
+
+- `setup/demo/` (CSV + images) **jamais utilisé** : la checkbox
+  « Installer les données par défaut » de step_club contient un
+  `@todo` mort → la case ne fait rien. Soit livrer l'import, soit
+  retirer demo/ + la checkbox.
+- `setup/includes/footer.php` affiche « Epiclub 0.9.3 (beta) » —
+  version fantaisiste vs version.txt (cosmétique).
+- step_smtp ré-affiche le mot de passe saisi dans le formulaire
+  (`value="<?= … $smtp['password'] ?>"`) — incohérent avec la politique
+  « jamais de mot de passe en clair » de step_dbms (cosmétique/UX).
 
 ---
 
