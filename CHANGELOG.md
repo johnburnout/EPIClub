@@ -25,6 +25,36 @@ Branché dans `AbstractControllerTestCase::setUp()` et
 `AccessControlTest::setUp()`. Fini les 64 faux échecs « connexion
 refusée » quand la suite était lancée sans serveur de dev.
 
+## [v0.29.15] — 2026-10-17
+
+### Refactored
+
+- **#111 — `ControleController::edit()` découpé en handlers** (Priorité 4
+  de l'audit, effort ~3 h) : la méthode (~315 lignes) est réduite à
+  l'orchestration et ses blocs extraits en méthodes privées —
+  `handleEditRemarquePost` (CSRF + chiffrement #52 + save + flash),
+  `enrichLignesWithEquipements`, `decryptLignesRemarques`,
+  `decryptControleRemarque`, `parseLignesQueryParams`, `filterLignes`,
+  `sortLignesBy`, `paginate` + `buildPaginationUrls` (blocs identiques
+  lignes/équipements factorisés), `hasPendingLignes`,
+  `parseEquipementQueryParams`, `enrichEquipementsWithRelations`,
+  `filterEquipementsDisponibles`, `sortEquipementsBy`.
+  **Iso-comportement strict** : mouvements mécaniques uniquement —
+  caractérisation 492 Unit + 106 Integration verte avant/après. Les
+  findId() par équipement (N+1) sont volontairement inchangés : figés
+  par `ControleControllerEditManagersTest` (« C'est LE point du test »),
+  ils feront l'objet d'un ticket dédié. Écarts connus laissés tels quels
+  et désormais documentés dans le code : `hasPending` calculé sur les
+  lignes filtrées (le commentaire d'origine disait « avant filtrage »).
+
+### Added
+
+- 4 tests Unit `ControleControllerEditFlowTest` : redirection silencieuse
+  quand le contrôle est absent, POST remarques générales (CSRF +
+  chiffrement #52 vérifié — jamais stocké en clair — + flash + redirect),
+  POST ignoré en readonly (clôturé), rendu du formulaire pour le
+  propriétaire.
+
 ## [v0.29.14] — 2026-10-17
 
 ### Removed

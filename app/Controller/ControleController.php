@@ -338,26 +338,177 @@ class ControleController extends AbstractController
 
         // --- Gestion du POST pour la remarque générale ---
         if ($request->getMethod() === 'POST' && !$readonly) {
-            // [SÉCURITÉ] Vérification CSRF avant enregistrement des remarques
-            $this->validateCsrf($request);
-            
-            // [SÉCURITÉ #52] Chiffrement dès l'écriture. La valeur n'est plus
-            // jamais stockée en clair, même avant clôture du contrôle.
-            $remarqueGenerale = $request->request->get('remarques_generales', '');
-            $controle['hash_remarques'] = $this->encryptRemarque(
-                is_string($remarqueGenerale) ? $remarqueGenerale : ''
-            );
-            $controleManager->save($controle);
-            $this->session->getFlashBag()->add('success', 'Remarques générales mises à jour.');
-            return $this->redirectTo("/admin/controles/edit/$id");
+            return $this->handleEditRemarquePost($request, $controleManager, $controle, $id);
         }
         // --- Fin de la gestion POST ---
 
-        // ---- 1. Récupération des lignes (équipements déjà ajoutés) ----
-        $ligneManager = $this->controleLigneManager();
-        $allLignes = $ligneManager->findByControle($id);
+        // ---- 1. Récupération et préparation des lignes (équipements déjà ajoutés) ----
+        $allLignes = $this->controleLigneManager()->findByControle($id);
+        $allLignes = $this->enrichLignesWithEquipements($allLignes, $this->equipementManager());
+        $allLignes = $this->decryptLignesRemarques($allLignes);
+        $controle = $this->decryptControleRemarque($controle);
 
-        $equipementManager = $this->equipementManager();
+        // ---- 2. Paramètres, filtrage, tri et pagination des lignes ----
+        $lignesParams = $this->parseLignesQueryParams($request);
+        $allLignes = $this->filterLignes($allLignes, $lignesParams['statut'], $lignesParams['search']);
+        $allLignes = $this->sortLignesBy($allLignes, $lignesParams['order_by'], $lignesParams['order_dir']);
+
+        [$lignes, $lignes_total, $lignes_totalPages] = $this->paginate(
+            $allLignes,
+            $lignesParams['page'],
+            $lignesParams['limit']
+        );
+        $lignesPaginationUrls = $this->buildPaginationUrls(
+            [
+                'lignes_statut'   => $lignesParams['statut'],
+                'lignes_search'   => $lignesParams['search'],
+                'lignes_order_by' => $lignesParams['order_by'],
+                'lignes_order_dir'=> $lignesParams['order_dir'],
+                'lignes_limit'    => $lignesParams['limit'],
+            ],
+            $lignesParams['page'],
+            $lignes_totalPages,
+            'lignes_page'
+        );
+
+        // ---- 3. Vérifier s'il reste des équipements "à contrôler" ----
+        // NOTE (#111) : calculé sur les lignes FILTRÉES — le commentaire
+        // d'origine disait « avant filtrage » ; écart connu, iso-comportement.
+        $hasPending = $this->hasPendingLignes($allLignes);
+
+        // ---- 4. Liste des équipements disponibles ----
+        $idsDejaAjoutes = array_column($allLignes, 'equipement_id');
+
+        $filtres = $this->parseEquipementQueryParams($request);
+
+        $categorieManager = $this->categorieManager();
+        $emplacementManager = $this->emplacementManager();
+
+        $tousLesEquipements = $this->equipementManager()->findAll();
+        $tousLesEquipements = $this->enrichEquipementsWithRelations(
+            $tousLesEquipements,
+            $categorieManager,
+            $emplacementManager
+        );
+
+        $equipementsDisponibles = $this->filterEquipementsDisponibles($tousLesEquipements, $idsDejaAjoutes, $filtres);
+        $equipementsDisponibles = $this->sortEquipementsBy(
+            $equipementsDisponibles,
+            $filtres['order_by'],
+            $filtres['order_dir']
+        );
+
+        [$equipementsPage, $total, $totalPages] = $this->paginate(
+            $equipementsDisponibles,
+            $filtres['page'],
+            $filtres['limit']
+        );
+        $paginationUrls = $this->buildPaginationUrls(
+            [
+                'categorie'        => $filtres['categorie_id'],
+                'epi'              => $filtres['epi'],
+                'en_service'       => $filtres['en_service'],
+                'emplacement'      => $filtres['emplacement_id'],
+                'dernier_controle' => $filtres['dernier_controle'],
+                'order_by'         => $filtres['order_by'],
+                'order_dir'        => $filtres['order_dir'],
+                'limit'            => $filtres['limit'],
+            ],
+            $filtres['page'],
+            $totalPages,
+            'page'
+        );
+
+        $categories = $categorieManager->findAll();
+        $emplacements = $emplacementManager->findAll();
+
+        return $this->render('controle_edit.twig', [
+            'controle' => $controle,
+            'lignes' => $lignes,
+            'equipements_disponibles' => array_values($equipementsPage),
+            'categories' => $categories,
+            'emplacements' => $emplacements,
+            'filtres' => [
+                'categorie_id' => $filtres['categorie_id'],
+                'epi' => $filtres['epi'],
+                'en_service' => $filtres['en_service'],
+                'emplacement_id' => $filtres['emplacement_id'],
+                'dernier_controle' => $filtres['dernier_controle'],
+                'order_by' => $filtres['order_by'],
+                'order_dir' => $filtres['order_dir'],
+                'page' => $filtres['page'],
+                'limit' => $filtres['limit'],
+            ],
+            'pagination' => [
+                'total' => $total,
+                'page' => $filtres['page'],
+                'limit' => $filtres['limit'],
+                'totalPages' => $totalPages,
+                'hasPrevious' => $filtres['page'] > 1,
+                'hasNext' => $filtres['page'] < $totalPages,
+            ],
+            'paginationUrls' => $paginationUrls,
+            'lignes_filtres' => [
+                'statut' => $lignesParams['statut'],
+                'search' => $lignesParams['search'],
+                'order_by' => $lignesParams['order_by'],
+                'order_dir' => $lignesParams['order_dir'],
+                'limit' => $lignesParams['limit'],
+            ],
+            'lignes_pagination' => [
+                'total' => $lignes_total,
+                'page' => $lignesParams['page'],
+                'limit' => $lignesParams['limit'],
+                'totalPages' => $lignes_totalPages,
+                'hasPrevious' => $lignesParams['page'] > 1,
+                'hasNext' => $lignesParams['page'] < $lignes_totalPages,
+            ],
+            'lignes_paginationUrls' => $lignesPaginationUrls,
+            'readonly' => $readonly,
+            'hasPending' => $hasPending,
+            'isAdminEdit' => $isAdminEdit,
+            'user' => $user,
+        ]);
+    }
+
+    // ==================================================================
+    // [#111] Handlers privés de edit() — découpés iso-comportement
+    // (Priorité 4 de l'audit : « ControleController::edit() : découper en
+    // handlers »). Aucune transformation : mouvements mécaniques uniquement.
+    // ==================================================================
+
+    /**
+     * POST remarques générales de edit() : CSRF, chiffrement #52, save,
+     * flash et redirection.
+     */
+    private function handleEditRemarquePost(
+        Request $request,
+        ControleManager $controleManager,
+        array $controle,
+        int $id
+    ): Response {
+        // [SÉCURITÉ] Vérification CSRF avant enregistrement des remarques
+        $this->validateCsrf($request);
+
+        // [SÉCURITÉ #52] Chiffrement dès l'écriture. La valeur n'est plus
+        // jamais stockée en clair, même avant clôture du contrôle.
+        $remarqueGenerale = $request->request->get('remarques_generales', '');
+        $controle['hash_remarques'] = $this->encryptRemarque(
+            is_string($remarqueGenerale) ? $remarqueGenerale : ''
+        );
+        $controleManager->save($controle);
+        $this->session->getFlashBag()->add('success', 'Remarques générales mises à jour.');
+        return $this->redirectTo("/admin/controles/edit/$id");
+    }
+
+    /**
+     * Enrichit chaque ligne avec référence/libellé/photo de son équipement.
+     * NOTE : un findId() par ligne, inchangé — figé par
+     * ControleControllerEditManagersTest (« C'est LE point du test »).
+     * Le N+1 fera l'objet d'un ticket dédié.
+     */
+    private function enrichLignesWithEquipements(array $allLignes, EquipementManager $equipementManager): array
+    {
         foreach ($allLignes as &$ligne) {
             $equipement = $equipementManager->findId($ligne['equipement_id']);
             if ($equipement) {
@@ -372,14 +523,18 @@ class ControleController extends AbstractController
         }
         unset($ligne);
 
-        // [SÉCURITÉ #52] Déchiffrement en lecture.
-        //
-        // La remarque générale est chiffrée dès l'écriture par edit() POST.
-        // Elle doit donc être déchiffrée à CHAQUE affichage du formulaire,
-        // que le contrôle soit clôturé ou non. Les lignes suivent la même
-        // logique : elles peuvent être chiffrées après une clôture, mais
-        // tant qu'elles sont en clair, decryptRemarque() retourne null et
-        // on garde la valeur d'origine.
+        return $allLignes;
+    }
+
+    /**
+     * [SÉCURITÉ #52] Déchiffrement en lecture des remarques de lignes.
+     *
+     * Les lignes peuvent être chiffrées après une clôture, mais tant
+     * qu'elles sont en clair, decryptRemarque() retourne null et on
+     * garde la valeur d'origine.
+     */
+    private function decryptLignesRemarques(array $allLignes): array
+    {
         foreach ($allLignes as &$ligne) {
             if (!empty($ligne['remarque'])) {
                 $decrypted = $this->decryptRemarque($ligne['remarque']);
@@ -389,7 +544,17 @@ class ControleController extends AbstractController
             }
         }
         unset($ligne);
-        
+
+        return $allLignes;
+    }
+
+    /**
+     * [SÉCURITÉ #52] Déchiffrement de la remarque générale du contrôle.
+     * Chiffrée dès l'écriture par edit() POST, elle est déchiffrée à
+     * CHAQUE affichage du formulaire, clôturé ou non.
+     */
+    private function decryptControleRemarque(array $controle): array
+    {
         if (!empty($controle['hash_remarques'])) {
             $decrypted = $this->decryptRemarque($controle['hash_remarques']);
             if ($decrypted !== null) {
@@ -397,14 +562,31 @@ class ControleController extends AbstractController
             }
         }
 
-        // ---- 2. Paramètres pour la liste des lignes ----
-        $lignes_page = (int) $request->query->get('lignes_page', 1);
-        $lignes_limit = (int) $request->query->get('lignes_limit', 10);
-        $lignes_order_by = $request->query->get('lignes_order_by', 'reference');
-        $lignes_order_dir = $request->query->get('lignes_order_dir', 'asc');
-        $lignes_statut = $request->query->get('lignes_statut', null);
-        $lignes_search = $request->query->get('lignes_search', '');
+        return $controle;
+    }
 
+    /**
+     * Paramètres query de la liste des lignes.
+     *
+     * @return array{page: int, limit: int, order_by: string, order_dir: string, statut: ?string, search: string}
+     */
+    private function parseLignesQueryParams(Request $request): array
+    {
+        return [
+            'page'      => (int) $request->query->get('lignes_page', 1),
+            'limit'     => (int) $request->query->get('lignes_limit', 10),
+            'order_by'  => $request->query->get('lignes_order_by', 'reference'),
+            'order_dir' => $request->query->get('lignes_order_dir', 'asc'),
+            'statut'    => $request->query->get('lignes_statut', null),
+            'search'    => $request->query->get('lignes_search', ''),
+        ];
+    }
+
+    /**
+     * Filtres statut + recherche (référence/libellé) des lignes.
+     */
+    private function filterLignes(array $allLignes, ?string $lignes_statut, string $lignes_search): array
+    {
         if ($lignes_statut !== null && $lignes_statut !== '') {
             $allLignes = array_filter($allLignes, function($l) use ($lignes_statut) {
                 return $l['statut'] == $lignes_statut;
@@ -418,47 +600,84 @@ class ControleController extends AbstractController
             });
         }
 
-        usort($allLignes, function($a, $b) use ($lignes_order_by, $lignes_order_dir) {
-            $valA = $a[$lignes_order_by] ?? '';
-            $valB = $b[$lignes_order_by] ?? '';
-            if ($lignes_order_dir === 'asc') {
+        return $allLignes;
+    }
+
+    /**
+     * Tri des lignes par colonne (strcmp sur valeurs stringifiées).
+     */
+    private function sortLignesBy(array $lignes, string $orderBy, string $orderDir): array
+    {
+        usort($lignes, function($a, $b) use ($orderBy, $orderDir) {
+            $valA = $a[$orderBy] ?? '';
+            $valB = $b[$orderBy] ?? '';
+            if ($orderDir === 'asc') {
                 return strcmp((string)$valA, (string)$valB);
             } else {
                 return strcmp((string)$valB, (string)$valA);
             }
         });
 
-        $lignes_total = count($allLignes);
-        $lignes_offset = ($lignes_page - 1) * $lignes_limit;
-        $lignes = array_slice($allLignes, $lignes_offset, $lignes_limit);
-        $lignes_totalPages = $lignes_limit > 0 ? ceil($lignes_total / $lignes_limit) : 1;
+        return $lignes;
+    }
 
-        $baseLignesParams = [
-            'lignes_statut' => $lignes_statut,
-            'lignes_search' => $lignes_search,
-            'lignes_order_by' => $lignes_order_by,
-            'lignes_order_dir' => $lignes_order_dir,
-            'lignes_limit' => $lignes_limit,
-        ];
-        $lignesPaginationUrls = [
-            'first' => '?' . http_build_query(array_merge($baseLignesParams, ['lignes_page' => 1])),
-            'previous' => '?' . http_build_query(array_merge($baseLignesParams, ['lignes_page' => max(1, $lignes_page - 1)])),
-            'next' => '?' . http_build_query(array_merge($baseLignesParams, ['lignes_page' => min($lignes_totalPages, $lignes_page + 1)])),
-            'last' => '?' . http_build_query(array_merge($baseLignesParams, ['lignes_page' => $lignes_totalPages])),
-        ];
+    /**
+     * Découpe une liste filtrée en page. Bloc identique utilisé pour les
+     * lignes et les équipements disponibles.
+     *
+     * @return array{0: array, 1: int, 2: float|int} [slice, total, totalPages]
+     */
+    private function paginate(array $items, int $page, int $limit): array
+    {
+        $total = count($items);
+        $offset = ($page - 1) * $limit;
 
-        // ---- 3. Vérifier s'il reste des équipements "à contrôler" (sur toutes les lignes, avant filtrage) ----
-        $hasPending = false;
+        return [
+            array_slice($items, $offset, $limit),
+            $total,
+            $limit > 0 ? ceil($total / $limit) : 1,
+        ];
+    }
+
+    /**
+     * URLs de pagination first/previous/next/last. Bloc identique utilisé
+     * pour les lignes et les équipements disponibles.
+     *
+     * @param string $pageParam Nom du paramètre query de la page ('page'
+     *                          ou 'lignes_page').
+     */
+    private function buildPaginationUrls(array $baseParams, int $page, int $totalPages, string $pageParam): array
+    {
+        return [
+            'first'    => '?' . http_build_query(array_merge($baseParams, [$pageParam => 1])),
+            'previous' => '?' . http_build_query(array_merge($baseParams, [$pageParam => max(1, $page - 1)])),
+            'next'     => '?' . http_build_query(array_merge($baseParams, [$pageParam => min($totalPages, $page + 1)])),
+            'last'     => '?' . http_build_query(array_merge($baseParams, [$pageParam => $totalPages])),
+        ];
+    }
+
+    /**
+     * True si au moins une ligne est "à contrôler" (statut a_controler).
+     */
+    private function hasPendingLignes(array $allLignes): bool
+    {
         foreach ($allLignes as $ligne) {
             if ($ligne['statut'] === 'a_controler') {
-                $hasPending = true;
-                break;
+                return true;
             }
         }
 
-        // ---- 4. Liste des équipements disponibles ----
-        $idsDejaAjoutes = array_column($allLignes, 'equipement_id');
+        return false;
+    }
 
+    /**
+     * Paramètres query de la liste des équipements disponibles
+     * (chaînes vides normalisées en null, page/limit bornés).
+     *
+     * @return array{categorie_id: ?string, epi: ?string, en_service: ?string, emplacement_id: ?string, dernier_controle: ?string, order_by: string, order_dir: string, page: int, limit: int}
+     */
+    private function parseEquipementQueryParams(Request $request): array
+    {
         $categorie_id = $request->query->get('categorie');
         $filter_epi = $request->query->get('epi');
         $en_service = $request->query->get('en_service');
@@ -477,10 +696,29 @@ class ControleController extends AbstractController
         if ($page < 1) $page = 1;
         if ($limit < 1) $limit = 10;
 
-        $categorieManager = $this->categorieManager();
-        $emplacementManager = $this->emplacementManager();
+        return [
+            'categorie_id'     => $categorie_id,
+            'epi'              => $filter_epi,
+            'en_service'       => $en_service,
+            'emplacement_id'   => $emplacement_id,
+            'dernier_controle' => $dernier_controle,
+            'order_by'         => $order_by,
+            'order_dir'        => $order_dir,
+            'page'             => $page,
+            'limit'            => $limit,
+        ];
+    }
 
-        $tousLesEquipements = $equipementManager->findAll();
+    /**
+     * Enrichit chaque équipement de sa catégorie et de son emplacement.
+     * NOTE : findId() par FK, inchangé — figé par
+     * ControleControllerEditManagersTest.
+     */
+    private function enrichEquipementsWithRelations(
+        array $tousLesEquipements,
+        CategorieManager $categorieManager,
+        EmplacementManager $emplacementManager
+    ): array {
         foreach ($tousLesEquipements as $i => $e) {
             if (isset($e['categorie_id'])) {
                 $tousLesEquipements[$i]['categorie'] = $categorieManager->findId($e['categorie_id']);
@@ -490,7 +728,23 @@ class ControleController extends AbstractController
             }
         }
 
-        $equipementsDisponibles = array_filter($tousLesEquipements, function($e) use ($idsDejaAjoutes) {
+        return $tousLesEquipements;
+    }
+
+    /**
+     * Filtres de la liste des équipements disponibles : retrait des déjà
+     * ajoutés, catégorie, EPI, en service, emplacement, dernier contrôle.
+     * Sémantique conservée telle quelle (y compris les cas connus).
+     */
+    private function filterEquipementsDisponibles(array $equipementsDisponibles, array $idsDejaAjoutes, array $filtres): array
+    {
+        $categorie_id = $filtres['categorie_id'];
+        $filter_epi = $filtres['epi'];
+        $en_service = $filtres['en_service'];
+        $emplacement_id = $filtres['emplacement_id'];
+        $dernier_controle = $filtres['dernier_controle'];
+
+        $equipementsDisponibles = array_filter($equipementsDisponibles, function($e) use ($idsDejaAjoutes) {
             return !in_array($e['id'], $idsDejaAjoutes);
         });
 
@@ -541,94 +795,31 @@ class ControleController extends AbstractController
             }
         }
 
-        if ($order_by === 'reference') {
-            usort($equipementsDisponibles, function($a, $b) use ($order_dir) {
-                return $order_dir === 'asc' ? strcmp($a['reference'], $b['reference']) : strcmp($b['reference'], $a['reference']);
+        return $equipementsDisponibles;
+    }
+
+    /**
+     * Tri de la liste des équipements disponibles (reference/libelle/categorie).
+     */
+    private function sortEquipementsBy(array $equipementsDisponibles, string $orderBy, string $orderDir): array
+    {
+        if ($orderBy === 'reference') {
+            usort($equipementsDisponibles, function($a, $b) use ($orderDir) {
+                return $orderDir === 'asc' ? strcmp($a['reference'], $b['reference']) : strcmp($b['reference'], $a['reference']);
             });
-        } elseif ($order_by === 'libelle') {
-            usort($equipementsDisponibles, function($a, $b) use ($order_dir) {
-                return $order_dir === 'asc' ? strcmp($a['libelle'], $b['libelle']) : strcmp($b['libelle'], $a['libelle']);
+        } elseif ($orderBy === 'libelle') {
+            usort($equipementsDisponibles, function($a, $b) use ($orderDir) {
+                return $orderDir === 'asc' ? strcmp($a['libelle'], $b['libelle']) : strcmp($b['libelle'], $a['libelle']);
             });
-        } elseif ($order_by === 'categorie') {
-            usort($equipementsDisponibles, function($a, $b) use ($order_dir) {
+        } elseif ($orderBy === 'categorie') {
+            usort($equipementsDisponibles, function($a, $b) use ($orderDir) {
                 $a_cat = $a['categorie']['libelle'] ?? '';
                 $b_cat = $b['categorie']['libelle'] ?? '';
-                return $order_dir === 'asc' ? strcmp($a_cat, $b_cat) : strcmp($b_cat, $a_cat);
+                return $orderDir === 'asc' ? strcmp($a_cat, $b_cat) : strcmp($b_cat, $a_cat);
             });
         }
 
-        $total = count($equipementsDisponibles);
-        $offset = ($page - 1) * $limit;
-        $equipementsDisponibles = array_slice($equipementsDisponibles, $offset, $limit);
-        $totalPages = $limit > 0 ? ceil($total / $limit) : 1;
-
-        $baseParams = [
-            'categorie' => $categorie_id,
-            'epi' => $filter_epi,
-            'en_service' => $en_service,
-            'emplacement' => $emplacement_id,
-            'dernier_controle' => $dernier_controle,
-            'order_by' => $order_by,
-            'order_dir' => $order_dir,
-            'limit' => $limit,
-        ];
-        $paginationUrls = [
-            'first' => '?' . http_build_query(array_merge($baseParams, ['page' => 1])),
-            'previous' => '?' . http_build_query(array_merge($baseParams, ['page' => max(1, $page - 1)])),
-            'next' => '?' . http_build_query(array_merge($baseParams, ['page' => min($totalPages, $page + 1)])),
-            'last' => '?' . http_build_query(array_merge($baseParams, ['page' => $totalPages])),
-        ];
-
-        $categories = $categorieManager->findAll();
-        $emplacements = $emplacementManager->findAll();
-
-        return $this->render('controle_edit.twig', [
-            'controle' => $controle,
-            'lignes' => $lignes,
-            'equipements_disponibles' => array_values($equipementsDisponibles),
-            'categories' => $categories,
-            'emplacements' => $emplacements,
-            'filtres' => [
-                'categorie_id' => $categorie_id,
-                'epi' => $filter_epi,
-                'en_service' => $en_service,
-                'emplacement_id' => $emplacement_id,
-                'dernier_controle' => $dernier_controle,
-                'order_by' => $order_by,
-                'order_dir' => $order_dir,
-                'page' => $page,
-                'limit' => $limit,
-            ],
-            'pagination' => [
-                'total' => $total,
-                'page' => $page,
-                'limit' => $limit,
-                'totalPages' => $totalPages,
-                'hasPrevious' => $page > 1,
-                'hasNext' => $page < $totalPages,
-            ],
-            'paginationUrls' => $paginationUrls,
-            'lignes_filtres' => [
-                'statut' => $lignes_statut,
-                'search' => $lignes_search,
-                'order_by' => $lignes_order_by,
-                'order_dir' => $lignes_order_dir,
-                'limit' => $lignes_limit,
-            ],
-            'lignes_pagination' => [
-                'total' => $lignes_total,
-                'page' => $lignes_page,
-                'limit' => $lignes_limit,
-                'totalPages' => $lignes_totalPages,
-                'hasPrevious' => $lignes_page > 1,
-                'hasNext' => $lignes_page < $lignes_totalPages,
-            ],
-            'lignes_paginationUrls' => $lignesPaginationUrls,
-            'readonly' => $readonly,
-            'hasPending' => $hasPending,
-            'isAdminEdit' => $isAdminEdit,
-            'user' => $user,
-        ]);
+        return $equipementsDisponibles;
     }
 
     public function addEquipement(Request $request)

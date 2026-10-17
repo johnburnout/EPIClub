@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-17 (session #110 — enums morts supprimés, derniers $_ENV résiduels migrés)
-**Version courante** : v0.29.14
-**Branche** : `main` (travail direct, ticket #110)
+**Dernière mise à jour** : 2026-10-17 (session #111 — ControleController::edit() découpé en handlers, backlog audit soldé)
+**Version courante** : v0.29.15
+**Branche** : `main` (travail direct, ticket #111)
 
 ---
 
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.29.14 | #110 | Enums morts supprimés (EquipementStatuts/EquipementEtats) + derniers $_ENV résiduels migrés (PUBLIC_PATH, APP_ENV) + 4 tests Unit | `<hash>` |
+| v0.29.15 | #111 | ControleController::edit() découpé en handlers (iso-comportement, Priorité 4 audit) + 4 tests Unit | `<hash>` |
+| v0.29.14 | #110 | Enums morts supprimés (EquipementStatuts/EquipementEtats) + derniers $_ENV résiduels migrés (PUBLIC_PATH, APP_ENV) + 4 tests Unit | `87d6461` |
 | v0.29.13 | #109 | Fixture de config — tests Unit indépendants du .env.local.php gitignored (ConfigFile + bootstrap PHPUnit) + 3 tests | `db1fb0e` |
 | v0.29.12 | #108 | Dette 28 soldée — code mort setup/ (demo/ + checkbox @todo, footer version dynamique, mdp SMTP masqué) | `cca6e5a` |
 | v0.29.11 | #108 | Dettes 25-27 soldées — durcissement installeur (chmod 0600, admin non re-exécutable, garde accès setup) | `8118f23` |
@@ -591,8 +592,12 @@ allégations : les dettes 4 et 12 **sont** soldées (#86, #94), et le
   post-install. Zone d'ombre déclarée, à planifier en audit dédié.
   → **Audit réalisé le 2026-10-17**, voir section ci-dessous
   (« Audit setup/ — dettes 23+ »).
-- **`ControleController::edit()`** ~400 lignes et N+1 connus déjà
-  listés en Priorité 4 de l'audit (backlog, non bloquant).
+- **`ControleController::edit()`** — ~~~400 lignes, N+1 connus listés en
+  Priorité 4 de l'audit~~ **découpé en handlers en v0.29.15 (#111)** —
+  iso-comportement, +4 tests Unit.
+  Reste ouvert : les findId() par équipement/catégorie/emplacement (N+1
+  figés par `ControleControllerEditManagersTest`) et l'écart
+  `hasPending` (calculé sur lignes filtrées) — tickets dédiés.
 - **Accès `$_ENV` résiduels** (constatés en #101) :
   ~~`AbstractController` (~ligne 184, `PUBLIC_PATH`) et
   `TwigRenderer` (~ligne 25, `APP_ENV` dev)~~ **migrés en v0.29.14
