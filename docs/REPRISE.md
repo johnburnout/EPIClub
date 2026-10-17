@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-16 (fin de session #97-98 — TOUTES les dettes soldées)
-**Version courante** : v0.29.3
-**Branche** : `main` (travail direct, tickets #97 + #98)
+**Dernière mise à jour** : 2026-10-17 (session #103/#105 + documentation dettes 15-22)
+**Version courante** : v0.29.4
+**Branche** : `main` (travail direct, tickets #103 + #105)
 
 ---
 
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.29.3 | #97-98 | Dettes 1+2 soldées — updateSystemSettings() + alias route, setAll() (1 écriture) | `<hash>` |
+| v0.29.4 | #103+#105 | Dettes 20+18 soldées (@deprecated actifs retirés, DatabaseConnection supprimé) + 2 templates email orphelins | `<hash>` |
+| v0.29.3 | #97-98 | Dettes 1+2 soldées — updateSystemSettings() + alias route, setAll() (1 écriture) | `d992ef4` |
 | v0.29.1 | #96 | QrCodeReader supprimé (classe morte) — plus aucun header()+exit dans app/ | `9f2934f` |
 | v0.29.0 | #95 | Dette 13 soldée — QrRedirectController en Response, actions testables | `7052801` |
 | v0.28.3 | #94 | Dette 12 soldée — code mort QrRedirectController + fix flash perdu | `4220d61` |
@@ -452,6 +453,98 @@ séparés quand le temps le permet.
   **#96 : classe entièrement morte, supprimée**. Plus aucun
   `header()`/`exit` dans `app/` hors `bootstrap.php` (garde-fou
   d'installation + `dd()`), qui précède le dispatcher.
+
+### Dettes 15-22 — audit externe du 2026-10-16 + revue croisée
+
+Un audit externe (vérifié contre le code courant le 2026-10-17) a
+détecté 8 dettes non documentées ci-dessous, plus des découvertes
+annexes. ⚠️ L'audit parlait de « v0.25.3 » mais visait un état plus
+ancien : toutes ont été re-vérifiées une par une sur v0.29.3 avant
+d'être tracées ici. La revue croisée a par ailleurs réfuté deux
+allégations : les dettes 4 et 12 **sont** soldées (#86, #94), et le
+« Symfony 7.3 » est exact (composer.json `^7.3`).
+
+#### Dette 15 — 🔴 OUVERTE : `JournalController` lit `$_GET` direct
+
+- `index()` sans `Request` en signature ; lit `$_GET['controleur']`,
+  `annee`, `order_by`, `order_dir`, `limit`, `page` ; garde
+  `if (!$this->isGranted(...))` au lieu de `deniAccessUnlessGranted()`.
+- Candidat #100. Effort ~30 min. Testabilité + cohérence HttpFoundation.
+
+#### Dette 16 — 🔴 OUVERTE : `IndexController` contourne ConfigProvider
+
+- `systemSettings()` lit `getenv('MAILER_DSN') ?: $_ENV[...]` (lignes
+  ~52-54) au lieu de `ConfigProvider`, alors que le même fichier utilise
+  `ConfigProvider` ailleurs (ligne ~64).
+- Candidat #101. Effort ~15 min. Source unique de vérité (#50).
+
+#### Dette 17 — 🔴 OUVERTE : `AppUpdateController` lit `$_ENV` pour PDO
+
+- `perform()` construit le DSN depuis `$_ENV['DB_HOST']` etc. (lignes
+  ~181-185), contournant ConfigProvider.
+- Candidat #101 (même ticket que la 16). Effort ~30 min.
+
+#### Dette 18 — ✅ SOLDÉE (#105, v0.29.4)
+
+- `Engine/DatabaseConnection.php` : classe legacy (dernier `$_ENV`
+  direct pour PDO), **zéro appelant** hors d'elle-même (vérifié par
+  grep exhaustif). Supprimée, figée par
+  `tests/Unit/Engine/DatabaseConnectionRemovedTest.php`.
+
+#### Dette 19 — 🔴 OUVERTE : `AcquisitionLineController` non migré Vague 11
+
+- **Seul contrôleur** avec `new AcquisitionLigneManager()`,
+  `new CategorieManager()`, `new AcquisitionManager()`,
+  `new AcquisitionProcess()` en dur (non mockable).
+  La Vague 11 était annoncée complète — elle ne l'est pas.
+- Candidat #99 (priorité audit, argument cohérence ; la revue
+  croisée suggère #104 d'abord, cf. Dette 22). Effort 1,5-2 h **avec**
+  les tests unitaires qui justifient la migration (l'estimation « 1 h »
+  de l'audit est optimiste).
+
+#### Dette 20 — ✅ SOLDÉE (#103, v0.29.4)
+
+- `@deprecated Use this->show()` sur `UtilisateurController::edit()`,
+  pourtant servie par la route active `/admin/utilisateurs/nouveau`.
+  Même contradiction sur `delete()` (route active, contrôlée
+  ROLE_ADMIN). Annotation remplacée par de vrais docblocks. Aucun
+  impact routage : l'ancienne route `utilisateur_update` était déjà
+  désactivée (commentée dans routes.php).
+
+#### Dette 21 — 🔴 OUVERTE : `AppUserAuthController` envoie sans retourner
+
+- `login()` et `logout()` font `$response->send()` puis laissent le
+  code continuer (bug latent) ; `new AppUserAuthenticator($this->session)`
+  en dur sans factory.
+- Candidat #102. Effort ~30 min. Alignement pattern Response (#95).
+
+#### Dette 22 — 🟡 À TRANCHER (décision produit) : accès `/guide`
+
+- `GuideController::index()` sans aucune garde. Le lien est dans
+  `_layout.twig`, qui sert aussi `user_forgot_password.twig` (publique,
+  hors connexion) → le guide est aujourd'hui atteignable anonymement.
+- Soit `deniAccessUnlessGranted('ROLE_USER')`, soit volonté explicite
+  de le garder public (documentation) → à documenter dans routes.php.
+- Candidat #104. Effort ~5 min une fois tranché.
+
+### Découvertes annexes de l'audit (hors numérotation)
+
+- **Enums morts** : `EquipementStatuts` (pluriel, string, legacy) et
+  `EquipementEtats` — zéro usage en dehors de leur propre fichier
+  (vérifié par grep) ; déjà signalés « conservés en l'état » dans le
+  CHANGELOG de la 0.17.21. Candidats à suppression dans un ticket
+  nettoyage (avec test de fige, pattern #96/#105).
+- **Templates orphelins** : `templates/email/account_validation.twig`
+  et `templates/email/user_reset_password.twig` — zéro `render()`
+  (vérifié). Seul `email/reset_password.twig` est utilisé, il étend
+  `email_layout.twig` (conservé). **Supprimés en v0.29.4** (même
+  commit que #105).
+- **`setup/` hors périmètre** : l'installeur (écrit le `.env` avec les
+  credentials BDD, crée le compte admin) n'a jamais été audité —
+  permissions du fichier `.env`, échappement des saisies, suppression
+  post-install. Zone d'ombre déclarée, à planifier en audit dédié.
+- **`ControleController::edit()`** ~400 lignes et N+1 connus déjà
+  listés en Priorité 4 de l'audit (backlog, non bloquant).
 
 ---
 

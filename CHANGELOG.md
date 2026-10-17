@@ -25,6 +25,30 @@ Branché dans `AbstractControllerTestCase::setUp()` et
 `AccessControlTest::setUp()`. Fini les 64 faux échecs « connexion
 refusée » quand la suite était lancée sans serveur de dev.
 
+## [v0.29.4] — 2026-10-17
+
+Suite à l'audit externe du 2026-10-16 (re-vérifié ligne à ligne contre
+le code courant) et sa revue croisée. Dettes 15-22 documentées dans
+`docs/REPRISE.md`.
+
+### Removed
+
+- **Dette 18 (#105)** : `Engine\DatabaseConnection` supprimée — classe
+  legacy (dernier `$_ENV` direct pour PDO), zéro appelant hors
+  d'elle-même. Suppression figée par
+  `tests/Unit/Engine/DatabaseConnectionRemovedTest.php`.
+- **Templates email orphelins** : `templates/email/account_validation.twig`
+  et `templates/email/user_reset_password.twig` — aucun `render()` dans
+  le code (vérifié par grep). Seul `email/reset_password.twig` est
+  utilisé ; `email_layout.twig` conservé (étendu par celui-ci).
+
+### Fixed
+
+- **Dette 20 (#103)** : `@deprecated` trompeurs retirés de
+  `UtilisateurController::edit()` et `::delete()` — méthodes actives
+  servies par des routes vivantes (`/admin/utilisateurs/nouveau`, route
+  DELETE). Remplacés par de vrais docblocks.
+
 ## [v0.29.3] — 2026-10-16
 
 ### Changed

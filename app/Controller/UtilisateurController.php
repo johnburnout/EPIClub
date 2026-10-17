@@ -35,7 +35,7 @@ class UtilisateurController extends AbstractController
     }
 
     /**
-     * @deprecated Use this->show()
+     * Création / édition d'un utilisateur (route /admin/utilisateurs/nouveau).
      */
     public function edit(Request $request)
     {
@@ -235,7 +235,8 @@ class UtilisateurController extends AbstractController
     }
 
     /**
-     * @deprecated A user/utilisateur can be deleted only by himself
+     * Suppression d'un utilisateur (route DELETE, active — règles fines
+     * de droits gérées dans la méthode et le template).
      */
     public function delete(Request $request)
     {
