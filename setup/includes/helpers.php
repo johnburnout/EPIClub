@@ -35,3 +35,46 @@ function parseIniSize(string $value): int
         default => (int) $value,
     };
 }
+
+// ==================================================================
+// [#107 - Dette 24] CSRF de l'installeur
+//
+// Pré-install, bootstrap sert setup/install.php sur TOUTES les URLs :
+// sans jeton, un site tiers peut forger les POST des étapes — dont la
+// création du compte SUPER_ADMIN avec les identifiants de l'attaquant
+// (détournement d'installation). Jeton unique de session, hash_equals.
+// Testé dans tests/Unit/Setup/SetupCsrfHelpersTest.php.
+// ==================================================================
+
+/**
+ * Retourne (et crée si besoin) le jeton CSRF de session de l'installeur.
+ */
+function setup_csrf_token(): string
+{
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    if (empty($_SESSION['setup_csrf_token'])) {
+        $_SESSION['setup_csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['setup_csrf_token'];
+}
+
+/**
+ * Champ caché à insérer dans chaque formulaire d'étape.
+ */
+function setup_csrf_field(): string
+{
+    return '<input type="hidden" name="csrf_token" value="'
+        . htmlspecialchars(setup_csrf_token(), ENT_QUOTES) . '">';
+}
+
+/**
+ * Vérifie le jeton POSTé contre celui de session.
+ */
+function setup_csrf_is_valid(?string $postedToken): bool
+{
+    $expected = setup_csrf_token();
+    return is_string($postedToken) && $postedToken !== ''
+        && hash_equals($expected, $postedToken);
+}

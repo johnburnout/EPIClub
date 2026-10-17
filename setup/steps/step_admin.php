@@ -15,6 +15,12 @@ $admin = [
 $form_errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // [#107] CSRF : rejette les POST forgés cross-site — cette étape
+    // crée le compte SUPER_ADMIN, cible n°1 du détournement d'install.
+    if (!setup_csrf_is_valid($_POST['csrf_token'] ?? null)) {
+        $form_errors[] = 'Erreur de sécurité : jeton CSRF invalide ou expiré. Rechargez la page et réessayez.';
+    }
+
     // Validation
     if (empty($_POST['nom'])) { $form_errors[] = 'Le nom est requis.'; }
     if (empty($_POST['prenom'])) { $form_errors[] = 'Le prénom est requis.'; }
@@ -136,6 +142,7 @@ require __DIR__ . '/../includes/header.php';
         <input type="password" class="form-control" name="password_confirm" id="password_confirm" minlength="12" required>
     </div>
     <button type="submit" class="btn btn-primary">Valider</button>
+    <?= setup_csrf_field() ?>
 </form>
 
 <?php require __DIR__ . '/../includes/footer.php'; ?>

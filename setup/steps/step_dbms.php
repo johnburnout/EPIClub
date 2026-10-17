@@ -31,6 +31,12 @@ if (file_exists($envFilePath)) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // [#107] CSRF : rejette les POST forgés cross-site pendant la
+    // fenêtre d'installation (credentials BDD écrits dans .env.local.php).
+    if (!setup_csrf_is_valid($_POST['csrf_token'] ?? null)) {
+        $errors[] = 'Erreur de sécurité : jeton CSRF invalide ou expiré. Rechargez la page et réessayez.';
+    }
+
     $db_host = trim($_POST['db_host'] ?? '');
     $db_name = trim($_POST['db_name'] ?? '');
     $db_user = trim($_POST['db_user'] ?? '');
@@ -197,6 +203,7 @@ require __DIR__ . '/../includes/header.php';
     </div>
 
     <button type="submit" class="btn btn-primary">Valider</button>
+    <?= setup_csrf_field() ?>
 </form>
 
 <?php require __DIR__ . '/../includes/footer.php'; ?>

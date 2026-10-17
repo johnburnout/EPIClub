@@ -18,6 +18,11 @@ $club = [
 $form_errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // [#107] CSRF : rejette les POST forgés cross-site.
+    if (!setup_csrf_is_valid($_POST['csrf_token'] ?? null)) {
+        $form_errors[] = 'Erreur de sécurité : jeton CSRF invalide ou expiré. Rechargez la page et réessayez.';
+    }
+
     if (empty($_POST['nom'])) {
         $form_errors[] = 'Le nom du club est requis.';
     }
@@ -96,6 +101,7 @@ require __DIR__ . '/../includes/header.php';
         <label class="form-check-label" for="install_default_activity_data">Installer les données par défaut* ?</label>
     </div>
     <button type="submit" class="btn btn-primary">Valider</button>
+    <?= setup_csrf_field() ?>
     <div class="mt-3">
         <p class="text-muted">* Initialise la database avec des données (catégories, fournisseurs) pour l'activité sélectionnée.</p>
     </div>

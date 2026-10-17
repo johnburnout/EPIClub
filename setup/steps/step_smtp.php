@@ -11,6 +11,12 @@ $smtp = [
 $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // [#107] CSRF : rejette les POST forgés cross-site (credentials
+    // SMTP écrits dans .env.local.php).
+    if (!setup_csrf_is_valid($_POST['csrf_token'] ?? null)) {
+        $errors[] = 'Erreur de sécurité : jeton CSRF invalide ou expiré. Rechargez la page et réessayez.';
+    }
+
     $smtpEnabled = !empty($_POST['domain']);
 
     if ($smtpEnabled) {
@@ -89,6 +95,7 @@ require __DIR__ . '/../includes/header.php';
         <input type="password" class="form-control" name="password" id="password" value="<?= htmlspecialchars($smtp['password']); ?>">
     </div>
     <button type="submit" class="btn btn-primary">Valider</button>
+    <?= setup_csrf_field() ?>
     <a href="?step=club" class="btn btn-link">Passer cette étape</a>
 </form>
 

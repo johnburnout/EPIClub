@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-17 (session #99 — Dette 19 soldée, Vague 11 complète)
-**Version courante** : v0.29.9
-**Branche** : `main` (travail direct, ticket #99)
+**Dernière mise à jour** : 2026-10-17 (session #106/#107 — Dettes 23+24 soldées, setup sécurisé)
+**Version courante** : v0.29.10
+**Branche** : `main` (travail direct, tickets #106 + #107)
 
 ---
 
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.29.9 | #99 | Dette 19 soldée — AcquisitionLineController migré Vague 11 (4 factories, 7 'new' retirés) + 6 tests Unit | `<hash>` |
+| v0.29.10 | #106+#107 | Dettes 23+24 soldées — setup sécurisé (doublon parser supprimé, CSRF installateur) + 6 tests Unit | `<hash>` |
+| v0.29.9 | #99 | Dette 19 soldée — AcquisitionLineController migré Vague 11 (4 factories, 7 'new' retirés) + 6 tests Unit | `75b96f7` |
 | v0.29.8 | #102 | Dette 21 soldée — AppUserAuthController return Response (2 bugs send()) + factory authenticator + 5 tests Unit | `f5ba114` |
 | v0.29.7 | #100 | Dette 15 soldée — JournalController::index(Request) + query->get() (dernier $_GET de app/) + 3 tests Unit | `c37753d` |
 | v0.29.6 | #101 | Dettes 16+17 soldées — ConfigProvider partout (systemSettings SMTP, PDO migrations) + 4 tests Unit | `3448799` |
@@ -613,30 +614,40 @@ croisées avec `app/bootstrap.php` et `app/Engine/EnvironmentFileParser`.
 - `install.php` : whitelist stricte des étapes (`in_array`) — pas de LFI.
 - XSS : sorties systématiquement `htmlspecialchars`.
 
-#### Dette 23 — 🔴 CRITIQUE : doublon non échappé d'EnvironmentFileParser
+#### Dette 23 — ✅ SOLDÉE (#106, v0.29.10)
 
 - `setup/includes/EnvironmentFileParser.php` redéclare
   `Epiclub\Engine\EnvironmentFileParser` (même namespace !) et est
   chargé en premier par `step_1.php` (`require_once`) → **c'est la
   version legacy pré-#49 qui gagne** pour toute la session d'install.
-- Son `_dump()` écrit `'$key' => '$value'` **sans échappement** :
-  un `DB_PASS` contenant `'` ou `\` produit un `.env.local.php`
-  **invalide** (site hors service) ou permet d'injecter des clés
-  arbitraires dans un fichier PHP exécuté. La version `app/Engine`
-  échappe via `var_export` depuis #49 (commentaire [SÉCURITÉ]).
-- Correctif : supprimer le doublon setup et utiliser la classe app
-  (autoloadée ; son constructeur `?string $filePath = null` est déjà
-  compatible avec les appels existants `new EnvironmentFileParser()`).
+- Son `_dump()` écrivait `'$key' => '$value'` **sans échappement** :
+  un `DB_PASS` contenant `'` ou `\` produisait un `.env.local.php`
+  **invalide** (site hors service) ou permettait d'injecter des clés
+  arbitraires dans un fichier PHP exécuté.
+- Correctif : fichier supprimé, `require_once` retiré de step_1 ;
+  l'installeur utilise la classe app (autoloadée, échappement
+  var_export #49, constructeur `?string $filePath = null` compatible
+  avec les appels existants). step_1 : `$env->load()` (absent de la
+  classe app) remplacé par un include direct avec garde is_array.
+- 2 tests Unit : `SetupLegacyParserRemovedTest` (suppression figée +
+  round-trip d'un mot de passe hostile).
 
-#### Dette 24 — 🔴 CRITIQUE : aucun token CSRF dans l'installeur
+#### Dette 24 — ✅ SOLDÉE (#107, v0.29.10)
 
 - Aucun des formulaires setup (step_1, dbms, admin, smtp, club) ne
-  vérifie de jeton. Pendant la fenêtre d'installation (l'installeur est
-  servi sur TOUTES les URLs par bootstrap), un site tiers peut forger
-  les POST — en particulier **créer le compte SUPER_ADMIN avec les
-  identifiants de l'attaquant** (détournement d'installation).
-- Correctif : token CSRF par étape (session native déjà démarrée dans
-  step_final ; à généraliser dès install.php).
+  vérifiait de jeton. Pendant la fenêtre d'installation (l'installeur
+  est servi sur TOUTES les URLs par bootstrap), un site tiers pouvait
+  forger les POST — en particulier **créer le compte SUPER_ADMIN avec
+  les identifiants de l'attaquant** (détournement d'installation).
+- Correctif : helpers `setup_csrf_token()` / `setup_csrf_field()` /
+  `setup_csrf_is_valid()` (setup/includes/helpers.php, jeton unique de
+  session, hash_equals) ; champ caché + validation ajoutés aux 5
+  étapes — le blocage s'appuie sur le gate `empty($errors)` existant
+  de chaque étape (iso-structure). Smoke test manuel : les 5 étapes
+  rendent bien le champ (test de fumée en sous-processus, fichier
+  .env.local.php créé par step_1 supprimé après).
+- 4 tests Unit : `SetupCsrfHelpersTest` (génération stable, champ,
+  acceptation/rejet).
 
 #### Dette 25 — 🟡 : `.env.local.php` en chmod 0664
 

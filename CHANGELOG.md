@@ -25,6 +25,36 @@ Branché dans `AbstractControllerTestCase::setUp()` et
 `AccessControlTest::setUp()`. Fini les 64 faux échecs « connexion
 refusée » quand la suite était lancée sans serveur de dev.
 
+## [v0.29.10] — 2026-10-17
+
+### Security
+
+- **Dette 23 (#106)** : suppression de
+  `setup/includes/EnvironmentFileParser.php` — doublon legacy de
+  `Epiclub\Engine\EnvironmentFileParser` (même namespace), chargé en
+  premier par step_1 : c'était la version **pré-#49** qui gérait
+  l'install, dont `_dump()` écrivait les valeurs sans échappement.
+  Un mot de passe BDD contenant `'` ou `\` cassait (ou permettait
+  d'injecter) le `.env.local.php`. L'installeur utilise désormais la
+  classe de l'app (autoloadée, échappement `var_export`). step_1 :
+  `load()` remplacé par un include direct (méthode absente de la
+  classe app).
+- **Dette 24 (#107)** : **CSRF dans l'installeur**. Pré-install,
+  bootstrap sert `setup/install.php` sur toutes les URLs : sans jeton,
+  un site tiers pouvait forger les POST des étapes — dont la création
+  du compte SUPER_ADMIN avec les identifiants de l'attaquant
+  (détournement d'installation). Helpers `setup_csrf_token()` /
+  `setup_csrf_field()` / `setup_csrf_is_valid()` (helpers.php),
+  champ caché et validation ajoutés aux 5 étapes (step_1, dbms, admin,
+  smtp, club). Smoke test manuel : les 5 étapes rendent le champ.
+
+### Added
+
+- **Tests** : 6 tests Unit (`tests/Unit/Setup/`) —
+  `SetupLegacyParserRemovedTest` (suppression figée + round-trip d'un
+  mot de passe hostile via var_export) et `SetupCsrfHelpersTest`
+  (génération/stable, champ caché, acceptation/rejet du jeton).
+
 ## [v0.29.9] — 2026-10-17
 
 ### Changed

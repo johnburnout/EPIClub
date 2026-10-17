@@ -7,7 +7,6 @@
  */
 
 require_once __DIR__ . '/../includes/helpers.php';
-require_once __DIR__ . '/../includes/EnvironmentFileParser.php';
 
 use Epiclub\Engine\EnvironmentFileParser;
 
@@ -71,11 +70,23 @@ if (!file_exists($envFile)) {
     chmod($envFile, 0664);
 }
 
+// [#106] La classe app (autoloadée) remplace l'ancien doublon setup :
+// elle échappe via var_export (#49). Pas de load() : lecture directe.
 $env      = new EnvironmentFileParser();
-$existing = $env->load();
+$existing = file_exists($envFile) ? include $envFile : [];
+if (!is_array($existing)) {
+    $existing = [];
+}
+
 $errors   = [];
 
 if ($canProceed && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit_step1'])) {
+    // [#107] CSRF : l'installeur est servi sur toutes les URLs
+    // pré-install, un site tiers ne doit pas pouvoir forger ce POST.
+    if (!setup_csrf_is_valid($_POST['csrf_token'] ?? null)) {
+        $errors[] = 'Erreur de sécurité : jeton CSRF invalide ou expiré. Rechargez la page et réessayez.';
+    }
+
     $siteName = trim($_POST['site_name'] ?? '');
     $rootUrl  = trim($_POST['root_url'] ?? '');
 
@@ -159,6 +170,7 @@ $rootUrl  = $existing['ROOT_URL'] ?? '';
         </div>
 
         <button type="submit" name="submit_step1" class="btn btn-primary">Suivant</button>
+        <?= setup_csrf_field() ?>
     </form>
 <?php else: ?>
     <p class="text-muted">
