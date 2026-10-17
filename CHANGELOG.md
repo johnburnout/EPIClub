@@ -25,6 +25,26 @@ Branché dans `AbstractControllerTestCase::setUp()` et
 `AccessControlTest::setUp()`. Fini les 64 faux échecs « connexion
 refusée » quand la suite était lancée sans serveur de dev.
 
+## [v0.29.13] — 2026-10-17
+
+### Fixed
+
+- **#109 — Tests Unit indépendants du `.env.local.php` gitignored** :
+  68 tests Unit lisaient structurellement le `.env.local.php` réel
+  (constructeur d'`AbstractManager` et factories `configProvider()` des
+  abstractions incluant littéralement le chemin gitignored) : toute
+  machine/CI sans ce fichier voyait 68 erreurs. Ajout de
+  `Epiclub\Engine\ConfigFile::defaultPath()` — point de résolution
+  unique qui honore la constante `EPICLUB_CONFIG_FILE` quand elle existe
+  (bootstrap PHPUnit `tests/bootstrap.php`, qui pointe vers la fixture
+  commitée `tests/Fixtures/env.test.php` enrichie des clés DB) et retombe
+  sur le vrai `.env.local.php` en production (comportement inchangé).
+  Vérifié : suite Unit entièrement verte (488 tests, 1215 assertions)
+  avec le `.env.local.php` renommé, puis avec ; suite Integration
+  inchangée (106 tests, 250 assertions). 3 tests Unit nouveaux
+  (`ConfigFileTest`) : seam active en test, fixture chargeable,
+  construction d'un Manager sans le fichier gitignored.
+
 ## [v0.29.12] — 2026-10-17
 
 ### Removed

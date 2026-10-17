@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-17 (session #108 — Dettes 25-28 soldées, audit setup/ terminé)
-**Version courante** : v0.29.12
-**Branche** : `main` (travail direct, ticket #108)
+**Dernière mise à jour** : 2026-10-17 (session #109 — fixture de config, tests Unit découplés de .env.local.php)
+**Version courante** : v0.29.13
+**Branche** : `main` (travail direct, ticket #109)
 
 ---
 
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.29.12 | #108 | Dette 28 soldée — code mort setup/ (demo/ + checkbox @todo, footer version dynamique, mdp SMTP masqué) | `<hash>` |
+| v0.29.13 | #109 | Fixture de config — tests Unit indépendants du .env.local.php gitignored (ConfigFile + bootstrap PHPUnit) + 3 tests | `<hash>` |
+| v0.29.12 | #108 | Dette 28 soldée — code mort setup/ (demo/ + checkbox @todo, footer version dynamique, mdp SMTP masqué) | `cca6e5a` |
 | v0.29.11 | #108 | Dettes 25-27 soldées — durcissement installeur (chmod 0600, admin non re-exécutable, garde accès setup) | `8118f23` |
 | v0.29.10 | #106+#107 | Dettes 23+24 soldées — setup sécurisé (doublon parser supprimé, CSRF installateur) + 6 tests Unit | `25d2868` |
 | v0.29.9 | #99 | Dette 19 soldée — AcquisitionLineController migré Vague 11 (4 factories, 7 'new' retirés) + 6 tests Unit | `75b96f7` |
@@ -708,6 +709,31 @@ croisées avec `app/bootstrap.php` et `app/Engine/EnvironmentFileParser`.
   version.txt est absent), champ password SMTP vide.
 - Suites : 485 Unit (1208 assertions) + 106 Integration (250
   assertions) — baseline inchangée.
+
+#### Dette tests — ✅ SOLDÉE (#109, v0.29.13) : fixture de config, tests Unit indépendants de `.env.local.php`
+
+- 68 tests Unit lisaient structurellement le `.env.local.php` gitignored :
+  le constructeur d'`AbstractManager` incluait littéralement
+  `{projet}/.env.local.php` et ouvrait un PDO réel, et les factories
+  `configProvider()` d'`AbstractManager`/`AbstractController` faisaient de
+  même via `new ConfigProvider(__DIR__ . '/../../.env.local.php')`.
+  Mesuré : 68 erreurs / 485 tests quand le fichier est renommé.
+- Correctif : `Epiclub\Engine\ConfigFile::defaultPath()` — résolution
+  unique qui honore `EPICLUB_CONFIG_FILE` (définie par le nouveau
+  `tests/bootstrap.php`, référencé dans `phpunit.xml`) et retombe sur le
+  vrai `.env.local.php` en production. Fixture commitée
+  `tests/Fixtures/env.test.php` enrichie des clés DB (127.0.0.1, epiclub,
+  root, '' — iso-comportement : les tests se connectaient déjà à cette
+  base via le fichier réel).
+- Non touché volontairement : `IndexController` (lecture/écriture
+  explicite du fichier réel pour l'admin config), `app/bootstrap.php`,
+  et la suite Integration (lit le vrai fichier par chemins explicites).
+- Vérifié : 488 Unit (1215 assertions) VERTS avec `.env.local.php`
+  renommé, puis avec ; 106 Integration (250 assertions) inchangés.
+- 3 tests Unit nouveaux : `ConfigFileTest` (seam active, fixture
+  chargeable, construction d'un Manager sans le fichier gitignored).
+  Note : reste une dépendance live-MySQL pour ces constructions — la
+  rendre hermétique (PDO simulé partout) est un chantier à part.
 
 ---
 

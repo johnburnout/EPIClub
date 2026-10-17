@@ -203,7 +203,7 @@ abstract class AbstractController
     */
     protected function configProvider(): ConfigProvider
     {
-        return new ConfigProvider(__DIR__ . '/../../.env.local.php');
+        return new ConfigProvider(ConfigFile::defaultPath());
     }
     
     /**

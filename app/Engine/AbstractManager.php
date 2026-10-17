@@ -11,8 +11,9 @@ abstract class AbstractManager
 
     public function __construct()
     {
-        // Charger la configuration depuis .env.local.php
-        $configFile = __DIR__ . '/../../.env.local.php';
+        // [#109] Chemin résolu via ConfigFile : en test, la fixture
+        // commitée remplace le .env.local.php gitignored.
+        $configFile = ConfigFile::defaultPath();
         if (!file_exists($configFile)) {
             throw new \Exception("Fichier de configuration .env.local.php non trouvé");
         }
@@ -339,6 +340,6 @@ abstract class AbstractManager
     */
     protected function configProvider(): ConfigProvider
     {
-        return new ConfigProvider(__DIR__ . '/../../.env.local.php');
+        return new ConfigProvider(ConfigFile::defaultPath());
     }
 }
