@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-17 (session #106/#107 — Dettes 23+24 soldées, setup sécurisé)
-**Version courante** : v0.29.10
-**Branche** : `main` (travail direct, tickets #106 + #107)
+**Dernière mise à jour** : 2026-10-17 (session #108 — Dettes 25-27 soldées, installeur durci)
+**Version courante** : v0.29.11
+**Branche** : `main` (travail direct, ticket #108)
 
 ---
 
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.29.10 | #106+#107 | Dettes 23+24 soldées — setup sécurisé (doublon parser supprimé, CSRF installateur) + 6 tests Unit | `<hash>` |
+| v0.29.11 | #108 | Dettes 25-27 soldées — durcissement installeur (chmod 0600, admin non re-exécutable, garde accès setup) | `<hash>` |
+| v0.29.10 | #106+#107 | Dettes 23+24 soldées — setup sécurisé (doublon parser supprimé, CSRF installateur) + 6 tests Unit | `25d2868` |
 | v0.29.9 | #99 | Dette 19 soldée — AcquisitionLineController migré Vague 11 (4 factories, 7 'new' retirés) + 6 tests Unit | `75b96f7` |
 | v0.29.8 | #102 | Dette 21 soldée — AppUserAuthController return Response (2 bugs send()) + factory authenticator + 5 tests Unit | `f5ba114` |
 | v0.29.7 | #100 | Dette 15 soldée — JournalController::index(Request) + query->get() (dernier $_GET de app/) + 3 tests Unit | `c37753d` |
@@ -649,27 +650,40 @@ croisées avec `app/bootstrap.php` et `app/Engine/EnvironmentFileParser`.
 - 4 tests Unit : `SetupCsrfHelpersTest` (génération stable, champ,
   acceptation/rejet).
 
-#### Dette 25 — 🟡 : `.env.local.php` en chmod 0664
+#### Dette 25 — ✅ SOLDÉE (#108, v0.29.11)
 
-- `step_1.php` crée le fichier avec `chmod($envFile, 0664)` → lisible
-  par **tous les utilisateurs locaux** (credentials BDD en clair).
-  Correctif : 0600 (ou 0640), mention dans le README.
+- `step_1.php` créait le fichier avec `chmod($envFile, 0664)` → lisible
+  par tous les utilisateurs locaux (credentials BDD en clair).
+- Correctif : `chmod($envFile, 0600)` + commentaire justificatif. Vérifié
+  par grep du source (smoke test step_1 interdit après l'incident de
+  la session #106/#107 : tout run de step_1 réécrase le `.env.local.php`
+  de dev non commité).
 
-#### Dette 26 — 🟡 : step_admin re-exécutable (doublons admin + clé)
+#### Dette 26 — ✅ SOLDÉE (#108, v0.29.11)
 
-- Chaque POST insère un NOUVEL admin SUPER_ADMIN (aucune garde « un
-  utilisateur existe déjà ») et régénère SECRET_KEY (ré-écriture silencieuse
-  : les données chiffrées existantes deviendraient indéchiffrables en
-  re-run post-usage). Correctif : refuser si la table utilisateur n'est
-  pas vide ; ne pas régénérer SECRET_KEY s'il existe déjà.
+- Chaque POST insérait un NOUVEL admin SUPER_ADMIN (aucune garde) et
+  régénérait SECRET_KEY (ré-écriture silencieuse : données chiffrées
+  existantes rendues indéchiffrables en re-run post-usage).
+- Correctif : pré-garde en tête du bloc d'insertion (`new
+  UtilisateurManager()` + `findAll()` non vide → erreur « Un compte
+  administrateur existe déjà. Pour modifier le compte principal,
+  connectez-vous à l'application. ») ; SECRET_KEY n'est régénéré que si
+  `empty($config['SECRET_KEY'])` (`$keyHex = null` par défaut, généré
+  conditionnellement, `$keyGenerated` aligné).
+- Smoke test /tmp (CSRF seedé en session, POST valide) : message
+  affiché, formulaire réaffiché, **aucune ligne insérée** dans
+  `utilisateur` (base de dev, 3 comptes avant/après).
 
-#### Dette 27 — 🟡 : setup/ non supprimé post-install (pas de garde)
+#### Dette 27 — ✅ SOLDÉE (#108, v0.29.11)
 
-- step_final AFFICHE « supprimez setup/ » mais rien n'empêche de
-  relancer l'installeur si le docroot inclut le dossier projet (le
-  bootstrap protège le flux normal via SETUP_COMPLETE, pas l'accès
-  direct au fichier). Correctif minimal : garde en tête d'install.php
-  (refus si SETUP_COMPLETE) — défense en profondeur.
+- step_final AFFICHAIT « supprimez setup/ » mais rien n'empêchait de
+  relancer l'installeur si le docroot inclut le dossier projet.
+- Correctif : garde en tête d'`install.php` (juste après le chargement
+  de `.env.local.php`) : si `!empty($_ENV['SETUP_COMPLETE'])` → HTTP 403
+  + exit. Smoke test /tmp : code 403 confirmé via shutdown handler et
+  message « EPIClub est déjà installé. Supprimez le dossier setup/ de
+  votre serveur. ». Le flux normal n'est pas affecté (le bootstrap ne
+  requiert install.php que si l'install est incomplète).
 
 #### Dette 28 — 🟢 : code mort et cosmétique
 

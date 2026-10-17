@@ -64,10 +64,12 @@ $canProceed = empty($prereq_errors);
 // ----------------------------------------------------------------
 
 // 🔧 CRÉER LE FICHIER .env.local.php S'IL N'EXISTE PAS
+// [#108 - Dette 25] 0600 (owner only) : le fichier contiendra DB_PASS et
+// SECRET_KEY — 0664 le rendait lisible par tous les utilisateurs locaux.
 $envFile = __DIR__ . '/../../.env.local.php';
 if (!file_exists($envFile)) {
     file_put_contents($envFile, '<?php return [];');
-    chmod($envFile, 0664);
+    chmod($envFile, 0600);
 }
 
 // [#106] La classe app (autoloadée) remplace l'ancien doublon setup :

@@ -25,6 +25,27 @@ Branché dans `AbstractControllerTestCase::setUp()` et
 `AccessControlTest::setUp()`. Fini les 64 faux échecs « connexion
 refusée » quand la suite était lancée sans serveur de dev.
 
+## [v0.29.11] — 2026-10-17
+
+### Security
+
+- **Dette 25 (#108)** : `setup/steps/step_1.php` — le `.env.local.php`
+  généré est désormais créé en `chmod 0600` (owner only) au lieu de
+  `0664`. Le fichier contient `DB_PASS` et `SECRET_KEY` ; `0664` le
+  rendait lisible par tous les utilisateurs locaux de la machine.
+- **Dette 26 (#108)** : `setup/steps/step_admin.php` — l'étape
+  « Administrateur » n'est plus re-exécutable. Une pré-garde vérifie via
+  `UtilisateurManager::findAll()` qu'aucun compte n'existe déjà avant
+  toute insertion (sinon erreur « Un compte administrateur existe déjà »).
+  La clé `SECRET_KEY` n'est en outre régénérée que si elle est absente du
+  fichier de configuration (elle n'écrase plus une clé existante, ce qui
+  rendait indéchiffrables les données chiffrées antérieures).
+- **Dette 27 (#108)** : `setup/install.php` — garde d'accès en tête de
+  fichier : si `SETUP_COMPLETE` est vrai dans `.env.local.php`, tout
+  accès à l'installeur renvoie HTTP 403 avec un message demandant la
+  suppression de `setup/`. Défense en profondeur si le docroot inclut le
+  projet au lieu de pointer sur `public/`.
+
 ## [v0.29.10] — 2026-10-17
 
 ### Security
