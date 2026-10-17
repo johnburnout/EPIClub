@@ -181,7 +181,10 @@ abstract class AbstractController
     */
     protected function getPublicPath(string $subpath = ''): string
     {
-        $base = $_ENV['PUBLIC_PATH']
+        // [#110] PUBLIC_PATH se lit désormais via ConfigProvider (qui itère
+        // le même fichier que le bootstrap). $_SERVER reste le repli
+        // serveur (SetEnv), le défaut reste {projet}/public.
+        $base = $this->configProvider()->get('PUBLIC_PATH')
         ?? $_SERVER['PUBLIC_PATH']
         ?? dirname(__DIR__, 2) . '/public';
         

@@ -25,6 +25,29 @@ Branché dans `AbstractControllerTestCase::setUp()` et
 `AccessControlTest::setUp()`. Fini les 64 faux échecs « connexion
 refusée » quand la suite était lancée sans serveur de dev.
 
+## [v0.29.14] — 2026-10-17
+
+### Removed
+
+- **#110 — Enums morts** : suppression de `Epiclub\Enum\EquipementStatuts`
+  (pluriel, string, legacy) et `Epiclub\Enum\EquipementEtats` — zéro usage
+  en dehors de leur propre fichier. `EquipementStatut` (singulier, int,
+  utilisé par `EquipementController`) est conservé.
+
+### Fixed
+
+- **#110 — Derniers résiduels `$_ENV` hors bootstrap** :
+  `AbstractController::getPublicPath()` lisait `$_ENV['PUBLIC_PATH']` —
+  il lit désormais `configProvider()->get('PUBLIC_PATH')` (même fichier
+  que celui dont le bootstrap alimentait `$_ENV`) ; le repli
+  `$_SERVER['PUBLIC_PATH']` (SetEnv) et le défaut `{projet}/public` sont
+  inchangés. `TwigRenderer` lisait `$_ENV['APP_ENV']` pour l'extension
+  Debug — il lit désormais `ConfigProvider(ConfigFile::defaultPath())`.
+  Iso-comportement au runtime web (bootstrap : `$_ENV = $config`).
+  4 tests Unit nouveaux : `EnvResidualsRemovedTest` (fige l'absence de
+  `$_ENV` dans les deux fichiers + comportement getPublicPath via
+  ConfigProvider, rouge d'abord).
+
 ## [v0.29.13] — 2026-10-17
 
 ### Fixed

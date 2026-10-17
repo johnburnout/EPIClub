@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-17 (session #109 — fixture de config, tests Unit découplés de .env.local.php)
-**Version courante** : v0.29.13
-**Branche** : `main` (travail direct, ticket #109)
+**Dernière mise à jour** : 2026-10-17 (session #110 — enums morts supprimés, derniers $_ENV résiduels migrés)
+**Version courante** : v0.29.14
+**Branche** : `main` (travail direct, ticket #110)
 
 ---
 
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.29.13 | #109 | Fixture de config — tests Unit indépendants du .env.local.php gitignored (ConfigFile + bootstrap PHPUnit) + 3 tests | `<hash>` |
+| v0.29.14 | #110 | Enums morts supprimés (EquipementStatuts/EquipementEtats) + derniers $_ENV résiduels migrés (PUBLIC_PATH, APP_ENV) + 4 tests Unit | `<hash>` |
+| v0.29.13 | #109 | Fixture de config — tests Unit indépendants du .env.local.php gitignored (ConfigFile + bootstrap PHPUnit) + 3 tests | `db1fb0e` |
 | v0.29.12 | #108 | Dette 28 soldée — code mort setup/ (demo/ + checkbox @todo, footer version dynamique, mdp SMTP masqué) | `cca6e5a` |
 | v0.29.11 | #108 | Dettes 25-27 soldées — durcissement installeur (chmod 0600, admin non re-exécutable, garde accès setup) | `8118f23` |
 | v0.29.10 | #106+#107 | Dettes 23+24 soldées — setup sécurisé (doublon parser supprimé, CSRF installateur) + 6 tests Unit | `25d2868` |
@@ -575,11 +576,10 @@ allégations : les dettes 4 et 12 **sont** soldées (#86, #94), et le
 
 ### Découvertes annexes de l'audit (hors numérotation)
 
-- **Enums morts** : `EquipementStatuts` (pluriel, string, legacy) et
-  `EquipementEtats` — zéro usage en dehors de leur propre fichier
-  (vérifié par grep) ; déjà signalés « conservés en l'état » dans le
-  CHANGELOG de la 0.17.21. Candidats à suppression dans un ticket
-  nettoyage (avec test de fige, pattern #96/#105).
+- **Enums morts** : ~~`EquipementStatuts` (pluriel, string, legacy) et
+  `EquipementEtats` — zéro usage en dehors de leur propre fichier~~
+  **supprimés en v0.29.14 (#110)**. `EquipementStatut` (singulier, int,
+  utilisé par `EquipementController`) conservé.
 - **Templates orphelins** : `templates/email/account_validation.twig`
   et `templates/email/user_reset_password.twig` — zéro `render()`
   (vérifié). Seul `email/reset_password.twig` est utilisé, il étend
@@ -593,11 +593,13 @@ allégations : les dettes 4 et 12 **sont** soldées (#86, #94), et le
   (« Audit setup/ — dettes 23+ »).
 - **`ControleController::edit()`** ~400 lignes et N+1 connus déjà
   listés en Priorité 4 de l'audit (backlog, non bloquant).
-- **Accès `$_ENV` résiduels** (constatés en #101, hors périmètre du
-  ticket) : `AbstractController` (~ligne 184, `PUBLIC_PATH`) et
-  `TwigRenderer` (~ligne 25, `APP_ENV` dev). Candidats à un futur
-  ticket ConfigProvider ; tous les `$_ENV` de *config métier* sont
-  désormais migrés.
+- **Accès `$_ENV` résiduels** (constatés en #101) :
+  ~~`AbstractController` (~ligne 184, `PUBLIC_PATH`) et
+  `TwigRenderer` (~ligne 25, `APP_ENV` dev)~~ **migrés en v0.29.14
+  (#110)** — les deux lisent désormais ConfigProvider (`ConfigFile::
+  defaultPath()`), repli `$_SERVER['PUBLIC_PATH']` conservé. Tous les
+  `$_ENV` de *config métier* sont désormais migrés (hors bootstrap,
+  composition root légitime).
 
 ### Audit `setup/` — 2026-10-17 (dettes 23+)
 

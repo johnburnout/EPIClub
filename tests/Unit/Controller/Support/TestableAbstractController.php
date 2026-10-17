@@ -39,4 +39,12 @@ final class TestableAbstractController extends AbstractController
     {
         return $this->getBaseUrl();
     }
+
+    /**
+     * [#110] Expose getPublicPath() en public pour les tests Unit.
+     */
+    public function exposeGetPublicPath(string $subpath = ''): string
+    {
+        return $this->getPublicPath($subpath);
+    }
 }

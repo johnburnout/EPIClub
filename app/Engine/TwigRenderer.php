@@ -22,7 +22,11 @@ class TwigRenderer extends Environment
 
         parent::__construct($loader, $this->options);
 
-        if (isset($_ENV['APP_ENV']) && $_ENV['APP_ENV'] === 'dev') {
+        // [#110] APP_ENV se lit via ConfigProvider (même fichier que celui
+        // dont le bootstrap alimentait la config) — fini l'accès direct
+        // à la superglobale d'environnement.
+        $config = new ConfigProvider(ConfigFile::defaultPath());
+        if ($config->get('APP_ENV') === 'dev') {
             $this->addExtension(new \Twig\Extension\DebugExtension());
         }
 
