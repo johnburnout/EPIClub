@@ -25,6 +25,32 @@ Branché dans `AbstractControllerTestCase::setUp()` et
 `AccessControlTest::setUp()`. Fini les 64 faux échecs « connexion
 refusée » quand la suite était lancée sans serveur de dev.
 
+## [v0.29.6] — 2026-10-17
+
+### Fixed
+
+- **Dette 16 (#101)** : `IndexController::systemSettings()` lisait la
+  config SMTP via `getenv() ?: $_ENV` — l'environnement du **processus**,
+  pouvant afficher des valeurs différentes de `.env.local.php` (le
+  fichier réellement utilisé par MailerService #50c et bootstrap).
+  Lecture unifiée via `ConfigProvider` (même garde fichier
+  absent/illisible → chaînes vides, iso-comportement) ; la lecture
+  ROOT_URL (#59) en profite (un seul ConfigProvider au lieu de deux).
+- **Dette 17 (#101)** : `AppUpdateController::perform()` construisait
+  le DSN PDO depuis `$_ENV['DB_*']` — dernier accès direct à `$_ENV`
+  pour PDO. Extraction des factories protégées `databasePdo()` /
+  `databaseDsn()` alimentées par `configProvider()`. Iso-comportement
+  (bootstrap alimente `$_ENV` depuis le même fichier) ; bonus
+  testabilité : la construction du DSN est vérifiable en Unit.
+
+### Changed
+
+- **Tests** : 4 tests Unit ajoutés — `IndexControllerSystemSettingsTest`
+  (valeurs rendues depuis ConfigProvider, repli fichier illisible) et
+  `AppUpdateDatabasePdoTest` (DSN + credentials issus de ConfigProvider,
+  connexion court-circuitée). `TestableIndexController` et
+  `TestableAppUpdateController` acceptent un `ConfigProvider` injecté.
+
 ## [v0.29.5] — 2026-10-17
 
 ### Security

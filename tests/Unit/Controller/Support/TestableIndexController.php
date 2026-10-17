@@ -27,6 +27,8 @@ final class TestableIndexController extends IndexController
         Session $session,
         private ?EnvironmentFileParser $environmentFileParserMock = null,
         private ?MailerServiceInterface $mailerServiceMock = null,
+        private ?ConfigProvider $configProviderMock = null,
+        private bool $configThrows = false,
     ) {
         parent::__construct($session);
     }
@@ -44,6 +46,17 @@ final class TestableIndexController extends IndexController
     protected function mailerService(ConfigProvider $config): MailerServiceInterface
     {
         return $this->mailerServiceMock ?? parent::mailerService($config);
+    }
+
+    protected function configProvider(): ConfigProvider
+    {
+        // [#101] Simule un fichier de config absent/illisible : le
+        // contrôleur doit retomber sur des valeurs vides (iso-comportement
+        // avec getenv/$_ENV ?? '').
+        if ($this->configThrows) {
+            throw new \RuntimeException('Configuration file not found (simulation test #101)');
+        }
+        return $this->configProviderMock ?? parent::configProvider();
     }
 
     protected function validateCsrf(Request $request): void

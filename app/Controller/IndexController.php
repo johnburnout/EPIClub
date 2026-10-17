@@ -48,11 +48,32 @@ class IndexController extends AbstractController
         // ⚠️ Configuration système (SMTP) : réservée au SUPER_ADMIN
         $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
         
-        // Lecture des paramètres actuels depuis .env.local.php
-        $mailerDsn = getenv('MAILER_DSN') ?: $_ENV['MAILER_DSN'] ?? '';
-        $mailerFrom = getenv('MAILER_FROM') ?: $_ENV['MAILER_FROM'] ?? '';
-        $mailerName = getenv('MAILER_NAME') ?: $_ENV['MAILER_NAME'] ?? '';
-        
+        // [VAGUE 12 - #101] Lecture via ConfigProvider (source unique de
+        // vérité, cf. #50). Fix de bug documenté : l'ancien code lisait
+        // getenv() ?: $_ENV — c'est-à-dire l'environnement du PROCESSUS —
+        // qui pouvait afficher des valeurs différentes de .env.local.php,
+        // le fichier réellement utilisé par MailerService (#50c) et
+        // bootstrap. Si le fichier est absent/illisible, on expose des
+        // chaînes vides (iso-comportement avec getenv/$_ENV ?? '') :
+        // l'utilisateur pourra saisir les valeurs.
+        $mailerDsn = '';
+        $mailerFrom = '';
+        $mailerName = '';
+        $rootUrl = '';
+        $envFile = __DIR__ . '/../../.env.local.php';
+        if (is_file($envFile)) {
+            try {
+                $configProvider = $this->configProvider();
+                $mailerDsn  = (string) $configProvider->get('MAILER_DSN', '');
+                $mailerFrom = (string) $configProvider->get('MAILER_FROM', '');
+                $mailerName = (string) $configProvider->get('MAILER_NAME', '');
+                $rootUrl    = (string) $configProvider->get('ROOT_URL', '');
+            } catch (\Throwable $e) {
+                // Config illisible : on n'empêche pas l'affichage de la page SMTP.
+                error_log('[IndexController] systemSettings: ' . $e->getMessage());
+            }
+        }
+
         $dsnParts = parse_url($mailerDsn);
         $smtpHost = $dsnParts['host'] ?? '';
         $smtpPort = $dsnParts['port'] ?? 25;
@@ -60,23 +81,7 @@ class IndexController extends AbstractController
         // [SÉCURITÉ] Ne JAMAIS renvoyer le mot de passe au client.
         parse_str($dsnParts['query'] ?? '', $query);
         $smtpEncryption = $query['encryption'] ?? '';
-        
-        // [VAGUE 13 - #59] Lecture de ROOT_URL via ConfigProvider
-        // (source unique de vérité, cf. Vague 12). Si la clé est absente,
-        // on expose une chaîne vide — le champ HTML sera vide, l'utilisateur
-        // pourra la saisir.
-        $rootUrl = '';
-        $envFile = __DIR__ . '/../../.env.local.php';
-        if (is_file($envFile)) {
-            try {
-                $configProvider = new ConfigProvider($envFile);
-                $rootUrl = (string) $configProvider->get('ROOT_URL', '');
-            } catch (\Throwable $e) {
-                // Config illisible : on n'empêche pas l'affichage de la page SMTP.
-                error_log('[IndexController] systemSettings: ' . $e->getMessage());
-            }
-        }
-        
+
         return $this->render('system_settings.twig', [
             'settings' => [
                 'smtp_host' => $smtpHost,

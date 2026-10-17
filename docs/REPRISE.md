@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-17 (session #104 — Dette 22 soldée)
-**Version courante** : v0.29.5
-**Branche** : `main` (travail direct, ticket #104)
+**Dernière mise à jour** : 2026-10-17 (session #101 — Dettes 16+17 soldées)
+**Version courante** : v0.29.6
+**Branche** : `main` (travail direct, ticket #101)
 
 ---
 
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.29.5 | #104 | Dette 22 soldée — /guide réservé ROLE_USER (décision produit) + 2 tests Unit | `<hash>` |
+| v0.29.6 | #101 | Dettes 16+17 soldées — ConfigProvider partout (systemSettings SMTP, PDO migrations) + 4 tests Unit | `<hash>` |
+| v0.29.5 | #104 | Dette 22 soldée — /guide réservé ROLE_USER (décision produit) + 2 tests Unit | `f3bd90b` |
 | v0.29.4 | #103+#105 | Dettes 20+18 soldées (@deprecated actifs retirés, DatabaseConnection supprimé) + 2 templates email orphelins | `acfd84a` |
 | v0.29.3 | #97-98 | Dettes 1+2 soldées — updateSystemSettings() + alias route, setAll() (1 écriture) | `d992ef4` |
 | v0.29.1 | #96 | QrCodeReader supprimé (classe morte) — plus aucun header()+exit dans app/ | `9f2934f` |
@@ -472,18 +473,29 @@ allégations : les dettes 4 et 12 **sont** soldées (#86, #94), et le
   `if (!$this->isGranted(...))` au lieu de `deniAccessUnlessGranted()`.
 - Candidat #100. Effort ~30 min. Testabilité + cohérence HttpFoundation.
 
-#### Dette 16 — 🔴 OUVERTE : `IndexController` contourne ConfigProvider
+#### Dette 16 — ✅ SOLDÉE (#101, v0.29.6)
 
-- `systemSettings()` lit `getenv('MAILER_DSN') ?: $_ENV[...]` (lignes
+- `systemSettings()` lisait `getenv('MAILER_DSN') ?: $_ENV[...]` (lignes
   ~52-54) au lieu de `ConfigProvider`, alors que le même fichier utilise
   `ConfigProvider` ailleurs (ligne ~64).
-- Candidat #101. Effort ~15 min. Source unique de vérité (#50).
+- **Fix de bug documenté** : getenv lit l'environnement du PROCESSUS,
+  qui pouvait afficher des valeurs différentes de `.env.local.php`
+  (fichier réellement utilisé par MailerService et bootstrap). Lecture
+  unifiée via `configProvider()` (factory mockable), garde
+  fichier-absent/illisible conservée (chaînes vides). La lecture
+  ROOT_URL (#59) est fusionnée dans le même bloc (un seul provider).
+- 2 tests Unit : `IndexControllerSystemSettingsTest`.
 
-#### Dette 17 — 🔴 OUVERTE : `AppUpdateController` lit `$_ENV` pour PDO
+#### Dette 17 — ✅ SOLDÉE (#101, v0.29.6)
 
-- `perform()` construit le DSN depuis `$_ENV['DB_HOST']` etc. (lignes
+- `perform()` construisait le DSN depuis `$_ENV['DB_HOST']` etc. (lignes
   ~181-185), contournant ConfigProvider.
-- Candidat #101 (même ticket que la 16). Effort ~30 min.
+- Extraction des factories protégées `databasePdo()` / `databaseDsn()`
+  alimentées par `configProvider()`. Iso-comportement strict (bootstrap
+  alimente `$_ENV` depuis le même fichier) ; clé absente → '' sans
+  warning (avant : warning PHP + ''), toujours dans le try/catch de
+  perform(). Bonus : construction du DSN testable en Unit.
+- 2 tests Unit : `AppUpdateDatabasePdoTest` (connexion court-circuitée).
 
 #### Dette 18 — ✅ SOLDÉE (#105, v0.29.4)
 
@@ -549,6 +561,11 @@ allégations : les dettes 4 et 12 **sont** soldées (#86, #94), et le
   post-install. Zone d'ombre déclarée, à planifier en audit dédié.
 - **`ControleController::edit()`** ~400 lignes et N+1 connus déjà
   listés en Priorité 4 de l'audit (backlog, non bloquant).
+- **Accès `$_ENV` résiduels** (constatés en #101, hors périmètre du
+  ticket) : `AbstractController` (~ligne 184, `PUBLIC_PATH`) et
+  `TwigRenderer` (~ligne 25, `APP_ENV` dev). Candidats à un futur
+  ticket ConfigProvider ; tous les `$_ENV` de *config métier* sont
+  désormais migrés.
 
 ---
 

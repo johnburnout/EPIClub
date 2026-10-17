@@ -39,6 +39,41 @@ class AppUpdateController extends AbstractController
         );
     }
 
+    /**
+     * [#101 - Dette 17] Factory PDO des migrations — mockable en test Unit.
+     *
+     * Remplace l'accès direct à $_ENV (dernier lecteur de $_ENV pour PDO).
+     * Iso-comportement : bootstrap alimente $_ENV depuis .env.local.php,
+     * donc $_ENV['DB_*'] === ConfigProvider->get('DB_*') au runtime web.
+     * Clé absente → '' (avant : warning « undefined array key » + ''),
+     * le tout restant dans le try/catch(\Throwable) de perform().
+     */
+    protected function databasePdo(): \PDO
+    {
+        $config = $this->configProvider();
+        return new \PDO(
+            $this->databaseDsn(),
+            $config->get('DB_USER'),
+            $config->get('DB_PASS'),
+            [
+                \PDO::ATTR_ERRMODE            => \PDO::ERRMODE_EXCEPTION,
+                \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
+            ]
+        );
+    }
+
+    /**
+     * [#101] DSN PDO construit depuis ConfigProvider (source unique de
+     * vérité, cf. Vague 12/#50).
+     */
+    protected function databaseDsn(): string
+    {
+        $config = $this->configProvider();
+        return 'mysql:host=' . $config->get('DB_HOST')
+            . ';dbname=' . $config->get('DB_NAME')
+            . ';charset=utf8mb4';
+    }
+
     // --------------------------------------------------------------
     // AFFICHAGE DE LA PAGE DE MISE À JOUR
     // --------------------------------------------------------------
@@ -177,17 +212,7 @@ class AppUpdateController extends AbstractController
             // MIGRATIONS DE BASE DE DONNÉES
             // ------------------------------------------------------------
             try {
-                $pdo = new \PDO(
-                    'mysql:host=' . $_ENV['DB_HOST']
-                    . ';dbname=' . $_ENV['DB_NAME']
-                    . ';charset=utf8mb4',
-                    $_ENV['DB_USER'],
-                    $_ENV['DB_PASS'],
-                    [
-                        \PDO::ATTR_ERRMODE            => \PDO::ERRMODE_EXCEPTION,
-                        \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
-                    ]
-                );
+                $pdo = $this->databasePdo();
                 
                 $migrationManager = new \Epiclub\Engine\MigrationManager(
                     $pdo,
