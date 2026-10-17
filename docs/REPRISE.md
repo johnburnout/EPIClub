@@ -791,6 +791,18 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 
 - **`.env.local.php`** : non tracké par git (gitignore). Contient les
   secrets (`SECRET_KEY`, `DB_PASS`, `MAILER_DSN`, `ROOT_URL`).
+  ⚠️ **La SUITE DE TESTS en dépend** : ~68 tests Unit (tout manager
+  touchant `ConfigProvider` via `AbstractManager`) plantent si le
+  fichier est absent (« Fichier de configuration .env.local.php non
+  trouvé »). Ne JAMAIS le supprimer — en particulier lors de smoke
+  tests de `setup/` : step_1 le CRÉÉ si absent (risque de le détruire
+  ensuite en « nettoyant »). Incident réel du 2026-10-17 (#107) :
+  suppression accidentelle → 68 erreurs + re-création manuelle
+  (nouvelle SECRET_KEY → les 99 `hash_remarques` chiffrés antérieurs
+  sont désormais indéchiffrables, données de dev uniquement).
+  Fragilité structurelle connue : ces tests devraient utiliser un
+  fixture de config plutôt que le vrai fichier (candidat ticket
+  testabilité).
 - **`ROOT_URL` obligatoire** depuis v0.18.0 (#50a-bis) : `getBaseUrl()`
   throw si absent. Vérifier sa présence avant tout déploiement.
 - **`SECRET_KEY` obligatoire** depuis #52 : `EncryptionService` throw

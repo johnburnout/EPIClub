@@ -53,25 +53,23 @@ class IndexController extends AbstractController
         // getenv() ?: $_ENV — c'est-à-dire l'environnement du PROCESSUS —
         // qui pouvait afficher des valeurs différentes de .env.local.php,
         // le fichier réellement utilisé par MailerService (#50c) et
-        // bootstrap. Si le fichier est absent/illisible, on expose des
-        // chaînes vides (iso-comportement avec getenv/$_ENV ?? '') :
-        // l'utilisateur pourra saisir les valeurs.
+        // bootstrap. Si le fichier est absent/illisible (RuntimeException
+        // de ConfigProvider, rattrapée ici), on expose des chaînes vides
+        // (iso-comportement avec getenv/$_ENV ?? '') : l'utilisateur
+        // pourra saisir les valeurs.
         $mailerDsn = '';
         $mailerFrom = '';
         $mailerName = '';
         $rootUrl = '';
-        $envFile = __DIR__ . '/../../.env.local.php';
-        if (is_file($envFile)) {
-            try {
-                $configProvider = $this->configProvider();
-                $mailerDsn  = (string) $configProvider->get('MAILER_DSN', '');
-                $mailerFrom = (string) $configProvider->get('MAILER_FROM', '');
-                $mailerName = (string) $configProvider->get('MAILER_NAME', '');
-                $rootUrl    = (string) $configProvider->get('ROOT_URL', '');
-            } catch (\Throwable $e) {
-                // Config illisible : on n'empêche pas l'affichage de la page SMTP.
-                error_log('[IndexController] systemSettings: ' . $e->getMessage());
-            }
+        try {
+            $configProvider = $this->configProvider();
+            $mailerDsn  = (string) $configProvider->get('MAILER_DSN', '');
+            $mailerFrom = (string) $configProvider->get('MAILER_FROM', '');
+            $mailerName = (string) $configProvider->get('MAILER_NAME', '');
+            $rootUrl    = (string) $configProvider->get('ROOT_URL', '');
+        } catch (\Throwable $e) {
+            // Config absente/illisible : on n'empêche pas l'affichage de la page SMTP.
+            error_log('[IndexController] systemSettings: ' . $e->getMessage());
         }
 
         $dsnParts = parse_url($mailerDsn);
