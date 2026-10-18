@@ -10,6 +10,8 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v0.29.18] — 2026-10-18
+
 ### Fixed
 
 - **Scan QR : la branche « contrôle » exige désormais

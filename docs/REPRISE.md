@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-18 (session #113 — hasPending et idsDejaAjoutes calculés avant filtrage dans edit())
-**Version courante** : v0.29.17
-**Branche** : `main` (travail direct, ticket #113)
+**Dernière mise à jour** : 2026-10-18 (session — ajout d'équipement : ouverture directe de la fiche contrôle + garde ROLE_CONTROLLEUR au scan QR)
+**Version courante** : v0.29.18
+**Branche** : `main` (travail direct)
 
 ---
 
@@ -16,9 +16,10 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.29.17 | #113+#114 | hasPending + idsDejaAjoutes calculés avant filtrage dans edit() (décision produit option A) + 3 tests Integration | `<hash>` |
-| v0.29.16 | #112 | N+1 de edit() supprimés — findIds() batch Equipement/Emplacement + 4 tests Integration de caractérisation | `<hash>` |
-| v0.29.15 | #111 | ControleController::edit() découpé en handlers (iso-comportement, Priorité 4 audit) + 4 tests Unit | `<hash>` |
+| v0.29.18 | — | Ajout équipement → fiche contrôle directe (liste + scan QR) ; scan QR : branche contrôle réservée à ROLE_CONTROLLEUR + 2 tests Unit + 1 test Integration | `<hash>` |
+| v0.29.17 | #113+#114 | hasPending + idsDejaAjoutes calculés avant filtrage dans edit() (décision produit option A) + 3 tests Integration | `f00957f` |
+| v0.29.16 | #112 | N+1 de edit() supprimés — findIds() batch Equipement/Emplacement + 4 tests Integration de caractérisation | `58df023` |
+| v0.29.15 | #111 | ControleController::edit() découpé en handlers (iso-comportement, Priorité 4 audit) + 4 tests Unit | `cc2fbaf` |
 | v0.29.14 | #110 | Enums morts supprimés (EquipementStatuts/EquipementEtats) + derniers $_ENV résiduels migrés (PUBLIC_PATH, APP_ENV) + 4 tests Unit | `87d6461` |
 | v0.29.13 | #109 | Fixture de config — tests Unit indépendants du .env.local.php gitignored (ConfigFile + bootstrap PHPUnit) + 3 tests | `db1fb0e` |
 | v0.29.12 | #108 | Dette 28 soldée — code mort setup/ (demo/ + checkbox @todo, footer version dynamique, mdp SMTP masqué) | `cca6e5a` |
@@ -1060,6 +1061,25 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 
 ## Contexte de la session précédente
 
+- **v0.29.18** (2026-10-18, sans ticket) : **parcours « ajout
+  d'équipement »** — après le clic sur « Contrôler » (liste des
+  disponibles), `ControleController::addEquipement()` redirige vers la
+  fiche contrôle de la ligne créée (`update-ligne/{ligne_id}`) au lieu
+  de revenir sur la page du contrôle ; repli sur edit() si l'ID n'est
+  pas récupéré. Vérification du scan QR : le comportement attendu
+  (utilisateur → fiche équipement ; contrôleur avec contrôle ouvert →
+  ajout + fiche contrôle) était déjà implémenté, mais la branche
+  « contrôle » ne vérifiait pas le rôle — un ex-contrôleur rétrogradé
+  ROLE_USER avec un contrôle ouvert ajoutait une ligne puis était
+  refusé sur update-ligne → garde `isGranted('ROLE_CONTROLLEUR')` dans
+  `QrRedirectController::redirect()`. Constat annexes : le statut
+  `en_cours` (ENUM controle.statut) n'est jamais assigné dans app/ —
+  `findActiveByUser` (ouvert) couvre tous les contrôles actifs.
+  `DatabaseFixture::findControleLigne()` ajouté. 2 tests Unit
+  (ControleControllerHandlersTest) + 1 test Unit QR + 1 test
+  Integration du parcours complet (ControleControllerAddEquipementTest).
+  Commits `2edbbd0` (feat) et `197b4ea` (fix qr). 499 tests Unit
+  (1242 assertions), 114 Integration (288). Travail direct sur `main`.
 - **#97 + #98** (v0.29.3) : **Dettes 1 et 2 soldées — toutes les
   dettes documentées sont désormais soldées.** #97 :
   `IndexController::updateSmtp()` → `updateSystemSettings()`, route
