@@ -10,6 +10,66 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v0.30.0] — 2026-10-18
+
+### Added
+
+- **Référencement automatique des équipements** (décision produit
+  2026-10-18) — nouveau service `ReferenceGenerator` et modèle global
+  configurable dans **Administration → Référence** (nouvel écran,
+  `club.ref_modele`, défaut `YYCATNNN`) :
+  - variables : `YY`/`YYYY` (année), `CAT` (code catégorie), `N…`
+    (n° d'ordre, autant de N que de chiffres) avec aperçu en direct ;
+  - chaque catégorie possède un **code** (nouveau champ
+    `categorie.code`, UNIQUE) : pré-rempli à la saisie du libellé (3
+    premières lettres normalisées, `CO1`/`CO2`… en cas de collision),
+    modifiable, attribué et persisté à la volée si absent
+    (self-healing) ;
+  - à la **validation d'une acquisition**, chaque équipement généré
+    reçoit une référence automatique selon le modèle (ex. `26COR001`) —
+    le compteur est **remis à zéro chaque année**, par catégorie
+    (première corde 2027 → `27COR001`) ; la référence produit de la
+    ligne (`acquisition_ligne.reference`, UNIQUE) reste inchangée ;
+  - une **référence forcée** (import, colonne `reference_forcee`) prime
+    sur la génération automatique ;
+  - la création/modification manuelle d'équipement reste en saisie
+    libre (pas d'auto).
+- **Import d'acquisitions Excel / CSV** (rôle ADMIN, bouton « Importer
+  » sur `/admin/acquisitions`, route `/admin/acquisitions/import`) —
+  colonnes : `reference` (optionnelle) `| designation | categorie |
+  nombre | lot | facture_reference | facture_date | fournisseur` ;
+  les lignes d'une même `facture_reference` sont groupées dans **une
+  même acquisition automatiquement validée** (équipements générés,
+  références auto ou forcées), avec `facture_document = « facture à
+  importer »` ; le fournisseur est trouvé/créé par nom ; une référence
+  de facture déjà connue → **groupe ignoré** (jamais de fusion) ;
+  rapport d'import (acquisitions créées, groupes ignorés, lignes en
+  erreur).
+- **Facture téléversable après coup sur acquisition validée** —
+  nouvelle action `update_facture` (`AcquisitionController::update()`)
+  qui ne remplace QUE `facture_document`, même sur une acquisition
+  validée ; formulaire inline sur la fiche acquisition ; le placeholder
+  « facture à importer » (`AcquisitionManager::FACTURE_A_IMPORTER`)
+  s'affiche en badge au lieu d'un lien cassé (liste/fiche acquisition,
+  formulaire, fiche équipement).
+- **Export « données » Excel + CSV** sur `/equipements` — deux
+  nouvelles options du menu Exporter (« Excel (données) », « CSV
+  (données) ») : format plat (référence, code, nom, catégorie,
+  emplacement, EPI, statut, nombre, dates, n°/date de facture) reprenant
+  les filtres courants, sans images ; CSV en UTF-8 BOM + `;` (Excel FR).
+  Destiné à la consultation, pas au réimport.
+- Migration `006_references_auto` : `categorie.code` (varchar(8),
+  UNIQUE, NULL), `club.ref_modele` (défaut `YYCATNNN`),
+  `acquisition_ligne.reference_forcee` (varchar(32), NULL).
+- Tests : 32 tests Unit `ReferenceGeneratorTest` (+ sous-classe
+  Testable) ; 5 tests Unit code catégorie dans
+  `CategorieControllerHandlersTest` ; 6 tests Integration
+  `AcquisitionImportTest` (import CSV multi-factures end-to-end,
+  doublon ignoré, lignes en erreur, extension rejetée, références auto
+  à la validation manuelle, `update_facture` sur acquisition validée) ;
+  `HttpTestClient::postMultipart()` (CURLFile) ; fixture : nettoyage
+  des fournisseurs de test.
+
 ## [v0.29.20] — 2026-10-18
 
 ### Fixed

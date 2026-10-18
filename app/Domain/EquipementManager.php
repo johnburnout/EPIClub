@@ -114,6 +114,22 @@ class EquipementManager extends AbstractManager
     }
 
     /**
+     * Références des équipements correspondant à un motif REGEXP MySQL
+     * (ex. '^26COR[0-9]{3}$' pour le compteur annuel du référencement
+     * automatique). Soft-deleted inclus : une référence consommée ne
+     * doit jamais être réattribuée.
+     *
+     * @return string[]
+     */
+    public function findReferencesMatching(string $regexp): array
+    {
+        $sql = "SELECT reference FROM club_equipement WHERE reference REGEXP :pattern";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['pattern' => $regexp]);
+        return $stmt->fetchAll(\PDO::FETCH_COLUMN);
+    }
+
+    /**
      * [REFACTOR #92] Champs autorisés en écriture (filteredInsert /
      * filteredUpdate).
      */

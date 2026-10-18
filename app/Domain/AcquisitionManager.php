@@ -6,6 +6,15 @@ use Epiclub\Engine\AbstractManager;
 
 class AcquisitionManager extends AbstractManager
 {
+    /**
+     * [MÉTIER] Valeur sentinelle de facture_document posée par l'import
+     * Excel/CSV : la facture n'est pas encore téléversée et pourra
+     * l'être ultérieurement (action dédiée sur l'acquisition validée).
+     * Les templates comparent à ce littéral pour afficher un badge au
+     * lieu d'un lien cassé.
+     */
+    public const FACTURE_A_IMPORTER = 'facture à importer';
+
     public function findAll($order = '', $limit = -1, $offset = 0)
     {
         $params = $this->buildOrderClause($order)

@@ -7,6 +7,7 @@ use Epiclub\Domain\AcquisitionManager;
 use Epiclub\Domain\FournisseurManager;
 use Epiclub\Domain\CategorieManager;
 use Epiclub\Domain\EquipementManager;
+use Epiclub\Domain\ReferenceGenerator;
 
 class AcquisitionProcess
 {
@@ -43,6 +44,15 @@ class AcquisitionProcess
     protected function equipementManager(): EquipementManager
     {
         return new EquipementManager();
+    }
+
+    /**
+     * Factory ReferenceGenerator — mockable en test Unit (même pattern
+     * que les managers ci-dessus).
+     */
+    protected function referenceGenerator(): ReferenceGenerator
+    {
+        return new ReferenceGenerator();
     }
     
     public function acquisition_process($acquisition)
@@ -112,7 +122,22 @@ class AcquisitionProcess
             $est_epi = $categorie ? $categorie['est_epi'] : 1;
             
             $regrouper_en_lot = isset($ligne['regrouper_en_lot']) && $ligne['regrouper_en_lot'] == 1;
-            
+
+            // [MÉTIER] Référence de la fiche équipement (décision
+            // produit 2026-10-18) :
+            //  - reference_forcee renseignée (import Excel/CSV) → elle
+            //    prime, suffixée -1..-n si plusieurs unités ;
+            //  - sinon → référence AUTO selon le modèle global
+            //    (club.ref_modele), compteur remis à zéro chaque année,
+            //    recalculé après chaque enregistrement.
+            $referenceForcee = trim((string) ($ligne['reference_forcee'] ?? ''));
+            $referenceAuto = function () use ($ligne, $annee): string {
+                return $this->referenceGenerator()->generate(
+                    (int) $ligne['categorie_id'],
+                    (int) $annee
+                );
+            };
+
             if ($regrouper_en_lot) {
                 $code = $annee . '-' . str_pad($ligne['acquisition_id'], 3, '0', STR_PAD_LEFT) . '-' .
                         str_pad($ligne['id'], 3, '0', STR_PAD_LEFT) . '-LOT';
@@ -122,7 +147,7 @@ class AcquisitionProcess
                 $new_equipement = [
                     'acquisition_id' => $ligne['acquisition_id'],
                     'categorie_id' => $ligne['categorie_id'],
-                    'reference' => $ligne['reference'],
+                    'reference' => $referenceForcee !== '' ? $referenceForcee : $referenceAuto(),
                     'libelle' => $ligne['designation'],
                     'code' => $code,
                     'statut' => 0,
@@ -144,7 +169,16 @@ class AcquisitionProcess
                         $code = $code . '-' . rand(10, 99);
                     }
                     
-                    $reference = $ligne['reference'] . '-' . $i;
+                    if ($referenceForcee !== '') {
+                        $reference = $ligne['nombre'] > 1
+                            ? $referenceForcee . '-' . $i
+                            : $referenceForcee;
+                    } else {
+                        // Référence auto : le compteur se recalcule à
+                        // chaque passage (l'unité précédente est déjà
+                        // enregistrée).
+                        $reference = $referenceAuto();
+                    }
                     
                     $new_equipement = [
                         'acquisition_id' => $ligne['acquisition_id'],

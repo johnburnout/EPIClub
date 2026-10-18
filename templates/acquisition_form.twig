@@ -63,7 +63,10 @@
 		<div class="mb-3">
 			<label for="facture_document" class="form-label">
 				Facture (PDF, JPG, PNG)
-				{% if not acquisition.facture_document and acquisition.id %}
+				{# « facture à importer » = AcquisitionManager::FACTURE_A_IMPORTER (placeholder posé par l'import Excel/CSV) #}
+				{% if acquisition.facture_document == 'facture à importer' %}
+					<span class="badge bg-secondary">📄 facture à importer</span>
+				{% elseif not acquisition.facture_document and acquisition.id %}
 					<span class="badge bg-danger">⚠️ Requise pour valider</span>
 				{% elseif acquisition.facture_document %}
 					<span class="badge bg-success">✅ Téléchargée</span>
@@ -80,7 +83,7 @@
 				<div class="invalid-feedback">{{ form_errors.facture_document }}</div>
 			{% endif %}
 			
-			{% if acquisition.facture_document %}
+			{% if acquisition.facture_document and acquisition.facture_document != 'facture à importer' %}
 			<div class="mt-2">
 				<span class="text-muted">Fichier actuel :</span>
 				<a href="/uploads/{{ acquisition.facture_document }}" target="_blank" class="btn btn-sm btn-outline-primary">

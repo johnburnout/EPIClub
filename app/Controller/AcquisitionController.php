@@ -338,6 +338,10 @@ class AcquisitionController extends AbstractController
                 $result = match ($action) {
                     'update'    => $this->handleUpdateAction($request, $acquisition),
                     'add_ligne' => $this->handleAddLigneAction($request, $acquisition),
+                    // [MÉTIER] Remplacement du SEUL document de facture :
+                    // autorisé même sur une acquisition validée (ex.
+                    // facture téléversée après un import Excel/CSV).
+                    'update_facture' => $this->handleUpdateFactureAction($request, $acquisition),
                     default     => null,
                 };
                 
@@ -539,6 +543,76 @@ class AcquisitionController extends AbstractController
             ));
             $formErrors['ligne_general'] = 'Une erreur est survenue lors de l\'ajout de la ligne.';
             return new HandlerResult(null, $acquisition, $formErrors, $ligneData);
+        }
+    }
+
+    /**
+     * [MÉTIER] Handler de l'action 'update_facture'.
+     *
+     * Remplace UNIQUEMENT le document de facture (mise à jour partielle,
+     * filteredUpdate sans les autres champs). Autorisé même sur une
+     * acquisition validée : cas d'usage principal = téléverser la
+     * facture réelle après un import Excel/CSV (placeholder
+     * « facture à importer » — AcquisitionManager::FACTURE_A_IMPORTER).
+     *
+     * Toutes les branches retournent une RedirectResponse (flash) : le
+     * formulaire appelant vit sur la fiche acquisition, pas sur le
+     * formulaire d'édition.
+     *
+     * @param array $acquisition Acquisition chargée (avec 'id', 'facture_document').
+     */
+    protected function handleUpdateFactureAction(
+        Request $request,
+        array $acquisition,
+    ): HandlerResult {
+        $id = (int) $acquisition['id'];
+        $redirect = fn(): Response => $this->redirectTo("/admin/acquisitions/acquisition-{$id}");
+
+        $fichier = $request->files->get('facture_document');
+        if (!$fichier) {
+            $this->session->getFlashBag()->add('error', 'Veuillez choisir un fichier de facture.');
+            return new HandlerResult($redirect());
+        }
+
+        $uploader = $this->factureUploader();
+        try {
+            $newFacture = $uploader->upload($fichier);
+            if ($newFacture === null) {
+                $this->session->getFlashBag()->add('error', 'Veuillez choisir un fichier de facture.');
+                return new HandlerResult($redirect());
+            }
+
+            // [ROBUSTESSE] Ne pas tenter de supprimer le placeholder :
+            // ce n'est pas un fichier réel.
+            if (!empty($acquisition['facture_document'])
+                && $acquisition['facture_document'] !== AcquisitionManager::FACTURE_A_IMPORTER) {
+                $uploader->delete($acquisition['facture_document']);
+            }
+
+            // Mise à jour partielle : SEUL facture_document est écrit.
+            $this->acquisitionManager()->save([
+                'id' => $id,
+                'facture_document' => $newFacture,
+            ]);
+
+            $this->session->getFlashBag()->add('success', '✅ La facture a été téléversée.');
+            return new HandlerResult($redirect());
+        } catch (FactureUploadException $e) {
+            $this->session->getFlashBag()->add('error', $e->getMessage());
+            return new HandlerResult($redirect());
+        } catch (\Throwable $e) {
+            error_log(sprintf(
+                '[AcquisitionController] Update facture failed for acquisition id=%s: %s in %s:%d',
+                $id,
+                $e->getMessage(),
+                $e->getFile(),
+                $e->getLine()
+            ));
+            $this->session->getFlashBag()->add(
+                'error',
+                'Une erreur est survenue lors du téléversement. Merci de réessayer.'
+            );
+            return new HandlerResult($redirect());
         }
     }
 

@@ -169,6 +169,17 @@ $routes->add('club_show', new Route(
 
 
 // =====================================================================
+// REFERENCEMENT AUTOMATIQUE
+// =====================================================================
+// ROLE_ADMIN : modèle global de référence (club.ref_modele)
+
+$routes->add('reference_settings', new Route(
+    '/admin/references',
+    ['_controller' => 'Epiclub\\Controller\\ReferenceController', 'action' => 'edit']
+));
+
+
+// =====================================================================
 // CATEGORIE
 // =====================================================================
 // ROLE_ADMIN (list/show : ROLE_USER)
@@ -209,6 +220,10 @@ $routes->add('acquisition_list', new Route(
 $routes->add('acquisition_create', new Route(
     '/admin/acquisitions/nouvelle',
     ['_controller' => 'Epiclub\\Controller\\AcquisitionController', 'action' => 'create']
+));
+$routes->add('acquisition_import', new Route(
+    '/admin/acquisitions/import',
+    ['_controller' => 'Epiclub\\Controller\\AcquisitionImportController', 'action' => 'import']
 ));
 $routes->add('acquisition_edit', new Route(
     '/admin/acquisitions/acquisition_modification-{id}',

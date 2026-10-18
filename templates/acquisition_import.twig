@@ -1,0 +1,115 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+
+	<h3>Importer des acquisitions (Excel / CSV)</h3>
+	<hr>
+
+	{% if erreur %}
+		<div class="alert alert-danger">
+			<i class="fas fa-exclamation-triangle"></i> {{ erreur }}
+		</div>
+	{% endif %}
+
+	<div class="card mb-3" style="max-width: 55rem;">
+		<div class="card-body">
+			<h6 class="card-title">Format du fichier</h6>
+			<p>
+				Fichier Excel (<code>.xlsx</code>, <code>.xls</code>) ou CSV, avec en ligne 1 les en-têtes
+				(casse et accents indifférents) :
+			</p>
+			<p><code>reference | designation | categorie | nombre | lot | facture_reference | facture_date | fournisseur</code></p>
+			<ul class="mb-0">
+				<li><code>reference</code> : <strong>optionnelle</strong> — si remplie, elle est utilisée telle quelle
+					sur la fiche équipement ; si vide, la référence est attribuée automatiquement selon le
+					<a href="/admin/references">modèle de référence</a> ;</li>
+				<li><code>facture_reference</code> : les lignes d'une même facture sont groupées dans
+					<strong>une même acquisition, automatiquement validée</strong> ; le document de facture est
+					marqué « facture à importer » et pourra être téléversé ultérieurement ;</li>
+				<li><code>lot</code> : « oui » pour regrouper les unités en un seul équipement ;</li>
+				<li><code>facture_date</code> : <code>AAAA-MM-JJ</code> ou <code>JJ/MM/AAAA</code> ;</li>
+				<li>une référence de facture déjà connue est <strong>ignorée</strong> (jamais de fusion).</li>
+			</ul>
+		</div>
+	</div>
+
+	<form method="post" enctype="multipart/form-data">
+		<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+		<div class="mb-3" style="max-width: 30rem;">
+			<label for="fichier">Fichier à importer * :</label>
+			<input type="file" id="fichier" name="fichier" class="form-control"
+			       accept=".xlsx,.xls,.csv" required>
+		</div>
+
+		<div class="form-actions">
+			<button type="submit" class="btn btn-primary">Importer</button>
+			<a href="/admin/acquisitions" class="btn btn-secondary">Retour aux acquisitions</a>
+		</div>
+	</form>
+
+	{% if rapport %}
+		<hr>
+		<h4>Rapport d'import</h4>
+
+		{% if rapport.acquisitions %}
+			<div class="alert alert-success">
+				<strong>{{ rapport.acquisitions|length }} acquisition(s) créée(s) et validée(s)</strong>
+				({{ rapport.lignes_lues }} ligne(s) lue(s)).
+			</div>
+			<table class="table">
+				<thead>
+					<tr>
+						<th>Facture</th>
+						<th>Lignes</th>
+						<th>Équipements générés</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for acq in rapport.acquisitions %}
+						<tr>
+							<td>{{ acq.facture_reference }}</td>
+							<td>{{ acq.nb_lignes }}</td>
+							<td>{{ acq.equipements_generes }}</td>
+							<td>
+								<a href="/admin/acquisitions/acquisition-{{ acq.id }}" class="btn btn-primary btn-sm">Voir</a>
+							</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		{% else %}
+			<div class="alert alert-warning">Aucune acquisition n'a été créée.</div>
+		{% endif %}
+
+		{% if rapport.groupes_ignores %}
+			<h5>Groupes ignorés</h5>
+			<table class="table">
+				<tbody>
+					{% for groupe in rapport.groupes_ignores %}
+						<tr>
+							<td>{{ groupe.facture_reference }}</td>
+							<td class="text-muted">{{ groupe.raison }}</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		{% endif %}
+
+		{% if rapport.lignes_en_erreur %}
+			<h5>Lignes en erreur</h5>
+			<table class="table">
+				<tbody>
+					{% for err in rapport.lignes_en_erreur %}
+						<tr>
+							<td style="width: 8rem;">Ligne {{ err.ligne }}</td>
+							<td class="text-danger">{{ err.message }}</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		{% endif %}
+	{% endif %}
+
+{% endblock %}

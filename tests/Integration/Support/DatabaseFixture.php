@@ -220,6 +220,10 @@ final class DatabaseFixture
         // ⚠️ Après les acquisitions, pour éviter que des acquisition_ligne
         //    ne pointent vers des catégories supprimées (pas de FK en base).
         $this->pdo->exec("DELETE FROM categorie WHERE libelle LIKE 'TEST-%'");
+
+        // [IMPORT] Fournisseurs créés par les tests d'import Excel/CSV
+        // (find-or-create par nom). Après les acquisitions (FK).
+        $this->pdo->exec("DELETE FROM fournisseur WHERE nom LIKE 'TEST-%'");
     }
     
     /**

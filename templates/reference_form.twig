@@ -1,0 +1,91 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+
+	<h3>Référencement automatique</h3>
+	<hr>
+
+	{% if form_errors is defined and form_errors %}
+		{% for message in form_errors %}
+			<div class="alert alert-danger">
+				<i class="fas fa-exclamation-triangle"></i> {{ message }}
+			</div>
+		{% endfor %}
+	{% endif %}
+
+	<p>
+		Le modèle de référence définit le format des références attribuées automatiquement
+		aux équipements lors de la <strong>validation d'une acquisition</strong> ou d'un
+		<strong>import Excel/CSV</strong> (quand la colonne référence est vide).
+	</p>
+
+	<form method="post">
+		<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+		<div class="mb-3">
+			<label for="ref_modele">Modèle de référence * :</label>
+			<input type="text"
+			       id="ref_modele"
+			       name="ref_modele"
+			       value="{{ modele }}"
+			       class="form-control{% if form_errors %} is-invalid{% endif %}"
+			       maxlength="32"
+			       style="max-width: 20rem; text-transform: uppercase;"
+			       required>
+		</div>
+
+		<div class="mb-3">
+			<label>Aperçu (catégorie de code <code>COR</code>, premier équipement de l'année) :</label>
+			<div><code id="apercu" class="fs-5"></code></div>
+		</div>
+
+		<div class="card mb-3" style="max-width: 40rem;">
+			<div class="card-body">
+				<h6 class="card-title">Variables disponibles</h6>
+				<ul class="mb-2">
+					<li><code>YY</code> : année sur 2 chiffres (ex. <code>26</code>) — <code>YYYY</code> sur 4 chiffres ;</li>
+					<li><code>CAT</code> : code de la catégorie (obligatoire, défini dans l'écran Catégories) ;</li>
+					<li><code>N…</code> : n° d'ordre — autant de <code>N</code> que de chiffres (<code>NNN</code> → <code>001</code>).</li>
+				</ul>
+				<p class="mb-0 text-muted">
+					Le n° d'ordre est remis à zéro chaque année, par catégorie :
+					la première corde saisie en 2027 sera <code>27COR001</code>.
+				</p>
+			</div>
+		</div>
+
+		<div class="form-actions">
+			<button type="submit" class="btn btn-primary">Enregistrer</button>
+			<a href="/tableau_de_bord" class="btn btn-secondary">Annuler</a>
+		</div>
+	</form>
+
+	<script>
+	// Aperçu en direct : reproduit ReferenceGenerator::render() côté
+	// client (YYYY avant YY, puis CAT, puis le bloc de N → compteur 1).
+	(function () {
+		var champ = document.getElementById('ref_modele');
+		var apercu = document.getElementById('apercu');
+
+		function rendre() {
+			var modele = champ.value.toUpperCase();
+			var annee = String(new Date().getFullYear());
+			var m = modele.match(/N+/);
+			var pad = m ? m[0].length : 3;
+			var compteur = '1';
+			while (compteur.length < pad) {
+				compteur = '0' + compteur;
+			}
+			var out = modele.split('YYYY').join(annee);
+			out = out.split('YY').join(annee.slice(-2));
+			out = out.split('CAT').join('COR');
+			out = out.replace(/N+/, compteur);
+			apercu.textContent = out;
+		}
+
+		champ.addEventListener('input', rendre);
+		rendre();
+	})();
+	</script>
+
+{% endblock %}

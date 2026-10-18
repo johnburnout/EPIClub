@@ -200,6 +200,116 @@ final class CategorieControllerHandlersTest extends TestCase
     }
 
     // ==================================================================
+    // edit() — code catégorie (référencement automatique)
+    // ==================================================================
+
+    public function testEditAutoSuggestsCodeWhenEmpty(): void
+    {
+        $manager = $this->getMockBuilder(CategorieManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $manager->method('findAll')->willReturn([]);
+        $manager->expects(self::once())
+            ->method('save')
+            ->with(self::callback(static fn(array $c) => ($c['code'] ?? null) === 'COR'))
+            ->willReturn(1);
+
+        $controller = $this->makeControllerWith($manager);
+
+        $response = $controller->edit($this->makePostRequest([
+            'libelle' => 'Cordes',
+            // pas de champ 'code' → suggestion automatique
+        ]));
+
+        self::assertInstanceOf(RedirectResponse::class, $response);
+    }
+
+    public function testEditAutoSuggestsCodeAlternativeOnCollision(): void
+    {
+        $manager = $this->getMockBuilder(CategorieManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        // COR déjà pris par une AUTRE catégorie
+        $manager->method('findAll')->willReturn([
+            ['id' => 9, 'libelle' => 'Cordes', 'code' => 'COR'],
+        ]);
+        $manager->expects(self::once())
+            ->method('save')
+            ->with(self::callback(static fn(array $c) => ($c['code'] ?? null) === 'CO1'))
+            ->willReturn(1);
+
+        $controller = $this->makeControllerWith($manager);
+
+        $response = $controller->edit($this->makePostRequest([
+            'libelle' => 'Cordages',
+            'code'    => '',
+        ]));
+
+        self::assertInstanceOf(RedirectResponse::class, $response);
+    }
+
+    public function testEditNormalizesManualCode(): void
+    {
+        $manager = $this->getMockBuilder(CategorieManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $manager->method('findAll')->willReturn([]);
+        $manager->expects(self::once())
+            ->method('save')
+            ->with(self::callback(static fn(array $c) => ($c['code'] ?? null) === 'COR'))
+            ->willReturn(1);
+
+        $controller = $this->makeControllerWith($manager);
+
+        $response = $controller->edit($this->makePostRequest([
+            'libelle' => 'Cordes',
+            'code'    => ' cor ',  // trim + majuscules attendus
+        ]));
+
+        self::assertInstanceOf(RedirectResponse::class, $response);
+    }
+
+    public function testEditRejectsInvalidCode(): void
+    {
+        $manager = $this->getMockBuilder(CategorieManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $manager->expects(self::never())->method('save');
+
+        $controller = $this->makeControllerWith($manager);
+
+        $response = $controller->edit($this->makePostRequest([
+            'libelle' => 'Cordes',
+            'code'    => 'C',  // 1 caractère < min 2
+        ]));
+
+        self::assertNotInstanceOf(RedirectResponse::class, $response);
+        self::assertSame(200, $response->getStatusCode());
+    }
+
+    public function testEditRejectsDuplicateCode(): void
+    {
+        $manager = $this->getMockBuilder(CategorieManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        // COR déjà pris par une AUTRE catégorie (id=9)
+        $manager->method('findAll')->willReturn([
+            ['id' => 9, 'libelle' => 'Cordes', 'code' => 'COR'],
+        ]);
+        $manager->expects(self::never())->method('save');
+
+        $controller = $this->makeControllerWith($manager);
+
+        $response = $controller->edit($this->makePostRequest([
+            'libelle' => 'Cordages',
+            'code'    => 'COR',
+        ]));
+
+        self::assertNotInstanceOf(RedirectResponse::class, $response);
+        self::assertSame(200, $response->getStatusCode());
+    }
+
+    // ==================================================================
     // Helpers
     // ==================================================================
 

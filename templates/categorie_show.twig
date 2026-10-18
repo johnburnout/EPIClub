@@ -17,6 +17,14 @@
 				{{ categorie.libelle }}
 			</div>
 			<div class="mb-3">
+				<label for="code">Code :</label>
+				{% if categorie.code %}
+					<code>{{ categorie.code }}</code>
+				{% else %}
+					<span class="text-muted">— (attribué automatiquement à la première utilisation)</span>
+				{% endif %}
+			</div>
+			<div class="mb-3">
 				{% set est_epi_value = "Oui" %}
 				{% if categorie.est_epi == 0 %}
 					{% set est_epi_value = "Non" %}

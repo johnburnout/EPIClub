@@ -6,6 +6,7 @@
 	
 	{% if isGranted('ROLE_ADMIN') %}
 		<a href="/admin/acquisitions/nouvelle" class="btn btn-primary mb-3">Nouvelle acquisition</a>
+		<a href="/admin/acquisitions/import" class="btn btn-outline-primary mb-3">📥 Importer (Excel / CSV)</a>
 		<hr>
 	{% endif %}
 	
@@ -36,7 +37,10 @@
 						{% endif %}
 					</td>
 					<td>
-						{% if acquisition.facture_document %}
+						{# « facture à importer » = AcquisitionManager::FACTURE_A_IMPORTER (placeholder posé par l'import) #}
+						{% if acquisition.facture_document == 'facture à importer' %}
+							<span class="badge bg-secondary" title="La facture pourra être téléversée ultérieurement">📄 facture à importer</span>
+						{% elseif acquisition.facture_document %}
 							<a href="/uploads/{{ acquisition.facture_document }}" target="_blank" class="btn btn-sm btn-outline-primary" title="Voir la facture">
 								📄
 							</a>

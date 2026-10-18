@@ -38,10 +38,31 @@
 					</div>
 					<div class="mb-2">
 						<strong>Document :</strong> 
-						{% if acquisition.facture_document %}
+						{# « facture à importer » = AcquisitionManager::FACTURE_A_IMPORTER (placeholder posé par l'import Excel/CSV) #}
+						{% if acquisition.facture_document == 'facture à importer' %}
+							<span class="badge bg-secondary">📄 facture à importer</span>
+						{% elseif acquisition.facture_document %}
 							<a href="/uploads/{{ acquisition.facture_document }}" target="_blank">📄 Voir la facture</a>
 						{% else %}
 							<span class="text-muted">Aucun document</span>
+						{% endif %}
+						{# Sur une acquisition validée, seul le document de facture
+						   peut encore être remplacé (action update_facture). #}
+						{% if isGranted('ROLE_ADMIN') and acquisition.est_validee %}
+							<form method="post" action="/admin/acquisitions/acquisition_modification-{{ acquisition.id }}" enctype="multipart/form-data" class="mt-2">
+								<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+								<input type="hidden" name="action" value="update_facture">
+								<div class="input-group input-group-sm" style="max-width: 24rem;">
+									<input type="file" name="facture_document" class="form-control" required>
+									<button type="submit" class="btn btn-outline-primary">
+										{% if acquisition.facture_document == 'facture à importer' %}
+											📤 Importer la facture
+										{% else %}
+											📤 Remplacer la facture
+										{% endif %}
+									</button>
+								</div>
+							</form>
 						{% endif %}
 					</div>
 					<div class="mb-2">

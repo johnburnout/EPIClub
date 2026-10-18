@@ -101,19 +101,38 @@ Ils sont générés automatiquement à partir des **factures d'acquisition** val
 
 1. Une fois la facture saisie, cliquer sur **« Valider »**.
 2. **Action automatique** :
-- Pour chaque ligne, le système crée **autant d’équipements que le nombre indiqué**.
+- Pour chaque ligne, le système crée **autant d’équipements que le nombre indiqué** (ou **un seul équipement** si la ligne est regroupée en lot).
 - Chaque équipement reçoit :
-- Une **référence** (identique à la ligne)
+- Une **référence attribuée automatiquement** selon le modèle de référence (voir §6 Référence), ex. `26COR001`
 - Un **libellé** (identique à la désignation)
 - Un **code** unique (généré automatiquement)
 - La **catégorie** et le **statut** par défaut « Disponible »
 - Une **photo** vide (modifiable ultérieurement)
 
-3. L’acquisition passe en statut **« Validée »** et n’est plus modifiable.
+3. L’acquisition passe en statut **« Validée »** et n’est plus modifiable — **sauf le document de facture**, qui peut être téléversé ou remplacé depuis la fiche de l’acquisition.
 
 ---
 
-### 2.3 Modifier un équipement (après validation)
+### 2.3 Importer des acquisitions (Excel / CSV)
+
+**Rôle requis :** `ROLE_ADMIN`
+
+1. Aller dans **Administration → Acquisitions**, cliquer sur **« Importer (Excel / CSV) »**.
+2. Fichier Excel (`.xlsx`, `.xls`) ou CSV avec en ligne 1 les en-têtes :
+
+`reference | designation | categorie | nombre | lot | facture_reference | facture_date | fournisseur`
+
+- **`reference`** : optionnelle — si remplie, elle est utilisée telle quelle sur la fiche équipement ; si vide, la référence est attribuée automatiquement selon le modèle (ex. `25COR005`) ;
+- **`facture_reference`** : les lignes d’une même facture sont **groupées dans une même acquisition, automatiquement validée** ; le document est marqué **« facture à importer »** et peut être téléversé ultérieurement depuis la fiche de l’acquisition ;
+- **`lot`** : « oui » pour regrouper les unités en un seul équipement ;
+- **`facture_date`** : `AAAA-MM-JJ` ou `JJ/MM/AAAA` ;
+- une référence de facture **déjà connue est ignorée** (jamais de fusion).
+
+3. Un **rapport d’import** liste les acquisitions créées, les groupes ignorés et les lignes en erreur.
+
+---
+
+### 2.4 Modifier un équipement (après validation)
 
 **Rôle requis :** `ROLE_ADMIN`
 
@@ -130,11 +149,12 @@ Ils sont générés automatiquement à partir des **factures d'acquisition** val
 
 ---
 
-### 2.4 Consulter / Exporter
+### 2.5 Consulter / Exporter
 
 - **Fiche individuelle** : depuis la liste, cliquer sur **« Voir »** pour consulter toutes les informations (y compris l’historique des contrôles et la facture associée).
 - **PDF individuel** : depuis la fiche, cliquer sur **« PDF »**.
-- **PDF liste / Excel / Étiquettes** : depuis la liste, utiliser le menu déroulant **« Exporter »**.
+- **PDF liste / Excel (photos + QR) / Étiquettes** : depuis la liste, utiliser le menu déroulant **« Exporter »**.
+- **Excel (données) / CSV (données)** : export plat des équipements filtrés (référence, catégorie, emplacement, statut, facture…), destiné à la consultation — pas au réimport.
 
 ---
 
@@ -166,12 +186,21 @@ Ils sont générés automatiquement à partir des **factures d'acquisition** val
 
 ### Catégories
 - Définir des catégories d'équipements (avec possibilité de marquer un équipement comme EPI).
+- Chaque catégorie possède un **code** (ex. `COR` pour « Cordes »), proposé automatiquement à partir du libellé (3 premières lettres ; `CO1`, `CO2`… en cas de collision) et modifiable. Ce code sert au référencement automatique.
+
+### Référence
+- **Administration → Référence** : définit le **modèle de référence** global des équipements (défaut `YYCATNNN`).
+- Variables : `YY` ou `YYYY` (année), `CAT` (code catégorie), `N…` (n° d’ordre — autant de `N` que de chiffres).
+- Exemple : `YYCATNNN` → `26COR001` pour la première corde saisie en 2026.
+- Le n° d’ordre est **remis à zéro chaque année**, par catégorie (première corde 2027 → `27COR001`).
+- La référence automatique est attribuée à la **validation d’une acquisition** et à l’**import Excel/CSV** (quand la colonne référence est vide).
 
 ### Emplacements
 - Définir des emplacements physiques (lieu de stockage, rayonnage, etc.).
 
 ### Acquisitions
 - Gérer les achats d'équipements avec factures et génération automatique des équipements.
+- **Importer (Excel / CSV)** : création groupée d'acquisitions validées à partir d'un fichier (voir §2.3).
 
 ---
 

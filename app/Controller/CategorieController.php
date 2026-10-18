@@ -3,6 +3,7 @@
 namespace Epiclub\Controller;
 
 use Epiclub\Domain\CategorieManager;
+use Epiclub\Domain\ReferenceGenerator;
 use Epiclub\Engine\AbstractController;
 use Symfony\Component\HttpFoundation\File\Exception\FileException;
 use Symfony\Component\HttpFoundation\Request;
@@ -25,6 +26,38 @@ class CategorieController extends AbstractController
     protected function categorieManager(): CategorieManager
     {
         return new CategorieManager();
+    }
+
+    /**
+     * Factory ReferenceGenerator — mockable en test Unit (même pattern
+     * que categorieManager()).
+     */
+    protected function referenceGenerator(): ReferenceGenerator
+    {
+        return new ReferenceGenerator();
+    }
+
+    /**
+     * Codes déjà pris par les AUTRES catégories (pour la suggestion et
+     * le contrôle d'unicité).
+     *
+     * @return string[]
+     */
+    private function codesPris(?int $excludeId): array
+    {
+        $codes = [];
+        // « ?: [] » : findAll() peut retourner null sur un mock de test
+        // non configuré (défensif, iso-comportement en production).
+        foreach ($this->categorieManager()->findAll() ?: [] as $cat) {
+            if ($excludeId !== null && (int) ($cat['id'] ?? 0) === $excludeId) {
+                continue;
+            }
+            $code = $cat['code'] ?? null;
+            if (is_string($code) && $code !== '') {
+                $codes[] = $code;
+            }
+        }
+        return $codes;
     }
     
     /**
@@ -125,7 +158,28 @@ class CategorieController extends AbstractController
             $description = is_string($descriptionRaw)
             ? mb_substr($descriptionRaw, 0, self::DESCRIPTION_MAX_LENGTH)
             : null;
-            
+
+            // [MÉTIER] Code catégorie (référencement automatique) :
+            // normalisé (majuscules, accents retirés), 2 à 8 caractères
+            // [A-Z0-9], unique hors soi. Vide → suggestion automatique.
+            $referenceGenerator = $this->referenceGenerator();
+            $codeRaw = $request->request->get('code');
+            $code = is_string($codeRaw) ? $referenceGenerator->normalize(trim($codeRaw)) : '';
+            $selfId = isset($categorie['id']) ? (int) $categorie['id'] : null;
+
+            if ($code === '') {
+                // Jamais d'erreur sur le libellé ici : il est déjà validé
+                // plus haut (obligatoire).
+                $code = $libelle !== ''
+                    ? $referenceGenerator->suggestCode($libelle, $this->codesPris($selfId))
+                    : null;
+            } elseif (!preg_match('/^[A-Z0-9]{2,8}$/', $code)) {
+                $form_errors['code'] = 'Le code doit contenir 2 à 8 caractères (lettres sans accent ou chiffres).';
+            } elseif (in_array($code, $this->codesPris($selfId), true)) {
+                $suggestion = $referenceGenerator->suggestCode($libelle !== '' ? $libelle : $code, $this->codesPris($selfId));
+                $form_errors['code'] = "Ce code est déjà utilisé par une autre catégorie. Suggestion : $suggestion.";
+            }
+
             if (empty($form_errors)) {
                 $categorie = array_merge(
                     $categorie,
@@ -133,6 +187,7 @@ class CategorieController extends AbstractController
                         'libelle' => $libelle,
                         'est_epi' => $request->request->has('est_epi') ? 1 : 0,
                         'description' => $description,
+                        'code' => $code,
                     ]
                 );
                 

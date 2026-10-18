@@ -32,6 +32,25 @@
 		</div>
 
 		<div class="mb-3">
+			<label for="code">Code :</label>
+			<input type="text"
+			       id="code"
+			       name="code"
+			       value="{{ categorie.code }}"
+			       class="form-control{% if form_errors.code is defined and form_errors.code %} is-invalid{% endif %}"
+			       maxlength="8"
+			       style="max-width: 12rem; text-transform: uppercase;"
+			       placeholder="ex. COR">
+			<small class="form-text text-muted">
+				Code utilisé dans la référence automatique des équipements (2 à 8 caractères, lettres sans accent ou chiffres).
+				Laisser vide pour une suggestion automatique à partir du libellé.
+			</small>
+			{% if form_errors.code is defined and form_errors.code %}
+				<div class="invalid-feedback d-block">{{ form_errors.code }}</div>
+			{% endif %}
+		</div>
+
+		<div class="mb-3">
 			<label for="description">Description :</label>
 			<textarea id="description" name="description" class="form-control" rows="3">{{ categorie.description }}</textarea>
 		</div>
@@ -60,5 +79,33 @@
 			<a href="/admin/categories" class="btn btn-secondary">Annuler</a>
 		</div>
 	</form>
+
+	<script>
+	// Pré-remplissage du code à partir du libellé : 3 premières lettres
+	// normalisées (majuscules, accents retirés), tant que le champ code
+	// n'a pas été modifié manuellement. La suggestion définitive (avec
+	// gestion des collisions CO1, CO2…) est faite côté serveur.
+	(function () {
+		var libelle = document.getElementById('libelle');
+		var code = document.getElementById('code');
+		var codeTouche = code.value !== '';
+
+		code.addEventListener('input', function () {
+			codeTouche = code.value !== '';
+		});
+
+		libelle.addEventListener('input', function () {
+			if (codeTouche) {
+				return;
+			}
+			var normalise = libelle.value
+				.normalize('NFD')
+				.replace(/[̀-ͯ]/g, '') // diacritiques U+0300–U+036F
+				.toUpperCase()
+				.replace(/[^A-Z0-9]/g, '');
+			code.value = normalise.substring(0, 3);
+		});
+	})();
+	</script>
 
 {% endblock %}

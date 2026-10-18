@@ -6,7 +6,7 @@ use Epiclub\Engine\AbstractManager;
 class ClubManager extends AbstractManager
 {
     /** [REFACTOR #92] Champs autorisés en écriture (filteredInsert / filteredUpdate). */
-    private const ALLOWED_FIELDS = ['nom', 'activite', 'description', 'email', 'phone'];
+    private const ALLOWED_FIELDS = ['nom', 'activite', 'description', 'email', 'phone', 'ref_modele'];
 
     public function findParameters()
     {

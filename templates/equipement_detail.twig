@@ -114,8 +114,11 @@
 								<a href="/admin/acquisitions/acquisition-{{ acquisition.id }}" class="btn btn-sm btn-outline-secondary">
 									<i class="fas fa-eye"></i> Voir la fiche acquisition
 								</a>
-								{# Lien vers la facture #}
-								{% if acquisition.facture_document %}
+								{# Lien vers la facture (« facture à importer » = placeholder
+								   AcquisitionManager::FACTURE_A_IMPORTER, pas un fichier réel) #}
+								{% if acquisition.facture_document == 'facture à importer' %}
+								<span class="badge bg-secondary align-self-center">📄 facture à importer</span>
+								{% elseif acquisition.facture_document %}
 								<a href="/uploads/{{ acquisition.facture_document }}" target="_blank" class="btn btn-sm btn-outline-info">
 									<i class="fas fa-file-pdf"></i> Voir la facture
 								</a>

@@ -97,10 +97,12 @@
             <div class="col-md-4 d-flex align-items-end gap-2">
                 <button type="submit" name="action" value="filter" class="btn btn-secondary">Appliquer</button>
                 <div class="input-group">
-                    <select name="export_type" class="form-select" style="max-width: 130px;">
+                    <select name="export_type" class="form-select" style="max-width: 180px;">
                         <option value="pdf">PDF</option>
-                        <option value="excel">Excel</option>
+                        <option value="excel">Excel (photos + QR)</option>
                         <option value="etiquettes">Étiquettes</option>
+                        <option value="donnees_excel">Excel (données)</option>
+                        <option value="donnees_csv">CSV (données)</option>
                     </select>
                     <button type="submit" name="action" value="export" class="btn btn-primary" formtarget="_blank">
                         <i class="fas fa-file-export"></i> Exporter

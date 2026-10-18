@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-18 (session — scan QR non connecté : vérification utilisateur avant deniAccess, ?redirect= réellement émis)
-**Version courante** : v0.29.20
+**Dernière mise à jour** : 2026-10-18 (session — référencement automatique des équipements + import/export Excel/CSV d'acquisitions)
+**Version courante** : v0.30.0
 **Branche** : `main` (travail direct)
 
 ---
@@ -16,6 +16,7 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
+| v0.30.0 | — | Référencement automatique (modèle global YY/CAT/N, code catégorie) + import/export Excel/CSV d'acquisitions (groupes par facture auto-validées) + facture après coup + 43 tests | `<hash>` |
 | v0.29.20 | — | Scan QR non connecté : vérification utilisateur avant deniAccess (?redirect= réellement émis) ; fixture deleteAcquisition robuste (FK controle_ligne) + 1 test Unit | `<hash>` |
 | v0.29.19 | — | Login : ?redirect= honoré (retour sur le QR scanné après connexion) + garde anti open redirect + 3 tests Unit | `762aadb` |
 | v0.29.18 | — | Ajout équipement → fiche contrôle directe (liste + scan QR) ; scan QR : branche contrôle réservée à ROLE_CONTROLLEUR + 2 tests Unit + 1 test Integration | `0918407` |
@@ -1062,6 +1063,41 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 ---
 
 ## Contexte de la session précédente
+
+- **v0.30.0** (2026-10-18, sans ticket) : **référencement
+  automatique + import/export Excel/CSV**. Décisions produit validées
+  par l'utilisateur au fil de la session :
+  - modèle de référence **global** (écran Administration → Référence à
+    créer, pas par catégorie), variables `YY`/`YYYY`/`CAT`/`N…`, défaut
+    `YYCATNNN` → `26COR001` ; ⚠️ l'écran catégorie montre le code SEUL
+    (`COR`), jamais la référence complète (confusion passée) ;
+  - compteur du n° d'ordre **remis à zéro chaque année**, par catégorie
+    (`27COR001` en 2027) ;
+  - auto-référence appliquée UNIQUEMENT à la **validation
+    d'acquisition** et à l'**import** (colonne `reference` vide → auto,
+    remplie → forcée) ; création/modif manuelle d'équipement = saisie
+    libre conservée ;
+  - import : groupement par `facture_reference` → acquisition
+    **auto-validée** avec placeholder `facture à importer`
+    (`AcquisitionManager::FACTURE_A_IMPORTER`), fournisseur
+    find-or-create, facture déjà connue → groupe ignoré (UNIQUE, jamais
+    de fusion) ; action `update_facture` autorisée sur acquisition
+    validée (ne touche QUE `facture_document`) ;
+  - export « données » Excel + CSV sur `/equipements` (format plat de
+    consultation, non destiné au réimport).
+  Implémentation : migration `006_references_auto` (appliquée),
+  `ReferenceGenerator` (REGEXP MySQL + MAX+1 sur groupe capturant,
+  code catégorie self-healing), `AcquisitionImportService`
+  (PhpSpreadsheet `IOFactory::load` gère xlsx ET csv),
+  `ReferenceController` + template avec aperçu JS, champ Code dans
+  l'écran catégorie (prefill JS + validation serveur),
+  `AcquisitionProcess::create_equipement_process` réécrit (références
+  auto/forcées, les deux branches lot/unités). Tests : 540 Unit (1304
+  assertions), 55 Integration (216) dont 6 nouveaux
+  `AcquisitionImportTest` (CSV end-to-end). ⚠️ Les anciennes
+  références « référence produit-N » (`ligne.reference.'-'.$i`) sont
+  remplacées par l'auto — changement de comportement assumé et
+  documenté au guide (§2.2).
 
 - **v0.29.20** (2026-10-18, sans ticket) : **scan QR non connecté —
   `?redirect=` réellement émis**. Le test navigateur de bout en bout a

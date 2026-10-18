@@ -72,6 +72,10 @@ class EquipementController extends AbstractController
                     return $this->listExcel($request);
                 case 'etiquettes':
                     return $this->etiquettesPdf($request);
+                case 'donnees_excel':
+                    return $this->listDataExcel($request);
+                case 'donnees_csv':
+                    return $this->listDataCsv($request);
                 default:
                     return $this->listPdf($request);
             }
@@ -967,8 +971,152 @@ HTML;
         $response->headers->set('Content-Disposition', 'inline; filename="liste_equipements.xlsx"');
         $response->headers->set('Content-Length', filesize($tempExcel));
         unlink($tempExcel);
-        
+
         return $response;
+    }
+
+    // --------------------------------------------------------------
+    // EXPORT DONNÉES (Excel / CSV) — consultation, sans images
+    // --------------------------------------------------------------
+
+    /**
+     * En-têtes communs aux deux exports « données » (ordre = ordre des
+     * clés des lignes de buildExportRows()).
+     *
+     * ⚠️ Format de consultation riche : NON destiné au réimport (le
+     * fichier d'import a sa propre structure — voir le guide).
+     */
+    private const EXPORT_DATA_HEADERS = [
+        'Référence', 'Code', 'Nom', 'Catégorie', 'Emplacement', 'EPI',
+        'Statut', 'Nombre', 'Mise en service', 'Dernier contrôle',
+        'Fin d\'utilisation', 'N° facture', 'Date facture',
+    ];
+
+    /**
+     * Construit les lignes plates de l'export données à partir des
+     * équipements filtrés (avec jointures catégorie / emplacement /
+     * acquisition).
+     *
+     * @return array<int, array<string, string|int>>
+     */
+    private function buildExportRows(array $equipements): array
+    {
+        // Chargement des acquisitions distinctes (une requête par
+        // acquisition, pas par équipement).
+        $acquisitionManager = $this->acquisitionManager();
+        $acquisitions = [];
+        foreach ($equipements as $e) {
+            $aid = $e['acquisition_id'] ?? null;
+            if ($aid !== null && $aid !== '' && !array_key_exists((int) $aid, $acquisitions)) {
+                $acquisitions[(int) $aid] = $acquisitionManager->findId((int) $aid) ?: null;
+            }
+        }
+
+        $rows = [];
+        foreach ($equipements as $e) {
+            $acquisition = $acquisitions[(int) ($e['acquisition_id'] ?? 0)] ?? null;
+            $statut = EquipementStatut::tryFrom((int) ($e['statut'] ?? 0));
+
+            $rows[] = [
+                $e['reference'] ?? '',
+                $e['code'] ?? '',
+                $e['libelle'] ?? '',
+                $e['categorie']['libelle'] ?? '',
+                $e['emplacement']['libelle'] ?? '',
+                !empty($e['est_epi']) ? 'Oui' : 'Non',
+                $statut?->label() ?? '',
+                (int) ($e['nombre'] ?? 1),
+                $e['date_mise_en_service'] ?? '',
+                $e['date_dernier_controle'] ?? '',
+                $e['date_fin_utilisation'] ?? '',
+                $acquisition['facture_reference'] ?? '',
+                $acquisition['facture_date'] ?? '',
+            ];
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Exporte la liste filtrée des équipements en Excel « données »
+     * (format plat, sans photos ni QR codes).
+     */
+    public function listDataExcel(Request $request): Response
+    {
+        $this->deniAccessUnlessGranted('ROLE_USER');
+
+        $rows = $this->buildExportRows($this->getFilteredEquipments($request));
+
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        $col = 'A';
+        foreach (self::EXPORT_DATA_HEADERS as $header) {
+            $sheet->setCellValue($col . '1', $header);
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+            $col = chr(ord($col) + 1);
+        }
+        $sheet->getStyle('A1:' . chr(ord('A') + count(self::EXPORT_DATA_HEADERS) - 1) . '1')
+            ->getFont()->setBold(true);
+
+        $rowNum = 2;
+        foreach ($rows as $row) {
+            $col = 'A';
+            foreach ($row as $value) {
+                // Préfixe texte explicite pour les références/codes : évite
+                // qu'Excel ne réinterprète « 26COR001 » ou une date.
+                $sheet->setCellValueExplicit(
+                    $col . $rowNum,
+                    $value,
+                    is_int($value)
+                        ? \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_NUMERIC
+                        : \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING
+                );
+                $col = chr(ord($col) + 1);
+            }
+            $rowNum++;
+        }
+
+        $writer = new Xlsx($spreadsheet);
+        $tempExcel = tempnam(sys_get_temp_dir(), 'export_');
+        $writer->save($tempExcel);
+
+        $response = new Response(file_get_contents($tempExcel));
+        $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        $response->headers->set('Content-Disposition', 'attachment; filename="export_equipements_' . date('Ymd_His') . '.xlsx"');
+        $response->headers->set('Content-Length', filesize($tempExcel));
+        unlink($tempExcel);
+
+        return $response;
+    }
+
+    /**
+     * Exporte la liste filtrée des équipements en CSV « données ».
+     *
+     * BOM UTF-8 + séparateur « ; » : lisible directement dans Excel
+     * configuré en français.
+     */
+    public function listDataCsv(Request $request): Response
+    {
+        $this->deniAccessUnlessGranted('ROLE_USER');
+
+        $rows = $this->buildExportRows($this->getFilteredEquipments($request));
+
+        $fp = fopen('php://temp', 'r+');
+        // BOM UTF-8 pour Excel
+        fwrite($fp, "\xEF\xBB\xBF");
+        fputcsv($fp, self::EXPORT_DATA_HEADERS, ';');
+        foreach ($rows as $row) {
+            fputcsv($fp, $row, ';');
+        }
+        rewind($fp);
+        $csv = stream_get_contents($fp);
+        fclose($fp);
+
+        return new Response($csv, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="export_equipements_' . date('Ymd_His') . '.csv"',
+        ]);
     }
     
     // --------------------------------------------------------------

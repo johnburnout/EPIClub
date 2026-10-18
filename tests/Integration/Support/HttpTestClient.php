@@ -67,6 +67,31 @@ final class HttpTestClient
     }
 
     /**
+     * POST multipart/form-data avec fichiers (CSRF automatique).
+     *
+     * @param array<string,mixed>  $data  Champs simples
+     * @param array<string,string> $files champ fichier => chemin local
+     * @return array{status:int, headers:array<string,string>, body:string}
+     */
+    public function postMultipart(string $path, array $data = [], array $files = []): array
+    {
+        if (!isset($data['csrf_token'])) {
+            $data['csrf_token'] = $this->getCsrfToken();
+        }
+
+        $postFields = $data;
+        foreach ($files as $champ => $chemin) {
+            $postFields[$champ] = new \CURLFile(
+                $chemin,
+                mime_content_type($chemin) ?: 'application/octet-stream',
+                basename($chemin)
+            );
+        }
+
+        return $this->request('POST', $path, $postFields, multipart: true);
+    }
+
+    /**
      * Authentifie un utilisateur.
      */
     public function login(string $username, string $password): void
@@ -168,7 +193,7 @@ final class HttpTestClient
      * @param array<string,mixed> $data
      * @return array{status:int, headers:array<string,string>, body:string}
      */
-    private function request(string $method, string $path, array $data = []): array
+    private function request(string $method, string $path, array $data = [], bool $multipart = false): array
     {
         $url = $this->baseUrl . $path;
         $ch = curl_init($url);
@@ -192,8 +217,15 @@ final class HttpTestClient
 
         if ($method === 'POST') {
             curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
-            $headers[] = 'Content-Type: application/x-www-form-urlencoded';
+            if ($multipart) {
+                // Tableau + CURLFile → cURL envoie en multipart/form-data
+                // (boundary généré automatiquement, ne PAS fixer
+                // Content-Type manuellement).
+                curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
+            } else {
+                curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+                $headers[] = 'Content-Type: application/x-www-form-urlencoded';
+            }
         }
 
         if (!empty($headers)) {

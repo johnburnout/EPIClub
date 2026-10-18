@@ -9,6 +9,7 @@
 		<thead>
 			<tr>
 				<th>Libellé</th>
+				<th>Code</th>
 				<th>Description</th>
 				<th>Est EPI ?</th>
 				<th>Actions</th>
@@ -23,6 +24,7 @@
 
 				<tr>
 					<td>{{ categorie.libelle }}</td>
+					<td>{% if categorie.code %}<code>{{ categorie.code }}</code>{% endif %}</td>
 					<td>{{ categorie.description }}</td>
 					<td>{{ est_epi_value }}</td>
 					<td>
