@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-18 (session — login : paramètre ?redirect= honoré, retour sur le QR scanné après connexion)
-**Version courante** : v0.29.19
+**Dernière mise à jour** : 2026-10-18 (session — scan QR non connecté : vérification utilisateur avant deniAccess, ?redirect= réellement émis)
+**Version courante** : v0.29.20
 **Branche** : `main` (travail direct)
 
 ---
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.29.19 | — | Login : ?redirect= honoré (retour sur le QR scanné après connexion) + garde anti open redirect + 3 tests Unit | `<hash>` |
+| v0.29.20 | — | Scan QR non connecté : vérification utilisateur avant deniAccess (?redirect= réellement émis) ; fixture deleteAcquisition robuste (FK controle_ligne) + 1 test Unit | `<hash>` |
+| v0.29.19 | — | Login : ?redirect= honoré (retour sur le QR scanné après connexion) + garde anti open redirect + 3 tests Unit | `762aadb` |
 | v0.29.18 | — | Ajout équipement → fiche contrôle directe (liste + scan QR) ; scan QR : branche contrôle réservée à ROLE_CONTROLLEUR + 2 tests Unit + 1 test Integration | `0918407` |
 | v0.29.17 | #113+#114 | hasPending + idsDejaAjoutes calculés avant filtrage dans edit() (décision produit option A) + 3 tests Integration | `f00957f` |
 | v0.29.16 | #112 | N+1 de edit() supprimés — findIds() batch Equipement/Emplacement + 4 tests Integration de caractérisation | `58df023` |
@@ -1062,6 +1063,23 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 
 ## Contexte de la session précédente
 
+- **v0.29.20** (2026-10-18, sans ticket) : **scan QR non connecté —
+  `?redirect=` réellement émis**. Le test navigateur de bout en bout a
+  montré que `deniAccessUnlessGranted('ROLE_USER')` levait
+  `AccessDeniedException` AVANT le code produisant
+  `/se_connecter?redirect=/qr/{id}` : le dispatcher intercepte et
+  renvoie vers `/`, le paramètre était perdu (code mort en pratique,
+  le fix login v0.29.19 ne recevait jamais rien). Réordonnancement :
+  vérification « utilisateur connecté » avant la garde de rôle. +1 test
+  Unit (anonyme avec garde en échec → login avec redirect). Test visuel
+  navigateur validé : scan connecté avec contrôle ouvert → ajout +
+  fiche contrôle. Effet de bord : le scan d'un équipement TEST- dans un
+  contrôle réel ouvert a fait échouer toute la suite Integration (FK
+  `fk_controle_ligne_equipement` sans CASCADE) →
+  `DatabaseFixture::deleteAcquisition()` supprime désormais les lignes
+  `controle_ligne` liées AVANT les équipements. Commit `6df04da`.
+  503 tests Unit (1250 assertions), 114 Integration (288).
+  Travail direct sur `main`.
 - **v0.29.19** (2026-10-18, sans ticket) : **login — `?redirect=`
   honoré**. Point de contrôle du parcours « scan QR non connecté » :
   l'étape 1 (`QrRedirectController` → `/se_connecter?redirect=/qr/{id}`)
