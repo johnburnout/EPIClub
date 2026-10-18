@@ -893,13 +893,20 @@ class ControleController extends AbstractController
         }
 
         $ligneManager = $this->controleLigneManager();
-        $ligneManager->save([
+        $ligne_id = $ligneManager->save([
             'controle_id' => $controle_id,
             'equipement_id' => $equipement_id,
             'remarque' => null,
             'date_controle' => null,
             'statut' => 'a_controler'
         ]);
+
+        // Ouvrir directement la fiche contrôle de l'équipement ajouté
+        // (saisie du statut / remarque / date). Repli sur la page du
+        // contrôle si l'ID de la ligne n'a pas pu être récupéré.
+        if ($ligne_id) {
+            return $this->redirectTo("/admin/controles/update-ligne/$ligne_id");
+        }
 
         return $this->redirectTo("/admin/controles/edit/$controle_id");
     }

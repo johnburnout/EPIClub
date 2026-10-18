@@ -320,6 +320,93 @@ final class ControleControllerHandlersTest extends TestCase
     }
 
     // ==================================================================
+    // addEquipement — ouverture de la fiche contrôle après ajout
+    // ==================================================================
+
+    public function testAddEquipementRedirectsToLigneForm(): void
+    {
+        $controleManager = $this->getMockBuilder(ControleManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $controleManager->method('findId')->willReturn([
+            'id'            => 5,
+            'statut'        => 'ouvert',
+            'controleur_id' => 42,
+            'date_debut'    => date('Y-m-d H:i:s'),
+        ]);
+
+        $ligneManager = $this->getMockBuilder(ControleLigneManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        // ⚠️ save() DOIT être appelé une fois avec la nouvelle ligne et
+        //    retourne l'ID inséré (lastInsertId)
+        $ligneManager->expects(self::once())
+            ->method('save')
+            ->with(self::callback(static function (array $ligne) {
+                return $ligne['controle_id'] === 5
+                    && $ligne['equipement_id'] === 42
+                    && $ligne['statut'] === 'a_controler';
+            }))
+            ->willReturn('123');
+
+        $controller = $this->makeControllerWith(
+            controleManager: $controleManager,
+            controleLigneManager: $ligneManager,
+        );
+
+        $request = $this->makePostRequest([
+            'controle_id'   => '5',
+            'equipement_id' => '42',
+        ]);
+
+        $result = $controller->addEquipement($request);
+
+        self::assertInstanceOf(RedirectResponse::class, $result);
+        // La fiche contrôle de l'équipement ajouté doit s'ouvrir
+        self::assertSame(
+            '/admin/controles/update-ligne/123',
+            $result->headers->get('Location')
+        );
+    }
+
+    public function testAddEquipementFallsBackToControleEditWhenNoLigneId(): void
+    {
+        $controleManager = $this->getMockBuilder(ControleManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $controleManager->method('findId')->willReturn([
+            'id'            => 5,
+            'statut'        => 'ouvert',
+            'controleur_id' => 42,
+            'date_debut'    => date('Y-m-d H:i:s'),
+        ]);
+
+        $ligneManager = $this->getMockBuilder(ControleLigneManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        // ID non récupéré (falsy) → repli sur la page du contrôle
+        $ligneManager->method('save')->willReturn('');
+
+        $controller = $this->makeControllerWith(
+            controleManager: $controleManager,
+            controleLigneManager: $ligneManager,
+        );
+
+        $request = $this->makePostRequest([
+            'controle_id'   => '5',
+            'equipement_id' => '42',
+        ]);
+
+        $result = $controller->addEquipement($request);
+
+        self::assertInstanceOf(RedirectResponse::class, $result);
+        self::assertSame(
+            '/admin/controles/edit/5',
+            $result->headers->get('Location')
+        );
+    }
+
+    // ==================================================================
     // Helpers
     // ==================================================================
 

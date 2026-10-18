@@ -273,8 +273,26 @@ final class DatabaseFixture
     }
 
     /**
-    * [REFACTOR #79 - Dette 11] Crée une catégorie de test.
+    * Récupère la ligne de contrôle liant un contrôle et un équipement.
     *
+    * @return array<string,mixed>|null La ligne complète, ou null si absente
+    */
+    public function findControleLigne(int $controleId, int $equipementId): ?array
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT * FROM controle_ligne
+             WHERE controle_id = :cid AND equipement_id = :eid"
+        );
+        $stmt->execute([
+            'cid' => $controleId,
+            'eid' => $equipementId,
+        ]);
+
+        return $stmt->fetch() ?: null;
+    }
+
+    /**
+    * [REFACTOR #79 - Dette 11] Crée une catégorie de test.
     * `libelle` est UNIQUE : on y injecte un suffixe aléatoire pour
     * éviter les collisions entre tests. Le préfixe TEST- permet le
     * cleanup via cleanupTestData().

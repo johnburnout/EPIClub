@@ -10,6 +10,23 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Changed
+
+- **Ajout d'équipement à un contrôle : ouverture directe de la fiche
+  contrôle** — après le clic sur « Contrôler » dans la liste des
+  équipements disponibles, `ControleController::addEquipement()`
+  redirige désormais vers la fiche contrôle de la ligne créée
+  (`/admin/controles/update-ligne/{ligne_id}`, saisie statut /
+  remarque / date) au lieu de revenir sur la page du contrôle.
+  Repli sur la page du contrôle si l'ID de la ligne n'a pas pu être
+  récupéré. Couvert par 2 tests unitaires
+  (`ControleControllerHandlersTest`) et 1 test d'intégration HTTP du
+  parcours complet (`ControleControllerAddEquipementTest` : liste des
+  disponibles → POST add-equipement → redirection vers la fiche →
+  fiche affichée → ligne visible dans « Équipements déjà dans le
+  contrôle » et équipement retiré des disponibles). Ajout de
+  `DatabaseFixture::findControleLigne()`.
+
 ## [v0.29.17] — 2026-10-18
 
 ### Fixed
