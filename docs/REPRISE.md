@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-17 (session #111 — ControleController::edit() découpé en handlers, backlog audit soldé)
-**Version courante** : v0.29.15
-**Branche** : `main` (travail direct, ticket #111)
+**Dernière mise à jour** : 2026-10-18 (session #112 — N+1 de ControleController::edit() supprimés, findIds() batch)
+**Version courante** : v0.29.16
+**Branche** : `main` (travail direct, ticket #112)
 
 ---
 
@@ -16,6 +16,7 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
+| v0.29.16 | #112 | N+1 de edit() supprimés — findIds() batch Equipement/Emplacement + 4 tests Integration de caractérisation | `<hash>` |
 | v0.29.15 | #111 | ControleController::edit() découpé en handlers (iso-comportement, Priorité 4 audit) + 4 tests Unit | `<hash>` |
 | v0.29.14 | #110 | Enums morts supprimés (EquipementStatuts/EquipementEtats) + derniers $_ENV résiduels migrés (PUBLIC_PATH, APP_ENV) + 4 tests Unit | `87d6461` |
 | v0.29.13 | #109 | Fixture de config — tests Unit indépendants du .env.local.php gitignored (ConfigFile + bootstrap PHPUnit) + 3 tests | `db1fb0e` |
@@ -286,10 +287,12 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
 - **#61, #62** : refactors ControleController (injection managers, test Integration edit view).
 
 ### État des tests
-- **458 tests** Unit/Domain verts, **1122 assertions**.
-- **105 tests** Integration verts, **248 assertions** :
-  - 4 Integration Domain (MySQL requis, dont `ForeignKeysIntegrationTest`).
-  - 10 Integration Controller (serveur HTTP auto-démarré) — **plus de failures**.
+- **496 tests** Unit/Domain verts, **1233 assertions**.
+- **110 tests** Integration verts, **263 assertions** :
+  - 11 Integration Domain (MySQL requis, dont `ForeignKeysIntegrationTest`
+    et les 4 caractérisations `findIds()` #112).
+  - 34 Integration Controller (serveur HTTP auto-démarré) — **plus de failures**.
+  - 65 Security (`AccessControlTest`).
 - Commande Unit : `php vendor/bin/phpunit`
   (`defaultTestSuite="Unit"` dans `phpunit.xml`).
 - Commande Integration : `php vendor/bin/phpunit --testsuite Integration`.
@@ -595,9 +598,15 @@ allégations : les dettes 4 et 12 **sont** soldées (#86, #94), et le
 - **`ControleController::edit()`** — ~~~400 lignes, N+1 connus listés en
   Priorité 4 de l'audit~~ **découpé en handlers en v0.29.15 (#111)** —
   iso-comportement, +4 tests Unit.
-  Reste ouvert : les findId() par équipement/catégorie/emplacement (N+1
-  figés par `ControleControllerEditManagersTest`) et l'écart
-  `hasPending` (calculé sur lignes filtrées) — tickets dédiés.
+  ~~Reste ouvert : les findId() par équipement/catégorie/emplacement (N+1
+  figés par `ControleControllerEditManagersTest`)~~ **N+1 supprimés en
+  v0.29.16 (#112)** — `findIds()` batch sur Equipement/Emplacement,
+  `enrichLignesWithEquipements()` et `enrichEquipementsWithRelations()`
+  réécrits (iso-comportement, +4 tests Integration de caractérisation).
+  Rendu GET edit() : requêtes désormais constantes (7 max) quelle que
+  soit la taille des listes.
+  Reste ouvert : l'écart `hasPending` (calculé sur lignes filtrées) —
+  question produit à trancher, ticket dédié.
 - **Accès `$_ENV` résiduels** (constatés en #101) :
   ~~`AbstractController` (~ligne 184, `PUBLIC_PATH`) et
   `TwigRenderer` (~ligne 25, `APP_ENV` dev)~~ **migrés en v0.29.14

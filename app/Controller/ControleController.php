@@ -503,14 +503,29 @@ class ControleController extends AbstractController
 
     /**
      * Enrichit chaque ligne avec référence/libellé/photo de son équipement.
-     * NOTE : un findId() par ligne, inchangé — figé par
-     * ControleControllerEditManagersTest (« C'est LE point du test »).
-     * Le N+1 fera l'objet d'un ticket dédié.
+     * [REFACTOR #112] N+1 supprimé : un findIds() batch remplace le
+     * findId() par ligne. Iso-comportement : équipement introuvable ou
+     * soft-deleted → reference/libelle vides, photo null (comme le
+     * findId() qui retournait null) ; ordre des lignes préservé.
      */
     private function enrichLignesWithEquipements(array $allLignes, EquipementManager $equipementManager): array
     {
+        // Collecte des IDs distincts (dédoublonnage via clés de map).
+        $equipementIds = [];
+        foreach ($allLignes as $ligne) {
+            $equipementIds[$ligne['equipement_id']] = true;
+        }
+
+        // Early return implicite : pas de lignes → pas de requête,
+        // comme avant (la boucle findId() ne tournait pas).
+        $equipements = $equipementIds === []
+            ? []
+            : $equipementManager->findIds(array_keys($equipementIds));
+
         foreach ($allLignes as &$ligne) {
-            $equipement = $equipementManager->findId($ligne['equipement_id']);
+            // ?? null : FK orpheline / équipement soft-deleted → même
+            // branche que le findId() qui retournait null.
+            $equipement = $equipements[$ligne['equipement_id']] ?? null;
             if ($equipement) {
                 $ligne['reference'] = $equipement['reference'] ?? '';
                 $ligne['libelle'] = $equipement['libelle'] ?? '';
@@ -711,20 +726,42 @@ class ControleController extends AbstractController
 
     /**
      * Enrichit chaque équipement de sa catégorie et de son emplacement.
-     * NOTE : findId() par FK, inchangé — figé par
-     * ControleControllerEditManagersTest.
+     * [REFACTOR #112] N+1 supprimé : un findIds() batch par relation
+     * remplace les findId() par FK. Iso-comportement : isset() conservé
+     * (clé 'categorie'/'emplacement' absente si FK non renseignée),
+     * ?? null sur FK orpheline (comme le findId() qui retournait null),
+     * ordre préservé.
      */
     private function enrichEquipementsWithRelations(
         array $tousLesEquipements,
         CategorieManager $categorieManager,
         EmplacementManager $emplacementManager
     ): array {
-        foreach ($tousLesEquipements as $i => $e) {
+        // Collecte des IDs distincts non-null (dédoublonnage via clés).
+        $categorieIds = [];
+        $emplacementIds = [];
+        foreach ($tousLesEquipements as $e) {
             if (isset($e['categorie_id'])) {
-                $tousLesEquipements[$i]['categorie'] = $categorieManager->findId($e['categorie_id']);
+                $categorieIds[$e['categorie_id']] = true;
             }
             if (isset($e['emplacement_id'])) {
-                $tousLesEquipements[$i]['emplacement'] = $emplacementManager->findId($e['emplacement_id']);
+                $emplacementIds[$e['emplacement_id']] = true;
+            }
+        }
+
+        $categories = $categorieIds === []
+            ? []
+            : $categorieManager->findIds(array_keys($categorieIds));
+        $emplacements = $emplacementIds === []
+            ? []
+            : $emplacementManager->findIds(array_keys($emplacementIds));
+
+        foreach ($tousLesEquipements as $i => $e) {
+            if (isset($e['categorie_id'])) {
+                $tousLesEquipements[$i]['categorie'] = $categories[$e['categorie_id']] ?? null;
+            }
+            if (isset($e['emplacement_id'])) {
+                $tousLesEquipements[$i]['emplacement'] = $emplacements[$e['emplacement_id']] ?? null;
             }
         }
 

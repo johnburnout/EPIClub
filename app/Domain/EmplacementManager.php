@@ -34,6 +34,31 @@ class EmplacementManager extends AbstractManager
     }
 
     /**
+    * [REFACTOR #112] Batch de findId() — suppression du N+1 de
+    * ControleController::edit() (enrichEquipementsWithRelations).
+    *
+    * Iso-comportement avec findId() : pas de filtre (findId n'en
+    * a pas), map indexée par id.
+    *
+    * @return array Map indexée par id (int).
+    */
+    public function findIds(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $sql = "SELECT * FROM emplacement WHERE id IN ($placeholders)";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($ids);
+
+        return array_column($stmt->fetchAll(), null, 'id');
+    }
+
+    /**
     * [REFACTOR #87] Table pour findOneByCriteria() générique
     * (AbstractManager).
     */

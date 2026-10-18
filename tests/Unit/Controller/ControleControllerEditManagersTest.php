@@ -18,21 +18,24 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 
 /**
- * [VAGUE 11 — issue #61]
+ * [VAGUE 11 — issue #61, REFACTOR #112]
  *
  * Vérifie que ControleController::edit() utilise bien les factories
  * categorieManager() / emplacementManager() (mockables) au lieu
  * d'instancier CategorieManager / EmplacementManager en dur.
  *
- * Sans ce refactor, edit() ouvre PDO à chaque rendu du formulaire
- * (N+1 sur les équipements), et le test Unit devient impossible.
+ * Sans ce refactor, edit() ouvre PDO à chaque rendu du formulaire,
+ * et le test Unit devient impossible.
+ *
+ * Depuis #112 (suppression du N+1), edit() appelle findIds() en batch
+ * au lieu d'un findId() par FK — le test fige désormais ce contrat.
  */
 final class ControleControllerEditManagersTest extends TestCase
 {
     /**
-     * edit() doit appeler categorieManager() pour chaque équipement
-     * ayant une categorie_id, et emplacementManager() pour chaque
-     * équipement ayant un emplacement_id.
+     * edit() doit appeler categorieManager()->findIds() avec les
+     * categorie_id distincts des équipements, et
+     * emplacementManager()->findIds() avec les emplacement_id distincts.
      *
      * Le test passe un contrôle minimal (ouvert, propriétaire = user),
      * un équipement disponible avec les deux FK renseignées, et vérifie
@@ -71,18 +74,20 @@ final class ControleControllerEditManagersTest extends TestCase
         // ⚠️ C'est LE point du test : les factories doivent être appelées.
         // Si edit() contient encore `new CategorieManager()` en dur,
         // ces expectations ne seront pas satisfaites → test rouge.
+        // [#112] Contrat batch : findIds() reçoit les IDs distincts et
+        // retourne une map indexée par id.
         $categorieManager = $this->mockManager(CategorieManager::class);
         $categorieManager->expects(self::atLeastOnce())
-            ->method('findId')
-            ->with(7)
-            ->willReturn(['id' => 7, 'libelle' => 'EPI', 'est_epi' => 1]);
+            ->method('findIds')
+            ->with([7])
+            ->willReturn([7 => ['id' => 7, 'libelle' => 'EPI', 'est_epi' => 1]]);
         $categorieManager->method('findAll')->willReturn([]);
 
         $emplacementManager = $this->mockManager(EmplacementManager::class);
         $emplacementManager->expects(self::atLeastOnce())
-            ->method('findId')
-            ->with(3)
-            ->willReturn(['id' => 3, 'libelle' => 'Local A']);
+            ->method('findIds')
+            ->with([3])
+            ->willReturn([3 => ['id' => 3, 'libelle' => 'Local A']]);
         $emplacementManager->method('findAll')->willReturn([]);
 
         $controller = $this->makeControllerWith(

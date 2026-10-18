@@ -10,8 +10,30 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v0.29.16] — 2026-10-18
+
+### Performance
+
+- **#112 — N+1 de `ControleController::edit()` supprimés** : le rendu
+  GET du formulaire d'édition exécutait un `findId()` par ligne de
+  contrôle (`enrichLignesWithEquipements`) et un `findId()` par FK
+  catégorie/emplacement de chaque équipement disponible
+  (`enrichEquipementsWithRelations`). Ajout de `findIds()` batch sur
+  `EquipementManager` (filtre soft delete conservé) et
+  `EmplacementManager`, sur le moule des #71/#72. Le rendu GET edit()
+  passe à un nombre de requêtes constant (7 max), quelle que soit la
+  taille des listes. Iso-comportement strict : `isset()` conservé,
+  `?? null` sur FK orpheline et équipement soft-deleted, ordre
+  préservé. `ControleControllerEditManagersTest` fige désormais le
+  contrat batch (`findIds` avec IDs distincts).
+
 ### Added
 
+- **4 tests Integration de caractérisation** :
+  `EquipementManagerFindIdsIntegrationTest` (map indexée par id, id
+  inconnu et soft-deleted absents, entrée vide) et
+  `EmplacementManagerFindIdsIntegrationTest` (map indexée par id, id
+  inconnu absent, entrée vide).
 - **`Epiclub\Tests\Support\WebServer` — serveur de test auto-démarré** :
 la suite `Integration` (tests HTTP + `AccessControlTest`) démarre
 automatiquement `php -S localhost:8000 -t public public/router.php`

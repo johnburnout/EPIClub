@@ -47,6 +47,32 @@ class EquipementManager extends AbstractManager
     }
 
     /**
+    * [REFACTOR #112] Batch de findId() — suppression du N+1 de
+    * ControleController::edit() (enrichLignesWithEquipements).
+    *
+    * Iso-comportement avec findId() : filtre soft delete
+    * (deleted_at IS NULL) conservé — un équipement supprimé est
+    * absent de la map, exactement comme findId() retournait null.
+    *
+    * @return array Map indexée par id (int).
+    */
+    public function findIds(array $ids): array
+    {
+        if ($ids === []) {
+            return [];
+        }
+
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $sql = "SELECT * FROM club_equipement WHERE id IN ($placeholders) AND deleted_at IS NULL";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($ids);
+
+        return array_column($stmt->fetchAll(), null, 'id');
+    }
+
+    /**
     * [REFACTOR #87] Table + filtre permanent (soft delete) pour
     * findOneByCriteria() générique (AbstractManager).
     * Iso-comportement : 'WHERE deleted_at IS NULL' toujours appliqué,
