@@ -143,6 +143,28 @@ final class QrRedirectControllerActionsTest extends TestCase
         self::assertSame('/equipements/equipement-5', $response->getTargetUrl());
     }
 
+    /**
+     * Scan QR non connecté : la redirection vers le login DOIT être
+     * émise même quand la garde ROLE_USER échouerait (anonyme) —
+     * sinon l'AccessDeniedException interceptée par le dispatcher
+     * renvoie vers '/' et le paramètre redirect est perdu.
+     */
+    public function testRedirectAnonymousGetsLoginWithRedirectEvenWhenGuardWouldFail(): void
+    {
+        $controller = $this->makeController(
+            null,   // pas d'utilisateur en session
+            null,
+            null,
+            null,
+            null,
+            roleUser: false,   // la garde ROLE_USER lèverait AccessDenied
+        );
+
+        $response = $controller->redirect($this->makeRequest('/qr/5', 5));
+
+        self::assertSame('/se_connecter?redirect=/qr/5', $response->getTargetUrl());
+    }
+
     // ==================================================================
     // Endpoints JSON / binaires — chemins d'erreur (avant getBaseUrl)
     // ==================================================================
@@ -239,12 +261,13 @@ final class QrRedirectControllerActionsTest extends TestCase
         ?ControleManager $controleManager = null,
         ?ControleLigneManager $controleLigneManager = null,
         bool $controleur = true,
+        bool $roleUser = true,
     ): QrRedirectController {
         $session = $this->createMock(Session::class);
-        // ROLE_USER est toujours accordé (accès à la route) ; seul
-        // ROLE_CONTROLLEUR dépend du paramètre $controleur.
+        // ROLE_USER dépend de $roleUser (accès à la route) ; les autres
+        // rôles (ROLE_CONTROLLEUR…) dépendent de $controleur.
         $session->method('isGranted')->willReturnCallback(
-            static fn(string $role) => $role === 'ROLE_USER' || $controleur
+            static fn(string $role) => $role === 'ROLE_USER' ? $roleUser : $controleur
         );
         $session->method('get')->willReturnCallback(
             static fn(string $key, mixed $default = null) => $key === 'user' ? $user : $default

@@ -10,6 +10,26 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Fixed
+
+- **Scan QR non connecté : le paramètre `?redirect=` était jamais
+  émis** — dans `QrRedirectController::redirect()`,
+  `deniAccessUnlessGranted('ROLE_USER')` levait `AccessDeniedException`
+  AVANT le code produisant `/se_connecter?redirect=/qr/{id}` ; le
+  dispatcher intercepte l'exception et redirige vers `/`, perdant le
+  paramètre (code mort en pratique). La vérification « utilisateur
+  connecté » précède désormais la garde de rôle : un anonyme est bien
+  renvoyé vers `/se_connecter?redirect=/qr/{id}`, puis revient sur le
+  QR après connexion (grâce au fix login de v0.29.19). Couvert par 1
+  test unitaire (`QrRedirectControllerActionsTest` : anonyme avec garde
+  ROLE_USER en échec → login avec redirect).
+- **`DatabaseFixture::deleteAcquisition()` : suppression préalable des
+  lignes de contrôle liées** — un équipement de test scanné dans un
+  contrôle réel (non TEST-) ouvert faisait échouer toute la suite
+  Integration (FK `fk_controle_ligne_equipement` sans CASCADE,
+  SQLSTATE 23000). Les lignes `controle_ligne` pointant vers les
+  équipements de l'acquisition sont supprimées en premier.
+
 ## [v0.29.19] — 2026-10-18
 
 ### Fixed

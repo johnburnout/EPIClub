@@ -151,6 +151,18 @@ final class DatabaseFixture
      */
     public function deleteAcquisition(int $id): void
     {
+        // 0. Lignes de contrôle pointant vers les équipements de
+        //    l'acquisition — y compris celles rattachées à un contrôle
+        //    NON TEST- (ex. équipement de test scanné dans un contrôle
+        //    réel ouvert) : fk_controle_ligne_equipement n'a pas de
+        //    ON DELETE CASCADE et bloquerait la suppression des
+        //    équipements (SQLSTATE 23000).
+        $this->pdo->prepare(
+            "DELETE cl FROM controle_ligne cl
+             JOIN club_equipement ce ON ce.id = cl.equipement_id
+             WHERE ce.acquisition_id = ?"
+        )->execute([$id]);
+
         // 1. Équipements générés
         $this->pdo->prepare("DELETE FROM club_equipement WHERE acquisition_id = ?")->execute([$id]);
 

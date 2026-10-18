@@ -68,25 +68,30 @@ class QrRedirectController extends AbstractController
     */
     public function redirect(Request $request): Response
     {
-        $this->deniAccessUnlessGranted('ROLE_USER');
-
         // 1. Récupérer l'ID de l'équipement
         $id = $this->extractId($request, '/\/qr\/(\d+)/');
         if (!$id) {
             return $this->redirectTo('/equipements');
         }
 
-        // 2. Vérifier que l'équipement existe
+        // 2. Non connecté → login AVEC retour sur le QR.
+        //    ⚠️ Doit précéder deniAccessUnlessGranted() : pour un anonyme,
+        //    la garde lève AccessDeniedException, interceptée par le
+        //    dispatcher qui redirige vers '/' — le paramètre redirect
+        //    serait perdu (l'utilisateur arrivait sur le tableau de bord
+        //    après connexion au lieu de revenir sur le QR scanné).
+        $user = $this->getCurrentUser();
+        if (!$user) {
+            return $this->redirectTo('/se_connecter?redirect=/qr/' . $id);
+        }
+
+        $this->deniAccessUnlessGranted('ROLE_USER');
+
+        // 3. Vérifier que l'équipement existe
         $equipement = $this->equipementManager()->findId($id);
         if (!$equipement) {
             $this->addFlash('danger', 'Équipement non trouvé');
             return $this->redirectTo('/equipements');
-        }
-
-        // 3. Vérifier que l'utilisateur est connecté
-        $user = $this->getCurrentUser();
-        if (!$user) {
-            return $this->redirectTo('/se_connecter?redirect=/qr/' . $id);
         }
 
         // 4. Un contrôleur (ou admin) avec un contrôle ouvert bascule
