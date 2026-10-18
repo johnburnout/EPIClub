@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-18 (session #112 — N+1 de ControleController::edit() supprimés, findIds() batch)
-**Version courante** : v0.29.16
-**Branche** : `main` (travail direct, ticket #112)
+**Dernière mise à jour** : 2026-10-18 (session #113 — hasPending et idsDejaAjoutes calculés avant filtrage dans edit())
+**Version courante** : v0.29.17
+**Branche** : `main` (travail direct, ticket #113)
 
 ---
 
@@ -16,6 +16,7 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
+| v0.29.17 | #113+#114 | hasPending + idsDejaAjoutes calculés avant filtrage dans edit() (décision produit option A) + 3 tests Integration | `<hash>` |
 | v0.29.16 | #112 | N+1 de edit() supprimés — findIds() batch Equipement/Emplacement + 4 tests Integration de caractérisation | `<hash>` |
 | v0.29.15 | #111 | ControleController::edit() découpé en handlers (iso-comportement, Priorité 4 audit) + 4 tests Unit | `<hash>` |
 | v0.29.14 | #110 | Enums morts supprimés (EquipementStatuts/EquipementEtats) + derniers $_ENV résiduels migrés (PUBLIC_PATH, APP_ENV) + 4 tests Unit | `87d6461` |
@@ -288,10 +289,11 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
 
 ### État des tests
 - **496 tests** Unit/Domain verts, **1233 assertions**.
-- **110 tests** Integration verts, **263 assertions** :
+- **113 tests** Integration verts, **273 assertions** :
   - 11 Integration Domain (MySQL requis, dont `ForeignKeysIntegrationTest`
     et les 4 caractérisations `findIds()` #112).
-  - 34 Integration Controller (serveur HTTP auto-démarré) — **plus de failures**.
+  - 37 Integration Controller (serveur HTTP auto-démarré, dont les 3
+    caractérisations #113/#114) — **plus de failures**.
   - 65 Security (`AccessControlTest`).
 - Commande Unit : `php vendor/bin/phpunit`
   (`defaultTestSuite="Unit"` dans `phpunit.xml`).
@@ -605,8 +607,32 @@ allégations : les dettes 4 et 12 **sont** soldées (#86, #94), et le
   réécrits (iso-comportement, +4 tests Integration de caractérisation).
   Rendu GET edit() : requêtes désormais constantes (7 max) quelle que
   soit la taille des listes.
-  Reste ouvert : l'écart `hasPending` (calculé sur lignes filtrées) —
-  question produit à trancher, ticket dédié.
+  ~~Reste ouvert : l'écart `hasPending`~~ **#113 + #114 soldés en
+  v0.29.17 (2026-10-18)** — analyse et décision ci-dessous.
+
+### #113 + #114 — calculs déplacés avant filtrage dans `edit()` — ✅ SOLDÉS (v0.29.17)
+
+*Constat* : dans `edit()`, `$hasPending` était calculé après
+`filterLignes()` (statut + recherche), alors que la liste (`index()`)
+et la garde serveur `cloturer()` le calculent sur **toutes** les
+lignes. Impact #113 : UX uniquement — un filtre masquant les lignes
+`a_controler` activait le bouton « Clôturer », qui échouait au POST
+(la garde serveur tenait, aucun trou d'intégrité). Finding #114 (même
+famille, intégrité cette fois) : `idsDejaAjoutes` aussi calculé après
+filtrage → un équipement déjà ajouté dont la ligne était masquée
+réapparaissait dans « équipements disponibles » ; `addEquipement()`
+insère sans garde et `controle_ligne` n'a pas d'UNIQUE(controle_id,
+equipement_id) → doublons de lignes possibles.
+*Décision produit (2026-10-18)* : **option A** — les deux calculs
+déplacés avant filtrage, alignés sur `index()` et `cloturer()`.
+*Fix* : 2 lignes déplacées dans `edit()` ; garde `addEquipement()` et
+contrainte UNIQUE non retenues (fix minimal).
+*Tests* : 3 Integration HTTP (`ControleControllerEditPendingTest`) —
+bouton désactivé malgré filtre, clôture proposée sans ligne pendante,
+équipement ajouté non re-proposé malgré filtre (+ témoin). Vérifiés
+rouges sans le fix, verts avec. Fixture : `createControleLigne()` +
+cleanup des contrôles TEST- et de leurs lignes AVANT les acquisitions
+(FK `controle_ligne → club_equipement` sans CASCADE).
 - **Accès `$_ENV` résiduels** (constatés en #101) :
   ~~`AbstractController` (~ligne 184, `PUBLIC_PATH`) et
   `TwigRenderer` (~ligne 25, `APP_ENV` dev)~~ **migrés en v0.29.14

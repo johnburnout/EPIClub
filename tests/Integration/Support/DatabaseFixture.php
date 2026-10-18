@@ -166,6 +166,17 @@ final class DatabaseFixture
      */
     public function cleanupTestData(): void
     {
+        // [#113] Nettoyer les contrôles de test et leurs lignes AVANT
+        // les acquisitions : fk_controle_ligne_equipement n'a pas de
+        // ON DELETE CASCADE — des lignes pointant vers des équipements
+        // de test bloqueraient leur suppression (PDOException).
+        $this->pdo->exec(
+            "DELETE cl FROM controle_ligne cl
+             JOIN controle c ON c.id = cl.controle_id
+             WHERE c.libelle LIKE 'TEST-%'"
+        );
+        $this->pdo->exec("DELETE FROM controle WHERE libelle LIKE 'TEST-%'");
+
         $stmt = $this->pdo->query(
             "SELECT id FROM acquisition WHERE facture_reference LIKE 'TEST-%'"
         );
@@ -229,7 +240,38 @@ final class DatabaseFixture
         
         return (int) $this->pdo->lastInsertId();
     }
-    
+
+    /**
+    * [#113] Crée une ligne de contrôle de test.
+    *
+    * Nettoyée par cleanupTestData() via le contrôle TEST- parent
+    * (suppression des lignes avant celle du contrôle et des
+    * équipements).
+    *
+    * @param int    $controleId   ID du contrôle (existant en base)
+    * @param int    $equipementId ID de l'équipement (existant en base)
+    * @param string $statut       a_controler | controle_ok | controle_ko | hors_service
+    * @return int ID de la ligne créée
+    */
+    public function createControleLigne(
+        int $controleId,
+        int $equipementId,
+        string $statut = 'a_controler',
+    ): int {
+        $stmt = $this->pdo->prepare(
+            "INSERT INTO controle_ligne
+            (controle_id, equipement_id, remarque, date_controle, statut)
+            VALUES (:cid, :eid, NULL, NULL, :statut)"
+        );
+        $stmt->execute([
+            'cid'    => $controleId,
+            'eid'    => $equipementId,
+            'statut' => $statut,
+        ]);
+
+        return (int) $this->pdo->lastInsertId();
+    }
+
     /**
     * [REFACTOR #79 - Dette 11] Crée une catégorie de test.
     *

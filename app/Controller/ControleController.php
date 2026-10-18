@@ -348,6 +348,15 @@ class ControleController extends AbstractController
         $allLignes = $this->decryptLignesRemarques($allLignes);
         $controle = $this->decryptControleRemarque($controle);
 
+        // [#113 / #114] hasPending et idsDejaAjoutes calculés AVANT
+        // filtrage — alignés sur index() (liste) et la garde serveur
+        // cloturer(). Décision produit du 2026-10-18 (option A) : un
+        // filtre actif ne doit ni activer le bouton « Clôturer » (#113)
+        // ni re-proposer un équipement déjà ajouté (#114, doublons de
+        // lignes possibles sinon).
+        $hasPending = $this->hasPendingLignes($allLignes);
+        $idsDejaAjoutes = array_column($allLignes, 'equipement_id');
+
         // ---- 2. Paramètres, filtrage, tri et pagination des lignes ----
         $lignesParams = $this->parseLignesQueryParams($request);
         $allLignes = $this->filterLignes($allLignes, $lignesParams['statut'], $lignesParams['search']);
@@ -371,14 +380,7 @@ class ControleController extends AbstractController
             'lignes_page'
         );
 
-        // ---- 3. Vérifier s'il reste des équipements "à contrôler" ----
-        // NOTE (#111) : calculé sur les lignes FILTRÉES — le commentaire
-        // d'origine disait « avant filtrage » ; écart connu, iso-comportement.
-        $hasPending = $this->hasPendingLignes($allLignes);
-
-        // ---- 4. Liste des équipements disponibles ----
-        $idsDejaAjoutes = array_column($allLignes, 'equipement_id');
-
+        // ---- 3. Liste des équipements disponibles ----
         $filtres = $this->parseEquipementQueryParams($request);
 
         $categorieManager = $this->categorieManager();

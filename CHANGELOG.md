@@ -10,6 +10,37 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v0.29.17] — 2026-10-18
+
+### Fixed
+
+- **#113 — `hasPending` calculé avant filtrage dans `edit()`**
+  (décision produit, option A) : un filtre actif (statut ou recherche)
+  qui masquait les lignes « À contrôler » activait le bouton
+  « Clôturer le contrôle », qui échouait ensuite au POST (la garde
+  serveur `cloturer()` vérifie, elle, toutes les lignes). Le calcul est
+  désormais aligné sur `index()` et `cloturer()` : le bouton reflète
+  l'état réel du contrôle, quel que soit le filtre.
+- **#114 — `idsDejaAjoutes` calculé avant filtrage** (finding #113,
+  intégrité) : un équipement déjà ajouté au contrôle dont la ligne
+  était masquée par le filtre réapparaissait dans « équipements
+  disponibles » et pouvait être re-ajouté — `addEquipement()` n'a pas
+  de garde anti-doublon et `controle_ligne` n'a pas de contrainte
+  UNIQUE(controle_id, equipement_id). Fix minimal : calcul avant
+  filtrage ; garde applicative et contrainte UNIQUE non retenues.
+
+### Added
+
+- **3 tests Integration HTTP** (`ControleControllerEditPendingTest`) :
+  bouton « Clôturer » désactivé malgré un filtre masquant une ligne
+  pendante, clôture proposée sans ligne pendante, équipement déjà
+  ajouté non re-proposé malgré le filtre (+ témoin). Vérifiés rouges
+  sans le fix, verts avec.
+- **`DatabaseFixture::createControleLigne()`** + cleanup des contrôles
+  TEST- et de leurs lignes avant les acquisitions dans
+  `cleanupTestData()` (FK `controle_ligne → club_equipement` sans
+  CASCADE).
+
 ## [v0.29.16] — 2026-10-18
 
 ### Performance
