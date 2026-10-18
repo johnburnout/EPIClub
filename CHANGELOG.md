@@ -10,6 +10,8 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v0.29.19] — 2026-10-18
+
 ### Fixed
 
 - **Login : le paramètre `?redirect=` est désormais honoré** —

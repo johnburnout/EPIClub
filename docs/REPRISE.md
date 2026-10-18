@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-18 (session — ajout d'équipement : ouverture directe de la fiche contrôle + garde ROLE_CONTROLLEUR au scan QR)
-**Version courante** : v0.29.18
+**Dernière mise à jour** : 2026-10-18 (session — login : paramètre ?redirect= honoré, retour sur le QR scanné après connexion)
+**Version courante** : v0.29.19
 **Branche** : `main` (travail direct)
 
 ---
@@ -16,7 +16,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v0.29.18 | — | Ajout équipement → fiche contrôle directe (liste + scan QR) ; scan QR : branche contrôle réservée à ROLE_CONTROLLEUR + 2 tests Unit + 1 test Integration | `<hash>` |
+| v0.29.19 | — | Login : ?redirect= honoré (retour sur le QR scanné après connexion) + garde anti open redirect + 3 tests Unit | `<hash>` |
+| v0.29.18 | — | Ajout équipement → fiche contrôle directe (liste + scan QR) ; scan QR : branche contrôle réservée à ROLE_CONTROLLEUR + 2 tests Unit + 1 test Integration | `0918407` |
 | v0.29.17 | #113+#114 | hasPending + idsDejaAjoutes calculés avant filtrage dans edit() (décision produit option A) + 3 tests Integration | `f00957f` |
 | v0.29.16 | #112 | N+1 de edit() supprimés — findIds() batch Equipement/Emplacement + 4 tests Integration de caractérisation | `58df023` |
 | v0.29.15 | #111 | ControleController::edit() découpé en handlers (iso-comportement, Priorité 4 audit) + 4 tests Unit | `cc2fbaf` |
@@ -1061,6 +1062,19 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 
 ## Contexte de la session précédente
 
+- **v0.29.19** (2026-10-18, sans ticket) : **login — `?redirect=`
+  honoré**. Point de contrôle du parcours « scan QR non connecté » :
+  l'étape 1 (`QrRedirectController` → `/se_connecter?redirect=/qr/{id}`)
+  fonctionnait, mais l'étape 2 était cassée —
+  `AppUserAuthController::login()` ne lisait jamais le paramètre et
+  redirigeait vers `'.'` (tableau de bord). Le formulaire sans attribut
+  `action` poste sur l'URL courante, le paramètre survivait donc au
+  POST : côté login c'était du code mort. Fix : après authentification,
+  redirection vers `redirect` si chemin local (garde anti open redirect
+  `^/(?!/)` — URL absolues et scheme-relative rejetées). 3 tests Unit
+  (`AppUserAuthControllerTest`) + assertion du fallback sur le test
+  existant. Commit `9a2125f`. 502 tests Unit (1249 assertions), 114
+  Integration (288). Travail direct sur `main`.
 - **v0.29.18** (2026-10-18, sans ticket) : **parcours « ajout
   d'équipement »** — après le clic sur « Contrôler » (liste des
   disponibles), `ControleController::addEquipement()` redirige vers la
