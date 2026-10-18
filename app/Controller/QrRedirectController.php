@@ -89,8 +89,14 @@ class QrRedirectController extends AbstractController
             return $this->redirectTo('/se_connecter?redirect=/qr/' . $id);
         }
 
-        // 4. Vérifier si l'utilisateur a un contrôle en cours
-        $controleEnCours = $this->findControleEnCours($id, $user['id']);
+        // 4. Un contrôleur (ou admin) avec un contrôle ouvert bascule
+        //    sur le parcours « contrôle ». Un simple utilisateur — même
+        //    s'il est encore controleur_id d'un contrôle ouvert (ex.
+        //    rétrogradé) — va sur la fiche équipement : la route
+        //    update-ligne exige ROLE_CONTROLLEUR et lui serait refusée.
+        $controleEnCours = $this->isGranted('ROLE_CONTROLLEUR')
+            ? $this->findControleEnCours($id, $user['id'])
+            : null;
         if ($controleEnCours) {
             $controleLigne = $this->findControleLigneByEquipement($controleEnCours['id'], $id);
             if ($controleLigne) {

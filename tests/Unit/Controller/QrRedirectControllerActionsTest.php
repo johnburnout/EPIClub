@@ -112,6 +112,37 @@ final class QrRedirectControllerActionsTest extends TestCase
         self::assertSame('/admin/controles/update-ligne/100', $response->getTargetUrl());
     }
 
+    /**
+     * Règle métier : un simple utilisateur va sur la fiche équipement,
+     * MÊME s'il est encore controleur_id d'un contrôle ouvert (ex.
+     * contrôleur rétrogradé en ROLE_USER) — la route update-ligne
+     * exige ROLE_CONTROLLEUR et lui serait refusée.
+     */
+    public function testRedirectWithoutControlleurRoleGoesToEquipementCard(): void
+    {
+        $equipementManager = $this->makeEquipementManager(['id' => 5, 'reference' => 'REF']);
+        $controleManager = $this->createMock(ControleManager::class);
+        // ⚠️ Le contrôle ouvert ne doit PAS être recherché pour un
+        //    simple utilisateur (décision prise sur le rôle).
+        $controleManager->expects(self::never())->method('findActiveByUser');
+        $ligneManager = $this->createMock(ControleLigneManager::class);
+        // ⚠️ Aucun ajout de ligne au contrôle pour un simple utilisateur
+        $ligneManager->expects(self::never())->method('addEquipement');
+
+        $controller = $this->makeController(
+            ['id' => 1],
+            null,
+            $equipementManager,
+            $controleManager,
+            $ligneManager,
+            controleur: false,
+        );
+
+        $response = $controller->redirect($this->makeRequest('/qr/5', 5));
+
+        self::assertSame('/equipements/equipement-5', $response->getTargetUrl());
+    }
+
     // ==================================================================
     // Endpoints JSON / binaires — chemins d'erreur (avant getBaseUrl)
     // ==================================================================
@@ -207,9 +238,14 @@ final class QrRedirectControllerActionsTest extends TestCase
         ?EquipementManager $equipementManager = null,
         ?ControleManager $controleManager = null,
         ?ControleLigneManager $controleLigneManager = null,
+        bool $controleur = true,
     ): QrRedirectController {
         $session = $this->createMock(Session::class);
-        $session->method('isGranted')->willReturn(true);
+        // ROLE_USER est toujours accordé (accès à la route) ; seul
+        // ROLE_CONTROLLEUR dépend du paramètre $controleur.
+        $session->method('isGranted')->willReturnCallback(
+            static fn(string $role) => $role === 'ROLE_USER' || $controleur
+        );
         $session->method('get')->willReturnCallback(
             static fn(string $key, mixed $default = null) => $key === 'user' ? $user : $default
         );

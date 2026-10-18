@@ -10,6 +10,19 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Fixed
+
+- **Scan QR : la branche « contrôle » exige désormais
+  ROLE_CONTROLLEUR** — `QrRedirectController::redirect()` basait
+  l'aiguillage uniquement sur la possession d'un contrôle ouvert
+  (`controleur_id`), sans vérifier le rôle. Un ex-contrôleur
+  rétrogradé en ROLE_USER avec un contrôle resté ouvert ajoutait
+  l'équipement au contrôle puis était redirigé vers
+  `/admin/controles/update-ligne/{id}`, route refusée pour son rôle.
+  Un simple utilisateur va désormais toujours sur la fiche équipement,
+  et aucune ligne n'est créée. Couvert par 1 test unitaire
+  (`QrRedirectControllerActionsTest`).
+
 ### Changed
 
 - **Ajout d'équipement à un contrôle : ouverture directe de la fiche
