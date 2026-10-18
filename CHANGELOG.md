@@ -10,6 +10,20 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Fixed
+
+- **Login : le paramètre `?redirect=` est désormais honoré** —
+  `QrRedirectController` envoie les utilisateurs non connectés vers
+  `/se_connecter?redirect=/qr/{id}`, mais `AppUserAuthController::login()`
+  ne lisait jamais ce paramètre : après connexion, l'utilisateur
+  arrivait sur le tableau de bord au lieu de revenir sur le QR scanné
+  (code mort côté login). Après authentification réussie, la
+  redirection cible désormais `redirect` s'il s'agit d'un chemin local.
+  [SÉCURITÉ] Garde anti open redirect : `^/(?!/)` rejette les URL
+  absolues et scheme-relative. Couvert par 3 tests unitaires
+  (`AppUserAuthControllerTest` : redirect honoré, URL absolue rejetée,
+  `//hôte` rejeté).
+
 ## [v0.29.18] — 2026-10-18
 
 ### Fixed

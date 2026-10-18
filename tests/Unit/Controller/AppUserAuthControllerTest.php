@@ -67,6 +67,77 @@ final class AppUserAuthControllerTest extends TestCase
         // Fix de bug documenté : avant #102, le code continuait après
         // send() et retournait le render du formulaire (double sortie).
         self::assertInstanceOf(RedirectResponse::class, $response);
+        // Sans ?redirect=, retour au tableau de bord ('.' → /)
+        self::assertSame('.', $response->getTargetUrl());
+    }
+
+    /**
+     * Scan QR non connecté : /se_connecter?redirect=/qr/{id} —
+     * après connexion réussie, l'utilisateur doit revenir sur le QR.
+     */
+    public function testLoginPostSuccessHonorsLocalRedirect(): void
+    {
+        $authenticator = $this->makeAuthenticator();
+        $authenticator->method('authenticate')->willReturn(true);
+
+        $controller = new TestableAppUserAuthController($this->mockSession(), $authenticator);
+
+        $request = Request::create('/se_connecter?redirect=/qr/5', 'POST', [
+            'csrf_token' => self::CSRF,
+            'username'   => 'jean',
+            'password'   => 'secret',
+        ]);
+
+        $response = $controller->login($request);
+
+        self::assertInstanceOf(RedirectResponse::class, $response);
+        self::assertSame('/qr/5', $response->getTargetUrl());
+    }
+
+    /**
+     * [SÉCURITÉ] Anti open redirect : une URL absolue en ?redirect=
+     * ne doit PAS être honorée.
+     */
+    public function testLoginPostSuccessRejectsAbsoluteUrlRedirect(): void
+    {
+        $authenticator = $this->makeAuthenticator();
+        $authenticator->method('authenticate')->willReturn(true);
+
+        $controller = new TestableAppUserAuthController($this->mockSession(), $authenticator);
+
+        $request = Request::create('/se_connecter?redirect=https://evil.example/phish', 'POST', [
+            'csrf_token' => self::CSRF,
+            'username'   => 'jean',
+            'password'   => 'secret',
+        ]);
+
+        $response = $controller->login($request);
+
+        self::assertInstanceOf(RedirectResponse::class, $response);
+        self::assertSame('.', $response->getTargetUrl());
+    }
+
+    /**
+     * [SÉCURITÉ] Anti open redirect : une URL scheme-relative
+     * (//hôte) en ?redirect= ne doit PAS être honorée non plus.
+     */
+    public function testLoginPostSuccessRejectsSchemeRelativeRedirect(): void
+    {
+        $authenticator = $this->makeAuthenticator();
+        $authenticator->method('authenticate')->willReturn(true);
+
+        $controller = new TestableAppUserAuthController($this->mockSession(), $authenticator);
+
+        $request = Request::create('/se_connecter?redirect=//evil.example/phish', 'POST', [
+            'csrf_token' => self::CSRF,
+            'username'   => 'jean',
+            'password'   => 'secret',
+        ]);
+
+        $response = $controller->login($request);
+
+        self::assertInstanceOf(RedirectResponse::class, $response);
+        self::assertSame('.', $response->getTargetUrl());
     }
 
     public function testLoginPostFailureRendersFormWithError(): void

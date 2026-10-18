@@ -58,6 +58,18 @@ class AppUserAuthController extends AbstractController
                         // [SÉCURITÉ] Régénérer le token après login (anti-fixation de session)
                         $this->session->set('csrf_token', bin2hex(random_bytes(32)));
 
+                        // Honorer ?redirect= (ex. scan QR non connecté :
+                        // /se_connecter?redirect=/qr/{id} — le formulaire
+                        // sans attribut action poste sur l'URL courante,
+                        // le paramètre survit donc au POST).
+                        // [SÉCURITÉ] Chemin local uniquement : ^/(?!/)
+                        // rejette les URL absolues (https://…) et
+                        // scheme-relative (//hôte) — anti open redirect.
+                        $redirect = $request->query->get('redirect');
+                        if (is_string($redirect) && preg_match('#^/(?!/)#', $redirect)) {
+                            return new RedirectResponse($redirect);
+                        }
+
                         // [#102 - Dette 21] Fix de bug documenté : la
                         // réponse est RETOURNÉE (le dispatcher l'envoie).
                         // Avant, send() était appelé ici et le code
