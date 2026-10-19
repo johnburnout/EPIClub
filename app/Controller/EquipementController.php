@@ -415,6 +415,10 @@ class EquipementController extends AbstractController
                     'remarques' => $request->request->get('remarques'),
                     'date_mise_en_service' => $date_mise_en_service,
                     'date_fin_utilisation' => $date_fin_utilisation,
+                    // [MÉTIER] Case « durée max » : héritée de la catégorie
+                    // à la génération, modifiable ici (checkbox absente
+                    // du POST = décochée).
+                    'duree_max_utilisation' => $request->request->has('duree_max_utilisation') ? 1 : 0,
                 ];
                 
                 if ($photoPath !== null) {

@@ -60,6 +60,15 @@
 			<label class="form-check-label" for="est_epi">Classée EPI</label>
 		</div>
 
+		<div class="mb-3 form-check">
+			<input type="checkbox" id="duree_max_utilisation" name="duree_max_utilisation" class="form-check-input" {% if categorie.duree_max_utilisation %}checked{% endif %}>
+			<label class="form-check-label" for="duree_max_utilisation">Durée maximum d'utilisation</label>
+			<small class="form-text text-muted d-block">
+				Cocher si les équipements de cette catégorie ont une durée de vie limitée par le fabricant
+				(généralement 10 ans, date de péremption). Valeur par défaut, modifiable sur chaque fiche équipement.
+			</small>
+		</div>
+
 		<div class="mb-3">
 			<label for="image">Image :</label>
 			<input type="file"

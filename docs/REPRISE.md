@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-18 (session — référencement automatique des équipements + import/export Excel/CSV d'acquisitions)
-**Version courante** : v0.30.0
+**Dernière mise à jour** : 2026-10-19 (session — import v2 : analyse + mapping colonnes, règles métier dates/lot/groupement ; case « Durée maximum d'utilisation »)
+**Version courante** : v0.31.0
 **Branche** : `main` (travail direct)
 
 ---
@@ -16,6 +16,7 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
+| v0.31.0 | — | Import v2 (analyse + mapping colonnes, lignes non conformes prévenantes, dates année seule, lot auto si nombre>1, groupement par date sans facture, mise en service) + case « Durée maximum d'utilisation » (catégorie/équipement) + 16 tests | `2320611` |
 | v0.30.0 | — | Référencement automatique (modèle global YY/CAT/N, code catégorie) + import/export Excel/CSV d'acquisitions (groupes par facture auto-validées) + facture après coup + 43 tests | `ef5ec52` |
 | v0.29.20 | — | Scan QR non connecté : vérification utilisateur avant deniAccess (?redirect= réellement émis) ; fixture deleteAcquisition robuste (FK controle_ligne) + 1 test Unit | `<hash>` |
 | v0.29.19 | — | Login : ?redirect= honoré (retour sur le QR scanné après connexion) + garde anti open redirect + 3 tests Unit | `762aadb` |
@@ -1063,6 +1064,45 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 ---
 
 ## Contexte de la session précédente
+
+- **Import v2 + durée maximum d'utilisation** (2026-10-19, sans ticket,
+  cible v0.31.0). Décisions produit validées au fil de la session :
+  - **case « Durée maximum d'utilisation »** : booléen sur `categorie`
+    (défaut) ET `club_equipement` (hérité à la génération, modifiable
+    dans la fiche) — certains matériels ont une durée limitée par le
+    fabricant (~10 ans), d'autres non tant que l'usure est acceptable.
+    Pas de durée en années : la date fait foi ;
+  - **date de péremption = `club_equipement.date_fin_utilisation`**
+    existant (pas de nouveau champ équipement ; colonne
+    `acquisition_ligne.date_peremption` reportée dessus à la génération) ;
+  - **date de mise en service = `facture_date`** à l'import
+    (`EquipementManager::marquerEnServiceParAcquisition`, n'écrase que
+    les NULL ; saisie manuelle inchangée) ;
+  - dates d'import : année seule → 1er janvier (achat) / 31 décembre
+    (péremption) ; date d'achat vide → date courante ; péremption vide →
+    vide ; séries Excel numériques reconnues ;
+  - catégorie d'import résolue par **code** (ex. `TCI`), sinon libellé,
+    sinon créée (libellé tronqué 32, est_epi=1) ;
+  - **`nombre > 1` ⇒ lot automatique** ; colonne `lot` SUPPRIMÉE du
+    format (rupture) ; une ligne = un équipement = une référence ;
+  - import en **2 étapes** : analyse (correspondance colonnes↔champs
+    devinée par en-tête, modifiable, colonnes ignorables ; aperçu 5
+    lignes ; **lignes non conformes présentées AVANT import — « seront
+    ignorées »**) puis confirmation → rapport (qui les liste aussi) ;
+  - **groupement sans facture** : par date d'achat normalisée →
+    référence synthétique `IMP-AAAA-MM-JJ`, placeholder « facture à
+    importer » ; le PDF téléversé ensuite peut regrouper toutes les
+    factures des équipements liés ; fournisseur vide → « Divers » ;
+    plusieurs fournisseurs dans un groupe par date → premier retenu +
+    note au rapport.
+  Implémentation : migration `007_duree_max_et_peremption` (appliquée),
+  `AcquisitionImportService` réécrit (`analyser()` + `import($mapping)`
+  + `normaliserDateImport` + `resoudreCategorieId`), contrôleur 2 étapes
+  (fichier en `sys_get_temp_dir()`, chemin en session), template 3 états.
+  Tests : 549 Unit (1333 assertions), 56 Integration (225) dont 7
+  `AcquisitionImportTest` réécrits. ⚠️ Fixture élargie : le cleanup
+  supprime aussi les acquisitions `IMP-%` (sinon FK 005 bloque la
+  suppression des catégories TEST-).
 
 - **v0.30.0** (2026-10-18, sans ticket) : **référencement
   automatique + import/export Excel/CSV**. Décisions produit validées

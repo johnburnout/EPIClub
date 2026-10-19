@@ -117,18 +117,26 @@ Ils sont générés automatiquement à partir des **factures d'acquisition** val
 
 **Rôle requis :** `ROLE_ADMIN`
 
-1. Aller dans **Administration → Acquisitions**, cliquer sur **« Importer (Excel / CSV) »**.
-2. Fichier Excel (`.xlsx`, `.xls`) ou CSV avec en ligne 1 les en-têtes :
+1. Aller dans **Administration → Acquisitions**, cliquer sur **« Importer (Excel / CSV) »** et envoyer un fichier Excel (`.xlsx`, `.xls`) ou CSV. **La première ligne doit être une ligne d'en-têtes.**
+2. L'écran **d'analyse** s'affiche alors :
+   - pour chaque colonne du fichier, choisissez le **champ correspondant** (une correspondance est proposée automatiquement d'après l'en-tête ; vous pouvez la modifier ou ignorer la colonne) ;
+   - un **aperçu des premières lignes** permet de vérifier ;
+   - les **lignes non conformes** (données incompatibles avec le champ de la colonne, cellules fusionnées…) sont listées : elles **seront ignorées** si vous poursuivez ;
+   - validez pour lancer l'import.
 
-`reference | designation | categorie | nombre | lot | facture_reference | facture_date | fournisseur`
+**Champs reconnus :** `reference` (optionnelle — vide ⇒ référence automatique selon le modèle, ex. `25COR005`), `designation` et `categorie` (**requis**), `nombre`, `date_achat`, `date_peremption`, `facture_reference`, `fournisseur`.
 
-- **`reference`** : optionnelle — si remplie, elle est utilisée telle quelle sur la fiche équipement ; si vide, la référence est attribuée automatiquement selon le modèle (ex. `25COR005`) ;
-- **`facture_reference`** : les lignes d’une même facture sont **groupées dans une même acquisition, automatiquement validée** ; le document est marqué **« facture à importer »** et peut être téléversé ultérieurement depuis la fiche de l’acquisition ;
-- **`lot`** : « oui » pour regrouper les unités en un seul équipement ;
-- **`facture_date`** : `AAAA-MM-JJ` ou `JJ/MM/AAAA` ;
-- une référence de facture **déjà connue est ignorée** (jamais de fusion).
+**Règles de l'import :**
 
-3. Un **rapport d’import** liste les acquisitions créées, les groupes ignorés et les lignes en erreur.
+- **`categorie`** : le **code** de la catégorie (ex. `TCI`) est reconnu, sinon son libellé, sinon une nouvelle catégorie est créée ;
+- **`nombre` > 1** ⇒ les unités sont regroupées en un **lot** (un seul équipement) ;
+- **dates** : si seule l'année est indiquée ⇒ 1er janvier (date d'achat) / 31 décembre (date de péremption) ; date d'achat vide ⇒ date du jour ; date de péremption vide ⇒ pas de limite ;
+- **groupement en acquisitions** : les lignes d'une même `facture_reference` sont groupées dans **une même acquisition, automatiquement validée** ; sans référence de facture, les équipements de **même date d'achat** sont groupés ensemble ;
+- l'acquisition créée porte le document **« facture à importer »**, remplaçable ensuite depuis la fiche de l'acquisition par le PDF réel (qui peut regrouper plusieurs factures) ; le fournisseur vide devient « Divers » ;
+- une référence de facture **déjà connue est ignorée** (jamais de fusion) ;
+- la date de facture est reportée comme **date de mise en service** sur les équipements qui n'en ont pas.
+
+3. Un **rapport d'import** liste les acquisitions créées, les groupes ignorés, les lignes non conformes écartées et les éventuelles notes (ex. fournisseurs différents groupés par date).
 
 ---
 
@@ -186,7 +194,8 @@ Ils sont générés automatiquement à partir des **factures d'acquisition** val
 
 ### Catégories
 - Définir des catégories d'équipements (avec possibilité de marquer un équipement comme EPI).
-- Chaque catégorie possède un **code** (ex. `COR` pour « Cordes »), proposé automatiquement à partir du libellé (3 premières lettres ; `CO1`, `CO2`… en cas de collision) et modifiable. Ce code sert au référencement automatique.
+- Chaque catégorie possède un **code** (ex. `COR` pour « Cordes »), proposé automatiquement à partir du libellé (3 premières lettres ; `CO1`, `CO2`… en cas de collision) et modifiable. Ce code sert au référencement automatique et est reconnu à l'import.
+- La case **« Durée maximum d'utilisation »** indique que les équipements de cette catégorie ont une durée de vie limitée par le fabricant (généralement 10 ans). Elle est cochée par défaut sur les équipements générés, et reste modifiable équipement par équipement dans la fiche équipement (avec la date de fin d'utilisation / péremption).
 
 ### Référence
 - **Administration → Référence** : définit le **modèle de référence** global des équipements (défaut `YYCATNNN`).

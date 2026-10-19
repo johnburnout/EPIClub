@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace Epiclub\Tests\Integration\Controller;
 
 /**
- * Tests d'intégration de l'import Excel/CSV d'acquisitions, de la
- * référence automatique à la validation et du remplacement de facture
- * sur acquisition validée (fonctionnalité « référencement automatique
- * + import/export », décision produit 2026-10-18).
+ * Tests d'intégration de l'import Excel/CSV d'acquisitions v2
+ * (analyse → correspondance des colonnes → import), de la référence
+ * automatique, de la durée maximum d'utilisation et du remplacement
+ * de facture sur acquisition validée (décisions produit 2026-10-18/19).
  */
 final class AcquisitionImportTest extends AbstractControllerTestCase
 {
@@ -26,93 +26,177 @@ final class AcquisitionImportTest extends AbstractControllerTestCase
     }
 
     // ==================================================================
-    // Import CSV — groupement par facture + auto-validation
+    // Étape 1 — Analyse : correspondance + lignes non conformes
     // ==================================================================
 
-    public function testImportCsvCreeAcquisitionsGroupeesEtValidees(): void
+    public function testAnalyseProposeMappingEtSignaleLignesNonConformes(): void
     {
         $csv = implode("\n", [
-            'reference;designation;categorie;nombre;lot;facture_reference;facture_date;fournisseur',
-            ';Corde 10mm;TEST-IMP-CORDES;2;;TEST-IMP-FA;15/01/2026;TEST-Fournisseur',
-            'REF-FORCEE-01;Mousqueton;TEST-IMP-MOUSQ;1;;TEST-IMP-FA;15/01/2026;TEST-Fournisseur',
-            ';Casque;TEST-IMP-CASQUES;5;oui;TEST-IMP-FB;16/01/2026;TEST-Fournisseur',
+            'reference;designation;categorie;nombre;date_achat',
+            ';Corde;Cordes;2;2019',
+            ';;Cordes;1;2019', // désignation vide (cases fusionnées)
             '',
         ]);
         $fichier = $this->makeTempFile($csv, 'csv');
 
         $response = $this->client->postMultipart('/admin/acquisitions/import', [], ['fichier' => $fichier]);
 
-        self::assertSame(200, $response['status'], 'Le rapport doit être rendu. Body: '
+        self::assertSame(200, $response['status']);
+        $body = html_entity_decode($response['body'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        // Correspondance proposée, modifiable
+        self::assertStringContainsString('Étape 2', $body);
+        self::assertStringContainsString('name="mapping[0]"', $body);
+
+        // Ligne non conforme présentée AVANT l'import
+        self::assertStringContainsString('seront ignorées', $body);
+        self::assertStringContainsString('Ligne 3', $body);
+        self::assertStringContainsString('désignation est obligatoire', $body);
+
+        // Rien n'a été créé à l'étape d'analyse
+        $pdo = $this->createPdo();
+        self::assertSame(
+            0,
+            (int) $pdo->query("SELECT COUNT(*) FROM acquisition WHERE facture_reference LIKE 'TEST-%'")->fetchColumn()
+        );
+    }
+
+    // ==================================================================
+    // Étape 2 — Import : règles métier complètes
+    // ==================================================================
+
+    public function testImportCompletReglesMetier(): void
+    {
+        // Catégorie pré-existante identifiable par son CODE (TCI),
+        // avec « durée max » cochée : l'équipement doit en hériter.
+        $pdo = $this->createPdo();
+        $pdo->prepare("INSERT INTO categorie (libelle, code, est_epi, duree_max_utilisation) VALUES (?, 'TCI', 1, 1)")
+            ->execute(['TEST-IMP2-CAT-' . bin2hex(random_bytes(3))]);
+        $categorieId = (int) $pdo->lastInsertId();
+
+        $csv = implode("\n", [
+            'reference;designation;categorie;nombre;date_achat;date_peremption;facture_reference;fournisseur',
+            // Lot (nombre>1), année seule pour les 2 dates, catégorie par code TCI
+            ';Corde 10mm;TCI;2;2019;2031;TEST-IMP2-FA;TEST-Fournisseur',
+            // Référence forcée, péremption vide, même facture/même date
+            'REF-FORCEE-02;Mousqueton;TCI;1;2019;;TEST-IMP2-FA;TEST-Fournisseur',
+            // Sans facture → groupement par date d'achat (année seule)
+            ';Casque;TEST-IMP2-CASQ;1;2020;;;TEST-AutreFourn',
+            '',
+        ]);
+        $fichier = $this->makeTempFile($csv, 'csv');
+
+        // Étape 1 : analyse
+        $this->client->postMultipart('/admin/acquisitions/import', [], ['fichier' => $fichier]);
+
+        // Étape 2 : confirmation avec le mapping explicite
+        $response = $this->client->post('/admin/acquisitions/import', [
+            'confirmation' => '1',
+            'mapping' => [
+                0 => 'reference',
+                1 => 'designation',
+                2 => 'categorie',
+                3 => 'nombre',
+                4 => 'date_achat',
+                5 => 'date_peremption',
+                6 => 'facture_reference',
+                7 => 'fournisseur',
+            ],
+        ]);
+
+        self::assertSame(200, $response['status'], 'Rapport attendu. Body: '
             . substr(strip_tags($response['body']), 0, 500));
         $body = html_entity_decode($response['body'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
         self::assertStringContainsString('2 acquisition(s) créée(s)', $body);
 
-        $pdo = $this->createPdo();
+        // --- Acquisition FACTURE (TEST-IMP2-FA) ---
+        $acqA = $this->acquisitionParReference('TEST-IMP2-FA');
+        self::assertNotNull($acqA);
+        self::assertSame('1', (string) $acqA['est_validee']);
+        self::assertSame('facture à importer', $acqA['facture_document']);
+        self::assertSame('2019-01-01', $acqA['facture_date'], 'Année seule → 1er janvier');
 
-        // --- Les deux acquisitions : validées, placeholder facture ---
-        $stmt = $pdo->query(
-            "SELECT * FROM acquisition
-             WHERE facture_reference IN ('TEST-IMP-FA', 'TEST-IMP-FB')
-             ORDER BY facture_reference"
-        );
-        $acquisitions = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-        self::assertCount(2, $acquisitions);
-        foreach ($acquisitions as $acq) {
-            self::assertSame('1', (string) $acq['est_validee'], 'Acquisition auto-validée');
-            self::assertSame('facture à importer', $acq['facture_document'], 'Placeholder facture');
-        }
+        $equipementsA = $this->equipementsDe((int) $acqA['id']);
+        self::assertCount(2, $equipementsA, 'Une ligne = un équipement (lot compris)');
 
-        [$acqA, $acqB] = $acquisitions;
+        // Ligne 1 : lot de 2, catégorie par code, durée max héritée,
+        // péremption 31/12, mise en service = date facture
+        $lot = $equipementsA[0];
+        self::assertSame('2', (string) $lot['nombre'], 'nombre > 1 → lot (un équipement, quantité 2)');
+        self::assertSame($categorieId, (int) $lot['categorie_id'], 'Catégorie résolue par son code TCI');
+        self::assertSame('1', (string) $lot['duree_max_utilisation'], 'Durée max héritée de la catégorie');
+        self::assertSame('2031-12-31', $lot['date_fin_utilisation'], 'Péremption année seule → 31 décembre');
+        self::assertSame('2019-01-01', $lot['date_mise_en_service'], 'Mise en service = date facture');
+        self::assertMatchesRegularExpression('/^19TCI[0-9]{3}$/', $lot['reference'], 'Référence auto (modèle, année 2019)');
 
-        // --- Lignes de l'acquisition A (2 lignes) ---
-        $lignesA = $this->lignesDe($acqA['id']);
-        self::assertCount(2, $lignesA);
-        self::assertSame('1', (string) $lignesA[0]['equipements_generes']);
-        self::assertSame('1', (string) $lignesA[1]['equipements_generes']);
+        // Ligne 2 : référence forcée, pas de péremption
+        $mousqueton = $equipementsA[1];
+        self::assertSame('REF-FORCEE-02', $mousqueton['reference']);
+        self::assertNull($mousqueton['date_fin_utilisation']);
+        self::assertSame('2019-01-01', $mousqueton['date_mise_en_service']);
 
-        // --- Équipements de l'acquisition A : 2 cordes auto + 1 forcé ---
-        $equipementsA = $this->equipementsDe($acqA['id']);
-        self::assertCount(3, $equipementsA);
+        // --- Acquisition SANS FACTURE (groupement par date) ---
+        $acqB = $this->acquisitionParReference('IMP-2020-01-01');
+        self::assertNotNull($acqB, 'Référence synthétique IMP-AAAA-MM-JJ');
+        self::assertSame('1', (string) $acqB['est_validee']);
+        self::assertSame('facture à importer', $acqB['facture_document']);
 
-        $referencesA = array_column($equipementsA, 'reference');
-        self::assertContains('REF-FORCEE-01', $referencesA, 'Référence forcée utilisée telle quelle');
-
-        $autoA = array_filter($referencesA, static fn($r) => $r !== 'REF-FORCEE-01');
-        self::assertCount(2, $autoA);
-        foreach ($autoA as $ref) {
-            // Modèle par défaut YYCATNNN, année de la facture (2026 → 26)
-            self::assertMatchesRegularExpression(
-                '/^26[A-Z0-9]{2,8}[0-9]{3}$/',
-                $ref,
-                "Référence auto conforme au modèle (reçu : $ref)"
-            );
-        }
-        self::assertCount(2, array_unique($autoA), 'Références auto distinctes');
-
-        // --- Acquisition B : lot de 5 → 1 seul équipement, nombre=5 ---
-        $equipementsB = $this->equipementsDe($acqB['id']);
-        self::assertCount(1, $equipementsB, 'Une ligne en lot génère un seul équipement');
-        self::assertSame('5', (string) $equipementsB[0]['nombre']);
-        self::assertMatchesRegularExpression(
-            '/^26[A-Z0-9]{2,8}[0-9]{3}$/',
-            $equipementsB[0]['reference']
-        );
+        $equipementsB = $this->equipementsDe((int) $acqB['id']);
+        self::assertCount(1, $equipementsB);
+        self::assertSame('2020-01-01', $equipementsB[0]['date_mise_en_service']);
+        self::assertMatchesRegularExpression('/^20[A-Z0-9]{2,8}[0-9]{3}$/', $equipementsB[0]['reference']);
     }
 
-    public function testImportIgnoreFactureDejaConnue(): void
+    public function testImportDateAchatVideDonneDateCourante(): void
     {
-        // Pré-existant : la facture TEST-IMP-FDUP est déjà en base
-        $this->fixture->createValidatedAcquisition('TEST-IMP-FDUP');
-
         $csv = implode("\n", [
-            'reference;designation;categorie;nombre;lot;facture_reference;facture_date;fournisseur',
-            ';Corde;TEST-IMP-DUPCAT;1;;TEST-IMP-FDUP;2026-01-15;TEST-Fournisseur',
-            ';Casque;TEST-IMP-NEWCAT;1;;TEST-IMP-FNEW;2026-01-15;TEST-Fournisseur',
+            'designation;categorie;nombre;date_achat',
+            'Corde;TEST-IMP3-CORDES;1;',
             '',
         ]);
         $fichier = $this->makeTempFile($csv, 'csv');
 
-        $response = $this->client->postMultipart('/admin/acquisitions/import', [], ['fichier' => $fichier]);
+        $this->client->postMultipart('/admin/acquisitions/import', [], ['fichier' => $fichier]);
+        $response = $this->client->post('/admin/acquisitions/import', [
+            'confirmation' => '1',
+            'mapping' => [
+                0 => 'designation',
+                1 => 'categorie',
+                2 => 'nombre',
+                3 => 'date_achat',
+            ],
+        ]);
+
+        self::assertSame(200, $response['status']);
+
+        $acq = $this->acquisitionParReference('IMP-' . date('Y-m-d'));
+        self::assertNotNull($acq, 'Date vide → date courante, groupe IMP-date du jour');
+        self::assertSame(date('Y-m-d'), $acq['facture_date']);
+    }
+
+    public function testImportIgnoreFactureDejaConnue(): void
+    {
+        $this->fixture->createValidatedAcquisition('TEST-IMP-FDUP');
+
+        $csv = implode("\n", [
+            'designation;categorie;nombre;facture_reference;fournisseur',
+            'Corde;TEST-IMP-DUPCAT;1;TEST-IMP-FDUP;TEST-Fournisseur',
+            'Casque;TEST-IMP-NEWCAT;1;TEST-IMP-FNEW;TEST-Fournisseur',
+            '',
+        ]);
+        $fichier = $this->makeTempFile($csv, 'csv');
+
+        $this->client->postMultipart('/admin/acquisitions/import', [], ['fichier' => $fichier]);
+        $response = $this->client->post('/admin/acquisitions/import', [
+            'confirmation' => '1',
+            'mapping' => [
+                0 => 'designation',
+                1 => 'categorie',
+                2 => 'nombre',
+                3 => 'facture_reference',
+                4 => 'fournisseur',
+            ],
+        ]);
 
         self::assertSame(200, $response['status']);
         $body = html_entity_decode($response['body'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
@@ -120,40 +204,15 @@ final class AcquisitionImportTest extends AbstractControllerTestCase
         self::assertStringContainsString('1 acquisition(s) créée(s)', $body);
 
         $pdo = $this->createPdo();
-        $stmt = $pdo->query(
-            "SELECT COUNT(*) FROM acquisition WHERE facture_reference = 'TEST-IMP-FDUP'"
+        self::assertSame(
+            1,
+            (int) $pdo->query("SELECT COUNT(*) FROM acquisition WHERE facture_reference = 'TEST-IMP-FDUP'")->fetchColumn(),
+            'Jamais de fusion / doublon'
         );
-        self::assertSame(1, (int) $stmt->fetchColumn(), 'Jamais de fusion / doublon');
-
-        $stmt = $pdo->query(
-            "SELECT COUNT(*) FROM acquisition WHERE facture_reference = 'TEST-IMP-FNEW'"
+        self::assertSame(
+            1,
+            (int) $pdo->query("SELECT COUNT(*) FROM acquisition WHERE facture_reference = 'TEST-IMP-FNEW'")->fetchColumn()
         );
-        self::assertSame(1, (int) $stmt->fetchColumn(), 'Le nouveau groupe est importé');
-    }
-
-    public function testImportSignaleLignesEnErreur(): void
-    {
-        $csv = implode("\n", [
-            'reference;designation;categorie;nombre;lot;facture_reference;facture_date;fournisseur',
-            ';Corde OK;TEST-IMP-OK;1;;TEST-IMP-FERR;2026-01-15;TEST-Fournisseur',
-            ';;TEST-IMP-KO;1;;TEST-IMP-FERR2;2026-01-15;TEST-Fournisseur',
-            '',
-        ]);
-        $fichier = $this->makeTempFile($csv, 'csv');
-
-        $response = $this->client->postMultipart('/admin/acquisitions/import', [], ['fichier' => $fichier]);
-
-        self::assertSame(200, $response['status']);
-        $body = html_entity_decode($response['body'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
-        self::assertStringContainsString('désignation est obligatoire', $body);
-        self::assertStringContainsString('1 acquisition(s) créée(s)', $body, 'La ligne valide est importée');
-
-        // Le groupe entièrement invalide ne doit PAS être créé
-        $pdo = $this->createPdo();
-        $stmt = $pdo->query(
-            "SELECT COUNT(*) FROM acquisition WHERE facture_reference = 'TEST-IMP-FERR2'"
-        );
-        self::assertSame(0, (int) $stmt->fetchColumn());
     }
 
     public function testImportRejetteExtensionInvalide(): void
@@ -274,14 +333,13 @@ final class AcquisitionImportTest extends AbstractControllerTestCase
         );
     }
 
-    /** @return array<int, array<string,mixed>> */
-    private function lignesDe(int $acquisitionId): array
+    private function acquisitionParReference(string $factureReference): ?array
     {
         $stmt = $this->createPdo()->prepare(
-            "SELECT * FROM acquisition_ligne WHERE acquisition_id = ? ORDER BY id"
+            "SELECT * FROM acquisition WHERE facture_reference = ?"
         );
-        $stmt->execute([$acquisitionId]);
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $stmt->execute([$factureReference]);
+        return $stmt->fetch(\PDO::FETCH_ASSOC) ?: null;
     }
 
     /** @return array<int, array<string,mixed>> */

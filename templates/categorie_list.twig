@@ -12,6 +12,7 @@
 				<th>Code</th>
 				<th>Description</th>
 				<th>Est EPI ?</th>
+				<th>Durée max ?</th>
 				<th>Actions</th>
 			</tr>
 		</thead>
@@ -27,6 +28,7 @@
 					<td>{% if categorie.code %}<code>{{ categorie.code }}</code>{% endif %}</td>
 					<td>{{ categorie.description }}</td>
 					<td>{{ est_epi_value }}</td>
+					<td>{{ categorie.duree_max_utilisation ? 'Oui' : 'Non' }}</td>
 					<td>
 						<a href="/admin/categories/categorie-{{ categorie.id }}" class="btn btn-primary btn-sm">Voir</a>
 						<a href="/admin/categories/categorie_modification-{{ categorie.id }}" class="btn btn-warning btn-sm">Modifier</a>

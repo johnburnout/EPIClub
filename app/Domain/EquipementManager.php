@@ -130,6 +130,21 @@ class EquipementManager extends AbstractManager
     }
 
     /**
+     * [IMPORT] Renseigne date_mise_en_service des équipements générés
+     * par une acquisition (décision produit 2026-10-19 : à l'import, la
+     * date de mise en service est la date de facture). Ne touche que
+     * les équipements dont la date est encore NULL (défensif).
+     */
+    public function marquerEnServiceParAcquisition(int $acquisitionId, string $date): void
+    {
+        $sql = "UPDATE club_equipement
+                SET date_mise_en_service = :date
+                WHERE acquisition_id = :id AND date_mise_en_service IS NULL";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['date' => $date, 'id' => $acquisitionId]);
+    }
+
+    /**
      * [REFACTOR #92] Champs autorisés en écriture (filteredInsert /
      * filteredUpdate).
      */
@@ -137,7 +152,7 @@ class EquipementManager extends AbstractManager
         'acquisition_id', 'categorie_id', 'reference', 'libelle', 'code',
         'statut', 'remarques', 'date_dernier_controle', 'controle_en_cours',
         'emplacement_id', 'date_mise_en_service', 'date_fin_utilisation',
-        'nombre', 'photo', 'est_epi'
+        'nombre', 'photo', 'est_epi', 'duree_max_utilisation'
     ];
 
     /** [REFACTOR #92] Défaut null des colonnes sans coercition spécifique. */
@@ -160,6 +175,7 @@ class EquipementManager extends AbstractManager
         $equipement['nombre'] = $equipement['nombre'] ?? 1;
         $equipement['photo'] = $equipement['photo'] ?? null;
         $equipement['est_epi'] = $equipement['est_epi'] ?? 1;
+        $equipement['duree_max_utilisation'] = $equipement['duree_max_utilisation'] ?? 0;
 
         return $this->filteredInsert($equipement, self::ALLOWED_FIELDS, self::CREATE_NULL_DEFAULTS);
     }

@@ -11,43 +11,121 @@
 		</div>
 	{% endif %}
 
-	<div class="card mb-3" style="max-width: 55rem;">
-		<div class="card-body">
-			<h6 class="card-title">Format du fichier</h6>
-			<p>
-				Fichier Excel (<code>.xlsx</code>, <code>.xls</code>) ou CSV, avec en ligne 1 les en-têtes
-				(casse et accents indifférents) :
-			</p>
-			<p><code>reference | designation | categorie | nombre | lot | facture_reference | facture_date | fournisseur</code></p>
-			<ul class="mb-0">
-				<li><code>reference</code> : <strong>optionnelle</strong> — si remplie, elle est utilisée telle quelle
-					sur la fiche équipement ; si vide, la référence est attribuée automatiquement selon le
-					<a href="/admin/references">modèle de référence</a> ;</li>
-				<li><code>facture_reference</code> : les lignes d'une même facture sont groupées dans
-					<strong>une même acquisition, automatiquement validée</strong> ; le document de facture est
-					marqué « facture à importer » et pourra être téléversé ultérieurement ;</li>
-				<li><code>lot</code> : « oui » pour regrouper les unités en un seul équipement ;</li>
-				<li><code>facture_date</code> : <code>AAAA-MM-JJ</code> ou <code>JJ/MM/AAAA</code> ;</li>
-				<li>une référence de facture déjà connue est <strong>ignorée</strong> (jamais de fusion).</li>
-			</ul>
-		</div>
-	</div>
+	{# ==============================================================
+	   ÉTAT 1 — Téléversement du fichier
+	   ============================================================== #}
+	{% if not analyse and not rapport %}
 
-	<form method="post" enctype="multipart/form-data">
-		<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-
-		<div class="mb-3" style="max-width: 30rem;">
-			<label for="fichier">Fichier à importer * :</label>
-			<input type="file" id="fichier" name="fichier" class="form-control"
-			       accept=".xlsx,.xls,.csv" required>
+		<div class="card mb-3" style="max-width: 55rem;">
+			<div class="card-body">
+				<h6 class="card-title">Principe</h6>
+				<ul class="mb-0">
+					<li>Fichier Excel (<code>.xlsx</code>, <code>.xls</code>) ou CSV ; la <strong>ligne 1 est la ligne d'en-tête</strong> ;</li>
+					<li>après le téléversement, vous pourrez <strong>vérifier la correspondance des colonnes</strong> avec les champs attendus avant de lancer l'import ;</li>
+					<li>les lignes d'une même facture — ou, à défaut de n° de facture, d'une même date d'achat — sont groupées dans <strong>une même acquisition automatiquement validée</strong>, dont le document sera marqué « facture à importer » (téléversé plus tard) ;</li>
+					<li>un <code>nombre</code> supérieur à 1 indique un <strong>lot</strong> (un seul équipement) ;</li>
+					<li>la catégorie est recherchée par <strong>code</strong> (ex. <code>COR</code>), puis par libellé, puis créée ;</li>
+					<li>dates : année seule → 1er janvier (achat) ou 31 décembre (péremption) ; date d'achat vide → date du jour ;</li>
+					<li>référence vide → <a href="/admin/references">référence automatique</a>.</li>
+				</ul>
+			</div>
 		</div>
 
-		<div class="form-actions">
-			<button type="submit" class="btn btn-primary">Importer</button>
-			<a href="/admin/acquisitions" class="btn btn-secondary">Retour aux acquisitions</a>
-		</div>
-	</form>
+		<form method="post" enctype="multipart/form-data">
+			<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
+			<div class="mb-3" style="max-width: 30rem;">
+				<label for="fichier">Fichier à importer * :</label>
+				<input type="file" id="fichier" name="fichier" class="form-control"
+				       accept=".xlsx,.xls,.csv" required>
+			</div>
+
+			<div class="form-actions">
+				<button type="submit" class="btn btn-primary">Analyser le fichier</button>
+				<a href="/admin/acquisitions" class="btn btn-secondary">Retour aux acquisitions</a>
+			</div>
+		</form>
+	{% endif %}
+
+	{# ==============================================================
+	   ÉTAT 2 — Analyse : correspondance des colonnes + confirmation
+	   ============================================================== #}
+	{% if analyse %}
+		<h4>Étape 2 : vérifier la correspondance des colonnes</h4>
+		<p class="text-muted">
+			{{ analyse.nb_lignes }} ligne(s) de données détectée(s).
+			Vérifiez que chaque colonne correspond au bon champ, puis lancez l'import.
+		</p>
+
+		<form method="post">
+			<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+			<input type="hidden" name="confirmation" value="1">
+
+			<table class="table" style="max-width: 60rem;">
+				<thead>
+					<tr>
+						<th>Colonne du fichier</th>
+						<th>Exemples de valeurs</th>
+						<th>Champ correspondant</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for colonne in analyse.colonnes %}
+						<tr>
+							<td><strong>{{ colonne.entete }}</strong></td>
+							<td class="text-muted">{{ colonne.exemples|join(' · ') }}</td>
+							<td>
+								<select name="mapping[{{ colonne.index }}]" class="form-select form-select-sm" style="max-width: 18rem;">
+									{% for valeur, libelle in champs %}
+										<option value="{{ valeur }}" {% if colonne.champ == valeur %}selected{% endif %}>{{ libelle }}</option>
+									{% endfor %}
+								</select>
+							</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+
+			{% if analyse.apercu %}
+				<h6>Aperçu des premières lignes</h6>
+				<div class="table-responsive" style="max-width: 60rem;">
+					<table class="table table-sm table-striped">
+						{% for ligne in analyse.apercu %}
+							<tr>
+								{% for cellule in ligne %}
+									<td>{{ cellule }}</td>
+								{% endfor %}
+							</tr>
+						{% endfor %}
+					</table>
+				</div>
+			{% endif %}
+
+			{% if analyse.lignes_non_conformes %}
+				<div class="alert alert-warning" style="max-width: 60rem;">
+					<strong>⚠️ {{ analyse.lignes_non_conformes|length }} ligne(s) non conforme(s) — seront ignorées</strong>
+					(cases fusionnées, données incompatibles avec le champ de la colonne, champs obligatoires manquants…) :
+					<ul class="mb-0">
+						{% for ligne in analyse.lignes_non_conformes %}
+							<li>Ligne {{ ligne.ligne }} : {{ ligne.raison }}</li>
+						{% endfor %}
+					</ul>
+				</div>
+			{% endif %}
+
+			<div class="form-actions">
+				<button type="submit" class="btn btn-success"
+				        onclick="return confirm('Lancer l\\'import de {{ analyse.nb_lignes }} ligne(s) ?');">
+					✅ Lancer l'import
+				</button>
+				<a href="/admin/acquisitions/import" class="btn btn-secondary">Annuler</a>
+			</div>
+		</form>
+	{% endif %}
+
+	{# ==============================================================
+	   ÉTAT 3 — Rapport d'import
+	   ============================================================== #}
 	{% if rapport %}
 		<hr>
 		<h4>Rapport d'import</h4>
@@ -83,6 +161,12 @@
 			<div class="alert alert-warning">Aucune acquisition n'a été créée.</div>
 		{% endif %}
 
+		{% if rapport.notes %}
+			{% for note in rapport.notes %}
+				<div class="alert alert-info">{{ note }}</div>
+			{% endfor %}
+		{% endif %}
+
 		{% if rapport.groupes_ignores %}
 			<h5>Groupes ignorés</h5>
 			<table class="table">
@@ -98,7 +182,7 @@
 		{% endif %}
 
 		{% if rapport.lignes_en_erreur %}
-			<h5>Lignes en erreur</h5>
+			<h5>Lignes ignorées</h5>
 			<table class="table">
 				<tbody>
 					{% for err in rapport.lignes_en_erreur %}
@@ -110,6 +194,11 @@
 				</tbody>
 			</table>
 		{% endif %}
+
+		<div class="mt-3">
+			<a href="/admin/acquisitions" class="btn btn-primary">Voir les acquisitions</a>
+			<a href="/admin/acquisitions/import" class="btn btn-secondary">Nouvel import</a>
+		</div>
 	{% endif %}
 
 {% endblock %}

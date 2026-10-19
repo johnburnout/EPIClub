@@ -120,6 +120,14 @@ class AcquisitionProcess
             
             $categorie = $categorieManager->findId($ligne['categorie_id']);
             $est_epi = $categorie ? $categorie['est_epi'] : 1;
+            // [MÉTIER] La case « durée maximum d'utilisation » de
+            // l'équipement hérite du défaut de la catégorie
+            // (décision produit 2026-10-19), modifiable ensuite sur
+            // la fiche équipement.
+            $dureeMax = $categorie ? (int) ($categorie['duree_max_utilisation'] ?? 0) : 0;
+            // [MÉTIER] Date de péremption issue de l'import Excel/CSV
+            // → date_fin_utilisation de l'équipement.
+            $datePeremption = !empty($ligne['date_peremption']) ? $ligne['date_peremption'] : null;
             
             $regrouper_en_lot = isset($ligne['regrouper_en_lot']) && $ligne['regrouper_en_lot'] == 1;
 
@@ -156,9 +164,10 @@ class AcquisitionProcess
                     'controle_en_cours' => 0,
                     'emplacement_id' => null,
                     'date_mise_en_service' => null,
-                    'date_fin_utilisation' => null,
+                    'date_fin_utilisation' => $datePeremption,
                     'nombre' => $ligne['nombre'],
-                    'est_epi' => $est_epi
+                    'est_epi' => $est_epi,
+                    'duree_max_utilisation' => $dureeMax
                 ];
                 $equipementManager->save($new_equipement);
             } else {
@@ -192,9 +201,10 @@ class AcquisitionProcess
                         'controle_en_cours' => 0,
                         'emplacement_id' => null,
                         'date_mise_en_service' => null,
-                        'date_fin_utilisation' => null,
+                        'date_fin_utilisation' => $datePeremption,
                         'nombre' => 1,
-                        'est_epi' => $est_epi
+                        'est_epi' => $est_epi,
+                        'duree_max_utilisation' => $dureeMax
                     ];
                     $equipementManager->save($new_equipement);
                 }

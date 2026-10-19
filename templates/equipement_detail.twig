@@ -46,6 +46,13 @@
 								<span class="text-muted">Non renseignée</span>
 							{% endif %}
 						</p>
+						<p><strong>Durée maximum d'utilisation :</strong>
+							{% if equipement.duree_max_utilisation %}
+							<span class="badge bg-warning text-dark">Oui — durée de vie limitée par le fabricant</span>
+							{% else %}
+							<span class="text-muted">Non</span>
+							{% endif %}
+						</p>
 						<p><strong>Date de fin d'utilisation :</strong> 
 							{% if not equipement.date_fin_utilisation or equipement.date_fin_utilisation > "now"|date("Y-m-d") %}
 							<span class="text-muted">

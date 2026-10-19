@@ -115,6 +115,7 @@ class CategorieManager extends AbstractManager
         'image' => null,
         'est_epi' => 1,
         'code' => null,
+        'duree_max_utilisation' => 0,
     ];
 
     private function _create(array $categorie)

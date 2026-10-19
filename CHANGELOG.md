@@ -10,6 +10,46 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v0.31.0] — 2026-10-19
+
+### Added
+
+- **Case « Durée maximum d'utilisation »** (décision produit
+  2026-10-19) — nouveau booléen `categorie.duree_max_utilisation`
+  (défaut par catégorie, ex. matériel limité à 10 ans par le fabricant)
+  et `club_equipement.duree_max_utilisation` (hérité de la catégorie à
+  la génération, modifiable dans la fiche équipement) ; affiché en badge
+  sur la fiche équipement. Migration `007_duree_max_et_peremption.sql`.
+- **Import v2 — étape d'analyse avant import** : après l'envoi du
+  fichier, un écran d'analyse permet de **faire correspondre chaque
+  colonne à un champ** (correspondance devinée par en-tête, modifiable,
+  colonnes ignorables), avec aperçu des 5 premières lignes et liste des
+  **lignes non conformes** (données incompatibles avec le champ de la
+  colonne) présentées avant lancement — elles seront ignorées et
+  rappelées dans le rapport d'import.
+- **Import v2 — nouvelles règles métier** (décisions 2026-10-19) :
+  - `nombre > 1` ⇒ **lot automatique** (colonne `lot` supprimée du
+    format ; une ligne = un équipement = une référence) ;
+  - nouvelle colonne `date_peremption` reportée sur
+    `club_equipement.date_fin_utilisation` à la génération ;
+  - dates : année seule ⇒ 1er janvier (achat) / 31 décembre
+    (péremption) ; date d'achat vide ⇒ date courante ; séries Excel
+    numériques reconnues ;
+  - la **catégorie est résolue par code** (ex. `TCI`), sinon par
+    libellé, sinon créée à la volée ;
+  - sans `facture_reference`, les équipements de **même date d'achat**
+    sont groupés dans une même acquisition `IMP-AAAA-MM-JJ` avec le
+    placeholder « facture à importer » (le PDF groupé de factures peut
+    être téléversé ensuite) ; fournisseur vide ⇒ « Divers » ;
+  - à la validation, la date de facture est reportée comme **date de
+    mise en service** sur les équipements qui n'en ont pas.
+
+### Changed
+
+- **Format d'import remanié** (rupture) : la colonne `lot` disparaît
+  (déduit de `nombre`), la première ligne doit être un en-tête, et
+  l'import passe par l'étape d'analyse/correspondance des colonnes.
+
 ## [v0.30.0] — 2026-10-18
 
 ### Added

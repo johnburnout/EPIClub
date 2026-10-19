@@ -79,9 +79,19 @@
 			{% endif %}
 		</div>
 
+		<!-- Durée maximum d'utilisation (héritée de la catégorie, modifiable) -->
+		<div class="mb-3 form-check">
+			<input type="checkbox" id="duree_max_utilisation" name="duree_max_utilisation" class="form-check-input" {% if equipement.duree_max_utilisation %}checked{% endif %}>
+			<label class="form-check-label" for="duree_max_utilisation">Durée maximum d'utilisation</label>
+			<small class="form-text text-muted d-block">
+				Cocher si le fabricant limite la durée de vie de cet équipement (généralement 10 ans) :
+				la date de fin d'utilisation ci-dessous fait alors office de date de péremption.
+			</small>
+		</div>
+
 		<!-- Date de fin d'utilisation (modifiable si vide) -->
 		<div class="mb-3">
-			<label for="date_fin_utilisation">Date de fin d'utilisation</label>
+			<label for="date_fin_utilisation">Date de fin d'utilisation (péremption)</label>
 			{% if equipement.date_fin_utilisation %}
 				<input type="date" class="form-control" id="date_fin_utilisation" 
 				       value="{{ equipement.date_fin_utilisation }}" readonly disabled>

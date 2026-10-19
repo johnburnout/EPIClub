@@ -186,6 +186,7 @@ class CategorieController extends AbstractController
                     [
                         'libelle' => $libelle,
                         'est_epi' => $request->request->has('est_epi') ? 1 : 0,
+                        'duree_max_utilisation' => $request->request->has('duree_max_utilisation') ? 1 : 0,
                         'description' => $description,
                         'code' => $code,
                     ]

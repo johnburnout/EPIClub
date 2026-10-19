@@ -189,8 +189,14 @@ final class DatabaseFixture
         );
         $this->pdo->exec("DELETE FROM controle WHERE libelle LIKE 'TEST-%'");
 
+        // [IMPORT v2] Les acquisitions groupées par date d'achat portent
+        // une référence synthétique IMP-AAAA-MM-JJ (import sans facture) :
+        // elles doivent être nettoyées elles aussi, sinon leurs lignes
+        // bloquent la suppression des catégories TEST- (FK migration 005).
         $stmt = $this->pdo->query(
-            "SELECT id FROM acquisition WHERE facture_reference LIKE 'TEST-%'"
+            "SELECT id FROM acquisition
+             WHERE facture_reference LIKE 'TEST-%'
+                OR facture_reference LIKE 'IMP-%'"
         );
         $ids = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
