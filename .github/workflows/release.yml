@@ -1,19 +1,21 @@
-# [audit 2026-10-19 F1] Publication d'une release installable.
+# [audit 2026-10-19 F1] Archive installable attachée à chaque release.
 #
-# Déclenchée par un tag « v* » (ex. git tag v1.0.0-beta.5 && git push --tags) :
-#   1. construit l'archive complète (vendor/ inclus) avec bin/build-release.sh ;
-#   2. publie la release GitHub avec deux assets :
-#        epiclub-<tag>.zip  et  epiclub-<tag>.zip.sha256
-#      que l'updater intégré (AppUpdateController) télécharge et vérifie.
+# Déclenchée quand une release est PUBLIÉE (ex. avec gh) :
+#   gh release create v1.0.0-beta.5 --target main --notes-file notes.md
+# La CI construit alors l'archive complète (bin/build-release.sh :
+# vendor/ inclus, sans tests) et l'attache à cette release :
+#   epiclub-<tag>.zip  et  epiclub-<tag>.zip.sha256
+# que l'updater intégré (AppUpdateController) télécharge et vérifie.
+# Les notes de version écrites à la création ne sont pas modifiées.
 #
-# ⚠️ Les releases ne sont PAS marquées « pre-release », même pour un tag
-# -beta : /releases/latest ignore les pré-releases, et les instances en
-# canal « stable » ne verraient pas la mise à jour (cf. docs/REPRISE.md).
+# ⚠️ Ne pas marquer la release « pre-release », même pour un tag -beta :
+# /releases/latest ignore les pré-releases, et les instances en canal
+# « stable » ne verraient pas la mise à jour (cf. docs/REPRISE.md).
 name: Release
 
 on:
-  push:
-    tags: [ 'v*' ]
+  release:
+    types: [ published ]
 
 permissions:
   contents: write
@@ -34,13 +36,12 @@ jobs:
           coverage: none
 
       - name: Construire l'archive complète
-        run: bin/build-release.sh "${GITHUB_REF_NAME}"
+        run: bin/build-release.sh "${{ github.event.release.tag_name }}"
 
       - name: Publier la release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            releases/epiclub-${{ github.ref_name }}.zip
-            releases/epiclub-${{ github.ref_name }}.zip.sha256
-          prerelease: false
-          generate_release_notes: true
+            releases/epiclub-${{ github.event.release.tag_name }}.zip
+            releases/epiclub-${{ github.event.release.tag_name }}.zip.sha256
+          tag_name: ${{ github.event.release.tag_name }}

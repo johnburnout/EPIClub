@@ -48,12 +48,19 @@ php -S localhost:8000 -t public public/router.php
 
 ### Publier une release
 
-1. Mettre à jour `version.txt` (ex. `1.0.0-beta.5`) et `CHANGELOG.md`, commiter.
-2. `git tag v1.0.0-beta.5 && git push origin v1.0.0-beta.5`
+1. Mettre à jour `version.txt` (ex. `1.0.0-beta.5`) et `CHANGELOG.md`, commiter, pousser `main`.
+2. Créer la release avec [gh](https://cli.github.com/) (notes tirées du CHANGELOG) :
+
+   ```bash
+   V=v1.0.0-beta.5
+   awk -v v="## [$V]" 'index($0,v)==1{f=1;next} f&&/^## \[/{exit} f' CHANGELOG.md > /tmp/notes.md
+   gh release create "$V" --target main --title "$V" --notes-file /tmp/notes.md
+   ```
 
 La CI (`.github/workflows/release.yml`) construit alors l'archive complète
-avec `bin/build-release.sh` (vendor/ inclus, sans tests) et la publie avec sa
-somme SHA-256 ; l'updater intégré télécharge et vérifie ces deux fichiers.
+avec `bin/build-release.sh` (vendor/ inclus, sans tests) et l'attache à la
+release avec sa somme SHA-256 ; l'updater intégré télécharge et vérifie ces
+deux fichiers. Ne pas cocher « pre-release » (voir `docs/REPRISE.md`).
 Pour tester la construction en local : `bin/build-release.sh v1.0.0-beta.5`.
 
 ### Tests

@@ -12,9 +12,8 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [v1.0.0-beta.5] — 2026-10-19
 
-Deuxième cycle de correction de l'audit du 2026-10-19
-(`audit-complet-2026-10-19.md`) : points à traiter avant diffusion,
-puis S4/S5.
+Deuxième cycle de correction de l'audit de sécurité du 2026-10-19 :
+points à traiter avant diffusion, puis S4/S5.
 
 ### Security
 
