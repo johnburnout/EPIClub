@@ -167,6 +167,69 @@ final class AcquisitionImportServiceTest extends TestCase
         self::assertStringContainsString('plusieurs colonnes', $rapport['erreur_globale']);
     }
 
+    public function testAnalyserDetecteEnteteAuDelaDeLaLigne1(): void
+    {
+        // Fichier réel type : lignes vides + titre fusionné avant
+        // l'en-tête (ligne 4).
+        $fichier = $this->csv(implode("\n", [
+            '',
+            'Inventaire du matériel',
+            '',
+            'designation;categorie;nombre;date_achat',
+            'Corde;Cordes;2;2019',
+            '',
+        ]));
+
+        $analyse = $this->service->analyser($fichier);
+
+        self::assertNull($analyse['erreur_globale']);
+        self::assertSame(4, $analyse['ligne_entete']);
+        self::assertSame(1, $analyse['nb_lignes']);
+
+        $champs = array_column($analyse['colonnes'], 'champ', 'entete');
+        self::assertSame('designation', $champs['designation']);
+        self::assertSame('categorie', $champs['categorie']);
+    }
+
+    public function testAnalyserSansAliasReconnuPrendLaPremiereLigneNonVide(): void
+    {
+        $fichier = $this->csv(implode("\n", [
+            '',
+            'foo;bar',
+            'Corde;Cordes',
+            '',
+        ]));
+
+        $analyse = $this->service->analyser($fichier);
+
+        self::assertSame(2, $analyse['ligne_entete']);
+        $champs = array_column($analyse['colonnes'], 'champ', 'entete');
+        self::assertSame('ignorer', $champs['foo']);
+    }
+
+    public function testAnalyserDevineLesAliasDuFichierReel(): void
+    {
+        // En-têtes du fichier d'inventaire réel du club.
+        $fichier = $this->csv(implode("\n", [
+            'Catégorie;EPI;ACHAT;HA- Périme;stock théorique;stock réel;Manque;Remarque',
+            'Baudriers;Enfant Torse;2016;2026;1;;;',
+            '',
+        ]));
+
+        $analyse = $this->service->analyser($fichier);
+
+        self::assertSame(1, $analyse['ligne_entete']);
+        $champs = array_column($analyse['colonnes'], 'champ', 'entete');
+        self::assertSame('categorie', $champs['Catégorie']);
+        self::assertSame('designation', $champs['EPI']);
+        self::assertSame('date_achat', $champs['ACHAT']);
+        self::assertSame('date_peremption', $champs['HA- Périme']);
+        self::assertSame('nombre', $champs['stock théorique']);
+        self::assertSame('ignorer', $champs['stock réel']);
+        self::assertSame('ignorer', $champs['Manque']);
+        self::assertSame('ignorer', $champs['Remarque']);
+    }
+
     // ==================================================================
     // Helpers
     // ==================================================================

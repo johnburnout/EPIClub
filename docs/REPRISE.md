@@ -1,6 +1,6 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-19 (session — import v2 : analyse + mapping colonnes, règles métier dates/lot/groupement ; case « Durée maximum d'utilisation »)
+**Dernière mise à jour** : 2026-10-19 (session — import v2 : analyse + mapping colonnes, règles métier dates/lot/groupement ; case « Durée maximum d'utilisation » ; adaptation au fichier d'inventaire réel : détection ligne d'en-tête + alias + délimiteur CSV)
 **Version courante** : v0.31.0
 **Branche** : `main` (travail direct)
 
@@ -1064,6 +1064,20 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 ---
 
 ## Contexte de la session précédente
+
+- **Import — adaptation au fichier d'inventaire réel** (2026-10-19,
+  suite v0.31.0) : le fichier réel du club (« EPI au 25 juin 2026.xlsx »)
+  a l'en-tête en **ligne 4** (titre fusionné + lignes vides au-dessus)
+  et des en-têtes spécifiques (`EPI` = désignation, `ACHAT`, `HA-
+  Périme`, `stock théorique` = nombre). Ajouts : `detecterLigneEntete()`
+  (≥ 2 alias dans les 10 premières lignes, sinon première non vide,
+  lignes au-dessus ignorées et signalées), alias supplémentaires
+  (`epi`, `stocktheorique`/`stock`, `haperime`/`perime`), et **sniffing
+  du délimiteur CSV** sur les 20 premières lignes non vides
+  (l'inférence PhpSpreadsheet échouait si les premières lignes n'ont
+  pas le délimiteur). Simulation sur le fichier réel : en-tête ligne 4
+  détectée, 53 lignes, 4 non conformes (32, 53, 54, 65 — sans
+  désignation). Tests : 552 Unit, 57 Integration.
 
 - **Import v2 + durée maximum d'utilisation** (2026-10-19, sans ticket,
   cible v0.31.0). Décisions produit validées au fil de la session :

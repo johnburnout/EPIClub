@@ -117,7 +117,7 @@ Ils sont générés automatiquement à partir des **factures d'acquisition** val
 
 **Rôle requis :** `ROLE_ADMIN`
 
-1. Aller dans **Administration → Acquisitions**, cliquer sur **« Importer (Excel / CSV) »** et envoyer un fichier Excel (`.xlsx`, `.xls`) ou CSV. **La première ligne doit être une ligne d'en-têtes.**
+1. Aller dans **Administration → Acquisitions**, cliquer sur **« Importer (Excel / CSV) »** et envoyer un fichier Excel (`.xlsx`, `.xls`) ou CSV. La **ligne d'en-tête est détectée automatiquement** (dans les 10 premières lignes) : les lignes au-dessus (titre, lignes vides…) sont ignorées.
 2. L'écran **d'analyse** s'affiche alors :
    - pour chaque colonne du fichier, choisissez le **champ correspondant** (une correspondance est proposée automatiquement d'après l'en-tête ; vous pouvez la modifier ou ignorer la colonne) ;
    - un **aperçu des premières lignes** permet de vérifier ;

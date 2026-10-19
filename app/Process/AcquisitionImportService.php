@@ -7,6 +7,7 @@ use Epiclub\Domain\AcquisitionManager;
 use Epiclub\Domain\CategorieManager;
 use Epiclub\Domain\EquipementManager;
 use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Reader\Csv;
 use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
 
 /**
@@ -21,7 +22,10 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
  *     l'utilisateur.
  *
  * Règles métier :
- *  - la ligne 1 est la ligne d'en-tête ;
+ *  - la ligne d'en-tête est détectée automatiquement dans les 10
+ *    premières lignes (≥ 2 en-têtes reconnus ; sinon première ligne
+ *    non vide) — les lignes au-dessus sont ignorées (signalées à
+ *    l'analyse) ;
  *  - groupement : par facture_reference si renseignée, sinon par date
  *    d'achat normalisée (référence synthétique IMP-AAAA-MM-JJ) — une
  *    acquisition par groupe, automatiquement validée, document
@@ -68,12 +72,12 @@ class AcquisitionImportService
     /** Aliases d'en-têtes (normalisés : minuscules, sans accents ni ponctuation). */
     private const HEADER_ALIASES = [
         'reference' => ['reference', 'ref'],
-        'designation' => ['designation', 'libelle', 'nom'],
+        'designation' => ['designation', 'libelle', 'nom', 'epi'],
         'categorie' => ['categorie', 'code', 'codecategorie'],
-        'nombre' => ['nombre', 'quantite', 'qte'],
+        'nombre' => ['nombre', 'quantite', 'qte', 'stocktheorique', 'stock'],
         'facture_reference' => ['facturereference', 'nfacture', 'numerofacture', 'facture'],
         'date_achat' => ['dateachat', 'facturedate', 'datefacture', 'date', 'achat'],
-        'date_peremption' => ['dateperemption', 'peremption', 'datefinutilisation', 'finutilisation'],
+        'date_peremption' => ['dateperemption', 'peremption', 'perime', 'dateperime', 'haperime', 'datefinutilisation', 'finutilisation'],
         'fournisseur' => ['fournisseur'],
     ];
 
@@ -121,6 +125,7 @@ class AcquisitionImportService
      *   erreur_globale: ?string,
      *   colonnes: array<int, array{index:int, entete:string, champ:string, exemples:string[]}>,
      *   apercu: array<int, array<int, string>>,
+     *   ligne_entete: int,
      *   nb_lignes: int,
      *   lignes_non_conformes: array<int, array{ligne:int, raison:string}>
      * }
@@ -131,6 +136,7 @@ class AcquisitionImportService
             'erreur_globale' => null,
             'colonnes' => [],
             'apercu' => [],
+            'ligne_entete' => 1,
             'nb_lignes' => 0,
             'lignes_non_conformes' => [],
         ];
@@ -145,8 +151,12 @@ class AcquisitionImportService
             return $analyse;
         }
 
-        // Ligne 1 = en-têtes
-        $entetes = array_shift($lignes);
+        // La ligne d'en-tête n'est pas forcément la ligne 1 (fichiers
+        // réels : titre fusionné, lignes vides…) — détection auto.
+        $idxEntete = $this->detecterLigneEntete($lignes);
+        $analyse['ligne_entete'] = $idxEntete + 1; // 1-based pour l'affichage
+        $entetes = $lignes[$idxEntete];
+        $lignes = array_slice($lignes, $idxEntete + 1);
 
         // Correspondance proposée (index colonne → champ)
         $mapping = [];
@@ -172,7 +182,7 @@ class AcquisitionImportService
         // Exemples de valeurs (jusqu'à 3 par colonne) + aperçu (5 lignes)
         $nbExemples = array_fill_keys(array_keys($mapping), 0);
         $nbLignes = 0;
-        $numero = 1; // la ligne 1 = en-têtes
+        $numero = $idxEntete + 1; // numéros 1-based, en-tête incluse
         foreach ($lignes as $ligneBrute) {
             $numero++;
             if ($this->ligneVide($ligneBrute)) {
@@ -265,11 +275,12 @@ class AcquisitionImportService
             $rapport['erreur_globale'] = 'Le fichier est vide.';
             return $rapport;
         }
-        array_shift($lignes); // ligne d'en-tête
+        $idxEntete = $this->detecterLigneEntete($lignes);
+        $lignes = array_slice($lignes, $idxEntete + 1); // après l'en-tête
 
         // --- Validation ligne à ligne + groupement ---
         $groupes = [];
-        $numero = 1;
+        $numero = $idxEntete + 1;
         foreach ($lignes as $ligneBrute) {
             $numero++;
             $donnees = $this->extraireLigne($ligneBrute, $mapping);
@@ -455,13 +466,62 @@ class AcquisitionImportService
     // ==================================================================
 
     /**
+     * Détecte la ligne d'en-tête parmi les 10 premières lignes :
+     * première ligne dont au moins 2 cellules correspondent à un alias
+     * d'en-tête connu ; à défaut, première ligne non vide (fichiers
+     * sans en-têtes reconnus — la correspondance sera à faire à la
+     * main dans l'écran d'analyse).
+     *
+     * @param array<int, array<int, mixed>> $lignes
+     */
+    private function detecterLigneEntete(array $lignes): int
+    {
+        $premiereNonVide = 0;
+        $trouveNonVide = false;
+
+        foreach (array_slice($lignes, 0, 10, true) as $index => $ligne) {
+            if ($this->ligneVide($ligne)) {
+                continue;
+            }
+            if (!$trouveNonVide) {
+                $premiereNonVide = (int) $index;
+                $trouveNonVide = true;
+            }
+            $score = 0;
+            foreach ($ligne as $cellule) {
+                if (is_scalar($cellule) && trim((string) $cellule) !== ''
+                    && $this->devinerChamp((string) $cellule) !== 'ignorer') {
+                    $score++;
+                }
+            }
+            if ($score >= 2) {
+                return (int) $index;
+            }
+        }
+
+        return $premiereNonVide;
+    }
+
+    /**
      * Lit la feuille active du fichier (Excel ou CSV).
+     *
+     * Pour les CSV, le délimiteur est détecté sur l'ensemble des
+     * premières lignes non vides : l'inférence native du lecteur se
+     * trompe quand les premières lignes (titre, vide…) ne contiennent
+     * pas le délimiteur.
      *
      * @return array<int, array<int, mixed>>|null null si illisible
      */
     private function lireFichier(string $cheminFichier): ?array
     {
         try {
+            if (strtolower(pathinfo($cheminFichier, PATHINFO_EXTENSION)) === 'csv') {
+                $reader = new Csv();
+                $reader->setDelimiter($this->detecterDelimiteurCsv($cheminFichier));
+                return $reader->load($cheminFichier)
+                    ->getActiveSheet()
+                    ->toArray(null, true, false, false);
+            }
             return IOFactory::load($cheminFichier)
                 ->getActiveSheet()
                 ->toArray(null, true, false, false);
@@ -469,6 +529,33 @@ class AcquisitionImportService
             error_log('[AcquisitionImportService] Lecture impossible: ' . $e->getMessage());
             return null;
         }
+    }
+
+    /**
+     * Délimiteur CSV le plus fréquent parmi « ; », « , » et tabulation
+     * sur les 20 premières lignes non vides (';' par défaut, Excel FR).
+     */
+    private function detecterDelimiteurCsv(string $cheminFichier): string
+    {
+        $compte = [';' => 0, ',' => 0, "\t" => 0];
+        $handle = @fopen($cheminFichier, 'rb');
+        if ($handle === false) {
+            return ';';
+        }
+        $lues = 0;
+        while ($lues < 20 && ($ligne = fgets($handle)) !== false) {
+            if (trim($ligne) === '') {
+                continue;
+            }
+            $lues++;
+            foreach ($compte as $delimiteur => $n) {
+                $compte[$delimiteur] += substr_count($ligne, $delimiteur);
+            }
+        }
+        fclose($handle);
+
+        $max = max($compte);
+        return $max > 0 ? (string) array_search($max, $compte, true) : ';';
     }
 
     /**

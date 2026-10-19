@@ -10,6 +10,27 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v0.31.1] — 2026-10-19
+
+### Added
+
+- **Import — adaptation au fichier d'inventaire réel** (retour terrain
+  2026-10-19) :
+  - la **ligne d'en-tête est détectée automatiquement** dans les 10
+    premières lignes (≥ 2 en-têtes reconnus, sinon première ligne non
+    vide) ; les lignes au-dessus (titre fusionné, lignes vides…) sont
+    ignorées et la ligne détectée est affichée à l'analyse ;
+  - nouveaux alias d'en-têtes reconnus : `EPI` → désignation,
+    `stock théorique`/`stock` → nombre, `HA- Périme`/`périmé` → date
+    de péremption (`ACHAT`, `Catégorie` l'étaient déjà).
+
+### Fixed
+
+- **CSV : délimiteur détecté sur les 20 premières lignes non vides** —
+  l'inférence native de PhpSpreadsheet se trompait quand les premières
+  lignes (titre, vide) ne contiennent pas le délimiteur, ce qui
+  empêchait la détection de l'en-tête.
+
 ## [v0.31.0] — 2026-10-19
 
 ### Added

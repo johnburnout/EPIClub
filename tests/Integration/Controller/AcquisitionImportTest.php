@@ -174,6 +174,54 @@ final class AcquisitionImportTest extends AbstractControllerTestCase
         self::assertSame(date('Y-m-d'), $acq['facture_date']);
     }
 
+    public function testImportAvecEnteteDetecteAuDelaDeLaLigne1(): void
+    {
+        // Fichier réel type : lignes vides + titre avant l'en-tête,
+        // en-têtes du fichier d'inventaire du club (décision 2026-10-19).
+        $csv = implode("\n", [
+            '',
+            'Inventaire du matériel',
+            '',
+            'Catégorie;EPI;ACHAT;HA- Périme;stock théorique;stock réel;Manque;Remarque',
+            'TEST-IMP4-CAT;Baudrier enfant;2016;2026;2;;;',
+            '',
+        ]);
+        $fichier = $this->makeTempFile($csv, 'csv');
+
+        // Étape 1 : l'analyse détecte l'en-tête ligne 4 et le signale
+        $response = $this->client->postMultipart('/admin/acquisitions/import', [], ['fichier' => $fichier]);
+        self::assertSame(200, $response['status']);
+        $body = html_entity_decode($response['body'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        self::assertStringContainsString('ligne 4', $body);
+
+        // Étape 2 : import avec le mapping proposé (alias fichier réel)
+        $response = $this->client->post('/admin/acquisitions/import', [
+            'confirmation' => '1',
+            'mapping' => [
+                0 => 'categorie',
+                1 => 'designation',
+                2 => 'date_achat',
+                3 => 'date_peremption',
+                4 => 'nombre',
+            ],
+        ]);
+
+        self::assertSame(200, $response['status'], 'Rapport attendu. Body: '
+            . substr(strip_tags($response['body']), 0, 500));
+        $body = html_entity_decode($response['body'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        self::assertStringContainsString('1 acquisition(s) créée(s)', $body);
+
+        // Acquisition groupée par date (pas de facture) : année seule
+        // → 1er janvier ; stock théorique 2 → lot ; péremption 2026
+        // → 31 décembre.
+        $acq = $this->acquisitionParReference('IMP-2016-01-01');
+        self::assertNotNull($acq);
+        $equipements = $this->equipementsDe((int) $acq['id']);
+        self::assertCount(1, $equipements);
+        self::assertSame('2', (string) $equipements[0]['nombre'], 'stock théorique 2 → lot');
+        self::assertSame('2026-12-31', $equipements[0]['date_fin_utilisation']);
+    }
+
     public function testImportIgnoreFactureDejaConnue(): void
     {
         $this->fixture->createValidatedAcquisition('TEST-IMP-FDUP');

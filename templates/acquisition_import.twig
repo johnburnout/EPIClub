@@ -20,7 +20,7 @@
 			<div class="card-body">
 				<h6 class="card-title">Principe</h6>
 				<ul class="mb-0">
-					<li>Fichier Excel (<code>.xlsx</code>, <code>.xls</code>) ou CSV ; la <strong>ligne 1 est la ligne d'en-tête</strong> ;</li>
+					<li>Fichier Excel (<code>.xlsx</code>, <code>.xls</code>) ou CSV ; la <strong>ligne d'en-tête est détectée automatiquement</strong> (dans les 10 premières lignes) ;</li>
 					<li>après le téléversement, vous pourrez <strong>vérifier la correspondance des colonnes</strong> avec les champs attendus avant de lancer l'import ;</li>
 					<li>les lignes d'une même facture — ou, à défaut de n° de facture, d'une même date d'achat — sont groupées dans <strong>une même acquisition automatiquement validée</strong>, dont le document sera marqué « facture à importer » (téléversé plus tard) ;</li>
 					<li>un <code>nombre</code> supérieur à 1 indique un <strong>lot</strong> (un seul équipement) ;</li>
@@ -53,7 +53,9 @@
 	{% if analyse %}
 		<h4>Étape 2 : vérifier la correspondance des colonnes</h4>
 		<p class="text-muted">
-			{{ analyse.nb_lignes }} ligne(s) de données détectée(s).
+			Ligne d'en-tête détectée : <strong>ligne {{ analyse.ligne_entete }}</strong>
+			{% if analyse.ligne_entete > 1 %}(les lignes au-dessus ont été ignorées){% endif %}
+			— {{ analyse.nb_lignes }} ligne(s) de données détectée(s).
 			Vérifiez que chaque colonne correspond au bon champ, puis lancez l'import.
 		</p>
 
