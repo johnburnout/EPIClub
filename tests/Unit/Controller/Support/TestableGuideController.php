@@ -9,9 +9,21 @@ use Epiclub\Engine\Session;
 
 final class TestableGuideController extends GuideController
 {
+    private ?string $guideFilePath = null;
+
     public function __construct(Session $session)
     {
         parent::__construct($session);
+    }
+
+    public function setGuideFilePath(string $path): void
+    {
+        $this->guideFilePath = $path;
+    }
+
+    protected function guideFilePath(): string
+    {
+        return $this->guideFilePath ?? parent::guideFilePath();
     }
 
     protected function updateLastActivity(): void

@@ -1,0 +1,3 @@
+# [SÉCURITÉ — audit C1 bis] L'installeur ne doit pas être accessible
+# via HTTP une fois l'application déployée (docroot = public/).
+Require all denied

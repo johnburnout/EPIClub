@@ -191,8 +191,13 @@ class AppUserRegisterController extends AbstractController
             }
 
             if (empty($form_errors)) {
-                $utilisateur['password'] = password_hash($password, PASSWORD_DEFAULT);
-                $utilisateurManager->save($utilisateur);
+                // [SÉCURITÉ — audit C3] Le reset ne touche QUE le mot de
+                // passe : jamais de save() complet (qui réécrirait le
+                // rôle et les autres colonnes avec des données périmétrées).
+                $utilisateurManager->changePassword(
+                    (int) $utilisateur['id'],
+                    password_hash($password, PASSWORD_DEFAULT)
+                );
                 $utilisateurManager->clearResetToken((int) $utilisateur['id']);
 
                 $this->session->getFlashBag()->add('success', 'Votre mot de passe a ete reinitialise avec succes.');

@@ -46,6 +46,37 @@ final class GuideControllerTest extends TestCase
         self::assertNotSame('', trim($response->getContent()));
     }
 
+    public function testGuideEchappeHtmlBrut(): void
+    {
+        // [SÉCURITÉ — audit C12] Un Markdown contenant du HTML brut
+        // (<script>, attributs on*) doit être échappé par le safe mode
+        // de Parsedown : jamais de XSS stockée via le guide.
+        $mdFile = tempnam(sys_get_temp_dir(), 'guide_test_');
+        file_put_contents(
+            $mdFile,
+            "# Guide\n\n<script>alert('xss')</script>\n\n<img src=x onerror=alert(1)>\n"
+        );
+
+        $session = $this->mockSession(true);
+        $controller = new TestableGuideController($session);
+        $controller->setGuideFilePath($mdFile);
+
+        try {
+            $response = $controller->index(Request::create('/guide', 'GET'));
+        } finally {
+            unlink($mdFile);
+        }
+
+        $content = $response->getContent();
+        // Aucune balise HTML active injectée ne doit subsister : le HTML
+        // brut du Markdown doit être échappé (visible en texte). Nota :
+        // le layout contient ses propres <script> légitimes — on cible
+        // donc uniquement le contenu malveillant injecté.
+        self::assertStringNotContainsString("<script>alert('xss')</script>", $content);
+        self::assertStringNotContainsString('<img src=x', $content);
+        self::assertStringContainsString('&lt;script&gt;', $content);
+    }
+
     private function mockSession(bool $granted): Session
     {
         $session = $this->getMockBuilder(Session::class)->getMock();

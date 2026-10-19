@@ -174,6 +174,13 @@ class UtilisateurController extends AbstractController
             }
             
             // [SÉCURITÉ] Gestion du rôle
+            // [SÉCURITÉ — audit C3] Le rôle n'est plus écrit via save()
+            // (exclu d'ALLOWED_FIELDS) : on mémorise la cible et on
+            // passe par updateRole() après validation complète.
+            // $roleEnBase = rôle actuellement en BDD (chargé au début de
+            // edit()), avant tout remplacement pour l'affichage.
+            $roleEnBase = $utilisateur['role'];
+            $newRole = null;
             if ($isSelf) {
                 // Un utilisateur ne peut pas modifier son propre rôle via ce formulaire.
                 // Seul un autre administrateur (SUPER_ADMIN) peut le faire.
@@ -188,26 +195,33 @@ class UtilisateurController extends AbstractController
                     if ($isDemotingSuperAdmin && $this->isLastSuperAdmin($utilisateur['id'])) {
                         $form_errors['role'] = "Impossible de rétrograder le dernier SUPER_ADMIN de l'application.";
                     } else {
-                        $utilisateur['role'] = $submittedRole;
+                        $newRole = $submittedRole;
+                        $utilisateur['role'] = $submittedRole; // affichage cohérent en cas d'erreur ultérieure
                     }
                 }
             }
-            
+
             // Gestion du mot de passe (optionnel en modification)
+            // [SÉCURITÉ — audit C3] Le hash n'est plus écrit via save() :
+            // on passe par changePassword() après validation complète.
+            $newPasswordHash = null;
             if ($password) {
                 // [SÉCURITÉ #53] Validation 12 chars minimum si un nouveau MDP est fourni.
                 if ($error = UtilisateurManager::validatePassword($password)) {
                     $form_errors['password'] = $error;
                 } else {
-                    $utilisateur['password'] = password_hash($password, PASSWORD_DEFAULT);
+                    $newPasswordHash = password_hash($password, PASSWORD_DEFAULT);
                 }
-            } else {
-                $existingUser = $utilisateurManager->findId($utilisateur['id']);
-                $utilisateur['password'] = $existingUser['password'];
             }
-            
+
             if (empty($form_errors)) {
                 $utilisateurManager->save($utilisateur);
+                if ($newRole !== null && $newRole !== $roleEnBase) {
+                    $utilisateurManager->updateRole((int) $utilisateur['id'], $newRole);
+                }
+                if ($newPasswordHash !== null) {
+                    $utilisateurManager->changePassword((int) $utilisateur['id'], $newPasswordHash);
+                }
                 $this->session->getFlashBag()->add('success', "L'utilisateur a été mis à jour.");
                 return new RedirectResponse("/admin/utilisateurs/utilisateur-$utilisateur[id]");
             }

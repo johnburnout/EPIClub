@@ -1,0 +1,11 @@
+# [SÉCURITÉ — audit C1 bis] La racine du projet n'est PAS un docroot.
+# Si Apache pointe ici par erreur, rien ne doit être servi : ni le code,
+# ni .env.local.php, ni les migrations, ni les tests.
+# Le seul répertoire public est public/ (voir public/.htaccess).
+Require all denied
+
+# Défense en profondeur : les fichiers d'environnement ne doivent jamais
+# être servis, même si une règle ci-dessus venait à être modifiée.
+<FilesMatch "^\.env">
+    Require all denied
+</FilesMatch>

@@ -10,6 +10,45 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Security
+
+- **Correctifs du rapport d'audit 2026-10-19** (constats bloquants et
+  élevés, cycle de correction complet) :
+  - **C1 — RCE via l'updater** : les archives de mise à jour sont
+    désormais validées entrée par entrée AVANT extraction (rejet des
+    « .. », chemins absolus et backslashes — zip slip) ; `public/` est
+    exclu de la copie (le docroot ne peut plus recevoir de fichier
+    déposé par un zip compromis) ; `composer install` est exécuté avec
+    `--no-scripts` (les handlers Composer ne tournent plus sous le
+    processus web). + 2 tests Unit (`testPerformRejectsMaliciousZip`,
+    `testPerformRejectsZipWithAbsolutePath`).
+  - **C1 bis — expositions HTTP** : nouveau `.htaccess` racine
+    `Require all denied` (+ blocage explicite des `.env*`),
+    `public/.htaccess` ré-autorise le docroot, et `setup/`, `bin/`,
+    `migrations/`, `tests/` reçoivent chacun un `.htaccess` de refus.
+    + 1 test Unit (`HtaccessProtectionTest`).
+  - **C5 — doublons de référence équipement** : migration
+    `009_unique_reference_equipement.sql` (`UNIQUE` sur
+    `club_equipement.reference`, avec requête de contrôle préalable en
+    en-tête) et conversion du `PDOException 1062` en erreur métier
+    claire lors de la génération d'équipements. + 1 test Unit
+    (`testImportAvecReferenceForceeDupliqueeEchoue`).
+  - **C12 — XSS stockée dans le guide** : Parsedown passe en
+    `setSafeMode(true)` — le HTML brut du Markdown est échappé au lieu
+    d'être rendu. + 1 test Unit (`testGuideEchappeHtmlBrut`).
+  - **C3 — mass assignment utilisateur** : `save()` en mise à jour ne
+    réécrit plus `password`, `role` ni `reset_token*` (ALLOWED_FIELDS
+    restreint) ; nouvelles méthodes dédiées `changePassword()` et
+    `updateRole()`, utilisées par l'édition de compte et le reset de
+    mot de passe. La création conserve ces champs. + 4 tests Unit.
+  - **P34 — hash en session** : la session ne stocke plus que la
+    projection non sensible de l'utilisateur (jamais `password` ni
+    `reset_token*`). + 2 tests Unit.
+  - **P1/P2 — bootstrap** : le fallback `SETUP_COMPLETE` ne réécrit
+    plus `.env.local.php` (marquage en mémoire uniquement) ; le fichier
+    de configuration n'est inclus qu'après gardes (existence,
+    lisibilité, préfixe `<?php`, retour tableau).
+
 ## [v1.0.0-beta.3] — 2026-10-19
 
 ### Added

@@ -1,5 +1,8 @@
+# [SÉCURITÉ — audit C1 bis] public/ est le SEUL docroot légitime.
+# Nécessaire car le .htaccess racine pose « Require all denied ».
+Require all granted
+
 RewriteEngine On
- 
+
 RewriteCond %{REQUEST_FILENAME} !-f
- 
 RewriteRule ^(.*)$ index.php? [QSA,L]

@@ -1,0 +1,3 @@
+# [SÉCURITÉ — audit C1 bis] Les tests révèlent la structure interne et
+# des fixtures (env.test.php) : jamais servis via HTTP.
+Require all denied

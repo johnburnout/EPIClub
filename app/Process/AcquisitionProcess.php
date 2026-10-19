@@ -175,7 +175,7 @@ class AcquisitionProcess
                     'est_epi' => $est_epi,
                     'duree_max_utilisation' => $dureeMax
                 ];
-                $equipementManager->save($new_equipement);
+                $this->saveEquipementAvecGardeDoublon($equipementManager, $new_equipement);
             } else {
                 for ($i = 1; $i <= $ligne['nombre']; $i++) {
                     $code = $annee . '-' . str_pad($ligne['acquisition_id'], 3, '0', STR_PAD_LEFT) . '-' .
@@ -213,7 +213,7 @@ class AcquisitionProcess
                         'est_epi' => $est_epi,
                         'duree_max_utilisation' => $dureeMax
                     ];
-                    $equipementManager->save($new_equipement);
+                    $this->saveEquipementAvecGardeDoublon($equipementManager, $new_equipement);
                 }
             }
             
@@ -224,6 +224,31 @@ class AcquisitionProcess
         throw new \RuntimeException("L'acquisition ligne n'existe pas", 1);
     }
     
+    /**
+     * [SÉCURITÉ — audit C5] Garde anti-doublon sur club_equipement.reference.
+     *
+     * La migration 009 pose UNIQUE(reference) ; si un import tente une
+     * référence déjà existante (reference_forcee dupliquée, race
+     * condition), MySQL lève PDOException 1062. On la convertit en
+     * erreur métier claire au lieu d'un 500 générique — même pattern
+     * que AcquisitionLigneManager::_create().
+     */
+    private function saveEquipementAvecGardeDoublon(EquipementManager $equipementManager, array $equipement): void
+    {
+        try {
+            $equipementManager->save($equipement);
+        } catch (\PDOException $e) {
+            if ((int) $e->getCode() === 23000 || str_contains($e->getMessage(), '1062')) {
+                throw new \RuntimeException(
+                    sprintf('La référence « %s » existe déjà : import refusé pour éviter un doublon.', $equipement['reference']),
+                    0,
+                    $e
+                );
+            }
+            throw $e;
+        }
+    }
+
     public function validerAcquisition(int $acquisitionId): bool
     {
         $acquisitionLigneManager = $this->acquisitionLigneManager();

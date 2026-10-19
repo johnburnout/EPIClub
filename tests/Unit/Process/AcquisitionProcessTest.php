@@ -582,6 +582,48 @@ final class AcquisitionProcessTest extends TestCase
     }
 
     // ==================================================================
+    // [SÉCURITÉ — audit C5] Doublon de référence équipement
+    // ==================================================================
+
+    public function testImportAvecReferenceForceeDupliqueeEchoue(): void
+    {
+        $ligne = $this->makeLigneFixture(regrouperEnLot: 0, nombre: 1);
+        $ligne['reference_forcee'] = 'REF-DOUBLON';
+
+        $ligneManager = $this->makeAcquisitionLigneManagerMock();
+        $ligneManager->method('findId')->willReturn($ligne);
+        // La ligne ne doit PAS être marquée equipements_generes=1 :
+        // le save() final est inaccessible après le refus.
+        $ligneManager->expects(self::never())->method('save');
+
+        $acquisitionManager = $this->makeAcquisitionManagerMock();
+        $acquisitionManager->method('findId')->willReturn(['id' => 42, 'facture_date' => '2025-01-15']);
+
+        $categorieManager = $this->makeCategorieManagerMock();
+        $categorieManager->method('findId')->willReturn(['id' => 3, 'est_epi' => 1]);
+
+        $equipementManager = $this->makeEquipementManagerMock();
+        $equipementManager->method('codeExists')->willReturn(false);
+        // MySQL lève PDOException 1062 sur la contrainte UNIQUE(reference)
+        // posée par la migration 009.
+        $equipementManager->method('save')
+            ->willThrowException(new \PDOException(
+                "SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry 'REF-DOUBLON' for key 'reference'"
+            ));
+
+        $process = $this->makeProcessWith(
+            acquisitionManager: $acquisitionManager,
+            acquisitionLigneManager: $ligneManager,
+            categorieManager: $categorieManager,
+            equipementManager: $equipementManager,
+        );
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('REF-DOUBLON');
+        $process->create_equipement_process(10);
+    }
+
+    // ==================================================================
     // Helpers
     // ==================================================================
 

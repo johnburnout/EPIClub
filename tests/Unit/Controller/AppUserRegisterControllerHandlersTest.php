@@ -381,7 +381,13 @@ final class AppUserRegisterControllerHandlersTest extends TestCase
             ->disableOriginalConstructor()
             ->getMock();
         $utilisateurManager->method('findOneByCriteria')->willReturn($user);
-        $utilisateurManager->expects(self::once())->method('save');
+        // [SÉCURITÉ — audit C3] Le reset passe par changePassword()
+        // (mise à jour ciblée), jamais par un save() complet qui
+        // réécrirait le rôle et les autres colonnes.
+        $utilisateurManager->expects(self::never())->method('save');
+        $utilisateurManager->expects(self::once())
+            ->method('changePassword')
+            ->with(42, self::callback(fn (string $hash): bool => password_verify('validpassword', $hash)));
         $utilisateurManager->expects(self::once())
             ->method('clearResetToken')
             ->with(42);

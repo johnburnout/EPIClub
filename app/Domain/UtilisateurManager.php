@@ -6,7 +6,28 @@ use Epiclub\Engine\AbstractManager;
 
 class UtilisateurManager extends AbstractManager
 {
+    /**
+    * [SÉCURITÉ — audit C3] Champs modifiables via save() en MISE À JOUR.
+    *
+    * Les champs sensibles (password, role, reset_token*) sont EXCLUS :
+    * un save() générique ne doit jamais pouvoir réécrire un hash de mot
+    * de passe, un rôle ou un token de réinitialisation (mass assignment).
+    * Utiliser les méthodes dédiées : changePassword(), updateRole(),
+    * setResetToken(), clearResetToken().
+    */
     private const ALLOWED_FIELDS = [
+        'nom', 'prenom', 'username', 'email',
+        'date_creation', 'derniere_connexion', 'controle_en_cours_id',
+        'last_activity',
+    ];
+
+    /**
+    * [SÉCURITÉ — audit C3] Champs autorisés à la CRÉATION uniquement :
+    * un nouveau compte doit pouvoir recevoir son mot de passe, son rôle
+    * et ses colonnes de reset initialisées à NULL (step_admin,
+    * UtilisateurController::edit() en création).
+    */
+    private const CREATION_ALLOWED_FIELDS = [
         'nom', 'prenom', 'username', 'email', 'password', 'role',
         'date_creation', 'derniere_connexion', 'controle_en_cours_id',
         'last_activity', 'reset_token', 'reset_token_expires',
@@ -288,12 +309,50 @@ class UtilisateurManager extends AbstractManager
     {
         // [REFACTOR #92] Délégué au helper générique — même contrat :
         // filtrage ALLOWED_FIELDS, SET dynamique, gardes RuntimeException.
+        // [SÉCURITÉ — audit C3] ALLOWED_FIELDS exclut password/role/
+        // reset_* : voir changePassword() / updateRole() / setResetToken().
         return $this->filteredUpdate($utilisateur, self::ALLOWED_FIELDS);
     }
 
     private function _create(array $utilisateur): bool
     {
-        return $this->filteredInsert($utilisateur, self::ALLOWED_FIELDS);
+        // [SÉCURITÉ — audit C3] La création accepte password/role/reset_*
+        // (initialisation du compte), la mise à jour non.
+        return $this->filteredInsert($utilisateur, self::CREATION_ALLOWED_FIELDS);
+    }
+
+    /**
+     * [SÉCURITÉ — audit C3] Change le mot de passe d'un utilisateur.
+     *
+     * Seule voie de mise à jour du hash : reçoit un hash DÉJÀ calculé
+     * (password_hash côté contrôleur) et ne touche aucune autre colonne
+     * — en particulier pas le rôle (test testResetPasswordDoesNotOverwriteRole).
+     */
+    public function changePassword(int $userId, string $passwordHash): bool
+    {
+        $sql = "UPDATE utilisateur SET password = :password WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            'password' => $passwordHash,
+            'id'       => $userId,
+        ]);
+    }
+
+    /**
+     * [SÉCURITÉ — audit C3] Change le rôle d'un utilisateur.
+     *
+     * Seule voie de mise à jour du rôle. La vérification des droits
+     * (whitelist UserRole::listAssignableBy, protection du dernier
+     * SUPER_ADMIN) reste de la responsabilité du contrôleur appelant.
+     */
+    public function updateRole(int $userId, string $role): bool
+    {
+        $sql = "UPDATE utilisateur SET role = :role WHERE id = :id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute([
+            'role' => $role,
+            'id'   => $userId,
+        ]);
     }
 
     public function getDb()

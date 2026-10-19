@@ -21,7 +21,10 @@ class AppUpdateController extends AbstractController
     private const GITHUB_REPO = 'johnburnout/EPIClub';
     private const VERSION_FILE = __DIR__ . '/../../version.txt';
     private const TEMP_DIR = __DIR__ . '/../../var/tmp/update';
-    private const EXCLUDED_DIRS = ['var', 'vendor', '.git', '_storage', 'config', 'setup'];
+    // [SÉCURITÉ — audit C1] 'public' est exclu de la copie : le zip ne
+    // doit JAMAIS pouvoir écrire dans le docroot (sinon un zip
+    // compromis dépose un shell.php directement exécutable).
+    private const EXCLUDED_DIRS = ['var', 'vendor', '.git', '_storage', 'config', 'setup', 'public'];
     private const EXCLUDED_FILES = ['.env', '.env.local', '.env.local.php', 'version.txt'];
     
     /**
@@ -184,6 +187,23 @@ class AppUpdateController extends AbstractController
                     'message' => 'Impossible d\'ouvrir l\'archive téléchargée.',
                 ]);
             }
+
+            // [SÉCURITÉ — audit C1] Validation des entrées AVANT extraction :
+            // rejet des chemins « .. », absolus ou Windows (zip slip). Un zip
+            // GitHub compromis ne doit pas pouvoir écrire hors du dossier
+            // d'extraction.
+            try {
+                $this->assertZipEntriesSafe($zip);
+            } catch (\RuntimeException $e) {
+                $zip->close();
+                @unlink($tempZip);
+                error_log('[AppUpdateController] Archive rejetée : ' . $e->getMessage());
+                return $this->render('update_result.twig', [
+                    'success' => false,
+                    'message' => 'Archive invalide : le fichier téléchargé a été rejeté pour des raisons de sécurité.',
+                ]);
+            }
+
             $extractPath = self::TEMP_DIR . '/extracted';
             if (!is_dir($extractPath)) {
                 mkdir($extractPath, 0755, true);
@@ -324,6 +344,28 @@ class AppUpdateController extends AbstractController
         return 'v0.0.0';
     }
 
+    /**
+     * [SÉCURITÉ — audit C1] Rejette les archives contenant des entrées
+     * dangereuses : « .. » (zip slip), chemins absolus Unix (« / ») ou
+     * Windows (« C:\ », « \ »), backslashes.
+     *
+     * Méthode protected pour être testable en Unit (sous-classe de test).
+     *
+     * @throws \RuntimeException si une entrée est malveillante
+     */
+    protected function assertZipEntriesSafe(ZipArchive $zip): void
+    {
+        for ($i = 0; $i < $zip->numFiles; $i++) {
+            $name = $zip->getNameIndex($i);
+            if ($name === false) {
+                throw new \RuntimeException("Entrée zip #$i illisible");
+            }
+            if (str_contains($name, '..') || preg_match('#^[/\\\\]#', $name) || str_contains($name, '\\')) {
+                throw new \RuntimeException(sprintf('Entrée zip malveillante : %s', $name));
+            }
+        }
+    }
+
     private function copyFiles(string $source, string $target): void
     {
         $iterator = new \RecursiveIteratorIterator(
@@ -404,9 +446,12 @@ class AppUpdateController extends AbstractController
 
     private function runComposer(): void
     {
+        // [SÉCURITÉ — audit C1] --no-scripts : les handlers Composer
+        // (post-install-cmd, etc.) du composer.json potentiellement
+        // compromis ne doivent JAMAIS être exécutés par le processus web.
         $commands = [
-            'composer install --no-dev --optimize-autoloader 2>&1',
-            'php composer.phar install --no-dev --optimize-autoloader 2>&1'
+            'composer install --no-dev --no-scripts --optimize-autoloader 2>&1',
+            'php composer.phar install --no-dev --no-scripts --optimize-autoloader 2>&1'
         ];
 
         foreach ($commands as $cmd) {

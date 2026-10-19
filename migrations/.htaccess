@@ -1,0 +1,3 @@
+# [SÉCURITÉ — audit C1 bis] Les migrations SQL révèlent le schéma :
+# jamais servies via HTTP.
+Require all denied
