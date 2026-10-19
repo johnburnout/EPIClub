@@ -23,6 +23,7 @@ final class TestableCategorieControllerBuilder
 {
     private Session $session;
     private CategorieManager $categorieManager;
+    private ?string $imagesDir = null;
 
     public function __construct(private readonly TestCase $testCase)
     {
@@ -42,11 +43,18 @@ final class TestableCategorieControllerBuilder
         return $this;
     }
 
+    public function withImagesDir(string $dir): self
+    {
+        $this->imagesDir = $dir;
+        return $this;
+    }
+
     public function build(): TestableCategorieController
     {
         return new TestableCategorieController(
             $this->session,
             $this->categorieManager,
+            $this->imagesDir,
         );
     }
 

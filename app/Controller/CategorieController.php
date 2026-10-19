@@ -5,7 +5,7 @@ namespace Epiclub\Controller;
 use Epiclub\Domain\CategorieManager;
 use Epiclub\Domain\ReferenceGenerator;
 use Epiclub\Engine\AbstractController;
-use Symfony\Component\HttpFoundation\File\Exception\FileException;
+use Epiclub\Engine\ImageUploader;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
@@ -35,6 +35,25 @@ class CategorieController extends AbstractController
     protected function referenceGenerator(): ReferenceGenerator
     {
         return new ReferenceGenerator();
+    }
+
+    /**
+     * [SÉCURITÉ — audit 2026-10-19 S1] Dossier des images de catégorie
+     * (servi par le serveur web). Factory surchargée en test Unit pour
+     * écrire dans un dossier temporaire.
+     */
+    protected function imagesDir(): string
+    {
+        return __DIR__ . self::IMAGE_DIR;
+    }
+
+    /**
+     * [SÉCURITÉ — audit 2026-10-19 S1] Upload sûr : liste blanche MIME +
+     * réencodage GD (voir ImageUploader). Mockable en test Unit.
+     */
+    protected function imageUploader(): ImageUploader
+    {
+        return new ImageUploader($this->imagesDir());
     }
 
     /**
@@ -192,22 +211,29 @@ class CategorieController extends AbstractController
                     ]
                 );
                 
-                if ($image = $request->files->get('image')) {
-                    $sanitized = $this->sanitizeUploadedFilename($image->getClientOriginalName());
-                    $newFilename = $sanitized . '-' . uniqid() . '.' . $image->guessExtension();
+                $image = $request->files->get('image');
+                if ($image !== null) {
+                    // [SÉCURITÉ — audit 2026-10-19 S1] Avant ce correctif,
+                    // le fichier client était déplacé tel quel dans
+                    // public/images/ avec l'extension devinée (un HTML ou
+                    // un SVG piégé y devenait servi en .html / .svg :
+                    // XSS stockée). Désormais : liste blanche + réencodage.
                     try {
-                        $image->move(__DIR__ . self::IMAGE_DIR, $newFilename);
+                        $sanitized = $this->sanitizeUploadedFilename((string) $image->getClientOriginalName());
+                        $newFilename = $this->imageUploader()->save($image, $sanitized);
 
                         // Supprimer l'ancienne image si on est en mise à jour
                         if (!empty($categorie['image']) && $categorie['image'] !== $newFilename) {
-                            $oldImagePath = __DIR__ . self::IMAGE_DIR . $categorie['image'];
-                            if (file_exists($oldImagePath)) {
+                            $oldImagePath = $this->imagesDir() . basename($categorie['image']);
+                            if (is_file($oldImagePath)) {
                                 @unlink($oldImagePath);
                             }
                         }
 
                         $categorie['image'] = $newFilename;
-                    } catch (FileException $e) {
+                    } catch (\InvalidArgumentException $e) {
+                        $form_errors['image'] = $e->getMessage();
+                    } catch (\Throwable $e) {
                         error_log('[CategorieController] Upload failed: ' . $e->getMessage());
                         $form_errors['image'] = "Erreur lors du téléversement de l'image.";
                     }
@@ -267,7 +293,7 @@ class CategorieController extends AbstractController
         // [MÉTIER] Hard delete => on supprime aussi le fichier image associé
         $imageToDelete = null;
         if (!empty($categorie['image'])) {
-            $imageToDelete = __DIR__ . self::IMAGE_DIR . $categorie['image'];
+            $imageToDelete = $this->imagesDir() . basename($categorie['image']);
         }
 
         $categorieManager->delete($id);

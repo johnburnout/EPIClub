@@ -10,6 +10,7 @@ use Epiclub\Tests\Unit\Controller\Support\TestableCategorieController;
 use Epiclub\Tests\Unit\Controller\Support\TestableCategorieControllerBuilder;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
@@ -310,6 +311,92 @@ final class CategorieControllerHandlersTest extends TestCase
     }
 
     // ==================================================================
+    // [SÉCURITÉ — audit 2026-10-19 S1] Upload de l'image de catégorie
+    //
+    // Reproduction de la faille : avant le correctif, un fichier HTML
+    // nommé « photo.jpg » était déplacé tel quel dans public/images/
+    // sous le nom « photo-<uniqid>.html » (XSS stockée, même domaine).
+    // ==================================================================
+
+    public function testEditRefuseUnFichierHtmlDeguiseEnImage(): void
+    {
+        $dir = $this->dossierImagesTemporaire();
+        $manager = $this->managerSansCategorieExistante();
+        $manager->expects(self::never())->method('save');
+
+        $controller = (new TestableCategorieControllerBuilder($this))
+            ->withSession($this->makeSession())
+            ->withCategorieManager($manager)
+            ->withImagesDir($dir)
+            ->build();
+
+        $response = $controller->edit($this->makePostRequest(
+            ['libelle' => 'Baudriers', 'code' => 'BAU'],
+            ['image' => $this->fichierUploade('photo.jpg', '<html><script>alert(document.cookie)</script></html>')],
+        ));
+
+        self::assertNotInstanceOf(RedirectResponse::class, $response);
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame([], $this->contenuDossier($dir), 'Aucun fichier ne doit être déposé dans le dossier public.');
+        $this->supprimerDossier($dir);
+    }
+
+    public function testEditRefuseUnSvgAvecScript(): void
+    {
+        $dir = $this->dossierImagesTemporaire();
+        $manager = $this->managerSansCategorieExistante();
+        $manager->expects(self::never())->method('save');
+
+        $controller = (new TestableCategorieControllerBuilder($this))
+            ->withSession($this->makeSession())
+            ->withCategorieManager($manager)
+            ->withImagesDir($dir)
+            ->build();
+
+        $controller->edit($this->makePostRequest(
+            ['libelle' => 'Casques', 'code' => 'CAS'],
+            ['image' => $this->fichierUploade('logo.png',
+                '<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>')],
+        ));
+
+        self::assertSame([], $this->contenuDossier($dir));
+        $this->supprimerDossier($dir);
+    }
+
+    public function testEditReencodeUneImageValide(): void
+    {
+        $dir = $this->dossierImagesTemporaire();
+        $manager = $this->managerSansCategorieExistante();
+        $manager->expects(self::once())
+            ->method('save')
+            ->with(self::callback(function (array $categorie): bool {
+                return (bool) preg_match('/^photo-[0-9a-f]{16}\.(webp|jpg)$/', $categorie['image'] ?? '');
+            }));
+
+        $controller = (new TestableCategorieControllerBuilder($this))
+            ->withSession($this->makeSession())
+            ->withCategorieManager($manager)
+            ->withImagesDir($dir)
+            ->build();
+
+        $img = imagecreatetruecolor(10, 10);
+        ob_start();
+        imagepng($img);
+        $png = (string) ob_get_clean();
+
+        $response = $controller->edit($this->makePostRequest(
+            ['libelle' => 'Mousquetons', 'code' => 'MOU'],
+            ['image' => $this->fichierUploade('photo.png', $png)],
+        ));
+
+        self::assertInstanceOf(RedirectResponse::class, $response);
+        $fichiers = $this->contenuDossier($dir);
+        self::assertCount(1, $fichiers);
+        self::assertMatchesRegularExpression('/\.(webp|jpg)$/', $fichiers[0]);
+        $this->supprimerDossier($dir);
+    }
+
+    // ==================================================================
     // Helpers
     // ==================================================================
 
@@ -342,7 +429,7 @@ final class CategorieControllerHandlersTest extends TestCase
     /**
      * @param array<string,mixed> $post
      */
-    private function makePostRequest(array $post): Request
+    private function makePostRequest(array $post, array $files = []): Request
     {
         $post['csrf_token'] = $post['csrf_token'] ?? 'test-csrf-token';
 
@@ -350,6 +437,45 @@ final class CategorieControllerHandlersTest extends TestCase
             '/admin/categories/edit',
             'POST',
             $post,
+            [],
+            $files,
         );
+    }
+
+    private function managerSansCategorieExistante(): CategorieManager
+    {
+        $manager = $this->getMockBuilder(CategorieManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $manager->method('findAll')->willReturn([]);
+        return $manager;
+    }
+
+    private function dossierImagesTemporaire(): string
+    {
+        $dir = sys_get_temp_dir() . '/epiclub_cat_' . bin2hex(random_bytes(4)) . '/';
+        mkdir($dir, 0700, true);
+        return $dir;
+    }
+
+    private function fichierUploade(string $nomClient, string $contenu): UploadedFile
+    {
+        $chemin = tempnam(sys_get_temp_dir(), 'epiclub_up_');
+        file_put_contents($chemin, $contenu);
+        return new UploadedFile($chemin, $nomClient, null, null, true);
+    }
+
+    /** @return string[] */
+    private function contenuDossier(string $dir): array
+    {
+        return array_values(array_diff(scandir($dir) ?: [], ['.', '..']));
+    }
+
+    private function supprimerDossier(string $dir): void
+    {
+        foreach ($this->contenuDossier($dir) as $f) {
+            @unlink($dir . $f);
+        }
+        @rmdir($dir);
     }
 }

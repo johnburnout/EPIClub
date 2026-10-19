@@ -1,0 +1,18 @@
+# [SÉCURITÉ — audit 2026-10-19 S1] Dossier d'images téléversées.
+# Rien d'autre que des images ne doit y être servi, et aucun script ne
+# doit y être exécuté, même si un fichier arrivait à y être déposé.
+
+# 1. Aucun type de fichier interprétable : scripts serveur, HTML, SVG, JS…
+<FilesMatch "(?i)\.(php\d*|phtml|pht|phar|phps|cgi|pl|py|sh|shtml|s?html?|xhtml|svgz?|xml|js|mjs|htaccess)$">
+    Require all denied
+</FilesMatch>
+
+# 2. Pas de rendu « deviné » par le navigateur
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox"
+</IfModule>
+
+# NB : pas de « Options » ni de « php_flag » ici : ils exigent
+# AllowOverride Options et provoqueraient une erreur 500 sur les
+# hébergements qui ne l'autorisent pas (les images ne s'afficheraient plus).

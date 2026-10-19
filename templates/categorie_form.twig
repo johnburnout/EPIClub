@@ -74,6 +74,7 @@
 			<input type="file"
 			       id="image"
 			       name="image"
+			       accept="image/jpeg,image/png,image/webp,image/gif"
 			       class="form-control{% if form_errors.image is defined and form_errors.image %} is-invalid{% endif %}">
 			{% if form_errors.image is defined and form_errors.image %}
 				<div class="invalid-feedback d-block">{{ form_errors.image }}</div>

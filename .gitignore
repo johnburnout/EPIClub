@@ -8,7 +8,9 @@
 /_dev
 /releases
 /public/uploads
-/public/images
+/public/images/*
+# [SÉCURITÉ — audit 2026-10-19 S1] la protection du dossier est versionnée
+!/public/images/.htaccess
 
 # Fichiers de construction
 build-release.sh

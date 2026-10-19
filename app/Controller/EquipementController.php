@@ -1292,8 +1292,8 @@ HTML;
             imagejpeg($resizedImage, $filepath, 85);
         }
 
-        imagedestroy($image);
-        imagedestroy($resizedImage);
+        unset($image); // imagedestroy() est dépréciée en PHP 8.5 (no-op depuis 8.0)
+        unset($resizedImage); // imagedestroy() est dépréciée en PHP 8.5 (no-op depuis 8.0)
 
         return self::UPLOAD_DIR . $filename;
     }
