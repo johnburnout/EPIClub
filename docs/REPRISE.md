@@ -16,6 +16,7 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
+| v1.0.0-beta.1 | — | **1ʳᵉ bêta fonctionnelle de test** : scan QR intégré à la page (AJAX, sans quitter) + listes de catégories par activité dans le setup (escalade/spéléo/alpinisme) + 9 tests | `8a725f6` |
 | v0.32.0 | — | Import : rattachement des catégories inconnues à une existante + lignes non conformes affichées en entier ; lots : nombre_initial plafonné, code sans LOT, badge « Lot : X/Y » liste + 9 tests | `5483764` |
 | v0.31.1 | — | Import : détection auto de la ligne d'en-tête (fichier réel : en-tête ligne 4) + alias (EPI, stock théorique, HA- Périme) + sniffing délimiteur CSV + 4 tests | `792a37d` |
 | v0.31.0 | — | Import v2 (analyse + mapping colonnes, lignes non conformes prévenantes, dates année seule, lot auto si nombre>1, groupement par date sans facture, mise en service) + case « Durée maximum d'utilisation » (catégorie/équipement) + 16 tests | `7b505bd` |
