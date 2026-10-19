@@ -177,6 +177,7 @@ Ils sont générés automatiquement à partir des **factures d'acquisition** val
 ### Scanner un QR Code
 - Le QR Code d'un équipement redirige vers la fiche ou vers un contrôle en cours.
 - Si un contrôle est en cours, l'équipement est automatiquement ajouté à la ligne de contrôle.
+- **Scan intégré (menu Contrôles → « Scanner un équipement »)** : la caméra du téléphone s'ouvre **dans la page** — chaque équipement scanné est ajouté au contrôle en cours sans quitter la page (confirmation visuelle et sonore, doublons signalés), avec un bouton « Terminer » vers la fiche contrôle. ⚠️ Nécessite que le site soit servi en **HTTPS** (contrainte des navigateurs pour l'accès caméra).
 
 ---
 

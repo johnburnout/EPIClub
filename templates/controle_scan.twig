@@ -1,0 +1,159 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+
+	{% if controle %}
+		<h3>📷 Scanner — contrôle « {{ controle.libelle }} »</h3>
+	{% else %}
+		<h3>📷 Scanner un équipement</h3>
+	{% endif %}
+	<hr>
+
+	<div id="scanner-alerte-https" class="alert alert-danger" style="display:none; max-width: 40rem;">
+		<strong>Caméra indisponible :</strong> le navigateur n'autorise la caméra que sur une
+		page servie en <strong>HTTPS</strong> (ou en localhost). Demandez à l'administrateur
+		d'activer HTTPS sur le serveur du club — le scan par l'appareil photo natif du
+		téléphone reste possible en attendant.
+	</div>
+
+	{% if controle %}
+		<div class="alert alert-info" style="max-width: 40rem;">
+			Contrôle ouvert : <strong>{{ controle.libelle }}</strong> — chaque équipement
+			scanné est ajouté au contrôle <strong>sans quitter cette page</strong>.
+		</div>
+	{% else %}
+		<div class="alert alert-info" style="max-width: 40rem;">
+			Aucun contrôle ouvert : le scan vous mènera à la fiche de l'équipement.
+		</div>
+	{% endif %}
+
+	<div id="scanner-zone" style="max-width: 40rem;">
+		<div id="qr-reader" style="width: 100%;"></div>
+	</div>
+
+	<div id="scan-messages" class="mt-3" style="max-width: 40rem;"></div>
+
+	{% if controle %}
+		<h6 class="mt-3">Équipements scannés pendant cette session :</h6>
+		<ul id="scan-liste" class="list-group" style="max-width: 40rem;"></ul>
+		<div class="mt-3">
+			<a href="/admin/controles/edit/{{ controle.id }}" class="btn btn-primary">✅ Terminer — ouvrir la fiche contrôle</a>
+		</div>
+	{% endif %}
+
+{% endblock %}
+
+{% block javascripts %}
+	<script src="/assets/js/html5-qrcode.min.js"></script>
+	<script>
+	(function () {
+		const controleOuvert = {{ controle ? 'true' : 'false' }};
+		const csrfToken = {{ csrf_token|json_encode|raw }};
+		const messages = document.getElementById('scan-messages');
+		const liste = document.getElementById('scan-liste');
+
+		// La caméra exige un contexte sécurisé (HTTPS ou localhost).
+		if (!window.isSecureContext) {
+			document.getElementById('scanner-alerte-https').style.display = 'block';
+			document.getElementById('scanner-zone').style.display = 'none';
+			return;
+		}
+
+		// Petit bip de confirmation (WebAudio, sans fichier son).
+		function bip(ok) {
+			try {
+				const ctx = new (window.AudioContext || window.webkitAudioContext)();
+				const osc = ctx.createOscillator();
+				const gain = ctx.createGain();
+				osc.frequency.value = ok ? 880 : 220;
+				gain.gain.value = 0.08;
+				osc.connect(gain).connect(ctx.destination);
+				osc.start();
+				osc.stop(ctx.currentTime + 0.12);
+			} catch (e) { /* silencieux si audio indisponible */ }
+		}
+
+		function afficher(type, texte) {
+			const div = document.createElement('div');
+			div.className = 'alert alert-' + type + ' py-2';
+			div.textContent = texte;
+			messages.prepend(div);
+			while (messages.children.length > 3) {
+				messages.removeChild(messages.lastChild);
+			}
+		}
+
+		function ajouterALaListe(texte, deja) {
+			if (!liste) return;
+			const li = document.createElement('li');
+			li.className = 'list-group-item' + (deja ? ' list-group-item-warning' : '');
+			li.textContent = texte;
+			liste.prepend(li);
+		}
+
+		// Verrou anti-doublon : un même QR n'est pas renvoyé tant que
+		// la requête précédente n'est pas terminée.
+		let enCours = false;
+		let dernierScan = '';
+		let dernierScanAt = 0;
+
+		function onScanSuccess(decodedText) {
+			const match = decodedText.match(/\/qr\/(\d+)/) || decodedText.match(/^(\d+)$/);
+			if (!match) {
+				return; // QR étranger à l'application : ignoré silencieusement
+			}
+			const now = Date.now();
+			if (enCours || (decodedText === dernierScan && now - dernierScanAt < 3000)) {
+				return;
+			}
+			enCours = true;
+			dernierScan = decodedText;
+			dernierScanAt = now;
+
+			const body = new URLSearchParams();
+			body.set('equipement_id', match[1]);
+			body.set('csrf_token', csrfToken);
+
+			fetch('/controles/scanner/ajouter', {
+				method: 'POST',
+				headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+				body: body.toString()
+			})
+				.then((r) => r.json())
+				.then((data) => {
+					if (data.statut === 'hors_controle' && data.redirect) {
+						window.location.href = data.redirect;
+						return;
+					}
+					if (data.statut === 'ajoute') {
+						bip(true);
+						afficher('success', '✅ ' + data.reference + ' — ' + data.libelle + ' : ajouté au contrôle.');
+						ajouterALaListe('✅ ' + data.reference + ' — ' + data.libelle, false);
+					} else if (data.statut === 'deja') {
+						bip(false);
+						afficher('warning', '⚠️ ' + data.reference + ' — ' + data.libelle + ' : déjà dans le contrôle.');
+						ajouterALaListe('⚠️ ' + data.reference + ' — ' + data.libelle + ' (déjà présent)', true);
+					} else {
+						bip(false);
+						afficher('danger', '❌ ' + (data.message || 'Erreur lors du scan.'));
+					}
+				})
+				.catch(() => {
+					bip(false);
+					afficher('danger', '❌ Erreur réseau — vérifiez la connexion et réessayez.');
+				})
+				.finally(() => { enCours = false; });
+		}
+
+		const scanner = new Html5Qrcode('qr-reader');
+		scanner.start(
+			{ facingMode: 'environment' },
+			{ fps: 10, qrbox: { width: 250, height: 250 } },
+			onScanSuccess,
+			undefined // erreurs de lecture frame à frame : ignorées
+		).catch(() => {
+			afficher('danger', 'Impossible d\'accéder à la caméra. Vérifiez les autorisations du navigateur.');
+		});
+	})();
+	</script>
+{% endblock %}

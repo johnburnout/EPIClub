@@ -4,7 +4,8 @@ use Epiclub\Domain\ClubManager;
 
 $activites = [
     'Alpinisme',
-    'Escalade'
+    'Escalade',
+    'Spéléologie'
 ];
 
 $club = [
@@ -46,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         $clubManager->save($club);
 
-        header('Location: ?step=final');
+        header('Location: ?step=categories');
         exit();
     }
 }

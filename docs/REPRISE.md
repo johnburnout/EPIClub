@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
 **Dernière mise à jour** : 2026-10-19 (session — import v2 complet : analyse + mapping, rattachement catégories, lignes non conformes complètes ; lots : nombre initial plafonné ; case « Durée maximum d'utilisation »)
-**Version courante** : v0.32.0
+**Version courante** : v1.0.0-beta.1
 **Branche** : `main` (travail direct)
 
 ---
@@ -1066,6 +1066,45 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 ---
 
 ## Contexte de la session précédente
+
+- **Scan QR dans la page** (2026-10-19, décision produit) : page
+  `/controles/scanner` (menu Contrôles → « Scanner un équipement ») +
+  endpoint AJAX `POST /controles/scanner/ajouter`
+  (`ControleScanController`). Bibliothèque **html5-qrcode 2.3.8
+  embarquée** (`public/assets/js/html5-qrcode.min.js`, 375 Ko, MIT —
+  pas de CDN : terrain sans réseau). JS : `window.isSecureContext`
+  vérifié (caméra = HTTPS/localhost uniquement, message explicite
+  sinon), anti-doublon 3 s + verrou requête, bip WebAudio, liste des
+  scannés, « Terminer » → fiche contrôle. Endpoint : statuts
+  `ajoute` / `deja` (findByControleAndEquipement AVANT addEquipement,
+  qui retourne true même en doublon) / `hors_controle` (+ redirect
+  fiche équipement) / `introuvable` / 400 id invalide / 403 CSRF.
+  ⚠️ Hiérarchie des rôles par niveaux (Session::ROLE_LEVELS) :
+  SUPER_ADMIN ≥ CONTROLLEUR. Tests : 5 Integration
+  (`ControleScanControllerTest`).
+- **Release 1.0.0-beta.1** demandée par l'utilisateur : première
+  bêta fonctionnelle de test (tag `v1.0.0-beta.1`, `--prerelease`).
+
+- **Setup — listes préparées de catégories par activité** (2026-10-19,
+  décision produit) : nouvelle étape `categories` du setup entre
+  `club` et `final` (`step_club` redirige vers elle). Presets dans
+  `setup/includes/categories_presets.php` (Escalade : 12 catégories
+  fournies par l'utilisateur — HAR/DEG/ASS/MOU/COR/RAP/OUT/CAS/FIC/ANN/
+  SAE/MOS avec est_epi et duree_max_utilisation ; Alpinisme = même base
+  + PIO/CRA/CRG/BRO/SKI/CHA/ARV (piolet, crampons, corde de randonnée/
+  glacier, broche à glace, ski de randonnée, chaussures de ski, ARVA —
+  décision utilisateur) ; Spéléologie = 16 catégories — CAS/HAR/
+  BLO/BLP/DES/ETR/LON/COR/FIC/ANN/MOU/MOS/ECL/COM/SAC/OUT, réglages
+  EPI/durée max à faire valider par l'utilisateur). « Spéléologie »
+  ajouté aux activités de `step_club.php`. L'étape lit l'activité du club via
+  `ClubManager::findParameters()`, affiche un tableau à cases cochées
+  (toutes par défaut), insertion via `CategorieManager::save()`,
+  **idempotente** (skip si libellé déjà présent), lien « Passer » vers
+  final. Lien symbolique activité inconnue → liste Escalade.
+  ⚠️ Ne concerne que les NOUVELLES installations (SETUP_COMPLETE) —
+  pour une base existante, utiliser Administration → Catégories ou le
+  rattachement à l'import. Tests : 557 Unit (dont 4 garde-fous sur les
+  presets : complétude, codes/libellés uniques), 63 Integration.
 
 - **Lignes non conformes complètes + lots (nombre initial)** (2026-10-19,
   décisions produit) :

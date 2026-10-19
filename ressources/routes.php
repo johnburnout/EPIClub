@@ -156,6 +156,18 @@ $routes->add('controle_delete', new Route(
     [], [], '', [], ['POST']
 ));
 
+// Scan QR dans la page (caméra), sans ouvrir une nouvelle page à chaque
+// scan : ajout en AJAX au contrôle ouvert (décision produit 2026-10-19).
+$routes->add('controle_scan_page', new Route(
+    '/controles/scanner',
+    ['_controller' => 'Epiclub\\Controller\\ControleScanController', 'action' => 'page']
+));
+$routes->add('controle_scan_ajouter', new Route(
+    '/controles/scanner/ajouter',
+    ['_controller' => 'Epiclub\\Controller\\ControleScanController', 'action' => 'ajouter'],
+    [], [], '', [], ['POST']
+));
+
 
 // =====================================================================
 // ADMINISTRATEUR — Réglages du club

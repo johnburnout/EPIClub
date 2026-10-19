@@ -10,6 +10,43 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.0.0-beta.1] — 2026-10-19
+
+> Première **version bêta fonctionnelle de test** : l'application couvre
+> le cycle complet (installations assistées, acquisitions, import
+> Excel/CSV, équipements, contrôles, QR codes, scan intégré).
+
+### Added
+
+- **Scan QR dans la page — menu Contrôles → « Scanner un équipement »**
+  (décision produit 2026-10-19) : nouvelle page `/controles/scanner`
+  utilisant la caméra du téléphone sans ouvrir une nouvelle page à
+  chaque scan (bibliothèque `html5-qrcode` embarquée en local, aucune
+  dépendance réseau sur le terrain) :
+  - contrôleur avec un **contrôle ouvert** : chaque scan ajoute
+    l'équipement au contrôle **en AJAX sans quitter la page**, avec
+    confirmation visuelle et sonore, liste des équipements scannés et
+    bouton « Terminer » vers la fiche contrôle ; les doublons sont
+    signalés sans créer de ligne ;
+  - sans contrôle ouvert : redirection (même onglet) vers la fiche
+    équipement, comme le parcours `/qr/{id}` existant ;
+  - ⚠️ la caméra exige un contexte sécurisé (HTTPS ou localhost) :
+    la page le détecte et affiche un message explicite ;
+  - nouvel endpoint AJAX `POST /controles/scanner/ajouter`.
+
+- **Installeur — listes préparées de catégories par activité**
+  (décision produit 2026-10-19) : nouvelle étape « Catégories » entre
+  « Club » et « Final » du setup, qui propose une liste adaptée à
+  l'activité déclarée (Escalade : harnais, dégaine, assureur,
+  mousquetons, cordes, casque, cordelette, anneau de sangle, SAE,
+  outillage — avec code, EPI et durée max pré-renseignés ; Alpinisme :
+  même base + piolet, crampons, corde de randonnée/glacier, broche à
+  glace, ski de randonnée, chaussures de ski, ARVA ; Spéléologie :
+  casque, harnais, bloqueurs, descendeur, étriers, longe, corde,
+  cordelette, anneau de sangle, mousquetons, éclairage, combinaison,
+  sac, outillage) ; chaque ligne peut être décochée avant création, et
+  l'étape est idempotente (pas de doublon si la catégorie existe déjà).
+
 ## [v0.32.0] — 2026-10-19
 
 ### Added
