@@ -11,6 +11,15 @@
         </div>
         <div class="card-body">
             <p><strong>Version installée :</strong> <span class="badge bg-secondary">{{ current_version }}</span></p>
+            <p><strong>Canal de mise à jour :</strong>
+                {% if update_channel == 'beta' %}
+                    <span class="badge bg-warning text-dark">beta</span>
+                    <small class="text-muted">— les versions bêta (pré-releases) sont proposées. Réglage <code>UPDATE_CHANNEL</code> dans <code>.env.local.php</code>.</small>
+                {% else %}
+                    <span class="badge bg-success">stable</span>
+                    <small class="text-muted">— seules les versions stables sont proposées. Pour suivre les bêtas : <code>UPDATE_CHANNEL=beta</code> dans <code>.env.local.php</code>.</small>
+                {% endif %}
+            </p>
             <p><strong>Dernière version sur GitHub :</strong>
                 {% if latest_version %}
                     <span class="badge bg-info">{{ latest_version }}</span>

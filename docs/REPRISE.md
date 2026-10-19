@@ -1,8 +1,18 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-19 (session — import v2 complet : analyse + mapping, rattachement catégories, lignes non conformes complètes ; lots : nombre initial plafonné ; case « Durée maximum d'utilisation »)
+**Dernière mise à jour** : 2026-10-19 (session — canal de mise à jour : fix « la prod ne voit pas la bêta », UPDATE_CHANNEL stable/beta)
 **Version courante** : v1.0.0-beta.1
 **Branche** : `main` (travail direct)
+
+> **Note canal bêta** : l'endpoint GitHub `/releases/latest` ignore les
+> pré-releases — une instance en canal `stable` ne voit donc pas les
+> bêtas. Pour une instance de test : ajouter `UPDATE_CHANNEL=beta` dans
+> `.env.local.php`. Le cache de détection dure 1 h
+> (`var/tmp/update/latest_release.json[.beta]`) : supprimer ce fichier
+> pour forcer une re-détection. Pendant la phase bêta, les releases
+> GitHub ne sont plus marquées « prerelease » (la bêta vit dans le
+> numéro de version) — sinon le code déjà déployé ne verrait pas la
+> correction.
 
 ---
 

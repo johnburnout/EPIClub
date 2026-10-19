@@ -33,9 +33,12 @@ class AppUpdateController extends AbstractController
     protected function githubReleaseProvider(): GitHubReleaseProviderInterface
     {
         return new GitHubReleaseProvider(
-        self::GITHUB_REPO,
-        self::TEMP_DIR . '/latest_release.json',
+            self::GITHUB_REPO,
+            self::TEMP_DIR . '/latest_release.json',
             3600,
+            // Canal de mise à jour : « stable » (défaut) ou « beta »
+            // (pré-releases incluses) — lu depuis .env.local.php.
+            (string) $this->configProvider()->get('UPDATE_CHANNEL', 'stable'),
         );
     }
 
@@ -103,6 +106,11 @@ class AppUpdateController extends AbstractController
 
         $cleanupNeeded = is_dir(self::TEMP_DIR . '/extracted');
 
+        $canal = (string) $this->configProvider()->get('UPDATE_CHANNEL', 'stable');
+        if (!in_array($canal, GitHubReleaseProvider::CANAUX, true)) {
+            $canal = 'stable';
+        }
+
         return $this->render('update.twig', [
             'current_version' => $currentVersion,
             'latest_version' => $latestRelease ? $latestRelease['tag'] : null,
@@ -112,6 +120,7 @@ class AppUpdateController extends AbstractController
             'error' => $latestRelease === null ? 'Impossible de contacter GitHub.' : null,
             'csrf_token' => $csrfToken,
             'cleanup_needed' => $cleanupNeeded,
+            'update_channel' => $canal,
         ]);
     }
 

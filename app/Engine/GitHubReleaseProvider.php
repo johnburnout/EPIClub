@@ -11,14 +11,27 @@ namespace Epiclub\Engine;
  */
 final class GitHubReleaseProvider implements GitHubReleaseProviderInterface
 {
+    /** Canaux de mise à jour : stable = /releases/latest ; beta = pré-releases incluses. */
+    public const CANAUX = ['stable', 'beta'];
+
+    private readonly string $channel;
+
     public function __construct(
         private readonly string $repo,
         private readonly string $cacheFile,
         private readonly int $cacheTtl = 3600,
-    ) {}
+        string $channel = 'stable',
+    ) {
+        $this->channel = in_array($channel, self::CANAUX, true) ? $channel : 'stable';
+    }
 
     /**
      * {@inheritdoc}
+     *
+     * Canal « stable » : endpoint /releases/latest (qui ne retourne
+     * JAMAIS les pré-releases). Canal « beta » : liste des releases et
+     * sélection de la plus récente, pré-releases comprises — permet à
+     * une instance de test de suivre les versions bêta.
      */
     public function getLatestRelease(): ?array
     {
@@ -31,7 +44,74 @@ final class GitHubReleaseProvider implements GitHubReleaseProviderInterface
         }
 
         // 2. Appel HTTP
-        $url = 'https://api.github.com/repos/' . $this->repo . '/releases/latest';
+        if ($this->channel === 'beta') {
+            $releases = $this->fetchJson(
+                'https://api.github.com/repos/' . $this->repo . '/releases?per_page=10'
+            );
+            $release = is_array($releases) ? self::choisirPlusRecente($releases) : null;
+        } else {
+            $release = $this->fetchJson(
+                'https://api.github.com/repos/' . $this->repo . '/releases/latest'
+            );
+        }
+
+        if (!is_array($release)
+            || !isset($release['tag_name'], $release['zipball_url'])
+        ) {
+            return null;
+        }
+
+        // 3. Construire le résultat
+        //    ⚠️ FIX #45 : accepte body null (Release sans description)
+        $result = [
+            'tag'     => (string) $release['tag_name'],
+            'zip_url' => (string) $release['zipball_url'],
+            'body'    => (string) ($release['body'] ?? ''),
+        ];
+
+        $this->writeCache($result);
+
+        return $result;
+    }
+
+    /**
+     * Sélectionne la release la plus récente dans une liste de l'API
+     * /releases (pré-releases incluses, drafts exclus). Comparaison
+     * semver via version_compare (1.0.0-beta.2 > 1.0.0-beta.1, mais
+     * 1.0.0-beta.1 < 1.0.0). Publique et statique : testable sans HTTP.
+     *
+     * @param array<int, mixed> $releases
+     */
+    public static function choisirPlusRecente(array $releases): ?array
+    {
+        $meilleure = null;
+        $meilleureVersion = null;
+
+        foreach ($releases as $release) {
+            if (!is_array($release) || !empty($release['draft']) || empty($release['tag_name'])) {
+                continue;
+            }
+            $version = ltrim((string) $release['tag_name'], 'v');
+            // Ignorer les tags non numériques (ex. « latest », « doc »)
+            if (!preg_match('/^\d+\.\d+/', $version)) {
+                continue;
+            }
+            if ($meilleureVersion === null
+                || version_compare($version, $meilleureVersion, '>')) {
+                $meilleure = $release;
+                $meilleureVersion = $version;
+            }
+        }
+
+        return $meilleure;
+    }
+
+    /**
+     * Appel HTTP GET JSON vers l'API GitHub. Retourne null en cas
+     * d'échec (réseau, HTTP >= 400, JSON inattendu).
+     */
+    private function fetchJson(string $url): ?array
+    {
         $context = stream_context_create([
             'http' => [
                 'header' => "User-Agent: EPIClub-Update\r\n"
@@ -51,7 +131,7 @@ final class GitHubReleaseProvider implements GitHubReleaseProviderInterface
             return null;
         }
 
-        // 3. Vérifier le code HTTP
+        // Vérifier le code HTTP
         $httpCode = $this->extractHttpCode($http_response_header ?? []);
         if ($httpCode >= 400) {
             error_log(sprintf(
@@ -62,11 +142,8 @@ final class GitHubReleaseProvider implements GitHubReleaseProviderInterface
             return null;
         }
 
-        // 4. Décoder
-        $release = json_decode($data, true);
-        if (!is_array($release)
-            || !isset($release['tag_name'], $release['zipball_url'])
-        ) {
+        $decoded = json_decode($data, true);
+        if (!is_array($decoded)) {
             error_log(sprintf(
                 '[GitHubReleaseProvider] Unexpected GitHub API response: %s',
                 substr($data, 0, 300)
@@ -74,17 +151,7 @@ final class GitHubReleaseProvider implements GitHubReleaseProviderInterface
             return null;
         }
 
-        // 5. Construire le résultat
-        //    ⚠️ FIX #45 : accepte body null (Release sans description)
-        $result = [
-            'tag'     => (string) $release['tag_name'],
-            'zip_url' => (string) $release['zipball_url'],
-            'body'    => (string) ($release['body'] ?? ''),
-        ];
-
-        $this->writeCache($result);
-
-        return $result;
+        return $decoded;
     }
 
     /**
@@ -132,10 +199,23 @@ final class GitHubReleaseProvider implements GitHubReleaseProviderInterface
     // Cache interne
     // ==================================================================
 
+    /**
+     * Le cache est propre au canal : une instance qui bascule en
+     * « beta » ne doit pas relire le cache « stable » (qui masquerait
+     * les pré-releases jusqu'à expiration).
+     */
+    private function cacheFileEffectif(): string
+    {
+        return $this->channel === 'stable'
+            ? $this->cacheFile
+            : $this->cacheFile . '.' . $this->channel;
+    }
+
     private function isCacheFresh(): bool
     {
-        return is_file($this->cacheFile)
-            && (time() - filemtime($this->cacheFile) < $this->cacheTtl);
+        $fichier = $this->cacheFileEffectif();
+        return is_file($fichier)
+            && (time() - filemtime($fichier) < $this->cacheTtl);
     }
 
     /**
@@ -143,7 +223,7 @@ final class GitHubReleaseProvider implements GitHubReleaseProviderInterface
      */
     private function readCache(): ?array
     {
-        $raw = @file_get_contents($this->cacheFile);
+        $raw = @file_get_contents($this->cacheFileEffectif());
         if ($raw === false) {
             return null;
         }
@@ -167,11 +247,12 @@ final class GitHubReleaseProvider implements GitHubReleaseProviderInterface
      */
     private function writeCache(array $release): void
     {
-        $dir = dirname($this->cacheFile);
+        $fichier = $this->cacheFileEffectif();
+        $dir = dirname($fichier);
         if (!is_dir($dir)) {
             @mkdir($dir, 0755, true);
         }
-        @file_put_contents($this->cacheFile, json_encode($release));
+        @file_put_contents($fichier, json_encode($release));
     }
 
     /**

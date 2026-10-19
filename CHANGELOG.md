@@ -10,6 +10,24 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.0.0-beta.2] — 2026-10-19
+
+### Fixed
+
+- **Mise à jour applicative : les pré-releases étaient invisibles.**
+  L'endpoint GitHub `/releases/latest` ne retourne jamais les
+  pré-releases : une instance en v0.32.0 ne voyait donc pas la
+  v1.0.0-beta.1 (publiée en pré-release). Deux corrections :
+  - nouveau **canal de mise à jour** `UPDATE_CHANNEL` dans
+    `.env.local.php` : `stable` (défaut, comportement inchangé) ou
+    `beta` — en canal `beta`, l'updater liste les releases et choisit
+    la plus récente, **pré-releases incluses** (cache séparé par
+    canal pour ne pas masquer les bêtas) ;
+  - pendant la phase bêta, les releases ne sont **plus marquées
+    « prerelease »** sur GitHub (la bêta vit dans le numéro de
+    version, ex. `1.0.0-beta.2`) afin que les instances existantes
+    voient la correction.
+
 ## [v1.0.0-beta.1] — 2026-10-19
 
 > Première **version bêta fonctionnelle de test** : l'application couvre
