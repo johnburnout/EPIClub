@@ -7,6 +7,7 @@ namespace Epiclub\Tests\Unit\Controller;
 use Epiclub\Engine\GitHubReleaseProviderInterface;
 use Epiclub\Engine\Session;
 use Epiclub\Tests\Unit\Controller\Support\TestableAppUpdateController;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockBuilder;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
@@ -166,6 +167,135 @@ final class AppUpdateControllerTest extends TestCase
         $response = $controller->perform($request);
 
         self::assertStringContainsString('rejeté', $response->getContent());
+    }
+
+    // ==================================================================
+    // [audit 2026-10-19 F2] Copie de public/ lors de la mise à jour
+    //
+    // Reproduction : avant le correctif, 'public' figurait dans
+    // EXCLUDED_DIRS — index.php, .htaccess et assets d'une nouvelle
+    // release n'étaient jamais déployés.
+    // ==================================================================
+
+    public function testCopyFilesMetAJourLeDocrootPublic(): void
+    {
+        [$source, $cible] = $this->arborescencesDeTest();
+
+        $this->makeControllerWith($this->makeProviderMock())->copyFilesForTest($source, $cible);
+
+        self::assertStringEqualsFile($cible . '/public/index.php', '<?php // v2');
+        self::assertStringEqualsFile($cible . '/public/.htaccess', 'Require all granted # v2');
+        self::assertStringEqualsFile($cible . '/public/assets/css/nouveau.css', 'body{}');
+        self::assertStringEqualsFile($cible . '/public/images/.htaccess', 'Require all denied # v2');
+        self::assertStringEqualsFile($cible . '/app/Fichier.php', '<?php // v2');
+
+        $this->supprimer(dirname($source));
+    }
+
+    public function testCopyFilesNeTouchePasAuxDonneesUtilisateur(): void
+    {
+        [$source, $cible] = $this->arborescencesDeTest();
+
+        $this->makeControllerWith($this->makeProviderMock())->copyFilesForTest($source, $cible);
+
+        // Photo existante : non écrasée
+        self::assertStringEqualsFile($cible . '/public/images/equipements/photo.webp', 'PHOTO DU CLUB');
+        // Images livrées par la release (photos de démo suivies par git) : non ajoutées
+        self::assertFileDoesNotExist($cible . '/public/images/equipements/demo.webp');
+        self::assertFileDoesNotExist($cible . '/public/images/Harnais-demo.webp');
+        self::assertFileDoesNotExist($cible . '/public/images/qrcodes/equipement_1.png');
+        // Exclusions historiques toujours actives
+        self::assertStringEqualsFile($cible . '/.env.local.php', '<?php return ["SECRET" => "prod"];');
+        self::assertStringEqualsFile($cible . '/version.txt', 'v1.0.0');
+        self::assertFileDoesNotExist($cible . '/var/tmp/x');
+        self::assertFileDoesNotExist($cible . '/vendor/autoload.php');
+        self::assertFileDoesNotExist($cible . '/setup/install.php');
+
+        $this->supprimer(dirname($source));
+    }
+
+    #[DataProvider('cheminsProvider')]
+    public function testIsExcluded(string $chemin, bool $exclu): void
+    {
+        self::assertSame($exclu, $this->makeControllerWith($this->makeProviderMock())->isExcludedForTest($chemin));
+    }
+
+    public static function cheminsProvider(): array
+    {
+        return [
+            'index.php'                    => ['public/index.php', false],
+            'public/.htaccess'             => ['public/.htaccess', false],
+            'assets'                       => ['public/assets/js/html5-qrcode.min.js', false],
+            'images/.htaccess'             => ['public/images/.htaccess', false],
+            'sous-dossier .htaccess'       => ['public/images/equipements/.htaccess', false],
+            'dossier images'               => ['public/images', true],
+            'photo équipement'             => ['public/images/equipements/a.webp', true],
+            'image catégorie'              => ['public/images/Harnais-1.webp', true],
+            'qr code'                      => ['public/images/qrcodes/equipement_1.png', true],
+            'faux préfixe images'          => ['public/imagesX/a.php', false],
+            'env'                          => ['.env.local.php', true],
+            'vendor'                       => ['vendor/autoload.php', true],
+            'setup'                        => ['setup/install.php', true],
+            'app'                          => ['app/bootstrap.php', false],
+        ];
+    }
+
+    /**
+     * Crée une release extraite (source) et une installation existante (cible).
+     *
+     * @return array{0: string, 1: string}
+     */
+    private function arborescencesDeTest(): array
+    {
+        $base = sys_get_temp_dir() . '/epiclub_maj_' . bin2hex(random_bytes(4));
+        $source = $base . '/release';
+        $cible = $base . '/installation';
+
+        $release = [
+            'public/index.php'                       => '<?php // v2',
+            'public/.htaccess'                       => 'Require all granted # v2',
+            'public/assets/css/nouveau.css'          => 'body{}',
+            'public/images/.htaccess'                => 'Require all denied # v2',
+            'public/images/Harnais-demo.webp'        => 'DEMO',
+            'public/images/equipements/photo.webp'   => 'PHOTO DE DEMO',
+            'public/images/equipements/demo.webp'    => 'DEMO',
+            'public/images/qrcodes/equipement_1.png' => 'QR',
+            'app/Fichier.php'                        => '<?php // v2',
+            '.env.local.php'                         => '<?php return ["SECRET" => "release"];',
+            'version.txt'                            => 'v2.0.0',
+            'var/tmp/x'                              => 'x',
+            'vendor/autoload.php'                    => '<?php',
+            'setup/install.php'                      => '<?php',
+        ];
+        $installation = [
+            'public/index.php'                     => '<?php // v1',
+            'public/.htaccess'                     => 'Require all granted # v1',
+            'public/images/equipements/photo.webp' => 'PHOTO DU CLUB',
+            'app/Fichier.php'                      => '<?php // v1',
+            '.env.local.php'                       => '<?php return ["SECRET" => "prod"];',
+            'version.txt'                          => 'v1.0.0',
+        ];
+
+        foreach ([$source => $release, $cible => $installation] as $racine => $fichiers) {
+            foreach ($fichiers as $chemin => $contenu) {
+                @mkdir(dirname($racine . '/' . $chemin), 0700, true);
+                file_put_contents($racine . '/' . $chemin, $contenu);
+            }
+        }
+
+        return [$source, $cible];
+    }
+
+    private function supprimer(string $dir): void
+    {
+        $it = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($dir, \RecursiveDirectoryIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST
+        );
+        foreach ($it as $f) {
+            $f->isDir() ? rmdir($f->getPathname()) : unlink($f->getPathname());
+        }
+        rmdir($dir);
     }
 
     // ==================================================================

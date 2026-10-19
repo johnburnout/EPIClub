@@ -21,10 +21,21 @@ class AppUpdateController extends AbstractController
     private const GITHUB_REPO = 'johnburnout/EPIClub';
     private const VERSION_FILE = __DIR__ . '/../../version.txt';
     private const TEMP_DIR = __DIR__ . '/../../var/tmp/update';
-    // [SÉCURITÉ — audit C1] 'public' est exclu de la copie : le zip ne
-    // doit JAMAIS pouvoir écrire dans le docroot (sinon un zip
-    // compromis dépose un shell.php directement exécutable).
-    private const EXCLUDED_DIRS = ['var', 'vendor', '.git', '_storage', 'config', 'setup', 'public'];
+    // [audit 2026-10-19 F2] 'public' n'est PLUS exclu : l'exclure
+    // empêchait toute mise à jour de index.php, des .htaccess et des
+    // assets (le durcissement public/.htaccess de la beta.4 n'atteignait
+    // jamais les instances mises à jour). L'exclusion n'apportait pas de
+    // vraie protection : app/ est copié et exécuté de toute façon. La
+    // protection contre un zip compromis relève de la vérification
+    // d'intégrité de l'archive (audit S3), pas de cette liste.
+    private const EXCLUDED_DIRS = ['var', 'vendor', '.git', '_storage', 'config', 'setup'];
+
+    // [audit 2026-10-19 F2] Données des utilisateurs dans le docroot
+    // (photos d'équipement, QR codes, images de catégorie) : jamais
+    // écrasées ni complétées par une release. Seuls les .htaccess de
+    // protection de ce dossier sont mis à jour.
+    private const USER_DATA_DIR = 'public/images';
+    private const USER_DATA_ALLOWED_FILES = ['.htaccess'];
     private const EXCLUDED_FILES = ['.env', '.env.local', '.env.local.php', 'version.txt'];
     
     /**
@@ -366,7 +377,11 @@ class AppUpdateController extends AbstractController
         }
     }
 
-    private function copyFiles(string $source, string $target): void
+    /**
+     * Copie récursive de la release extraite vers l'installation, en
+     * respectant isExcluded(). Protected : testable en Unit.
+     */
+    protected function copyFiles(string $source, string $target): void
     {
         $iterator = new \RecursiveIteratorIterator(
             new \RecursiveDirectoryIterator($source, \RecursiveDirectoryIterator::SKIP_DOTS),
@@ -395,8 +410,17 @@ class AppUpdateController extends AbstractController
         }
     }
 
-    private function isExcluded(string $path): bool
+    protected function isExcluded(string $path): bool
     {
+        $path = ltrim(str_replace('\\', '/', $path), '/');
+
+        // [audit 2026-10-19 F2] Dossier de données utilisateur du docroot :
+        // le dossier lui-même et ses sous-dossiers sont ignorés (copyFiles
+        // crée les parents nécessaires), seuls les .htaccess passent.
+        if ($path === self::USER_DATA_DIR || str_starts_with($path, self::USER_DATA_DIR . '/')) {
+            return !in_array(basename($path), self::USER_DATA_ALLOWED_FILES, true);
+        }
+
         foreach (self::EXCLUDED_DIRS as $dir) {
             if (strpos($path, $dir . '/') === 0 || $path === $dir) {
                 return true;

@@ -43,6 +43,17 @@ final class TestableAppUpdateController extends AppUpdateController
         return $this->configProviderMock ?? parent::configProvider();
     }
 
+    /** [audit 2026-10-19 F2] Accès de test à la copie de la release. */
+    public function copyFilesForTest(string $source, string $target): void
+    {
+        $this->copyFiles($source, $target);
+    }
+
+    public function isExcludedForTest(string $path): bool
+    {
+        return $this->isExcluded($path);
+    }
+
     public function databaseDsnForTest(): string
     {
         return $this->databaseDsn();
