@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
 **Dernière mise à jour** : 2026-10-19 (session — import v2 : analyse + mapping colonnes, règles métier dates/lot/groupement ; case « Durée maximum d'utilisation » ; adaptation au fichier d'inventaire réel : détection ligne d'en-tête + alias + délimiteur CSV)
-**Version courante** : v0.31.0
+**Version courante** : v0.31.1
 **Branche** : `main` (travail direct)
 
 ---
@@ -16,6 +16,7 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
+| v0.31.1 | — | Import : détection auto de la ligne d'en-tête (fichier réel : en-tête ligne 4) + alias (EPI, stock théorique, HA- Périme) + sniffing délimiteur CSV + 4 tests | `792a37d` |
 | v0.31.0 | — | Import v2 (analyse + mapping colonnes, lignes non conformes prévenantes, dates année seule, lot auto si nombre>1, groupement par date sans facture, mise en service) + case « Durée maximum d'utilisation » (catégorie/équipement) + 16 tests | `7b505bd` |
 | v0.30.0 | — | Référencement automatique (modèle global YY/CAT/N, code catégorie) + import/export Excel/CSV d'acquisitions (groupes par facture auto-validées) + facture après coup + 43 tests | `ef5ec52` |
 | v0.29.20 | — | Scan QR non connecté : vérification utilisateur avant deniAccess (?redirect= réellement émis) ; fixture deleteAcquisition robuste (FK controle_ligne) + 1 test Unit | `<hash>` |
