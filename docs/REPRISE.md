@@ -1066,6 +1066,41 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 
 ## Contexte de la session précédente
 
+- **Lignes non conformes complètes + lots (nombre initial)** (2026-10-19,
+  décisions produit) :
+  - à l'analyse, chaque ligne non conforme est affichée avec son
+    **contenu complet** (`lignes_non_conformes[].donnees`) ;
+  - **lot** : migration `008_nombre_initial` (`club_equipement
+    .nombre_initial` INT NOT NULL DEFAULT 1, backfill = nombre pour les
+    lots existants) ; le code technique d'un lot ne contient **plus le
+    suffixe `-LOT`** (`-001` comme une unité) ; fiche équipement :
+    nombre initial en lecture seule + **nombre actuel modifiable entre
+    1 et nombre_initial** (plafond vérifié serveur dans
+    `EquipementController::edit`, clé d'erreur `nombre`) ; fiche détail
+    : « X restants sur Y initiaux » ; liste des équipements : badge
+    « Lot : X/Y » dans la colonne Nom ; `EquipementManager` : ALLOWED_
+    FIELDS += nombre_initial, défaut _create = nombre saisi.
+  Tests : 553 Unit, 63 Integration (nouveau fichier
+  `EquipementControllerEditLotTest`, 5 tests).
+
+- **Import — rattachement des catégories inconnues** (2026-10-19,
+  décision produit) : à l'étape d'analyse, chaque catégorie du fichier
+  non résolue (ni code ni libellé) propose un select « Créer la
+  catégorie » (défaut) / « Rattacher à : … » (catégories existantes).
+  Implémentation : `analyser()` collecte `categories_fichier`
+  (distinctes, pur — pas de DB), `enrichirCategories()` (DB : résolution
+  + liste existantes) appelé par le contrôleur, `import()` reçoit
+  `$choixCategories` (valeur → 'nouvelle'|id, id vérifié en base,
+  sinon résolution normale), `trouverCategorie()` factorisé. Template :
+  section « Catégories du fichier » (✓ résolue / select sinon).
+  Tests : 553 Unit, 58 Integration (dont rattachement end-to-end).
+  ⚠️ La base de dev a été **réinstallée** par l'utilisateur le
+  2026-10-19 (user `jean` SUPER_ADMIN, 6 vraies catégories) : compte
+  `admin`/`adminadmin` recréé pour la fixture Integration, et
+  **SECRET_KEY régénérée** dans `.env.local.php` (absente après
+  réinstall — 2 tests skippaient, l'app aurait planté sur le chiffrement
+  des remarques de contrôle).
+
 - **Import — adaptation au fichier d'inventaire réel** (2026-10-19,
   suite v0.31.0) : le fichier réel du club (« EPI au 25 juin 2026.xlsx »)
   a l'en-tête en **ligne 4** (titre fusionné + lignes vides au-dessus)

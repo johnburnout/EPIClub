@@ -134,7 +134,14 @@
             {% for equipement in equipements %}
                 <tr>
                     <td>{{ equipement.reference }}</td>
-                    <td>{{ equipement.libelle }}</td>
+                    <td>
+                        {{ equipement.libelle }}
+                        {% if equipement.nombre_initial is defined and equipement.nombre_initial > 1 %}
+                            <span class="badge bg-info text-dark" title="Lot : {{ equipement.nombre }} élément(s) restant(s) sur {{ equipement.nombre_initial }} initiaux">
+                                Lot : {{ equipement.nombre }}/{{ equipement.nombre_initial }}
+                            </span>
+                        {% endif %}
+                    </td>
                     <td>
                         {% if equipement.photo %}
                             <img src="{{ equipement.photo }}" alt="Photo" style="max-width: 50px; max-height: 50px;" class="img-thumbnail">

@@ -111,6 +111,12 @@ final class AcquisitionImportServiceTest extends TestCase
         self::assertStringContainsString('catégorie', $parLigne[4]);
         self::assertStringContainsString('nombre', $parLigne[5]);
         self::assertStringContainsString("date d'achat", $parLigne[6]);
+
+        // Le contenu complet de chaque ligne non conforme est fourni
+        // pour vérification avant import (décision produit 2026-10-19).
+        $donneesParLigne = array_column($analyse['lignes_non_conformes'], 'donnees', 'ligne');
+        self::assertSame(['', 'Cordes', '1', '2019'], $donneesParLigne[3]);
+        self::assertSame('nimporte', $donneesParLigne[6][3]);
     }
 
     public function testAnalyserLignesVidesIgnoreesSilencieusement(): void
@@ -165,6 +171,22 @@ final class AcquisitionImportServiceTest extends TestCase
 
         self::assertNotNull($rapport['erreur_globale']);
         self::assertStringContainsString('plusieurs colonnes', $rapport['erreur_globale']);
+    }
+
+    public function testAnalyserCollecteLesCategoriesDistinctes(): void
+    {
+        $fichier = $this->csv(implode("\n", [
+            'designation;categorie;nombre',
+            'Corde;Cordes;2',
+            'Casque;Casques;1',
+            'Autre corde;Cordes;1',
+            ';Cordes;1', // non conforme, mais catégorie déjà collectée
+            '',
+        ]));
+
+        $analyse = $this->service->analyser($fichier);
+
+        self::assertSame(['Cordes', 'Casques'], $analyse['categories_fichier']);
     }
 
     public function testAnalyserDetecteEnteteAuDelaDeLaLigne1(): void

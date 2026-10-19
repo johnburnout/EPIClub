@@ -120,15 +120,16 @@ Ils sont générés automatiquement à partir des **factures d'acquisition** val
 1. Aller dans **Administration → Acquisitions**, cliquer sur **« Importer (Excel / CSV) »** et envoyer un fichier Excel (`.xlsx`, `.xls`) ou CSV. La **ligne d'en-tête est détectée automatiquement** (dans les 10 premières lignes) : les lignes au-dessus (titre, lignes vides…) sont ignorées.
 2. L'écran **d'analyse** s'affiche alors :
    - pour chaque colonne du fichier, choisissez le **champ correspondant** (une correspondance est proposée automatiquement d'après l'en-tête ; vous pouvez la modifier ou ignorer la colonne) ;
+   - pour chaque **catégorie du fichier inconnue** de la base, choisissez une **catégorie existante à laquelle la rattacher**, ou laissez « Créer la catégorie » (choix par défaut) ;
    - un **aperçu des premières lignes** permet de vérifier ;
-   - les **lignes non conformes** (données incompatibles avec le champ de la colonne, cellules fusionnées…) sont listées : elles **seront ignorées** si vous poursuivez ;
+   - les **lignes non conformes** (données incompatibles avec le champ de la colonne, cellules fusionnées…) sont listées **avec leur contenu complet** : elles **seront ignorées** si vous poursuivez ;
    - validez pour lancer l'import.
 
 **Champs reconnus :** `reference` (optionnelle — vide ⇒ référence automatique selon le modèle, ex. `25COR005`), `designation` et `categorie` (**requis**), `nombre`, `date_achat`, `date_peremption`, `facture_reference`, `fournisseur`.
 
 **Règles de l'import :**
 
-- **`categorie`** : le **code** de la catégorie (ex. `TCI`) est reconnu, sinon son libellé, sinon une nouvelle catégorie est créée ;
+- **`categorie`** : le **code** de la catégorie (ex. `TCI`) est reconnu, sinon son libellé ; si la catégorie est inconnue, l'écran d'analyse propose de la **rattacher à une catégorie existante** ou de la créer ;
 - **`nombre` > 1** ⇒ les unités sont regroupées en un **lot** (un seul équipement) ;
 - **dates** : si seule l'année est indiquée ⇒ 1er janvier (date d'achat) / 31 décembre (date de péremption) ; date d'achat vide ⇒ date du jour ; date de péremption vide ⇒ pas de limite ;
 - **groupement en acquisitions** : les lignes d'une même `facture_reference` sont groupées dans **une même acquisition, automatiquement validée** ; sans référence de facture, les équipements de **même date d'achat** sont groupés ensemble ;
@@ -152,8 +153,9 @@ Ils sont générés automatiquement à partir des **factures d'acquisition** val
 - Mettre à jour les **dates** (mise en service, fin d’utilisation)
 - Changer le **statut** (Disponible, En maintenance, Hors service)
 - Changer l’**état d’usure** (si défini)
+- Pour un **lot** : ajuster le **nombre actuel d'éléments**, entre 1 et le **nombre initial** du lot (affiché, non modifiable) — par exemple lorsque des éléments du lot sont perdus ou retirés.
 
-> **Important :** la référence, le code et la catégorie ne sont **pas modifiables** car ils sont hérités de l’acquisition.
+> **Important :** la référence, le code et la catégorie ne sont **pas modifiables** car ils sont hérités de l’acquisition. Le nombre initial d'un lot ne l'est pas non plus.
 
 ---
 

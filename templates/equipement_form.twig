@@ -65,6 +65,25 @@
 			<small class="text-muted">Le code est généré automatiquement.</small>
 		</div>
 
+		<!-- Lot : nombre d'éléments (modifiable, plafonné au nombre initial) -->
+		{% if equipement.nombre_initial is defined and equipement.nombre_initial > 1 %}
+			<div class="mb-3">
+				<label>Nombre initial du lot</label>
+				<input type="text" class="form-control" value="{{ equipement.nombre_initial }}" readonly disabled>
+				<small class="text-muted">Nombre d'éléments du lot à la création — non modifiable.</small>
+			</div>
+			<div class="mb-3">
+				<label for="nombre">Nombre actuel d'éléments</label>
+				<input type="number" class="form-control {% if form_errors.nombre is defined and form_errors.nombre %}is-invalid{% endif %}"
+				       id="nombre" name="nombre" min="1" max="{{ equipement.nombre_initial }}"
+				       value="{{ equipement.nombre }}">
+				<small class="text-muted">Entre 1 et {{ equipement.nombre_initial }} (nombre initial du lot).</small>
+				{% if form_errors.nombre is defined and form_errors.nombre %}
+					<div class="invalid-feedback d-block">{{ form_errors.nombre }}</div>
+				{% endif %}
+			</div>
+		{% endif %}
+
 		<!-- Date de mise en service (modifiable si vide) -->
 		<div class="mb-3">
 			<label for="date_mise_en_service">Date de mise en service</label>

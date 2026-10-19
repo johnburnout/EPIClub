@@ -10,6 +10,35 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v0.32.0] — 2026-10-19
+
+### Added
+
+- **Import — rattachement des catégories inconnues** (décision produit
+  2026-10-19) : à l'étape d'analyse, chaque catégorie du fichier qui ne
+  correspond à aucune catégorie existante (ni par code ni par libellé)
+  propose un **choix : rattacher à une catégorie existante ou créer la
+  nouvelle catégorie** (comportement par défaut). Les catégories déjà
+  résolues sont affichées avec leur code.
+- **Import — lignes non conformes affichées en entier** : à l'étape
+  d'analyse, chaque ligne non conforme est présentée avec son
+  **contenu complet** (toutes les colonnes) pour vérification avant
+  lancement.
+- **Lots — nombre initial conservé et plafond** (décision produit
+  2026-10-19) : nouvelle colonne `club_equipement.nombre_initial`
+  (migration `008_nombre_initial.sql`) ; la fiche équipement d'un lot
+  affiche le nombre initial (non modifiable) et permet de modifier le
+  **nombre actuel entre 1 et le nombre initial** (plafond vérifié
+  côté serveur) ; la fiche détail affiche « X restants sur Y initiaux »
+  et la **liste des équipements affiche un badge « Lot : X/Y »** sur
+  les lignes concernées.
+
+### Changed
+
+- **Code des lots sans suffixe « LOT »** : le code technique d'un lot
+  se termine désormais par `-001` comme une unité (les codes existants
+  ne sont pas réécrits).
+
 ## [v0.31.1] — 2026-10-19
 
 ### Added

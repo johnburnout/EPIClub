@@ -34,8 +34,9 @@ use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
  *  - date d'achat : année seule → 1er janvier, vide → date courante ;
  *  - date de péremption : année seule → 31 décembre, vide → sans
  *    objet ; reportée sur club_equipement.date_fin_utilisation ;
- *  - catégorie : résolue par CODE (ex. COR), sinon par libellé, sinon
- *    créée ;
+ *  - catégorie : résolue par CODE (ex. COR), sinon par libellé ; si
+ *    inconnue, l'étape d'analyse propose de la rattacher à une
+ *    catégorie existante ou de la créer ;
  *  - nombre > 1 → la ligne est un LOT (un seul équipement, quantité =
  *    nombre) : une ligne = un équipement = une référence (forcée si la
  *    colonne reference est remplie, automatique sinon) ;
@@ -127,7 +128,8 @@ class AcquisitionImportService
      *   apercu: array<int, array<int, string>>,
      *   ligne_entete: int,
      *   nb_lignes: int,
-     *   lignes_non_conformes: array<int, array{ligne:int, raison:string}>
+     *   categories_fichier: string[],
+     *   lignes_non_conformes: array<int, array{ligne:int, raison:string, donnees:string[]}>
      * }
      */
     public function analyser(string $cheminFichier): array
@@ -138,6 +140,7 @@ class AcquisitionImportService
             'apercu' => [],
             'ligne_entete' => 1,
             'nb_lignes' => 0,
+            'categories_fichier' => [],
             'lignes_non_conformes' => [],
         ];
 
@@ -210,9 +213,24 @@ class AcquisitionImportService
             // Contrôle de conformité selon la correspondance proposée
             $donnees = $this->extraireLigne($ligneBrute, $mapping);
             if ($donnees !== null) {
+                // Catégories distinctes du fichier (pour le choix de
+                // rattachement à l'étape d'analyse — décision 2026-10-19)
+                if ($donnees['categorie'] !== ''
+                    && !in_array($donnees['categorie'], $analyse['categories_fichier'], true)) {
+                    $analyse['categories_fichier'][] = $donnees['categorie'];
+                }
                 $erreur = $this->validerLigne($donnees);
                 if ($erreur !== null) {
-                    $analyse['lignes_non_conformes'][] = ['ligne' => $numero, 'raison' => $erreur];
+                    // La ligne est présentée COMPLÈTE pour vérification
+                    // avant import (décision produit 2026-10-19).
+                    $analyse['lignes_non_conformes'][] = [
+                        'ligne' => $numero,
+                        'raison' => $erreur,
+                        'donnees' => array_map(
+                            static fn($v) => is_scalar($v) ? trim((string) $v) : '',
+                            $ligneBrute
+                        ),
+                    ];
                 }
             }
         }
@@ -229,6 +247,8 @@ class AcquisitionImportService
      * Importe le fichier avec la correspondance validée.
      *
      * @param array<int, string> $mapping index de colonne => champ (CHAMPS)
+     * @param array<string, string> $choixCategories valeur du fichier =>
+     *        'nouvelle' ou id de catégorie existante (décision 2026-10-19)
      * @return array{
      *   erreur_globale: ?string,
      *   lignes_lues: int,
@@ -238,7 +258,7 @@ class AcquisitionImportService
      *   notes: string[]
      * }
      */
-    public function import(string $cheminFichier, int $userId, array $mapping): array
+    public function import(string $cheminFichier, int $userId, array $mapping, array $choixCategories = []): array
     {
         $rapport = [
             'erreur_globale' => null,
@@ -347,7 +367,7 @@ class AcquisitionImportService
 
         // --- Création des acquisitions (une par groupe) ---
         foreach ($groupes as $groupe) {
-            $this->importerGroupe($groupe, $userId, $rapport);
+            $this->importerGroupe($groupe, $userId, $rapport, $choixCategories);
         }
 
         return $rapport;
@@ -357,7 +377,7 @@ class AcquisitionImportService
     // Groupe (une facture ou une date d'achat = une acquisition validée)
     // ==================================================================
 
-    private function importerGroupe(array $groupe, int $userId, array &$rapport): void
+    private function importerGroupe(array $groupe, int $userId, array &$rapport, array $choixCategories = []): void
     {
         $factureReference = $groupe['facture_reference'];
 
@@ -393,7 +413,7 @@ class AcquisitionImportService
                     'acquisition_id' => $acquisitionId,
                     'reference' => $referenceLigne,
                     'designation' => $ligne['designation'],
-                    'categorie_id' => $this->resoudreCategorieId($ligne['categorie']),
+                    'categorie_id' => $this->resoudreCategorieId($ligne['categorie'], $choixCategories),
                     'nombre' => $ligne['nombre'],
                     'regrouper_en_lot' => $ligne['lot'],
                     'reference_forcee' => $ligne['reference'] !== '' ? $ligne['reference'] : null,
@@ -430,25 +450,29 @@ class AcquisitionImportService
     }
 
     /**
-     * Résout la catégorie d'une ligne : par CODE (ex. COR), sinon par
-     * libellé, sinon création (décision produit 2026-10-19).
+     * Résout la catégorie d'une ligne : choix explicite de l'étape
+     * d'analyse (id existant), sinon par CODE (ex. COR), sinon par
+     * libellé, sinon création (décisions produit 2026-10-19).
+     *
+     * @param array<string, string> $choixCategories
      */
-    private function resoudreCategorieId(string $valeur): int
+    private function resoudreCategorieId(string $valeur, array $choixCategories = []): int
     {
         $manager = $this->categorieManager();
         $valeur = trim($valeur);
 
-        // 1. Par code (les codes sont en majuscules alnum)
-        $code = mb_strtoupper($valeur);
-        if (preg_match('/^[A-Z0-9]{2,8}$/', $code) === 1) {
-            $categorie = $manager->findOneByCriteria(['code' => $code]);
+        // 0. Choix explicite de l'utilisateur à l'étape d'analyse
+        $choix = $choixCategories[$valeur] ?? null;
+        if ($choix !== null && $choix !== 'nouvelle' && ctype_digit((string) $choix)) {
+            $categorie = $manager->findOneByCriteria(['id' => (int) $choix]);
             if ($categorie) {
                 return (int) $categorie['id'];
             }
+            // Id inconnu (formulaire forgé) → résolution normale
         }
 
-        // 2. Par libellé
-        $categorie = $manager->findOneByCriteria(['libelle' => $valeur]);
+        // 1. Par code, 2. par libellé
+        $categorie = $this->trouverCategorie($valeur);
         if ($categorie) {
             return (int) $categorie['id'];
         }
@@ -459,6 +483,57 @@ class AcquisitionImportService
             'libelle' => mb_substr($valeur, 0, 32),
             'est_epi' => 1,
         ]);
+    }
+
+    /**
+     * Recherche une catégorie existante : par CODE (ex. COR), sinon
+     * par libellé. Ne crée rien.
+     */
+    private function trouverCategorie(string $valeur): ?array
+    {
+        $manager = $this->categorieManager();
+        $valeur = trim($valeur);
+
+        // Par code (les codes sont en majuscules alnum)
+        $code = mb_strtoupper($valeur);
+        if (preg_match('/^[A-Z0-9]{2,8}$/', $code) === 1) {
+            $categorie = $manager->findOneByCriteria(['code' => $code]);
+            if ($categorie) {
+                return $categorie;
+            }
+        }
+
+        // Par libellé
+        $categorie = $manager->findOneByCriteria(['libelle' => $valeur]);
+        return $categorie ?: null;
+    }
+
+    /**
+     * Enrichit les catégories détectées dans le fichier pour l'écran
+     * d'analyse : résolution éventuelle (code/libellé) + liste des
+     * catégories existantes pour le choix de rattachement
+     * (décision produit 2026-10-19).
+     *
+     * @param string[] $valeurs  Catégories distinctes du fichier
+     * @return array{
+     *   categories: array<int, array{valeur:string, existante:?array}>,
+     *   existantes: array<int, array>
+     * }
+     */
+    public function enrichirCategories(array $valeurs): array
+    {
+        $categories = [];
+        foreach ($valeurs as $valeur) {
+            $categories[] = [
+                'valeur' => $valeur,
+                'existante' => $this->trouverCategorie($valeur),
+            ];
+        }
+
+        return [
+            'categories' => $categories,
+            'existantes' => $this->categorieManager()->findAll('libelle'),
+        ];
     }
 
     // ==================================================================

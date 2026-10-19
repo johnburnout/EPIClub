@@ -128,6 +128,9 @@ final class AcquisitionImportTest extends AbstractControllerTestCase
         self::assertSame('2031-12-31', $lot['date_fin_utilisation'], 'Péremption année seule → 31 décembre');
         self::assertSame('2019-01-01', $lot['date_mise_en_service'], 'Mise en service = date facture');
         self::assertMatchesRegularExpression('/^19TCI[0-9]{3}$/', $lot['reference'], 'Référence auto (modèle, année 2019)');
+        self::assertStringNotContainsString('LOT', $lot['code'], 'Pas de suffixe LOT dans le code (2026-10-19)');
+        self::assertSame('2', (string) $lot['nombre_initial'], 'Nombre initial du lot conservé (plafond)');
+        self::assertSame('1', (string) $equipementsA[1]['nombre_initial'], 'Unité : nombre initial = 1');
 
         // Ligne 2 : référence forcée, pas de péremption
         $mousqueton = $equipementsA[1];
@@ -172,6 +175,54 @@ final class AcquisitionImportTest extends AbstractControllerTestCase
         $acq = $this->acquisitionParReference('IMP-' . date('Y-m-d'));
         self::assertNotNull($acq, 'Date vide → date courante, groupe IMP-date du jour');
         self::assertSame(date('Y-m-d'), $acq['facture_date']);
+    }
+
+    public function testImportCategorieInconnueRattacheeAUneExistante(): void
+    {
+        // Catégorie cible pré-existante (décision produit 2026-10-19 :
+        // à l'analyse, une catégorie inconnue du fichier peut être
+        // rattachée à une existante au lieu d'être créée).
+        $pdo = $this->createPdo();
+        $pdo->prepare("INSERT INTO categorie (libelle, code, est_epi) VALUES (?, 'T5C', 1)")
+            ->execute(['TEST-IMP5-CIBLE-' . bin2hex(random_bytes(3))]);
+        $cibleId = (int) $pdo->lastInsertId();
+
+        $csv = implode("\n", [
+            'designation;categorie;date_achat',
+            'Corde;TEST-IMP5-INCONNUE;2019',
+            '',
+        ]);
+        $fichier = $this->makeTempFile($csv, 'csv');
+
+        // Étape 1 : l'analyse propose le choix de rattachement
+        $response = $this->client->postMultipart('/admin/acquisitions/import', [], ['fichier' => $fichier]);
+        self::assertSame(200, $response['status']);
+        $body = html_entity_decode($response['body'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        self::assertStringContainsString('Catégories du fichier', $body);
+        self::assertStringContainsString('Créer la catégorie', $body);
+        self::assertStringContainsString('categories[TEST-IMP5-INCONNUE]', $body);
+
+        // Étape 2 : rattachement explicite à la catégorie existante
+        $response = $this->client->post('/admin/acquisitions/import', [
+            'confirmation' => '1',
+            'mapping' => [0 => 'designation', 1 => 'categorie', 2 => 'date_achat'],
+            'categories' => ['TEST-IMP5-INCONNUE' => (string) $cibleId],
+        ]);
+
+        self::assertSame(200, $response['status'], 'Rapport attendu. Body: '
+            . substr(strip_tags($response['body']), 0, 500));
+
+        $acq = $this->acquisitionParReference('IMP-2019-01-01');
+        self::assertNotNull($acq);
+        $equipements = $this->equipementsDe((int) $acq['id']);
+        self::assertCount(1, $equipements);
+        self::assertSame($cibleId, (int) $equipements[0]['categorie_id'], 'Rattachée à la catégorie choisie');
+
+        // La catégorie inconnue n'a PAS été créée
+        self::assertSame(
+            0,
+            (int) $pdo->query("SELECT COUNT(*) FROM categorie WHERE libelle = 'TEST-IMP5-INCONNUE'")->fetchColumn()
+        );
     }
 
     public function testImportAvecEnteteDetecteAuDelaDeLaLigne1(): void

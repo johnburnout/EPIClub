@@ -88,6 +88,36 @@
 				</tbody>
 			</table>
 
+			{% if analyse.categories %}
+				<h6>Catégories du fichier</h6>
+				<p class="text-muted mb-1">
+					Pour chaque catégorie inconnue, choisissez une catégorie existante à laquelle la rattacher, ou créez-la.
+				</p>
+				<table class="table" style="max-width: 60rem;">
+					<tbody>
+						{% for categorie in analyse.categories %}
+							<tr>
+								<td><strong>{{ categorie.valeur }}</strong></td>
+								<td>
+									{% if categorie.existante %}
+										<span class="text-success">✓ catégorie existante :
+											« {{ categorie.existante.libelle }} »{% if categorie.existante.code %} ({{ categorie.existante.code }}){% endif %}
+										</span>
+									{% else %}
+										<select name="categories[{{ categorie.valeur }}]" class="form-select form-select-sm" style="max-width: 24rem;">
+											<option value="nouvelle" selected>➕ Créer la catégorie « {{ categorie.valeur }} »</option>
+											{% for existante in analyse.categories_existantes %}
+												<option value="{{ existante.id }}">Rattacher à : {{ existante.libelle }}{% if existante.code %} ({{ existante.code }}){% endif %}</option>
+											{% endfor %}
+										</select>
+									{% endif %}
+								</td>
+							</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			{% endif %}
+
 			{% if analyse.apercu %}
 				<h6>Aperçu des premières lignes</h6>
 				<div class="table-responsive" style="max-width: 60rem;">
@@ -109,7 +139,12 @@
 					(cases fusionnées, données incompatibles avec le champ de la colonne, champs obligatoires manquants…) :
 					<ul class="mb-0">
 						{% for ligne in analyse.lignes_non_conformes %}
-							<li>Ligne {{ ligne.ligne }} : {{ ligne.raison }}</li>
+							<li>
+								Ligne {{ ligne.ligne }} : {{ ligne.raison }}
+								{% if ligne.donnees is defined %}
+									<br><small class="text-muted">Contenu : {{ ligne.donnees|join(' | ') }}</small>
+								{% endif %}
+							</li>
 						{% endfor %}
 					</ul>
 				</div>

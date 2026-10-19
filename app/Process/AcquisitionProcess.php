@@ -147,8 +147,11 @@ class AcquisitionProcess
             };
 
             if ($regrouper_en_lot) {
+                // [MÉTIER] Pas de suffixe « LOT » dans le code
+                // (décision produit 2026-10-19) : le lot porte le n° 001
+                // de sa ligne, comme une unité.
                 $code = $annee . '-' . str_pad($ligne['acquisition_id'], 3, '0', STR_PAD_LEFT) . '-' .
-                        str_pad($ligne['id'], 3, '0', STR_PAD_LEFT) . '-LOT';
+                        str_pad($ligne['id'], 3, '0', STR_PAD_LEFT) . '-001';
                 while ($equipementManager->codeExists($code)) {
                     $code = $code . '-' . rand(10, 99);
                 }
@@ -166,6 +169,9 @@ class AcquisitionProcess
                     'date_mise_en_service' => null,
                     'date_fin_utilisation' => $datePeremption,
                     'nombre' => $ligne['nombre'],
+                    // [MÉTIER] Nombre initial du lot : plafond non
+                    // dépassable du nombre actuel (décision 2026-10-19).
+                    'nombre_initial' => $ligne['nombre'],
                     'est_epi' => $est_epi,
                     'duree_max_utilisation' => $dureeMax
                 ];
@@ -203,6 +209,7 @@ class AcquisitionProcess
                         'date_mise_en_service' => null,
                         'date_fin_utilisation' => $datePeremption,
                         'nombre' => 1,
+                        'nombre_initial' => 1,
                         'est_epi' => $est_epi,
                         'duree_max_utilisation' => $dureeMax
                     ];

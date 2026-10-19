@@ -16,6 +16,9 @@
 					<div class="col-md-6">
 						<p><strong>Référence :</strong> {{ equipement.reference }}</p>
 						<p><strong>Code :</strong> {{ equipement.code }}</p>
+						{% if equipement.nombre_initial is defined and equipement.nombre_initial > 1 %}
+							<p><strong>Lot :</strong> {{ equipement.nombre }} élément(s) restant(s) sur {{ equipement.nombre_initial }} initiaux</p>
+						{% endif %}
 						<p><strong>Catégorie :</strong> 
 							{% if equipement.categorie %}
 								{{ equipement.categorie.libelle }}

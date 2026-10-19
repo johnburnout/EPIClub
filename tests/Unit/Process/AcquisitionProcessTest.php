@@ -271,12 +271,14 @@ final class AcquisitionProcessTest extends TestCase
         
         $equipementManager = $this->makeEquipementManagerMock();
         $equipementManager->method('codeExists')->willReturn(false);
-        // Un seul équipement créé (lot)
+        // Un seul équipement créé (lot) — sans suffixe « LOT » dans le
+        // code, avec nombre_initial = plafond (décision 2026-10-19).
         $equipementManager->expects(self::once())
         ->method('save')
         ->with(self::callback(function (array $equipement): bool {
             return $equipement['nombre'] === 5
-            && str_ends_with($equipement['code'], '-LOT');
+            && $equipement['nombre_initial'] === 5
+            && str_ends_with($equipement['code'], '-001');
         }));
         
         $process = $this->makeProcessWith(

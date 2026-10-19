@@ -51,11 +51,13 @@ class AcquisitionImportController extends AbstractController
                     $erreur = "Le fichier analysé n'est plus disponible. Merci de le téléverser à nouveau.";
                 } else {
                     $mapping = $this->nettoyerMapping($request->request->all('mapping'));
+                    $choixCategories = $this->nettoyerChoixCategories($request->request->all('categories'));
                     try {
                         $rapport = $this->acquisitionImportService()->import(
                             $chemin,
                             (int) $this->session->get('user')['id'],
-                            $mapping
+                            $mapping,
+                            $choixCategories
                         );
                         if ($rapport['erreur_globale'] !== null) {
                             $erreur = $rapport['erreur_globale'];
@@ -91,6 +93,12 @@ class AcquisitionImportController extends AbstractController
                                 $analyse = null;
                                 @unlink($chemin);
                             } else {
+                                // Rattachement des catégories du fichier
+                                // (choix proposé à l'analyse — 2026-10-19)
+                                $enrichissement = $this->acquisitionImportService()
+                                    ->enrichirCategories($analyse['categories_fichier']);
+                                $analyse['categories'] = $enrichissement['categories'];
+                                $analyse['categories_existantes'] = $enrichissement['existantes'];
                                 // Le fichier reste disponible pour l'étape 2
                                 $this->session->set(self::SESSION_CLE, $chemin);
                             }
@@ -127,6 +135,28 @@ class AcquisitionImportController extends AbstractController
             $out[(int) $index] = array_key_exists((string) $champ, AcquisitionImportService::CHAMPS)
                 ? (string) $champ
                 : 'ignorer';
+        }
+        return $out;
+    }
+
+    /**
+     * Nettoie les choix de rattachement des catégories : valeur du
+     * fichier (chaîne) => 'nouvelle' ou id numérique (sinon ignoré).
+     *
+     * @return array<string, string>
+     */
+    private function nettoyerChoixCategories(array $choix): array
+    {
+        $out = [];
+        foreach ($choix as $valeur => $cible) {
+            $valeur = trim((string) $valeur);
+            $cible = trim((string) $cible);
+            if ($valeur === '') {
+                continue;
+            }
+            if ($cible === 'nouvelle' || (ctype_digit($cible) && (int) $cible > 0)) {
+                $out[$valeur] = $cible;
+            }
         }
         return $out;
     }

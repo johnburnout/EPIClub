@@ -382,6 +382,25 @@ class EquipementController extends AbstractController
             }
             
             if (empty($form_errors)) {
+                // [MÉTIER] Lot : le nombre d'éléments est modifiable
+                // mais plafonné au nombre initial (décision 2026-10-19).
+                $nombreInitial = (int) ($equipement['nombre_initial'] ?? 1);
+                $nombreLot = null;
+                if ($nombreInitial > 1) {
+                    $nombreRaw = $request->request->get('nombre');
+                    if (!is_string($nombreRaw) || !ctype_digit($nombreRaw)
+                        || (int) $nombreRaw < 1 || (int) $nombreRaw > $nombreInitial) {
+                        $form_errors['nombre'] = sprintf(
+                            'Le nombre d\'éléments du lot doit être compris entre 1 et %d (nombre initial).',
+                            $nombreInitial
+                        );
+                    } else {
+                        $nombreLot = (int) $nombreRaw;
+                    }
+                }
+            }
+
+            if (empty($form_errors)) {
                 // [SÉCURITÉ] Whitelist stricte du statut (ENUM BDD 0/1/2).
                 // Empêche un POST forgé de pousser une valeur arbitraire.
                 // ⚠️ On exige une string numérique stricte AVANT le cast :
@@ -420,6 +439,10 @@ class EquipementController extends AbstractController
                     // du POST = décochée).
                     'duree_max_utilisation' => $request->request->has('duree_max_utilisation') ? 1 : 0,
                 ];
+
+                if ($nombreLot !== null) {
+                    $equipementData['nombre'] = $nombreLot;
+                }
                 
                 if ($photoPath !== null) {
                     if (!empty($equipement['photo'])) {
