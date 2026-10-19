@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
 **Dernière mise à jour** : 2026-10-19 (session — canal bêta : fix visibilité pré-releases [beta.2] + réglage UPDATE_CHANNEL dans Paramètres système)
-**Version courante** : v1.0.0-beta.3
+**Version courante** : v1.0.0-beta.5
 **Branche** : `main` (travail direct)
 
 > **Note canal bêta** : l'endpoint GitHub `/releases/latest` ignore les
@@ -26,6 +26,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
+| v1.0.0-beta.5 | audit S1 S2 S4 S5 S7 F1 F2 | Upload image catégorie sûr (ImageUploader + .htaccess images) ; limitation des tentatives (migration 010) ; message reset unique ; redirection post-login stricte ; session resynchronisée à chaque requête + cookie durci ; archive de release complète (vendor/) + SHA-256 vérifié par l'updater ; updater met à jour public/ | `<hash>` |
+| v1.0.0-beta.4 | audit C1 C1bis C3 C5 C12 P1 P2 P34 | Correctifs du premier rapport d'audit (bloquants + élevés) | `1e1ef8a` |
 | v1.0.0-beta.3 | — | Canal de mise à jour paramétrable dans Paramètres système (sélecteur Stable/Bêta → UPDATE_CHANNEL, valeur invalide conservée) + factory environmentFilePath + 2 tests | `1945be5` |
 | v1.0.0-beta.2 | — | Fix updater : pré-releases invisibles (/releases/latest les ignore) — canal UPDATE_CHANNEL stable/beta + cache par canal + affichage du canal sur la page Mise à jour + 7 tests | `4d01e5b` |
 | v1.0.0-beta.1 | — | **1ʳᵉ bêta fonctionnelle de test** : scan QR intégré à la page (AJAX, sans quitter) + listes de catégories par activité dans le setup (escalade/spéléo/alpinisme) + 9 tests | `8a725f6` |

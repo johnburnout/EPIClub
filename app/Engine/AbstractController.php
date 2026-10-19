@@ -126,17 +126,52 @@ abstract class AbstractController
     }
 
     /**
-     * ✅ Met à jour uniquement last_activity, sans écraser les autres champs
+     * Synchronise l'utilisateur de la session avec la base, à chaque requête,
+     * puis met à jour last_activity (sans écraser les autres champs).
+     *
+     * [SÉCURITÉ — audit 2026-10-19 S5] Avant ce correctif, le rôle était
+     * copié en session à la connexion puis jamais relu : un utilisateur
+     * rétrogradé gardait ses droits, et un compte SUPPRIMÉ restait
+     * utilisable, tant que sa session vivait. Désormais :
+     *   - compte supprimé  → session utilisateur fermée immédiatement ;
+     *   - rôle / identité modifiés → session mise à jour immédiatement.
+     *
+     * Une seule connexion, une lecture (PUBLIC_FIELDS) et une écriture par
+     * requête : même coût qu'avant (l'écriture last_activity existait déjà).
      */
     protected function updateLastActivity()
     {
         $user = $this->session->get('user');
-        if ($user && isset($user['id'])) {
-            $manager = new UtilisateurManager();
-            $manager->updateLastActivity($user['id']);
+        if (!is_array($user) || !isset($user['id'])) {
+            return;
         }
+
+        $manager = $this->sessionUtilisateurManager();
+        $enBase = $manager->findPublicId((int) $user['id']);
+
+        if ($enBase === null) {
+            error_log(sprintf('[AbstractController] Session fermée : utilisateur id=%s supprimé.', $user['id']));
+            $this->session->remove('user');
+            return;
+        }
+
+        $aJour = array_merge($user, $enBase);
+        if ($aJour !== $user) {
+            $this->session->set('user', $aJour);
+        }
+
+        $manager->updateLastActivity((int) $user['id']);
     }
-    
+
+    /**
+     * Factory du manager utilisé pour la synchronisation de session —
+     * surchargée en test Unit.
+     */
+    protected function sessionUtilisateurManager(): UtilisateurManager
+    {
+        return new UtilisateurManager();
+    }
+
     /**
     * Détecte si PHP a tronqué le POST parce que post_max_size a été dépassé.
     * Dans ce cas, $_POST et $_FILES sont vides et le CSRF est indétectable.

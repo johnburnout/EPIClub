@@ -20,6 +20,22 @@ class AppUserAuthController extends AbstractController
         return new AppUserAuthenticator($this->session);
     }
 
+    /**
+     * [SÉCURITÉ — audit 2026-10-19 S4] Une cible de redirection n'est
+     * acceptée que si c'est un chemin LOCAL sans ambiguïté.
+     *
+     * L'ancienne garde (« commence par / mais pas // ») laissait passer
+     * « /\\evil.com » : les navigateurs lisent « /\\ » comme « // »,
+     * donc une redirection vers https://evil.com (hameçonnage). Désormais :
+     * liste blanche de caractères (aucun « \\ », espace ou caractère de
+     * contrôle), et ni « // » ni « /\\ » en tête.
+     */
+    public static function estRedirectionLocale(string $cible): bool
+    {
+        return strlen($cible) <= 2048
+            && preg_match('#^/(?![/\\\\])[A-Za-z0-9/_.~%?=&+\-]*$#', $cible) === 1;
+    }
+
     public function login(Request $request): Response
     {
         // Le token est généré par TwigRenderer lors du rendu du template.
@@ -70,7 +86,7 @@ class AppUserAuthController extends AbstractController
                         // rejette les URL absolues (https://…) et
                         // scheme-relative (//hôte) — anti open redirect.
                         $redirect = $request->query->get('redirect');
-                        if (is_string($redirect) && preg_match('#^/(?!/)#', $redirect)) {
+                        if (is_string($redirect) && self::estRedirectionLocale($redirect)) {
                             return new RedirectResponse($redirect);
                         }
 

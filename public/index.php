@@ -1,6 +1,7 @@
 <?php
 
 use Epiclub\Engine\Session;
+use Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -13,7 +14,20 @@ use Symfony\Component\Routing\Exception\MethodNotAllowedException;   // ← AJOU
 
 require __DIR__ . '/../app/bootstrap.php';
 
-$session = new Session();
+// [SÉCURITÉ — audit 2026-10-19 S5] Cookie de session durci explicitement
+// (sans dépendre de php.ini) : inaccessible au JavaScript (HttpOnly),
+// non envoyé par les requêtes intersites (SameSite=Lax), réservé à HTTPS
+// quand le site est servi en HTTPS ; identifiants de session non
+// initialisés refusés (strict mode, anti-fixation).
+$enHttps = (!empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off')
+    || (int) ($_SERVER['SERVER_PORT'] ?? 0) === 443;
+$session = new Session(new NativeSessionStorage([
+    'cookie_httponly'  => true,
+    'cookie_samesite'  => 'lax',
+    'cookie_secure'    => $enHttps,
+    'use_strict_mode'  => true,
+    'use_only_cookies' => true,
+]));
 $session->start();
 
 $flashes = $session->getFlashBag();
@@ -23,7 +37,6 @@ if (!$session->has('csrf_token')) {
 }
 
 $isLoggedIn = $session->has('user');
-$isAdmin = $isLoggedIn && $session->get('user')['role'] === 'admin';
 
 if (time() - $session->getMetadataBag()->getLastUsed() > Session::SESSION_LIFETIME) {
     $session->invalidate();

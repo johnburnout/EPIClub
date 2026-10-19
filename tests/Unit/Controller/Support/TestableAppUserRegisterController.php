@@ -44,4 +44,12 @@ final class TestableAppUserRegisterController extends AppUserRegisterController
     {
         return $this->mailerService;
     }
+
+    /**
+     * [audit 2026-10-19 S5/Q2] Pas de synchronisation de session en test
+     * Unit : l'implémentation parente ouvre une vraie connexion MySQL.
+     */
+    protected function updateLastActivity()
+    {
+    }
 }

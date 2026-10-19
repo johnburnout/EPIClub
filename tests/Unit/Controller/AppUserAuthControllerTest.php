@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace Epiclub\Tests\Unit\Controller;
 
 use Epiclub\Engine\AppUserAuthenticator;
+use Epiclub\Controller\AppUserAuthController;
 use Epiclub\Engine\Session;
 use Epiclub\Tests\Unit\Controller\Support\TestableAppUserAuthController;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -138,6 +140,57 @@ final class AppUserAuthControllerTest extends TestCase
 
         self::assertInstanceOf(RedirectResponse::class, $response);
         self::assertSame('.', $response->getTargetUrl());
+    }
+
+    /**
+     * [SÉCURITÉ — audit 2026-10-19 S4] Reproduction : « /\evil.com »
+     * passait l'ancienne garde, et les navigateurs le lisent « //evil.com ».
+     */
+    public function testLoginPostSuccessRejectsBackslashRedirect(): void
+    {
+        $authenticator = $this->makeAuthenticator();
+        $authenticator->method('authenticate')->willReturn(true);
+
+        $controller = new TestableAppUserAuthController($this->mockSession(), $authenticator);
+
+        $request = Request::create('/se_connecter?redirect=' . rawurlencode('/\\evil.example/phish'), 'POST', [
+            'csrf_token' => self::CSRF,
+            'username'   => 'jean',
+            'password'   => 'secret',
+        ]);
+
+        $response = $controller->login($request);
+
+        self::assertInstanceOf(RedirectResponse::class, $response);
+        self::assertSame('.', $response->getTargetUrl());
+    }
+
+    #[DataProvider('ciblesDeRedirectionProvider')]
+    public function testEstRedirectionLocale(string $cible, bool $acceptee): void
+    {
+        self::assertSame($acceptee, AppUserAuthController::estRedirectionLocale($cible));
+    }
+
+    public static function ciblesDeRedirectionProvider(): array
+    {
+        return [
+            'QR'                    => ['/qr/42', true],
+            'liste filtrée'         => ['/equipements?page=2&tri=reference', true],
+            'contrôle'              => ['/admin/controles/edit/7', true],
+            'racine'                => ['/', true],
+            'antislash'             => ['/\\evil.example', false],
+            'double antislash'      => ['/\\\\evil.example', false],
+            'antislash au milieu'   => ['/qr/\\evil', false],
+            'scheme-relative'       => ['//evil.example', false],
+            'absolue'               => ['https://evil.example', false],
+            'javascript'            => ['javascript:alert(1)', false],
+            'tabulation'            => ["/\t/evil.example", false],
+            'retour ligne (CRLF)'   => ["/qr/1\r\nSet-Cookie: x=y", false],
+            'espace'                => ['/ /evil.example', false],
+            'relative sans slash'   => ['evil.example', false],
+            'vide'                  => ['', false],
+            'arobase (userinfo)'    => ['/@evil.example', false],
+        ];
     }
 
     public function testLoginPostFailureRendersFormWithError(): void

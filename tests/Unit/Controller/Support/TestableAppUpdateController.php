@@ -87,4 +87,12 @@ final class TestableAppUpdateController extends AppUpdateController
         // la construction des paramètres, pas MySQL.
         throw new \PDOException('Connexion court-circuitée (test #101)');
     }
+
+    /**
+     * [audit 2026-10-19 S5/Q2] Pas de synchronisation de session en test
+     * Unit : l'implémentation parente ouvre une vraie connexion MySQL.
+     */
+    protected function updateLastActivity()
+    {
+    }
 }

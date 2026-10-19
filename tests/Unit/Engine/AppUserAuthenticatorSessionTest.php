@@ -82,6 +82,30 @@ final class AppUserAuthenticatorSessionTest extends TestCase
         self::assertSame('Identifiants incorrects', $authenticator->getError());
     }
 
+    /**
+     * [SÉCURITÉ — audit 2026-10-19 S5] Anti-fixation : l'ancien
+     * identifiant de session doit être détruit (migrate(true)).
+     */
+    public function testLaConnexionDetruitLAncienneSession(): void
+    {
+        $userRow = [
+            'id'       => 7,
+            'username' => 'adurand',
+            'role'     => 'ROLE_USER',
+            'password' => password_hash(self::PLAIN_PASSWORD, PASSWORD_DEFAULT),
+        ];
+
+        $session = $this->createMock(Session::class);
+        $session->expects(self::once())->method('migrate')->with(true);
+
+        $authenticator = new TestableAppUserAuthenticator(
+            $session,
+            new TestableUtilisateurManager($this->makePdoReturning($userRow))
+        );
+
+        self::assertTrue($authenticator->authenticate('adurand', self::PLAIN_PASSWORD));
+    }
+
     private function makePdoReturning(array $row): \PDO
     {
         $pdo = $this->createMock(\PDO::class);

@@ -110,7 +110,10 @@ class AppUserAuthenticator
             $sessionUser['derniere_connexion'] = date('Y-m-d');
             $this->utilisateurManager->save($sessionUser);
 
-            $this->session->migrate();
+            // [SÉCURITÉ — audit 2026-10-19 S5] migrate(true) : l'ancien
+            // identifiant de session est DÉTRUIT (anti-fixation), pas
+            // seulement remplacé.
+            $this->session->migrate(true);
 
             return true;
         }

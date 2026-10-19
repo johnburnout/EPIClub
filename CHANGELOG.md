@@ -10,6 +10,85 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.0.0-beta.5] — 2026-10-19
+
+Deuxième cycle de correction de l'audit du 2026-10-19
+(`audit-complet-2026-10-19.md`) : points à traiter avant diffusion,
+puis S4/S5.
+
+### Security
+
+- **S1 — upload d'image de catégorie** : le fichier envoyé n'est plus
+  jamais copié tel quel dans `public/images/`. Nouveau service
+  `ImageUploader` : liste blanche MIME, décodage puis réencodage GD en
+  WebP, nom généré côté serveur. Un HTML ou un SVG piégé déguisé en
+  `.jpg` (XSS stockée) est refusé. Nouveau `public/images/.htaccess` :
+  aucun fichier interprétable (PHP, HTML, SVG, JS) servi depuis ce
+  dossier. + 14 tests, dont 2 reproduisant la faille.
+- **S2 — force brute** : limitation progressive des tentatives de
+  connexion, par identifiant (5 échecs, puis blocage de 1 min, 2, 4…
+  plafonné à 1 h) et par adresse IP (30 échecs). Le bon mot de passe
+  est refusé pendant le blocage. Comptes inexistants traités
+  exactement comme les autres (même message, même temps de réponse).
+  « Mot de passe oublié » limité à 5 demandes par IP et par jour.
+  Migration `010_login_throttle.sql` (clés hachées, purge automatique
+  au-delà de 48 h). Si le limiteur est indisponible, la connexion reste
+  possible (incident journalisé). + 16 tests.
+- **S7 — énumération de comptes** : « mot de passe oublié » affiche un
+  message unique, que l'adresse soit inscrite ou non.
+- **S4 — redirection ouverte** : `?redirect=` après connexion n'accepte
+  plus que des chemins locaux sans ambiguïté (`/\evil.com`, lu
+  `//evil.com` par les navigateurs, passait l'ancienne garde).
+  + 17 tests.
+- **S5 — session** : l'utilisateur de session est relu en base à chaque
+  requête. Un compte rétrogradé perd ses droits immédiatement, un
+  compte supprimé est déconnecté. L'ancien identifiant de session est
+  détruit à la connexion (`migrate(true)`). Cookie de session durci
+  explicitement (HttpOnly, SameSite=Lax, Secure en HTTPS, mode strict).
+  + 5 tests.
+- **Updater** : téléchargements limités à HTTPS vers GitHub (`file://`,
+  `php://`, hôtes tiers refusés, y compris depuis un cache altéré).
+
+### Added
+
+- **Archive de release complète** (F1) : `bin/build-release.sh` et la
+  CI `.github/workflows/release.yml` (sur tag `v*`) publient
+  `epiclub-<tag>.zip` (avec `vendor/`, sans tests) et sa somme
+  `epiclub-<tag>.zip.sha256`. L'archive s'installe telle quelle.
+
+### Changed
+
+- **Updater** (F1, F2) :
+  - télécharge l'archive complète et vérifie sa somme SHA-256
+    (obligatoire), puis remplace `vendor/` d'un bloc (restauration de
+    l'ancien en cas d'échec) ; `composer` n'est plus nécessaire. Repli
+    sur l'ancien fonctionnement pour les releases sans archive complète ;
+  - met désormais à jour `public/` (`index.php`, `.htaccess`, assets).
+    Les données de `public/images/` (photos, QR codes, images de
+    catégorie) ne sont jamais écrasées ; seuls ses `.htaccess` sont mis
+    à jour.
+- `imagedestroy()` retiré (déprécié en PHP 8.5).
+- Tests Unit : 35 tests de plus tournent sans MySQL (synchronisation de
+  session neutralisée dans les contrôleurs de test).
+
+### Upgrade notes
+
+- **Instances en v1.0.0-beta.4 ou antérieure** : la mise à jour vers
+  cette version est faite par l'ANCIEN updater, qui ne copie pas
+  `public/`. Après la mise à jour, copier une fois à la main
+  `public/index.php`, `public/.htaccess`, `public/router.php`,
+  `public/assets/` et `public/images/.htaccess` depuis l'archive (sans
+  toucher au reste de `public/images/`). Les mises à jour suivantes le
+  feront automatiquement.
+- **Migration 009** (UNIQUE sur `club_equipement.reference`) : si
+  l'instance contient des références en double (y compris
+  d'équipements supprimés), la migration échoue ; les dédoublonner
+  avant la mise à jour (requête de contrôle dans l'en-tête du fichier).
+- **Derrière un reverse proxy**, toutes les requêtes semblent venir de
+  la même IP : le blocage par IP s'appliquerait à tout le monde.
+
+## [v1.0.0-beta.4] — 2026-10-19
+
 ### Security
 
 - **Correctifs du rapport d'audit 2026-10-19** (constats bloquants et
