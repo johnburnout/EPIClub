@@ -14,7 +14,8 @@ EpiClub est une application de gestion et de journalisation des contrôles des E
 
 ## Installation
 
-* Téléchargez la dernière version [ici](https://github.com/johnburnout/EPIClub/releases)
+* Téléchargez l'archive `epiclub-<version>.zip` de la dernière version [ici](https://github.com/johnburnout/EPIClub/releases)
+  (et non « Source code », qui ne contient pas les dépendances `vendor/`).
 * Dézippez le dossier sur votre serveur.
 * Parametrez le serveur pour qu'il pointe sur le dossier `public`.
 * Ouvrez l'url dans votre navigateur et suivez les instructions.
@@ -44,6 +45,16 @@ Il refuse de s'exécuter depuis le navigateur (protection `PHP_SAPI !== 'cli'`).
 ```bash
 php -S localhost:8000 -t public public/router.php
 ```
+
+### Publier une release
+
+1. Mettre à jour `version.txt` (ex. `1.0.0-beta.5`) et `CHANGELOG.md`, commiter.
+2. `git tag v1.0.0-beta.5 && git push origin v1.0.0-beta.5`
+
+La CI (`.github/workflows/release.yml`) construit alors l'archive complète
+avec `bin/build-release.sh` (vendor/ inclus, sans tests) et la publie avec sa
+somme SHA-256 ; l'updater intégré télécharge et vérifie ces deux fichiers.
+Pour tester la construction en local : `bin/build-release.sh v1.0.0-beta.5`.
 
 ### Tests
 

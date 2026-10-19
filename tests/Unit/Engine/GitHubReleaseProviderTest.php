@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Epiclub\Tests\Unit\Engine;
 
 use Epiclub\Engine\GitHubReleaseProvider;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -230,6 +231,110 @@ final class GitHubReleaseProviderTest extends TestCase
         $this->expectException(\RuntimeException::class);
 
         $provider->downloadUrl('https://invalid.example.invalid/never-resolves');
+    }
+
+    // ==================================================================
+    // [audit 2026-10-19 F1] Archive complète publiée par la CI
+    // ==================================================================
+
+    public function testConstruireResultatPrefereLArchiveComplete(): void
+    {
+        $r = GitHubReleaseProvider::construireResultat([
+            'tag_name'    => 'v1.2.0',
+            'zipball_url' => 'https://api.github.com/repos/o/r/zipball/v1.2.0',
+            'body'        => null,
+            'assets'      => [
+                ['name' => 'epiclub-v1.1.0.zip', 'browser_download_url' => 'https://github.com/o/r/releases/download/v1.1.0/epiclub-v1.1.0.zip'],
+                ['name' => 'epiclub-v1.2.0.zip.sha256', 'browser_download_url' => 'https://github.com/o/r/releases/download/v1.2.0/epiclub-v1.2.0.zip.sha256'],
+                ['name' => 'epiclub-v1.2.0.zip', 'browser_download_url' => 'https://github.com/o/r/releases/download/v1.2.0/epiclub-v1.2.0.zip'],
+            ],
+        ]);
+
+        self::assertSame('v1.2.0', $r['tag']);
+        self::assertTrue($r['bundle']);
+        self::assertSame('https://github.com/o/r/releases/download/v1.2.0/epiclub-v1.2.0.zip', $r['zip_url']);
+        self::assertSame('https://github.com/o/r/releases/download/v1.2.0/epiclub-v1.2.0.zip.sha256', $r['sha256_url']);
+        self::assertSame('', $r['body']);
+    }
+
+    public function testConstruireResultatReplieSurLeZipballSansAsset(): void
+    {
+        $r = GitHubReleaseProvider::construireResultat([
+            'tag_name'    => 'v0.9.0',
+            'zipball_url' => 'https://api.github.com/repos/o/r/zipball/v0.9.0',
+            'body'        => 'notes',
+            'assets'      => [],
+        ]);
+
+        self::assertFalse($r['bundle']);
+        self::assertNull($r['sha256_url']);
+        self::assertSame('https://api.github.com/repos/o/r/zipball/v0.9.0', $r['zip_url']);
+    }
+
+    public function testConstruireResultatRetourneNullSiRienATelecharger(): void
+    {
+        self::assertNull(GitHubReleaseProvider::construireResultat(['tag_name' => 'v1.0.0']));
+        self::assertNull(GitHubReleaseProvider::construireResultat(['zipball_url' => 'https://api.github.com/x']));
+    }
+
+    public function testLeCacheConserveLesChampsDeLArchiveComplete(): void
+    {
+        $cacheFile = $this->tmpDir . '/release.json';
+        file_put_contents($cacheFile, json_encode([
+            'tag' => 'v1.2.0', 'zip_url' => 'https://github.com/a.zip', 'body' => '',
+            'bundle' => true, 'sha256_url' => 'https://github.com/a.zip.sha256',
+        ]));
+
+        $r = (new GitHubReleaseProvider('fake/repo', $cacheFile, 3600))->getLatestRelease();
+
+        self::assertTrue($r['bundle']);
+        self::assertSame('https://github.com/a.zip.sha256', $r['sha256_url']);
+    }
+
+    #[DataProvider('urlsDeConfianceProvider')]
+    public function testAssertUrlDeConfianceAccepteGitHub(string $url): void
+    {
+        GitHubReleaseProvider::assertUrlDeConfiance($url);
+        $this->addToAssertionCount(1);
+    }
+
+    public static function urlsDeConfianceProvider(): array
+    {
+        return [
+            'asset'   => ['https://github.com/johnburnout/EPIClub/releases/download/v1.0.0/epiclub-v1.0.0.zip'],
+            'zipball' => ['https://api.github.com/repos/johnburnout/EPIClub/zipball/v1.0.0'],
+            'codeload'=> ['https://codeload.github.com/johnburnout/EPIClub/legacy.zip/v1.0.0'],
+        ];
+    }
+
+    #[DataProvider('urlsRefuseesProvider')]
+    public function testAssertUrlDeConfianceRefuseLeReste(string $url): void
+    {
+        $this->expectException(\RuntimeException::class);
+        GitHubReleaseProvider::assertUrlDeConfiance($url);
+    }
+
+    public static function urlsRefuseesProvider(): array
+    {
+        return [
+            'fichier local'      => ['file:///etc/passwd'],
+            'wrapper php'        => ['php://filter/resource=/var/www/.env.local.php'],
+            'http clair'         => ['http://github.com/a.zip'],
+            'hôte tiers'         => ['https://evil.example/a.zip'],
+            'sous-domaine piège' => ['https://github.com.evil.example/a.zip'],
+            'identifiants'       => ['https://user@github.com/a.zip'],
+            'port'               => ['https://github.com:8443/a.zip'],
+            'vide'               => [''],
+        ];
+    }
+
+    public function testDownloadUrlRefuseUnFichierLocalSansLeLire(): void
+    {
+        $provider = new GitHubReleaseProvider('fake/repo', $this->tmpDir . '/cache.json');
+
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('refusée');
+        $provider->downloadUrl('file://' . __FILE__);
     }
 
     // ==================================================================

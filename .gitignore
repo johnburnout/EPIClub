@@ -12,8 +12,8 @@
 # [SÉCURITÉ — audit 2026-10-19 S1] la protection du dossier est versionnée
 !/public/images/.htaccess
 
-# Fichiers de construction
-build-release.sh
+# Fichiers de construction (l'ancien script racine ; bin/build-release.sh est versionné)
+/build-release.sh
 
 # Fichiers de configuration sensibles
 .env

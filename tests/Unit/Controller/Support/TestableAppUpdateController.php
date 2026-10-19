@@ -49,6 +49,17 @@ final class TestableAppUpdateController extends AppUpdateController
         $this->copyFiles($source, $target);
     }
 
+    /** [audit 2026-10-19 F1] */
+    public function verifierSommeDeControleForTest(array $release, string $zip): void
+    {
+        $this->verifierSommeDeControle($release, $zip);
+    }
+
+    public function remplacerVendorForTest(string $nouveau, string $cible): void
+    {
+        $this->remplacerVendor($nouveau, $cible);
+    }
+
     public function isExcludedForTest(string $path): bool
     {
         return $this->isExcluded($path);

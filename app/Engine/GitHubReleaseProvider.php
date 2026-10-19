@@ -55,19 +55,14 @@ final class GitHubReleaseProvider implements GitHubReleaseProviderInterface
             );
         }
 
-        if (!is_array($release)
-            || !isset($release['tag_name'], $release['zipball_url'])
-        ) {
+        if (!is_array($release)) {
             return null;
         }
 
-        // 3. Construire le résultat
-        //    ⚠️ FIX #45 : accepte body null (Release sans description)
-        $result = [
-            'tag'     => (string) $release['tag_name'],
-            'zip_url' => (string) $release['zipball_url'],
-            'body'    => (string) ($release['body'] ?? ''),
-        ];
+        $result = self::construireResultat($release);
+        if ($result === null) {
+            return null;
+        }
 
         $this->writeCache($result);
 
@@ -82,6 +77,88 @@ final class GitHubReleaseProvider implements GitHubReleaseProviderInterface
      *
      * @param array<int, mixed> $releases
      */
+    /**
+     * [audit 2026-10-19 F1] Hôtes autorisés pour un téléchargement de
+     * mise à jour (URL initiale ; les redirections restent chez GitHub).
+     */
+    public const HOTES_AUTORISES = [
+        'github.com',
+        'api.github.com',
+        'codeload.github.com',
+        'objects.githubusercontent.com',
+        'release-assets.githubusercontent.com',
+    ];
+
+    /**
+     * [audit 2026-10-19 F1] Construit le résultat à partir d'une release
+     * de l'API GitHub.
+     *
+     * Priorité à l'archive COMPLÈTE publiée par la CI
+     * (`epiclub-<tag>.zip`, vendor/ inclus) et à sa somme de contrôle
+     * (`epiclub-<tag>.zip.sha256`). À défaut (anciennes releases), repli
+     * sur le zipball des sources : composer devra alors être disponible.
+     *
+     * @return array{tag:string,zip_url:string,body:string,bundle:bool,sha256_url:?string}|null
+     */
+    public static function construireResultat(array $release): ?array
+    {
+        if (empty($release['tag_name']) || !is_string($release['tag_name'])) {
+            return null;
+        }
+        $tag = $release['tag_name'];
+
+        $zipUrl = null;
+        $shaUrl = null;
+        foreach ($release['assets'] ?? [] as $asset) {
+            if (!is_array($asset) || !isset($asset['name'], $asset['browser_download_url'])) {
+                continue;
+            }
+            if ($asset['name'] === 'epiclub-' . $tag . '.zip') {
+                $zipUrl = (string) $asset['browser_download_url'];
+            } elseif ($asset['name'] === 'epiclub-' . $tag . '.zip.sha256') {
+                $shaUrl = (string) $asset['browser_download_url'];
+            }
+        }
+
+        $bundle = $zipUrl !== null;
+        if (!$bundle) {
+            if (empty($release['zipball_url'])) {
+                return null;
+            }
+            $zipUrl = (string) $release['zipball_url'];
+            $shaUrl = null;
+        }
+
+        return [
+            'tag'        => $tag,
+            'zip_url'    => $zipUrl,
+            // ⚠️ FIX #45 : accepte body null (Release sans description)
+            'body'       => (string) ($release['body'] ?? ''),
+            'bundle'     => $bundle,
+            'sha256_url' => $shaUrl,
+        ];
+    }
+
+    /**
+     * [audit 2026-10-19 F1/S3] Refuse toute URL qui n'est pas en HTTPS
+     * vers GitHub (file://, php://, http://, hôte tiers…) — y compris si
+     * le cache local a été altéré.
+     *
+     * @throws \RuntimeException
+     */
+    public static function assertUrlDeConfiance(string $url): void
+    {
+        $parts = parse_url($url);
+        $scheme = strtolower((string) ($parts['scheme'] ?? ''));
+        $host = strtolower((string) ($parts['host'] ?? ''));
+
+        if ($scheme !== 'https' || !in_array($host, self::HOTES_AUTORISES, true)
+            || isset($parts['user']) || isset($parts['port'])
+        ) {
+            throw new \RuntimeException('URL de mise à jour refusée : ' . substr($url, 0, 120));
+        }
+    }
+
     public static function choisirPlusRecente(array $releases): ?array
     {
         $meilleure = null;
@@ -159,6 +236,8 @@ final class GitHubReleaseProvider implements GitHubReleaseProviderInterface
      */
     public function downloadUrl(string $url): string
     {
+        self::assertUrlDeConfiance($url);
+
         // 1. Tentative file_get_contents
         $content = @file_get_contents($url);
         if ($content !== false) {
@@ -236,9 +315,12 @@ final class GitHubReleaseProvider implements GitHubReleaseProviderInterface
         }
 
         return [
-            'tag'     => (string) $cached['tag'],
-            'zip_url' => (string) $cached['zip_url'],
-            'body'    => (string) ($cached['body'] ?? ''),
+            'tag'        => (string) $cached['tag'],
+            'zip_url'    => (string) $cached['zip_url'],
+            'body'       => (string) ($cached['body'] ?? ''),
+            'bundle'     => (bool) ($cached['bundle'] ?? false),
+            'sha256_url' => isset($cached['sha256_url']) && is_string($cached['sha256_url'])
+                ? $cached['sha256_url'] : null,
         ];
     }
 

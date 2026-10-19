@@ -1,0 +1,46 @@
+# [audit 2026-10-19 F1] Publication d'une release installable.
+#
+# Déclenchée par un tag « v* » (ex. git tag v1.0.0-beta.5 && git push --tags) :
+#   1. construit l'archive complète (vendor/ inclus) avec bin/build-release.sh ;
+#   2. publie la release GitHub avec deux assets :
+#        epiclub-<tag>.zip  et  epiclub-<tag>.zip.sha256
+#      que l'updater intégré (AppUpdateController) télécharge et vérifie.
+#
+# ⚠️ Les releases ne sont PAS marquées « pre-release », même pour un tag
+# -beta : /releases/latest ignore les pré-releases, et les instances en
+# canal « stable » ne verraient pas la mise à jour (cf. docs/REPRISE.md).
+name: Release
+
+on:
+  push:
+    tags: [ 'v*' ]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: gd, mbstring, pdo_mysql, zip, fileinfo
+          tools: composer
+          coverage: none
+
+      - name: Construire l'archive complète
+        run: bin/build-release.sh "${GITHUB_REF_NAME}"
+
+      - name: Publier la release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            releases/epiclub-${{ github.ref_name }}.zip
+            releases/epiclub-${{ github.ref_name }}.zip.sha256
+          prerelease: false
+          generate_release_notes: true

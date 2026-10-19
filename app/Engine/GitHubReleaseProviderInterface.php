@@ -24,10 +24,13 @@ interface GitHubReleaseProviderInterface
     /**
      * Retourne la dernière release disponible, ou null en cas d'échec.
      *
-     * @return array{tag:string,zip_url:string,body:string}|null
-     *         - tag     : ex. "v0.17.18"
-     *         - zip_url : URL du zipball GitHub
-     *         - body    : description de la Release (chaîne vide si null)
+     * @return array{tag:string,zip_url:string,body:string,bundle?:bool,sha256_url?:?string}|null
+     *         - tag        : ex. "v0.17.18"
+     *         - zip_url    : URL de l'archive complète (asset CI) ou, à
+     *                        défaut, du zipball des sources
+     *         - body       : description de la Release (chaîne vide si null)
+     *         - bundle     : true si zip_url est l'archive complète (vendor/ inclus)
+     *         - sha256_url : URL de la somme de contrôle de l'archive complète
      */
     public function getLatestRelease(): ?array;
 

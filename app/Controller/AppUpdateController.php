@@ -188,6 +188,20 @@ class AppUpdateController extends AbstractController
                     'message' => 'Le fichier téléchargé est vide.',
                 ]);
             }
+
+            // [audit 2026-10-19 F1] Somme de contrôle de l'archive complète.
+            // Obligatoire pour une archive « bundle » (vendor/ inclus) :
+            // sans elle, on ne remplace pas vendor/ à l'aveugle.
+            try {
+                $this->verifierSommeDeControle($latest, $zipContent);
+            } catch (\RuntimeException $e) {
+                error_log('[AppUpdateController] Archive rejetée : ' . $e->getMessage());
+                return $this->render('update_result.twig', [
+                    'success' => false,
+                    'message' => 'Archive invalide : le fichier téléchargé a été rejeté (somme de contrôle).',
+                ]);
+            }
+
             file_put_contents($tempZip, $zipContent);
             
             // Décompresser
@@ -246,8 +260,9 @@ class AppUpdateController extends AbstractController
             
             // Copier les fichiers (sauf exclus)
             $targetDir = __DIR__ . '/../..';
+            $vendorLivre = is_file($sourceDir . '/vendor/autoload.php');
             $this->copyFiles($sourceDir, $targetDir);
-            
+
             // ------------------------------------------------------------
             // MIGRATIONS DE BASE DE DONNÉES
             // ------------------------------------------------------------
@@ -287,22 +302,42 @@ class AppUpdateController extends AbstractController
                 ]);
             }
             
-            // Nettoyer le dossier extrait
-            $this->deleteDirectory($extractPath);
-            
             // Mettre à jour le numéro de version
             file_put_contents(self::VERSION_FILE, $version);
-            
-            // Exécuter Composer (si possible)
-            $this->runComposer();
-            
-            // Nettoyage final
-            $this->cleanupTempDir();
-            
-            return $this->render('update_result.twig', [
+
+            // [audit 2026-10-19 F1] La page de résultat est rendue AVANT de
+            // toucher à vendor/ : une fois vendor/ remplacé, la requête en
+            // cours ne doit plus charger de classe Twig (versions mêlées).
+            $reponse = $this->render('update_result.twig', [
                 'success' => true,
                 'message' => 'Mise à jour réussie. Version actuelle : ' . $version,
             ]);
+
+            // [audit 2026-10-19 F1] Dépendances : l'archive complète publiée
+            // par la CI embarque vendor/ (remplacé d'un bloc) ; composer
+            // n'est plus nécessaire. Repli historique pour un zipball de
+            // sources : composer install, s'il est disponible.
+            if ($vendorLivre) {
+                try {
+                    $this->remplacerVendor($sourceDir . '/vendor', $targetDir . '/vendor');
+                } catch (\Throwable $e) {
+                    error_log('[AppUpdateController] vendor/ non remplacé : ' . $e->getMessage());
+                    $reponse = $this->render('update_result.twig', [
+                        'success' => false,
+                        'message' => 'Les fichiers et la base sont à jour, mais les dépendances (vendor/) '
+                            . "n'ont pas pu être remplacées. L'ancienne version a été conservée : "
+                            . 'consultez les logs serveur.',
+                    ]);
+                }
+            } else {
+                $this->runComposer();
+            }
+
+            // Nettoyage final (dossier extrait compris)
+            $this->deleteDirectory($extractPath);
+            $this->cleanupTempDir();
+
+            return $reponse;
             
         } catch (\Throwable $e) {
             error_log(sprintf(
@@ -373,6 +408,100 @@ class AppUpdateController extends AbstractController
             }
             if (str_contains($name, '..') || preg_match('#^[/\\\\]#', $name) || str_contains($name, '\\')) {
                 throw new \RuntimeException(sprintf('Entrée zip malveillante : %s', $name));
+            }
+        }
+    }
+
+    /**
+     * [audit 2026-10-19 F1] Vérifie l'archive téléchargée contre la
+     * somme SHA-256 publiée avec la release.
+     *
+     * - archive complète (bundle) : somme OBLIGATOIRE ;
+     * - zipball de sources (anciennes releases) : pas de somme publiée,
+     *   comportement historique conservé.
+     *
+     * NB : protège contre une archive corrompue ou substituée en transit /
+     * dans le cache ; pas contre un compte GitHub compromis (il faudrait
+     * une signature — audit S3).
+     *
+     * @throws \RuntimeException
+     */
+    protected function verifierSommeDeControle(array $release, string $zipContent): void
+    {
+        $shaUrl = $release['sha256_url'] ?? null;
+
+        if (!is_string($shaUrl) || $shaUrl === '') {
+            if (!empty($release['bundle'])) {
+                throw new \RuntimeException('somme de contrôle absente pour une archive complète');
+            }
+            return;
+        }
+
+        $publie = $this->githubReleaseProvider()->downloadUrl($shaUrl);
+        if (!preg_match('/\b([a-f0-9]{64})\b/i', $publie, $m)) {
+            throw new \RuntimeException('fichier de somme de contrôle illisible');
+        }
+
+        if (!hash_equals(strtolower($m[1]), hash('sha256', $zipContent))) {
+            throw new \RuntimeException('somme de contrôle différente');
+        }
+    }
+
+    /**
+     * [audit 2026-10-19 F1] Remplace vendor/ d'un bloc par celui de
+     * l'archive : l'ancien est mis de côté puis supprimé, et restauré si
+     * la bascule échoue (jamais d'installation sans autoloader).
+     *
+     * @throws \RuntimeException
+     */
+    protected function remplacerVendor(string $nouveau, string $cible): void
+    {
+        if (!is_file($nouveau . '/autoload.php')) {
+            throw new \RuntimeException('vendor/ livré incomplet');
+        }
+
+        $ancien = $cible . '.ancien-' . date('YmdHis');
+        $avaitUnVendor = is_dir($cible);
+
+        if ($avaitUnVendor && !rename($cible, $ancien)) {
+            throw new \RuntimeException('impossible de mettre l\'ancien vendor/ de côté');
+        }
+
+        // rename() échoue entre deux systèmes de fichiers : repli sur une copie.
+        if (!@rename($nouveau, $cible)) {
+            try {
+                $this->copierDossier($nouveau, $cible);
+            } catch (\Throwable $e) {
+                $this->deleteDirectory($cible);
+                if ($avaitUnVendor) {
+                    rename($ancien, $cible);
+                }
+                throw new \RuntimeException('remplacement de vendor/ impossible : ' . $e->getMessage(), 0, $e);
+            }
+        }
+
+        if ($avaitUnVendor) {
+            $this->deleteDirectory($ancien);
+        }
+    }
+
+    private function copierDossier(string $source, string $cible): void
+    {
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($source, \RecursiveDirectoryIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::SELF_FIRST
+        );
+        if (!is_dir($cible) && !mkdir($cible, 0755, true)) {
+            throw new \RuntimeException("mkdir $cible");
+        }
+        foreach ($iterator as $item) {
+            $chemin = $cible . '/' . substr($item->getPathname(), strlen($source) + 1);
+            if ($item->isDir()) {
+                if (!is_dir($chemin) && !mkdir($chemin, 0755, true)) {
+                    throw new \RuntimeException("mkdir $chemin");
+                }
+            } elseif (!copy($item->getPathname(), $chemin)) {
+                throw new \RuntimeException("copy $chemin");
             }
         }
     }

@@ -299,6 +299,129 @@ final class AppUpdateControllerTest extends TestCase
     }
 
     // ==================================================================
+    // [audit 2026-10-19 F1] Archive complète : somme de contrôle + vendor/
+    // ==================================================================
+
+    public function testPerformRejetteUneArchiveCompleteDontLaSommeDiffere(): void
+    {
+        $zip = $this->zipValide();
+        $provider = $this->makeProviderMock();
+        $provider->method('getLatestRelease')->willReturn([
+            'tag' => 'v9.9.9', 'zip_url' => 'https://github.com/x/y/releases/download/v9.9.9/epiclub-v9.9.9.zip',
+            'body' => '', 'bundle' => true,
+            'sha256_url' => 'https://github.com/x/y/releases/download/v9.9.9/epiclub-v9.9.9.zip.sha256',
+        ]);
+        $provider->method('downloadUrl')->willReturnCallback(
+            fn (string $url) => str_ends_with($url, '.sha256')
+                ? str_repeat('0', 64) . '  epiclub-v9.9.9.zip'
+                : $zip
+        );
+
+        $response = $this->makeControllerWith($provider)->perform(
+            Request::create('/admin/update/perform', 'POST', ['csrf_token' => 'token_test'])
+        );
+
+        self::assertStringContainsString('somme de contrôle', $response->getContent());
+        self::assertDirectoryDoesNotExist(__DIR__ . '/../../../var/tmp/update/extracted');
+    }
+
+    public function testPerformRejetteUneArchiveCompleteSansSomme(): void
+    {
+        $zip = $this->zipValide();
+        $provider = $this->makeProviderMock();
+        $provider->method('getLatestRelease')->willReturn([
+            'tag' => 'v9.9.9', 'zip_url' => 'https://github.com/x/y/releases/download/v9.9.9/epiclub-v9.9.9.zip',
+            'body' => '', 'bundle' => true, 'sha256_url' => null,
+        ]);
+        $provider->method('downloadUrl')->willReturn($zip);
+
+        $response = $this->makeControllerWith($provider)->perform(
+            Request::create('/admin/update/perform', 'POST', ['csrf_token' => 'token_test'])
+        );
+
+        self::assertStringContainsString('somme de contrôle', $response->getContent());
+        self::assertDirectoryDoesNotExist(__DIR__ . '/../../../var/tmp/update/extracted');
+    }
+
+    public function testVerifierSommeDeControleAccepteLaBonneSomme(): void
+    {
+        $zip = $this->zipValide();
+        $provider = $this->makeProviderMock();
+        $provider->method('downloadUrl')->willReturn(hash('sha256', $zip) . "  epiclub-v9.9.9.zip\n");
+
+        $this->makeControllerWith($provider)->verifierSommeDeControleForTest(
+            ['bundle' => true, 'sha256_url' => 'https://github.com/x.sha256'],
+            $zip
+        );
+        $this->addToAssertionCount(1); // aucune exception
+    }
+
+    public function testVerifierSommeDeControleToléréePourUnZipballDeSources(): void
+    {
+        $provider = $this->makeProviderMock();
+        $provider->expects(self::never())->method('downloadUrl');
+
+        $this->makeControllerWith($provider)->verifierSommeDeControleForTest(
+            ['bundle' => false, 'sha256_url' => null],
+            'contenu'
+        );
+        $this->addToAssertionCount(1);
+    }
+
+    public function testRemplacerVendorBasculeDUnBloc(): void
+    {
+        $base = sys_get_temp_dir() . '/epiclub_vendor_' . bin2hex(random_bytes(4));
+        mkdir($base . '/release/vendor/composer', 0700, true);
+        file_put_contents($base . '/release/vendor/autoload.php', '<?php // v2');
+        file_put_contents($base . '/release/vendor/composer/nouveau.php', '<?php');
+        mkdir($base . '/installation/vendor/obsolete', 0700, true);
+        file_put_contents($base . '/installation/vendor/autoload.php', '<?php // v1');
+        file_put_contents($base . '/installation/vendor/obsolete/vieux.php', '<?php');
+
+        $this->makeControllerWith($this->makeProviderMock())
+            ->remplacerVendorForTest($base . '/release/vendor', $base . '/installation/vendor');
+
+        self::assertStringEqualsFile($base . '/installation/vendor/autoload.php', '<?php // v2');
+        self::assertFileExists($base . '/installation/vendor/composer/nouveau.php');
+        // Aucun fichier de l'ancienne version ne subsiste
+        self::assertFileDoesNotExist($base . '/installation/vendor/obsolete/vieux.php');
+        self::assertSame(['vendor'], array_values(array_diff(scandir($base . '/installation'), ['.', '..'])));
+
+        $this->supprimer($base);
+    }
+
+    public function testRemplacerVendorRefuseUnVendorIncompletEtNeTouchePasALExistant(): void
+    {
+        $base = sys_get_temp_dir() . '/epiclub_vendor_' . bin2hex(random_bytes(4));
+        mkdir($base . '/release/vendor', 0700, true);          // pas d'autoload.php
+        mkdir($base . '/installation/vendor', 0700, true);
+        file_put_contents($base . '/installation/vendor/autoload.php', '<?php // v1');
+
+        try {
+            $this->makeControllerWith($this->makeProviderMock())
+                ->remplacerVendorForTest($base . '/release/vendor', $base . '/installation/vendor');
+            self::fail('Un vendor/ incomplet doit être refusé.');
+        } catch (\RuntimeException) {
+        }
+
+        self::assertStringEqualsFile($base . '/installation/vendor/autoload.php', '<?php // v1');
+        $this->supprimer($base);
+    }
+
+    private function zipValide(): string
+    {
+        $chemin = tempnam(sys_get_temp_dir(), 'zip_test_');
+        $zip = new \ZipArchive();
+        $zip->open($chemin, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
+        $zip->addFromString('epiclub-v9.9.9/version.txt', 'v9.9.9');
+        $zip->addFromString('epiclub-v9.9.9/vendor/autoload.php', '<?php');
+        $zip->close();
+        $contenu = (string) file_get_contents($chemin);
+        unlink($chemin);
+        return $contenu;
+    }
+
+    // ==================================================================
     // Helpers
     // ==================================================================
 
