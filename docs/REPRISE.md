@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
 **Dernière mise à jour** : 2026-10-19 (session — canal de mise à jour : fix « la prod ne voit pas la bêta », UPDATE_CHANNEL stable/beta)
-**Version courante** : v1.0.0-beta.1
+**Version courante** : v1.0.0-beta.2
 **Branche** : `main` (travail direct)
 
 > **Note canal bêta** : l'endpoint GitHub `/releases/latest` ignore les
@@ -26,6 +26,7 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
+| v1.0.0-beta.2 | — | Fix updater : pré-releases invisibles (/releases/latest les ignore) — canal UPDATE_CHANNEL stable/beta + cache par canal + affichage du canal sur la page Mise à jour + 7 tests | `4d01e5b` |
 | v1.0.0-beta.1 | — | **1ʳᵉ bêta fonctionnelle de test** : scan QR intégré à la page (AJAX, sans quitter) + listes de catégories par activité dans le setup (escalade/spéléo/alpinisme) + 9 tests | `8a725f6` |
 | v0.32.0 | — | Import : rattachement des catégories inconnues à une existante + lignes non conformes affichées en entier ; lots : nombre_initial plafonné, code sans LOT, badge « Lot : X/Y » liste + 9 tests | `5483764` |
 | v0.31.1 | — | Import : détection auto de la ligne d'en-tête (fichier réel : en-tête ligne 4) + alias (EPI, stock théorique, HA- Périme) + sniffing délimiteur CSV + 4 tests | `792a37d` |
