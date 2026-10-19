@@ -54,7 +54,11 @@ class AppUserAuthController extends AbstractController
                 if (empty($form_errors)) {
                     $appUserAuthenticator = $this->authenticator();
 
-                    if ($appUserAuthenticator->authenticate($request->request->get('username'), $request->request->get('password'))) {
+                    if ($appUserAuthenticator->authenticate(
+                        (string) $request->request->get('username'),
+                        (string) $request->request->get('password'),
+                        $request->getClientIp()
+                    )) {
                         // [SÉCURITÉ] Régénérer le token après login (anti-fixation de session)
                         $this->session->set('csrf_token', bin2hex(random_bytes(32)));
 

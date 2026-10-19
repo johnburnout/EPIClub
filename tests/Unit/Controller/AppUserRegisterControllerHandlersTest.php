@@ -6,6 +6,8 @@ namespace Epiclub\Tests\Unit\Controller;
 
 use Epiclub\Domain\ClubManager;
 use Epiclub\Domain\UtilisateurManager;
+use Epiclub\Controller\AppUserRegisterController;
+use Epiclub\Tests\Unit\Domain\Support\InMemoryLoginThrottleManager;
 use Epiclub\Engine\MailerServiceInterface;
 use Epiclub\Engine\Session;
 use Epiclub\Exception\MailDeliveryException;
@@ -409,6 +411,58 @@ final class AppUserRegisterControllerHandlersTest extends TestCase
     // ==================================================================
     // Helpers
     // ==================================================================
+
+    // ==================================================================
+    // [SÉCURITÉ — audit 2026-10-19 S2/S7] Mot de passe oublié
+    // ==================================================================
+
+    public function testForgotPasswordLimiteLesDemandesParIp(): void
+    {
+        $user = ['id' => 42, 'email' => 'user@example.com', 'reset_email_sent_at' => null];
+
+        $utilisateurManager = $this->getMockBuilder(UtilisateurManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $utilisateurManager->method('findOneByCriteria')->willReturn($user);
+        // 5 demandes traitées, la 6e et suivantes ignorées (aucun mail)
+        $utilisateurManager->expects(self::exactly(AppUserRegisterController::SEUIL_RESET_IP))
+            ->method('setResetToken')->willReturn(true);
+
+        $limiteur = new InMemoryLoginThrottleManager();
+        $builder = (new \Epiclub\Tests\Unit\Controller\Support\TestableAppUserRegisterControllerBuilder($this))
+            ->withSession($this->makeSession())
+            ->withUtilisateurManager($utilisateurManager)
+            ->withLoginThrottle($limiteur);
+        $controller = $builder->build();
+
+        for ($i = 1; $i <= 8; $i++) {
+            // Le mock renvoie toujours reset_email_sent_at = null : seul le
+            // limiteur par IP peut arrêter les demandes.
+            $limiteur->horloge += 1;
+            $response = $controller->forgotPassword($this->makePostRequest(['email' => 'user@example.com']));
+            self::assertSame('/mot_de_passe_oublie/confirmation', $response->headers->get('Location'));
+        }
+    }
+
+    public function testForgotPasswordAfficheLeMemeMessageQueLeCompteExisteOuNon(): void
+    {
+        $messages = [];
+        foreach ([false, ['id' => 42, 'email' => 'user@example.com', 'reset_email_sent_at' => null],
+                  ['id' => 42, 'email' => 'user@example.com', 'reset_email_sent_at' => (new \DateTime('-1 minute'))->format('Y-m-d H:i:s')]]
+                 as $user) {
+            $utilisateurManager = $this->getMockBuilder(UtilisateurManager::class)
+                ->disableOriginalConstructor()
+                ->getMock();
+            $utilisateurManager->method('findOneByCriteria')->willReturn($user);
+
+            $session = $this->makeSession();
+            $this->makeControllerWith(utilisateurManager: $utilisateurManager, session: $session)
+                ->forgotPassword($this->makePostRequest(['email' => 'user@example.com']));
+            $messages[] = $session->getFlashBag()->get('info');
+        }
+
+        self::assertSame([[AppUserRegisterController::MESSAGE_RESET]], array_values(array_unique($messages, SORT_REGULAR)));
+    }
 
     private function makeControllerWith(
         ?UtilisateurManager $utilisateurManager = null,

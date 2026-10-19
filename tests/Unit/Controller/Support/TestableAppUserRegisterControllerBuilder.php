@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Epiclub\Tests\Unit\Controller\Support;
 
 use Epiclub\Domain\ClubManager;
+use Epiclub\Domain\LoginThrottleManager;
 use Epiclub\Domain\UtilisateurManager;
 use Epiclub\Engine\MailerServiceInterface;
 use Epiclub\Engine\Session;
@@ -27,6 +28,7 @@ final class TestableAppUserRegisterControllerBuilder
     private UtilisateurManager $utilisateurManager;
     private ClubManager $clubManager;
     private MailerServiceInterface $mailerService;
+    private ?LoginThrottleManager $limiteur = null;
 
     public function __construct(private readonly TestCase $testCase)
     {
@@ -60,6 +62,12 @@ final class TestableAppUserRegisterControllerBuilder
         return $this;
     }
 
+    public function withLoginThrottle(LoginThrottleManager $limiteur): self
+    {
+        $this->limiteur = $limiteur;
+        return $this;
+    }
+
     public function build(): TestableAppUserRegisterController
     {
         return new TestableAppUserRegisterController(
@@ -67,6 +75,7 @@ final class TestableAppUserRegisterControllerBuilder
             $this->utilisateurManager,
             $this->clubManager,
             $this->mailerService,
+            $this->limiteur,
         );
     }
 

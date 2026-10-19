@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Epiclub\Controller;
 
 use Epiclub\Domain\ClubManager;
+use Epiclub\Domain\LoginThrottleManager;
 use Epiclub\Domain\UtilisateurManager;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Exception\MailDeliveryException;
@@ -38,6 +39,47 @@ class AppUserRegisterController extends AbstractController
         return new ClubManager();
     }
     
+    /**
+     * [SÉCURITÉ — audit 2026-10-19 S2] Limiteur des demandes de
+     * réinitialisation — surchargé en test Unit.
+     */
+    protected function loginThrottle(): LoginThrottleManager
+    {
+        return new LoginThrottleManager();
+    }
+
+    /** Demandes de réinitialisation tolérées par IP (fenêtre de 24 h). */
+    public const SEUIL_RESET_IP = 5;
+
+    /**
+     * [SÉCURITÉ — audit 2026-10-19 S7] Message UNIQUE, que le compte
+     * existe, n'existe pas, ou qu'un mail vienne d'être envoyé : la page
+     * ne doit pas permettre de savoir si une adresse est inscrite.
+     */
+    public const MESSAGE_RESET = "Si un compte correspond à cette adresse, un email contenant un lien de réinitialisation vient d'être envoyé.";
+
+    /**
+     * true si l'IP a dépassé son quota de demandes. Ne bloque jamais si
+     * le limiteur est indisponible (journalisé).
+     */
+    private function demandeResetLimitee(?string $ip): bool
+    {
+        if ($ip === null || $ip === '') {
+            return false;
+        }
+        try {
+            $limiteur = $this->loginThrottle();
+            $cle = 'reset-ip:' . $ip;
+            if ($limiteur->secondesRestantes($cle) > 0) {
+                return true;
+            }
+            $limiteur->enregistrerEchec($cle, self::SEUIL_RESET_IP);
+        } catch (\Throwable $e) {
+            error_log('[forgotPassword] Limiteur indisponible : ' . $e->getMessage());
+        }
+        return false;
+    }
+
     protected function mailerService(): MailerServiceInterface
     {
         return new MailerService($this->configProvider());
@@ -57,13 +99,20 @@ class AppUserRegisterController extends AbstractController
                 $form_errors['email'] = 'Veuillez entrer une adresse mail valide.';
             }
 
+            if (empty($form_errors) && $this->demandeResetLimitee($request->getClientIp())) {
+                // Quota dépassé : même réponse que d'habitude, aucun mail.
+                error_log('[forgotPassword] Demandes trop nombreuses depuis cette IP — ignorée.');
+                $this->session->getFlashBag()->add('info', self::MESSAGE_RESET);
+                return new RedirectResponse('/mot_de_passe_oublie/confirmation');
+            }
+
             if (empty($form_errors)) {
                 $utilisateurManager = $this->utilisateurManager();
                 $user = $utilisateurManager->findOneByCriteria(['email' => $email]);
 
                 // Anti-énumération : on ne révèle jamais si l'email existe.
                 if (!$user) {
-                    $this->session->getFlashBag()->add('info', 'Un email a été envoyé si le compte existe.');
+                    $this->session->getFlashBag()->add('info', self::MESSAGE_RESET);
                     return new RedirectResponse('/mot_de_passe_oublie/confirmation');
                 }
 
@@ -73,7 +122,7 @@ class AppUserRegisterController extends AbstractController
                     $lastSent = new \DateTime($user['reset_email_sent_at']);
                     $diff = $now->getTimestamp() - $lastSent->getTimestamp();
                     if ($diff < self::RESET_EMAIL_TIMEOUT_SECONDS) {
-                        $this->session->getFlashBag()->add('info', 'Un email a déjà été envoyé récemment.');
+                        $this->session->getFlashBag()->add('info', self::MESSAGE_RESET);
                         return new RedirectResponse('/mot_de_passe_oublie/confirmation');
                     }
                 }
@@ -126,7 +175,7 @@ class AppUserRegisterController extends AbstractController
                     error_log('[forgotPassword] Club email is not configured — no reset email sent.');
                 }
 
-                $this->session->getFlashBag()->add('info', 'Un email a été envoyé avec les instructions.');
+                $this->session->getFlashBag()->add('info', self::MESSAGE_RESET);
                 return new RedirectResponse('/mot_de_passe_oublie/confirmation');
             }
         }
