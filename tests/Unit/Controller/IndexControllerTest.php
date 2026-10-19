@@ -114,9 +114,95 @@ final class IndexControllerTest extends TestCase
         self::assertStringContainsString('URL', $flashes[0]);
     }
 
+    public function testUpdateSystemSettingsPersistsUpdateChannelBeta(): void
+    {
+        $envFile = $this->makeEnvFile(['UPDATE_CHANNEL' => 'stable']);
+        $session = $this->makeSessionMock(granted: true);
+        // environmentFilePath → fichier temporaire ; le parser réel
+        // (factory parente) écrira dedans.
+        $controller = new TestableIndexController(
+            $session,
+            environmentFilePathOverride: $envFile
+        );
+
+        $request = $this->makePostRequest([
+            'smtp_host'      => 'smtp.example.com',
+            'smtp_port'      => '587',
+            'smtp_username'  => 'user',
+            'smtp_password'  => '',   // vide → mot de passe actuel conservé
+            'mail_from'      => 'from@test.fr',
+            'update_channel' => 'beta',
+        ]);
+
+        $response = $controller->updateSystemSettings($request);
+
+        self::assertSame(302, $response->getStatusCode());
+        self::assertSame('/admin/system-settings', $response->headers->get('Location'));
+
+        $env = require $envFile;
+        self::assertSame('beta', $env['UPDATE_CHANNEL']);
+        // Mot de passe SMTP existant conservé dans le DSN régénéré
+        self::assertSame(
+            'smtp://user:secretpass@smtp.example.com:587',
+            $env['MAILER_DSN']
+        );
+        self::assertNotEmpty($session->getFlashBag()->get('success'));
+    }
+
+    public function testUpdateSystemSettingsKeepsChannelWhenValueInvalid(): void
+    {
+        $envFile = $this->makeEnvFile(['UPDATE_CHANNEL' => 'beta']);
+        $session = $this->makeSessionMock(granted: true);
+        $controller = new TestableIndexController(
+            $session,
+            environmentFilePathOverride: $envFile
+        );
+
+        $request = $this->makePostRequest([
+            'smtp_host'      => 'smtp.example.com',
+            'smtp_port'      => '587',
+            'smtp_username'  => 'user',
+            'mail_from'      => 'from@test.fr',
+            'update_channel' => 'canal-bidon',  // invalide → conserver
+        ]);
+
+        $controller->updateSystemSettings($request);
+
+        $env = require $envFile;
+        self::assertSame('beta', $env['UPDATE_CHANNEL']);
+    }
+
     // ==================================================================
     // Helpers
     // ==================================================================
+
+    /**
+     * Crée un fichier .env.local.php temporaire (renvoyé, à supprimer
+     * en fin de test — PHP le purge avec le répertoire temporaire).
+     *
+     * @param array<string,string> $extra
+     */
+    private function makeEnvFile(array $extra = []): string
+    {
+        $envFile = sys_get_temp_dir()
+            . '/epiclub_env_' . bin2hex(random_bytes(6)) . '.php';
+
+        $values = array_merge([
+            'MAILER_DSN'  => 'smtp://user:secretpass@smtp.example.com:587',
+            'MAILER_FROM' => 'from@test.fr',
+            'MAILER_NAME' => 'Test',
+        ], $extra);
+
+        $lines = '';
+        foreach ($values as $key => $value) {
+            $lines .= '    ' . var_export($key, true)
+                    . ' => ' . var_export($value, true) . ",\n";
+        }
+        file_put_contents($envFile, "<?php\nreturn [\n" . $lines . "];\n");
+
+        return $envFile;
+    }
+
 
     /**
      * Mock Session tolérant.

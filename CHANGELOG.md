@@ -10,6 +10,18 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.0.0-beta.3] — 2026-10-19
+
+### Added
+
+- **Canal de mise à jour paramétrable depuis l'interface** (décision
+  produit 2026-10-19) : la page *Administration → Paramètres système*
+  propose désormais un sélecteur « Canal de mise à jour » (Stable /
+  Bêta) qui persiste `UPDATE_CHANNEL` dans `.env.local.php` — plus
+  besoin d'éditer le fichier à la main. Une valeur absente ou
+  invalide conserve le canal actuel (jamais de rétrogradation
+  silencieuse). + 2 tests Unit.
+
 ## [v1.0.0-beta.2] — 2026-10-19
 
 ### Fixed

@@ -5,6 +5,7 @@ namespace Epiclub\Controller;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\ConfigProvider;
 use Epiclub\Engine\EnvironmentFileParser;
+use Epiclub\Engine\GitHubReleaseProvider;
 use Epiclub\Engine\MailerService;
 use Epiclub\Engine\MailerServiceInterface;
 use Epiclub\Engine\RootUrlValidator;
@@ -21,6 +22,16 @@ class IndexController extends AbstractController
     protected function environmentFileParser(string $path): EnvironmentFileParser
     {
         return new EnvironmentFileParser($path);
+    }
+
+    /**
+     * Chemin du fichier .env.local.php. Factory protected pour que les
+     * tests Unit puissent viser un fichier temporaire (le chemin réel
+     * n'existe pas sur la CI, cf. #109).
+     */
+    protected function environmentFilePath(): string
+    {
+        return __DIR__ . '/../../.env.local.php';
     }
 
     protected function mailerService(ConfigProvider $config): MailerServiceInterface
@@ -61,12 +72,17 @@ class IndexController extends AbstractController
         $mailerFrom = '';
         $mailerName = '';
         $rootUrl = '';
+        $updateChannel = 'stable';
         try {
             $configProvider = $this->configProvider();
             $mailerDsn  = (string) $configProvider->get('MAILER_DSN', '');
             $mailerFrom = (string) $configProvider->get('MAILER_FROM', '');
             $mailerName = (string) $configProvider->get('MAILER_NAME', '');
             $rootUrl    = (string) $configProvider->get('ROOT_URL', '');
+            $canal      = (string) $configProvider->get('UPDATE_CHANNEL', 'stable');
+            $updateChannel = in_array($canal, GitHubReleaseProvider::CANAUX, true)
+                ? $canal
+                : 'stable';
         } catch (\Throwable $e) {
             // Config absente/illisible : on n'empêche pas l'affichage de la page SMTP.
             error_log('[IndexController] systemSettings: ' . $e->getMessage());
@@ -89,6 +105,7 @@ class IndexController extends AbstractController
                 'mail_from' => $mailerFrom,
                 'mail_from_name' => $mailerName,
                 'root_url' => $rootUrl,
+                'update_channel' => $updateChannel,
             ]
         ]);
     }
@@ -138,7 +155,7 @@ class IndexController extends AbstractController
         }
         
         // Lecture du fichier .env.local.php actuel
-        $envFile = __DIR__ . '/../../.env.local.php';
+        $envFile = $this->environmentFilePath();
         if (!file_exists($envFile)) {
             $this->session->getFlashBag()->add('error', 'Fichier de configuration introuvable.');
             return $this->redirectTo('/admin/system-settings');
@@ -184,6 +201,16 @@ class IndexController extends AbstractController
             $values['ROOT_URL'] = $normalizedRootUrl;
         }
 
+        // [v1.0.0-beta.3] Canal de mise à jour (stable/beta). Valeur
+        // absente ou inconnue → conservation de la valeur actuelle :
+        // on ne doit jamais rétrograder un canal « beta » sur une
+        // soumission incomplète (ex. ancien formulaire en cache).
+        $updateChannel = (string) $request->request->get('update_channel', '');
+        if (!in_array($updateChannel, GitHubReleaseProvider::CANAUX, true)) {
+            $updateChannel = (string) ($current['UPDATE_CHANNEL'] ?? 'stable');
+        }
+        $values['UPDATE_CHANNEL'] = $updateChannel;
+
         $parser->setAll($values);
         
         $this->session->getFlashBag()->add('success', 'Configuration mise à jour avec succès.');
@@ -200,7 +227,7 @@ class IndexController extends AbstractController
 
         try {
             // Charger .env.local.php
-            $envFile = __DIR__ . '/../../.env.local.php';
+            $envFile = $this->environmentFilePath();
             if (!file_exists($envFile)) {
                 return new JsonResponse(['success' => false, 'error' => 'Fichier .env.local.php introuvable']);
             }

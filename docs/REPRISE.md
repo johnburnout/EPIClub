@@ -1,6 +1,6 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-19 (session — canal de mise à jour : fix « la prod ne voit pas la bêta », UPDATE_CHANNEL stable/beta)
+**Dernière mise à jour** : 2026-10-19 (session — canal bêta : fix visibilité pré-releases [beta.2] + réglage UPDATE_CHANNEL dans Paramètres système)
 **Version courante** : v1.0.0-beta.2
 **Branche** : `main` (travail direct)
 

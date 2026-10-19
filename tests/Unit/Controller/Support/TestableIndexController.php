@@ -29,6 +29,7 @@ final class TestableIndexController extends IndexController
         private ?MailerServiceInterface $mailerServiceMock = null,
         private ?ConfigProvider $configProviderMock = null,
         private bool $configThrows = false,
+        private ?string $environmentFilePathOverride = null,
     ) {
         parent::__construct($session);
     }
@@ -41,6 +42,11 @@ final class TestableIndexController extends IndexController
     protected function environmentFileParser(string $path): EnvironmentFileParser
     {
         return $this->environmentFileParserMock ?? parent::environmentFileParser($path);
+    }
+
+    protected function environmentFilePath(): string
+    {
+        return $this->environmentFilePathOverride ?? parent::environmentFilePath();
     }
 
     protected function mailerService(ConfigProvider $config): MailerServiceInterface

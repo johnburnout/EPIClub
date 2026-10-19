@@ -47,6 +47,22 @@
                                 Laisser vide pour ne pas modifier la valeur actuelle.
                             </div>
                         </div>
+
+                        <div class="mb-3">
+                            <label for="update_channel" class="form-label">Canal de mise à jour</label>
+                            <select class="form-select" id="update_channel" name="update_channel">
+                                <option value="stable" {% if settings.update_channel|default('stable') == 'stable' %}selected{% endif %}>
+                                    Stable — versions définitives uniquement (recommandé en production)
+                                </option>
+                                <option value="beta" {% if settings.update_channel|default('stable') == 'beta' %}selected{% endif %}>
+                                    Bêta — inclut les versions de test (pré-releases)
+                                </option>
+                            </select>
+                            <div class="form-text">
+                                Canal suivi par la page Administration → Mise à jour.
+                                Réserver « Bêta » à une instance de test.
+                            </div>
+                        </div>
                         
                         <hr>
                         <div class="row">
