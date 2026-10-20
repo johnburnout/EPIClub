@@ -32,6 +32,9 @@ class UtilisateurManager extends AbstractManager
         'date_creation', 'derniere_connexion', 'controle_en_cours_id',
         'last_activity', 'reset_token', 'reset_token_expires',
         'reset_email_sent_at',
+        // [2026-10-20] Compte protégé : posé uniquement à la création
+        // (setup). Jamais modifiable ensuite (absent d'ALLOWED_FIELDS).
+        'est_protege',
     ];
     
     /**
@@ -54,6 +57,7 @@ class UtilisateurManager extends AbstractManager
     */
     public const PUBLIC_FIELDS = [
         'id', 'nom', 'prenom', 'username', 'email', 'role', 'date_creation',
+        'est_protege',
     ];
 
     /**

@@ -27,7 +27,7 @@
 					<td>{{ utilisateur.id }}</td>
 					<td>{{ utilisateur.nom }}</td>
 					<td>{{ utilisateur.prenom }}</td>
-					<td>{{ utilisateur.username }}</td>
+					<td>{{ utilisateur.username }}{% if utilisateur.est_protege|default(false) %} <span title="Compte protégé (créé à l'installation)">🔒</span>{% endif %}</td>
 					<td>{{ utilisateur.email }}</td>
 					<td>{{ utilisateur.rolelabel }}</td>
 					<td>

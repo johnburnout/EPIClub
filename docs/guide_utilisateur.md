@@ -194,7 +194,9 @@ Ils sont générés automatiquement à partir des **factures d'acquisition** val
 
 ## 4. Gestion des utilisateurs
 - Les administrateurs peuvent créer, modifier et supprimer des utilisateurs.
-- Les rôles disponibles : `ROLE_USER`, `ROLE_CONTROLLEUR`, `ROLE_ADMIN`.
+- Les rôles disponibles : `ROLE_USER`, `ROLE_CONTROLLEUR`, `ROLE_ADMIN`, `ROLE_SUPER_ADMIN`.
+- Le **compte super-administrateur créé à l'installation** est **protégé** (🔒 dans la liste) : il ne peut être ni supprimé ni rétrogradé, et seul son titulaire peut modifier son adresse mail et son mot de passe.
+- Il reste toujours au moins un super-administrateur : le dernier ne peut être ni supprimé ni rétrogradé.
 
 ---
 

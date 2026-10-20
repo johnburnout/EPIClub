@@ -2,8 +2,15 @@
 
 {% block body %}
 
-	<h3>Fiche Utilisateur</h3>
+	<h3>Fiche Utilisateur{% if est_protege|default(false) %} <span class="badge bg-dark align-middle fs-6">🔒 Compte protégé</span>{% endif %}</h3>
 	<hr>
+
+	{% if protege_pour_acteur|default(false) %}
+		<div class="alert alert-info">
+			🔒 Ce compte super-administrateur a été créé à l'installation : il ne peut être ni supprimé,
+			ni rétrogradé, et seul son titulaire peut modifier son adresse mail et son mot de passe.
+		</div>
+	{% endif %}
 
 	<form method="post">
 		<div class="mb-3">
@@ -27,21 +34,24 @@
 
 		<div class="mb-3">
 			<label for="email">Adresse mail :</label>
-			<input type="email" id="email" name="email" value="{{ utilisateur.email }}" class="form-control {% if form_errors.email %}is-invalid{% endif %}">
+			<input type="email" id="email" name="email" value="{{ utilisateur.email }}" class="form-control {% if form_errors.email %}is-invalid{% endif %}"
+			       {% if protege_pour_acteur|default(false) %}readonly disabled{% endif %}>
 			{% if form_errors.email %}<div class="invalid-feedback">{{ form_errors.email }}</div>{% endif %}
 		</div>
 
+		{% if not protege_pour_acteur|default(false) %}
 		<div class="mb-3">
 			<label for="password">Nouveau mot de passe :</label>
 			<input type="password" id="password" name="password" class="form-control {% if form_errors.password %}is-invalid{% endif %}">
 			<small class="form-text text-muted">Laisser vide pour ne pas modifier le mot de passe.</small>
 			{% if form_errors.password %}<div class="invalid-feedback">{{ form_errors.password }}</div>{% endif %}
 		</div>
+		{% endif %}
 
 		<div class="mb-3">
 			<label for="role">Rôle :</label>
 
-			{% if is_self is defined and is_self %}
+			{% if (is_self is defined and is_self) or protege_pour_acteur|default(false) %}
 				{# Un utilisateur ne peut pas modifier son propre rôle via ce formulaire.
 				   Le contrôleur l'ignore de toute façon ; on désactive le champ pour
 				   éviter toute confusion côté interface. #}
@@ -52,7 +62,11 @@
 				</select>
 				<input type="hidden" name="role" value="{{ utilisateur.role }}">
 				<small class="form-text text-muted">
-					Vous ne pouvez pas modifier votre propre rôle. Demandez à un autre administrateur.
+					{% if protege_pour_acteur|default(false) %}
+						Le rôle du compte protégé ne peut pas être modifié.
+					{% else %}
+						Vous ne pouvez pas modifier votre propre rôle. Demandez à un autre administrateur.
+					{% endif %}
 				</small>
 			{% else %}
 				<select name="role" id="role" class="form-control {% if form_errors.role %}is-invalid{% endif %}">
@@ -80,9 +94,9 @@
 				<span class="badge bg-info ms-auto p-2">
 					🔒 Vous ne pouvez pas supprimer votre propre compte
 				</span>
-			{% elseif utilisateur.username == 'admin' %}
+			{% elseif est_protege|default(false) %}
 				<span class="badge bg-info ms-auto p-2">
-					🔒 Ce compte est protégé
+					🔒 Compte protégé : suppression impossible
 				</span>
 			{% elseif utilisateur.role == 'ROLE_SUPER_ADMIN' %}
 				<span class="badge bg-warning text-dark ms-auto p-2">
