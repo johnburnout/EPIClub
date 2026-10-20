@@ -97,14 +97,19 @@
 				<input type="date" class="form-control {% if form_errors.date_mise_en_service is defined %}is-invalid{% endif %}"
 				       name="date_mise_en_service" id="date_mise_en_service"
 				       value="{{ equipement.date_mise_en_service }}" data-initiale="{{ equipement.date_mise_en_service }}"
+				       {% if not isGranted('ROLE_SUPER_ADMIN') %}data-confirmer="1"{% endif %}
 				       {% if date_facture %}min="{{ date_facture }}"{% endif %}>
 				{% if form_errors.date_mise_en_service is defined %}
 					<div class="invalid-feedback">{{ form_errors.date_mise_en_service }}</div>
 				{% endif %}
 				<small class="text-muted">
 					Par défaut, la date de la facture.
-					⚠️ Elle ne peut être modifiée qu'<strong>une seule fois</strong>{% if date_facture %},
-					et pas avant le {{ date_facture|date('d/m/Y') }}{% endif %}.
+					{% if isGranted('ROLE_SUPER_ADMIN') %}
+						Super-administrateur : modifiable à tout moment{% if date_facture %}, mais pas avant le {{ date_facture|date('d/m/Y') }}{% endif %}.
+					{% else %}
+						⚠️ Elle ne peut être modifiée qu'<strong>une seule fois</strong>{% if date_facture %},
+						et pas avant le {{ date_facture|date('d/m/Y') }}{% endif %}.
+					{% endif %}
 				</small>
 			{% endif %}
 		</div>
@@ -219,7 +224,7 @@
 		// confirmation avant enregistrement si elle a changé.
 		(function () {
 			const champ = document.getElementById('date_mise_en_service');
-			if (!champ || champ.disabled || !champ.form) {
+			if (!champ || champ.disabled || !champ.form || champ.dataset.confirmer !== '1') {
 				return;
 			}
 			champ.form.addEventListener('submit', function (e) {
