@@ -27,21 +27,24 @@
 					<td>{{ utilisateur.id }}</td>
 					<td>{{ utilisateur.nom }}</td>
 					<td>{{ utilisateur.prenom }}</td>
-					<td>{{ utilisateur.username }}{% if utilisateur.est_protege|default(false) %} <span title="Compte protégé (créé à l'installation)">🔒</span>{% endif %}</td>
+					<td>{{ utilisateur.username }}{% if utilisateur.est_protege|default(false) %} <span class="badge bg-dark" title="Compte protégé (créé à l'installation)">🔒 Protégé</span>{% endif %}</td>
 					<td>{{ utilisateur.email }}</td>
 					<td>{{ utilisateur.rolelabel }}</td>
 					<td>
 						<a href="/admin/utilisateurs/utilisateur-{{ utilisateur.id }}" class="btn btn-sm btn-primary">Voir</a>
-						{% if utilisateur.username != 'admin' %}
+						{% if utilisateur.suppression_impossible is empty %}
 						<form method="post" action="/admin/utilisateurs/utilisateur_supprimer-{{ utilisateur.id }}" style="display:inline;">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+							<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 							<button type="submit" class="btn btn-sm btn-danger"
 							        onclick="return confirm('Supprimer {{ utilisateur.prenom }} {{ utilisateur.nom }} ?')">
 								Supprimer
 							</button>
 						</form>
 						{% else %}
-						<span class="badge bg-info">🔒 Protégé</span>
+						{# Bouton désactivé : un span porte l'info-bulle (un bouton disabled n'en affiche pas) #}
+						<span class="d-inline-block" tabindex="0" title="{{ utilisateur.suppression_impossible }}">
+							<button type="button" class="btn btn-sm btn-danger" disabled style="pointer-events: none;">Supprimer</button>
+						</span>
 						{% endif %}
 					</td>
 				</tr>

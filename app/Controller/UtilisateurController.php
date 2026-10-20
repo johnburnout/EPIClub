@@ -25,9 +25,24 @@ class UtilisateurController extends AbstractController
 
         $utilisateurManager = $this->utilisateurManager();
         $utilisateurs = $utilisateurManager->findAll();
+        $actor = $this->session->get('user') ?: [];
+        $nbSuperAdmins = count(array_filter(
+            $utilisateurs,
+            static fn($u) => ($u['role'] ?? null) === 'ROLE_SUPER_ADMIN'
+        ));
 
         foreach ($utilisateurs as $i => $utilisateur) {
             $utilisateurs[$i]['rolelabel'] = UserRole::fromRole($utilisateur['role']);
+            // [2026-10-20] Mêmes règles que delete() : le bouton est
+            // affiché désactivé, avec la raison, quand la suppression
+            // est impossible (le contrôleur reste la source de vérité).
+            $utilisateurs[$i]['suppression_impossible'] = match (true) {
+                ($actor['id'] ?? null) == $utilisateur['id'] => 'Vous ne pouvez pas supprimer votre propre compte.',
+                !empty($utilisateur['est_protege']) => 'Compte protégé (créé à l\'installation).',
+                ($utilisateur['role'] ?? null) === 'ROLE_SUPER_ADMIN' && $nbSuperAdmins <= 1 => 'Dernier super-administrateur.',
+                $actor === [] || !$this->canManageUser($actor, $utilisateur) => 'Vous n\'avez pas les droits pour supprimer cet utilisateur.',
+                default => null,
+            };
         }
         return $this->render('utilisateur_list.twig', [
             'utilisateurs' => $utilisateurs
