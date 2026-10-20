@@ -34,7 +34,22 @@ $routes = new RouteCollection();
 $routes->add('index', new Route('/', ['_controller' => 'Epiclub\\Controller\\IndexController', 'action' => 'index']));
 
 // ROLE_USER : page d'accueil des utilisateurs connectés
-$routes->add('dashboard', new Route('/tableau_de_bord', ['_controller' => 'Epiclub\\Controller\\IndexController', 'action' => 'dashboard']));
+$routes->add('dashboard', new Route('/tableau_de_bord', ['_controller' => 'Epiclub\\Controller\\TableauDeBordController', 'action' => 'index']));
+
+// ROLE_USER : fermeture de la notification « EPI à renouveler »
+// (jusqu'à la prochaine connexion)
+$routes->add('dashboard_masquer_alerte', new Route(
+    '/tableau_de_bord/masquer-alerte',
+    ['_controller' => 'Epiclub\\Controller\\TableauDeBordController', 'action' => 'masquerAlerte'],
+    [], [], '', [], ['POST']
+));
+
+// ROLE_ADMIN : personnalisation du tableau de bord (logo, photo de
+// fond, horizon de la notification de renouvellement)
+$routes->add('dashboard_reglages', new Route(
+    '/admin/tableau-de-bord',
+    ['_controller' => 'Epiclub\\Controller\\TableauDeBordController', 'action' => 'reglages']
+));
 
 
 // =====================================================================

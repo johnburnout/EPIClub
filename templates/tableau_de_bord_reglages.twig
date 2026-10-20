@@ -1,0 +1,72 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+
+	<h3>Personnalisation du tableau de bord</h3>
+	<hr>
+
+	{% for message in form_errors %}
+		<div class="alert alert-danger">{{ message }}</div>
+	{% endfor %}
+
+	<form method="post" enctype="multipart/form-data">
+		<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+		<div class="row g-4">
+			{# --- Logo --- #}
+			<div class="col-md-6">
+				<label for="logo" class="form-label fw-bold">Logo du club</label>
+				<div class="mb-2">
+					<img src="{{ logo_url }}" alt="Logo actuel" class="img-thumbnail" style="max-height: 120px;">
+				</div>
+				<input type="file" id="logo" name="logo" accept="image/jpeg,image/png,image/webp,image/gif"
+				       class="form-control {% if form_errors.logo is defined %}is-invalid{% endif %}">
+				<div class="form-text">JPEG, PNG, WebP ou GIF. Redimensionné à 400 px maximum.</div>
+				{% if logo_personnalise %}
+					<div class="form-check mt-2">
+						<input class="form-check-input" type="checkbox" id="supprimer_logo" name="supprimer_logo" value="1">
+						<label class="form-check-label" for="supprimer_logo">Revenir au logo EPIClub par défaut</label>
+					</div>
+				{% endif %}
+			</div>
+
+			{# --- Photo de fond --- #}
+			<div class="col-md-6">
+				<label for="image_fond" class="form-label fw-bold">Photo de fond</label>
+				<div class="mb-2">
+					<img src="{{ fond_url }}" alt="Photo de fond actuelle" class="img-thumbnail" style="max-height: 120px;">
+				</div>
+				<input type="file" id="image_fond" name="image_fond" accept="image/jpeg,image/png,image/webp,image/gif"
+				       class="form-control {% if form_errors.image_fond is defined %}is-invalid{% endif %}">
+				<div class="form-text">JPEG, PNG, WebP ou GIF. Format paysage conseillé, redimensionné à 1920 px maximum.</div>
+				{% if fond_personnalise %}
+					<div class="form-check mt-2">
+						<input class="form-check-input" type="checkbox" id="supprimer_image_fond" name="supprimer_image_fond" value="1">
+						<label class="form-check-label" for="supprimer_image_fond">Revenir à la photo par défaut</label>
+					</div>
+				{% endif %}
+			</div>
+
+			{# --- Notification de renouvellement --- #}
+			<div class="col-md-6">
+				<label for="alerte_renouvellement_mois" class="form-label fw-bold">Notification « EPI à renouveler »</label>
+				<div class="input-group" style="max-width: 16rem;">
+					<input type="number" id="alerte_renouvellement_mois" name="alerte_renouvellement_mois"
+					       value="{{ duree }}" min="{{ duree_min }}" max="{{ duree_max }}" step="1" required
+					       class="form-control {% if form_errors.alerte_renouvellement_mois is defined %}is-invalid{% endif %}">
+					<span class="input-group-text">mois</span>
+				</div>
+				<div class="form-text">
+					Le tableau de bord signale les équipements dont la date de fin d'utilisation
+					tombe dans ce délai (ainsi que ceux déjà échus, hors équipements « Hors service »).
+				</div>
+			</div>
+		</div>
+
+		<div class="mt-4">
+			<button type="submit" class="btn btn-primary">Enregistrer</button>
+			<a href="/tableau_de_bord" class="btn btn-secondary">Retour au tableau de bord</a>
+		</div>
+	</form>
+
+{% endblock %}

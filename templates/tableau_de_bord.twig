@@ -1,10 +1,91 @@
 {% extends "_layout.twig" %}
 
 {% block body %}
-	{# <h3>Tableau de bord</h3> #}
-	<hr>
-	<div class="row">
-		{# @todo faire un detail des infos d'un club pour remplacer cette image. #}
-		<img src="/assets/img/screen.jpg" class="img-fluid m-auto" alt="...">
+	<div class="row g-3 mt-1">
+		{# ============================================================ #}
+		{# Bandeau vertical : club, notification, accès rapides          #}
+		{# ============================================================ #}
+		<aside class="col-lg-3 col-md-4">
+			<div class="card h-100">
+				<div class="card-body d-flex flex-column gap-3">
+					<div class="text-center">
+						<img src="{{ logo_url }}" alt="Logo {{ club.nom|default('du club') }}"
+						     class="img-fluid mb-2" style="max-height: 140px; object-fit: contain;">
+						<h4 class="mb-0 text-primary">{{ club.nom|default('Mon club') }}</h4>
+						{% if club.activite is not empty %}
+							<div class="small text-body-secondary">{{ club.activite }}</div>
+						{% endif %}
+					</div>
+
+					{% if alerte %}
+						<div id="alerte-renouvellement" class="alert alert-warning alert-dismissible mb-0 position-relative" role="alert">
+							<a href="{{ alerte.url }}" class="alert-link text-decoration-none d-block"
+							   title="Afficher la liste des équipements par date de fin croissante">
+								⚠️ <strong>{{ alerte.total }} EPI à renouveler</strong>
+								{% if alerte.mois > 1 %}
+									dans les {{ alerte.mois }} prochains mois
+								{% else %}
+									dans le mois à venir
+								{% endif %}
+								<span class="d-block small fw-normal">
+									(avant le {{ alerte.date_limite|date('d/m/Y') }}{% if alerte.echus > 0 %}, dont {{ alerte.echus }} déjà échu{{ alerte.echus > 1 ? 's' : '' }}{% endif %})
+								</span>
+								<span class="d-block small mt-1">Voir la liste →</span>
+							</a>
+							<form method="post" action="/tableau_de_bord/masquer-alerte" id="form-masquer-alerte" class="m-0">
+								<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+								<button type="submit" class="btn-close" aria-label="Fermer la notification"
+								        title="Masquer jusqu'à la prochaine connexion"></button>
+							</form>
+						</div>
+					{% endif %}
+
+					<a href="/controles/scanner" class="btn btn-primary w-100 py-2">
+						📷 Scanner un QR code
+					</a>
+
+					{% if isGranted('ROLE_ADMIN') %}
+						<a href="/admin/tableau-de-bord" class="small text-body-secondary mt-auto text-center">
+							⚙️ Personnaliser le tableau de bord
+						</a>
+					{% endif %}
+				</div>
+			</div>
+		</aside>
+
+		{# ============================================================ #}
+		{# Photo de fond                                                  #}
+		{# ============================================================ #}
+		<section class="col-lg-9 col-md-8">
+			<img src="{{ fond_url }}" alt="" class="w-100 h-100 rounded"
+			     style="object-fit: cover; min-height: 320px; max-height: 75vh;">
+		</section>
 	</div>
+{% endblock %}
+
+{% block javascripts %}
+	{{ parent() }}
+	<script>
+		// Fermeture de la notification sans rechargement de page (le
+		// formulaire reste fonctionnel si JavaScript est désactivé).
+		document.addEventListener('DOMContentLoaded', function () {
+			const form = document.getElementById('form-masquer-alerte');
+			if (!form) {
+				return;
+			}
+			form.addEventListener('submit', function (event) {
+				event.preventDefault();
+				const alerte = document.getElementById('alerte-renouvellement');
+				if (alerte) {
+					alerte.remove();
+				}
+				fetch(form.action, {
+					method: 'POST',
+					body: new FormData(form),
+					headers: { 'X-Requested-With': 'XMLHttpRequest' },
+					credentials: 'same-origin'
+				}).catch(function () { /* fermeture visuelle conservée */ });
+			});
+		});
+	</script>
 {% endblock %}

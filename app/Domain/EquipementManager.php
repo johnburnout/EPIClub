@@ -33,6 +33,35 @@ class EquipementManager extends AbstractManager
         return $stmt->fetchAll();
     }
 
+    /**
+     * [Tableau de bord] Équipements à renouveler : date de fin
+     * d'utilisation renseignée et antérieure ou égale à $dateLimite
+     * (y compris les équipements déjà échus). Les équipements supprimés
+     * et ceux déjà déclarés « Hors service » (statut 2) sont exclus.
+     *
+     * @param string $aujourdhui Date du jour (Y-m-d) — paramètre pour les tests
+     * @param string $dateLimite Date limite incluse (Y-m-d)
+     * @return array{total: int, echus: int}
+     */
+    public function statsARenouveler(string $aujourdhui, string $dateLimite): array
+    {
+        $sql = "SELECT COUNT(*) AS total,
+                       COALESCE(SUM(date_fin_utilisation <= :aujourdhui), 0) AS echus
+                  FROM club_equipement
+                 WHERE deleted_at IS NULL
+                   AND statut <> 2
+                   AND date_fin_utilisation IS NOT NULL
+                   AND date_fin_utilisation <= :limite";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['aujourdhui' => $aujourdhui, 'limite' => $dateLimite]);
+        $row = $stmt->fetch() ?: [];
+
+        return [
+            'total' => (int) ($row['total'] ?? 0),
+            'echus' => (int) ($row['echus'] ?? 0),
+        ];
+    }
+
     public function findId(int $id)
     {
         $sql = "SELECT * FROM club_equipement WHERE id=:id AND deleted_at IS NULL";
