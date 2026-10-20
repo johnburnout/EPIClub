@@ -67,13 +67,6 @@
 			<small class="text-muted">La date d'achat est définie lors de l'acquisition.</small>
 		</div>
 
-		<!-- Code (lecture seule) -->
-		<div class="mb-3">
-			<label for="code">Code</label>
-			<input type="text" class="form-control" id="code" value="{{ equipement.code }}" readonly disabled>
-			<small class="text-muted">Le code est généré automatiquement.</small>
-		</div>
-
 		<!-- Lot : nombre d'éléments (modifiable, plafonné au nombre initial) -->
 		{% if equipement.nombre_initial is defined and equipement.nombre_initial > 1 %}
 			<div class="mb-3">

@@ -725,7 +725,6 @@ class EquipementController extends AbstractController
     {
         // --- Extraction sécurisée des valeurs ---
         $reference = $equipement['reference'] ?? '';
-        $code = $equipement['code'] ?? '';
         $categorieLibelle = $equipement['categorie']['libelle'] ?? 'Non définie';
         $estEpi = (!empty($equipement['categorie']['est_epi'])) ? 'Oui' : 'Non';
         $emplacementLibelle = $equipement['emplacement']['libelle'] ?? 'Non défini';
@@ -804,7 +803,6 @@ class EquipementController extends AbstractController
                 <h1>Fiche équipement</h1>
                 <div class="info">
                     <div class="row"><span class="label">Référence :</span> {$reference}</div>
-                    <div class="row"><span class="label">Code :</span> {$code}</div>
                     <div class="row"><span class="label">Catégorie :</span> {$categorieLibelle}</div>
                     <div class="row"><span class="label">EPI :</span> {$estEpi}</div>
                     <div class="row"><span class="label">Emplacement :</span> {$emplacementLibelle}</div>
@@ -965,7 +963,6 @@ HTML;
             $rows .= <<<ROW
         <tr>
             <td>{$e['reference']}</td>
-            <td>{$e['code']}</td>
             <td>{$e['libelle']}</td>
             <td style="text-align:center;">{$photoHtml}</td>
             <td style="text-align:center;">{$qrHtml}</td>
@@ -991,8 +988,8 @@ ROW;
                     th { background: #3498db; color: white; padding: 5px 6px; text-align: left; }
                     td { padding: 4px 6px; border-bottom: 1px solid #ddd; vertical-align: middle; }
                     /* Ajustement des colonnes photo et QR */
+                    th:nth-child(3), td:nth-child(3) { width: 3.2cm; text-align:center; }
                     th:nth-child(4), td:nth-child(4) { width: 3.2cm; text-align:center; }
-                    th:nth-child(5), td:nth-child(5) { width: 3.2cm; text-align:center; }
                     .footer { margin-top: 20px; font-size: 10px; color: #888; text-align: center; border-top: 1px solid #ddd; padding-top: 8px; }
                 </style>
             </head>
@@ -1007,7 +1004,6 @@ ROW;
                     <thead>
                         <tr>
                             <th>Référence</th>
-                            <th>Code</th>
                             <th>Nom</th>
                             <th style="text-align:center;">Photo</th>
                             <th style="text-align:center;">QR Code</th>
@@ -1040,7 +1036,7 @@ HTML;
         $sheet = $spreadsheet->getActiveSheet();
         
         // En-têtes
-        $headers = ['Référence', 'Code', 'Nom', 'Photo', 'QR Code'];
+        $headers = ['Référence', 'Nom', 'Photo', 'QR Code'];
         $col = 'A';
         foreach ($headers as $header) {
             $sheet->setCellValue($col . '1', $header);
@@ -1048,7 +1044,7 @@ HTML;
             $col = chr(ord($col) + 1); // Incrémentation sans warning
         }
         
-        $headerStyle = $sheet->getStyle('A1:E1');
+        $headerStyle = $sheet->getStyle('A1:D1');
         $headerStyle->getFont()->setBold(true);
         $headerStyle->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $headerStyle->getBorders()->getAllBorders()->setBorderStyle(Border::BORDER_THIN);
@@ -1060,10 +1056,9 @@ HTML;
         
         foreach ($equipements as $e) {
             $sheet->setCellValue('A' . $row, $e['reference'] ?? '');
-            $sheet->setCellValue('B' . $row, $e['code'] ?? '');
-            $sheet->setCellValue('C' . $row, $e['libelle'] ?? '');
+            $sheet->setCellValue('B' . $row, $e['libelle'] ?? '');
             
-            // --- Photo (colonne D) ---
+            // --- Photo (colonne C) ---
             $photoPath = null;
             if (!empty($e['photo'])) {
                 $fullPath = $this->getPublicPath($e['photo']);
@@ -1074,7 +1069,7 @@ HTML;
             if ($photoPath) {
                 $drawing = new Drawing();
                 $drawing->setPath($photoPath);
-                $drawing->setCoordinates('D' . $row);
+                $drawing->setCoordinates('C' . $row);
                 $drawing->setWidth(80);
                 $drawing->setHeight(80);
                 $drawing->setOffsetX(5);
@@ -1082,7 +1077,7 @@ HTML;
                 $drawing->setWorksheet($sheet);
             }
             
-            // --- QR Code (colonne E) ---
+            // --- QR Code (colonne D) ---
             try {
                 $qrUrl = $baseUrl . '/qr/' . $e['id'];
                 $qrPng = $qrGenerator->generateFromData($qrUrl, 150, false);
@@ -1092,7 +1087,7 @@ HTML;
                     $tempFiles[] = $tempQr;
                     $drawingQr = new Drawing();
                     $drawingQr->setPath($tempQr);
-                    $drawingQr->setCoordinates('E' . $row);
+                    $drawingQr->setCoordinates('D' . $row);
                     $drawingQr->setWidth(80);
                     $drawingQr->setHeight(80);
                     $drawingQr->setOffsetX(5);
@@ -1140,7 +1135,7 @@ HTML;
      * fichier d'import a sa propre structure — voir le guide).
      */
     private const EXPORT_DATA_HEADERS = [
-        'Référence', 'Code', 'Nom', 'Catégorie', 'Emplacement', 'EPI',
+        'Référence', 'Nom', 'Catégorie', 'Emplacement', 'EPI',
         'Statut', 'Nombre', 'Mise en service', 'Dernier contrôle',
         'Fin d\'utilisation', 'N° facture', 'Date facture',
     ];
@@ -1172,7 +1167,6 @@ HTML;
 
             $rows[] = [
                 $e['reference'] ?? '',
-                $e['code'] ?? '',
                 $e['libelle'] ?? '',
                 $e['categorie']['libelle'] ?? '',
                 $e['emplacement']['libelle'] ?? '',

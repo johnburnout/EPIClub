@@ -103,9 +103,9 @@ Ils sont générés automatiquement à partir des **factures d'acquisition** val
 2. **Action automatique** :
 - Pour chaque ligne, le système crée **autant d’équipements que le nombre indiqué** (ou **un seul équipement** si la ligne est regroupée en lot).
 - Chaque équipement reçoit :
-- Une **référence attribuée automatiquement** selon le modèle de référence (voir §6 Référence), ex. `26COR001`
-- Un **libellé** (identique à la désignation)
-- Un **code** unique (généré automatiquement)
+- Une **référence** : celle de la ligne (proposée à la saisie selon le modèle de référence, voir §6 Référence, ex. `26COR001`), puis les numéros suivants pour les autres unités
+- Un **libellé** (identique à la désignation ; modifiable ensuite par un super-administrateur)
+- Une **date de mise en service** égale à la date de facture (modifiable une seule fois dans la fiche, jamais avant la date de facture)
 - La **catégorie** et le **statut** par défaut « Disponible »
 - Une **photo** vide (modifiable ultérieurement)
 

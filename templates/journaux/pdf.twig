@@ -165,8 +165,7 @@
         <thead>
             <tr>
                 <th style="width:15%;">Référence</th>
-                <th style="width:15%;">Code</th>
-                <th style="width:20%;">Désignation</th>
+                <th style="width:35%;">Désignation</th>
                 <th style="width:12%;">Catégorie</th>
                 <th style="width:5%;">EPI</th>
                 <th style="width:12%;">Emplacement</th>
@@ -178,7 +177,6 @@
             {% for ligne in lignes %}
             <tr>
                 <td><strong>{{ ligne.reference }}</strong></td>
-                <td><code>{{ ligne.equipement_code }}</code></td>
                 <td>{{ ligne.equipement_libelle }}</td>
                 <td>{{ ligne.categorie_libelle|default('N/A') }}</td>
                 <td style="text-align:center;">
