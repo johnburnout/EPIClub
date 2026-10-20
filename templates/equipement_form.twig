@@ -44,17 +44,26 @@
 			<input type="hidden" name="reference" value="{{ equipement.reference }}">
 		</div>
 
-		<!-- Libellé (lecture seule) -->
+		<!-- Libellé : défini à l'acquisition, modifiable par un super-administrateur -->
 		<div class="mb-3">
 			<label for="libelle">Libellé</label>
-			<input type="text" class="form-control" id="libelle" value="{{ equipement.libelle }}" readonly disabled>
-			<small class="text-muted">Le libellé est défini lors de l'acquisition.</small>
+			{% if isGranted('ROLE_SUPER_ADMIN') %}
+				<input type="text" class="form-control {% if form_errors.libelle is defined %}is-invalid{% endif %}"
+				       name="libelle" id="libelle" value="{{ equipement.libelle }}" maxlength="255" required>
+				{% if form_errors.libelle is defined %}
+					<div class="invalid-feedback">{{ form_errors.libelle }}</div>
+				{% endif %}
+				<small class="text-muted">Défini lors de l'acquisition ; modifiable par un super-administrateur.</small>
+			{% else %}
+				<input type="text" class="form-control" id="libelle" value="{{ equipement.libelle }}" readonly disabled>
+				<small class="text-muted">Le libellé est défini lors de l'acquisition.</small>
+			{% endif %}
 		</div>
 
 		<!-- Date d'achat (lecture seule) -->
 		<div class="mb-3">
 			<label for="date_achat">Date d'achat</label>
-			<input type="text" class="form-control" id="date_achat" value="{{ equipement.date_achat|date('d/m/Y') }}" readonly disabled>
+			<input type="text" class="form-control" id="date_achat" value="{{ equipement.date_achat ? equipement.date_achat|date('d/m/Y') : 'Non renseignée' }}" readonly disabled>
 			<small class="text-muted">La date d'achat est définie lors de l'acquisition.</small>
 		</div>
 
@@ -84,17 +93,26 @@
 			</div>
 		{% endif %}
 
-		<!-- Date de mise en service (modifiable si vide) -->
+		<!-- Date de mise en service : date de facture, modifiable une seule fois -->
 		<div class="mb-3">
 			<label for="date_mise_en_service">Date de mise en service</label>
-			{% if equipement.date_mise_en_service %}
-				<input type="date" class="form-control" id="date_mise_en_service" 
+			{% if date_mes_verrouillee %}
+				<input type="date" class="form-control" id="date_mise_en_service"
 				       value="{{ equipement.date_mise_en_service }}" readonly disabled>
-				<small class="text-muted">Cette date est déjà renseignée et ne peut plus être modifiée.</small>
-				<input type="hidden" name="date_mise_en_service" value="{{ equipement.date_mise_en_service }}">
+				<small class="text-muted">🔒 Cette date a déjà été modifiée une fois et ne peut plus l'être.</small>
 			{% else %}
-				<input type="date" class="form-control" name="date_mise_en_service" id="date_mise_en_service">
-				<small class="text-muted">Laisser vide si non renseignée.</small>
+				<input type="date" class="form-control {% if form_errors.date_mise_en_service is defined %}is-invalid{% endif %}"
+				       name="date_mise_en_service" id="date_mise_en_service"
+				       value="{{ equipement.date_mise_en_service }}" data-initiale="{{ equipement.date_mise_en_service }}"
+				       {% if date_facture %}min="{{ date_facture }}"{% endif %}>
+				{% if form_errors.date_mise_en_service is defined %}
+					<div class="invalid-feedback">{{ form_errors.date_mise_en_service }}</div>
+				{% endif %}
+				<small class="text-muted">
+					Par défaut, la date de la facture.
+					⚠️ Elle ne peut être modifiée qu'<strong>une seule fois</strong>{% if date_facture %},
+					et pas avant le {{ date_facture|date('d/m/Y') }}{% endif %}.
+				</small>
 			{% endif %}
 		</div>
 
@@ -203,6 +221,23 @@
 {% endblock %}
 
 {% block javascripts %}
+	<script>
+		// [MÉTIER] Date de mise en service modifiable une seule fois :
+		// confirmation avant enregistrement si elle a changé.
+		(function () {
+			const champ = document.getElementById('date_mise_en_service');
+			if (!champ || champ.disabled || !champ.form) {
+				return;
+			}
+			champ.form.addEventListener('submit', function (e) {
+				const initiale = champ.dataset.initiale || '';
+				if (champ.value !== '' && champ.value !== initiale
+					&& !confirm('La date de mise en service ne pourra plus être modifiée ensuite. Confirmer ?')) {
+					e.preventDefault();
+				}
+			});
+		})();
+	</script>
 	<script>
 		const add_category_submit = document.getElementById('add_category_submit');
 

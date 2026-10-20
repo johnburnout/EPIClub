@@ -8,6 +8,7 @@ use Epiclub\Domain\AcquisitionLigneManager;
 use Epiclub\Domain\AcquisitionManager;
 use Epiclub\Domain\AcquisitionValidator;
 use Epiclub\Domain\CategorieManager;
+use Epiclub\Domain\ReferenceGenerator;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Exception\DuplicateReferenceException;
 use Epiclub\Process\AcquisitionProcess;
@@ -35,6 +36,11 @@ class AcquisitionLineController extends AbstractController
     protected function acquisitionManager(): AcquisitionManager
     {
         return new AcquisitionManager();
+    }
+
+    protected function referenceGenerator(): ReferenceGenerator
+    {
+        return new ReferenceGenerator();
     }
 
     protected function acquisitionProcess(): AcquisitionProcess
@@ -119,6 +125,17 @@ class AcquisitionLineController extends AbstractController
                 $ligne['categorie_id']     = $categorie_id;
                 $ligne['nombre']           = $ligneData['nombre'];
                 $ligne['regrouper_en_lot'] = $regrouper_en_lot;
+                // [Référencement — 2026-10-20] référence libre → forcée ;
+                // conforme au modèle → n° de départ (cf. AcquisitionProcess).
+                // Les lignes importées (référence IMP-…) gardent leur
+                // référence forcée d'origine.
+                if (!str_starts_with((string) $ligne['reference'], 'IMP-')) {
+                    $ligne['reference_forcee'] = $this->referenceForceePour(
+                        (string) $ligne['reference'],
+                        (int) $categorie_id,
+                        (int) $ligne['acquisition_id']
+                    );
+                }
                 // equipements_generes est conservé (0 si non généré)
 
                 try {
@@ -207,5 +224,20 @@ class AcquisitionLineController extends AbstractController
 
         $this->session->getFlashBag()->add('success', 'Ligne supprimée avec succès.');
         return new RedirectResponse("/admin/acquisitions/acquisition_modification-{$ligne['acquisition_id']}");
+    }
+
+    private function referenceForceePour(string $reference, int $categorieId, int $acquisitionId): ?string
+    {
+        try {
+            $acquisition = $this->acquisitionManager()->findId($acquisitionId);
+            $annee = !empty($acquisition['facture_date'])
+                ? (int) date('Y', strtotime($acquisition['facture_date']))
+                : (int) date('Y');
+            $conforme = $this->referenceGenerator()->compteurSiConforme($reference, $categorieId, $annee) !== null;
+        } catch (\Throwable $e) {
+            error_log('[AcquisitionLineController] compteurSiConforme: ' . $e->getMessage());
+            $conforme = false;
+        }
+        return $conforme ? null : $reference;
     }
 }

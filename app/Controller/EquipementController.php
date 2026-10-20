@@ -172,6 +172,22 @@ class EquipementController extends AbstractController
         ]);
     }
     
+    /**
+     * [MÉTIER] La date de mise en service est verrouillée dès qu'elle a
+     * été modifiée une fois, c'est-à-dire lorsqu'elle est renseignée et
+     * différente de la date de facture (valeur posée à la validation de
+     * l'acquisition). Sans date de facture connue, une date renseignée
+     * est verrouillée (comportement historique).
+     */
+    public static function dateMiseEnServiceVerrouillee(array $equipement, ?string $dateFacture): bool
+    {
+        $dms = $equipement['date_mise_en_service'] ?? null;
+        if ($dms === null || $dms === '') {
+            return false;
+        }
+        return $dateFacture === null || substr((string) $dms, 0, 10) !== $dateFacture;
+    }
+
     /** Texte recherché (« q »), nettoyé ; null si vide. */
     private static function recherche(Request $request): ?string
     {
@@ -406,6 +422,21 @@ class EquipementController extends AbstractController
                 $equipement['categorie'] = $categorieManager->findId($equipement['categorie_id']);
             }
         }
+
+        // [MÉTIER] Date de facture de l'acquisition : date d'achat
+        // affichée et borne basse de la date de mise en service.
+        $dateFacture = null;
+        if (!empty($equipement['acquisition_id'])) {
+            $acquisition = $this->acquisitionManager()->findId((int) $equipement['acquisition_id']);
+            if (!empty($acquisition['facture_date'])) {
+                $dateFacture = date('Y-m-d', strtotime($acquisition['facture_date']));
+            }
+        }
+        if (is_array($equipement)) {
+            $equipement['date_achat'] = $dateFacture;
+        }
+        $dateMesVerrouillee = is_array($equipement)
+            && self::dateMiseEnServiceVerrouillee($equipement, $dateFacture);
         
         if ($request->getMethod() === 'POST') {
             // [SÉCURITÉ] Vérification CSRF AVANT tout traitement (y compris upload)
@@ -414,8 +445,28 @@ class EquipementController extends AbstractController
             $emplacement_id = $request->request->get('emplacement_id');
             if ($emplacement_id === '') $emplacement_id = null;
             
-            $date_mise_en_service = $request->request->get('date_mise_en_service');
-            if ($date_mise_en_service === '') $date_mise_en_service = null;
+            // [MÉTIER] Date de mise en service (décision 2026-10-20) :
+            // initialisée à la date de facture, modifiable UNE seule fois,
+            // jamais antérieure à la facture. Une fois verrouillée, la
+            // valeur postée est ignorée (champ non modifiable côté
+            // serveur, pas seulement dans le formulaire).
+            $date_mise_en_service = $equipement['date_mise_en_service'] ?? null;
+            if (!$dateMesVerrouillee) {
+                $dmsRaw = trim((string) $request->request->get('date_mise_en_service', ''));
+                if ($dmsRaw !== '') {
+                    $dms = \DateTimeImmutable::createFromFormat('!Y-m-d', $dmsRaw);
+                    if ($dms === false || $dms->format('Y-m-d') !== $dmsRaw) {
+                        $form_errors['date_mise_en_service'] = 'Date de mise en service invalide.';
+                    } elseif ($dateFacture !== null && $dmsRaw < $dateFacture) {
+                        $form_errors['date_mise_en_service'] = sprintf(
+                            'La date de mise en service ne peut pas être antérieure à la date de facture (%s).',
+                            date('d/m/Y', strtotime($dateFacture))
+                        );
+                    } else {
+                        $date_mise_en_service = $dmsRaw;
+                    }
+                }
+            }
             
             $date_fin_utilisation = $request->request->get('date_fin_utilisation');
             if ($date_fin_utilisation === '') $date_fin_utilisation = null;
@@ -482,6 +533,19 @@ class EquipementController extends AbstractController
                     return $this->redirectTo('/equipements');
                 }
                 
+                // [MÉTIER 2026-10-20] Libellé défini à l'acquisition :
+                // modifiable uniquement par un super-administrateur.
+                if ($this->isGranted('ROLE_SUPER_ADMIN') && $request->request->has('libelle')) {
+                    $libelle = trim((string) $request->request->get('libelle'));
+                    if ($libelle === '') {
+                        $form_errors['libelle'] = 'Le libellé est obligatoire.';
+                    } elseif (mb_strlen($libelle) > 255) {
+                        $form_errors['libelle'] = 'Le libellé ne doit pas dépasser 255 caractères.';
+                    }
+                }
+            }
+
+            if (empty($form_errors)) {
                 $equipementData = [
                     'statut' => $statutEnum->value,
                     'emplacement_id' => $emplacement_id,
@@ -496,6 +560,9 @@ class EquipementController extends AbstractController
 
                 if ($nombreLot !== null) {
                     $equipementData['nombre'] = $nombreLot;
+                }
+                if (isset($libelle)) {
+                    $equipementData['libelle'] = $libelle;
                 }
                 
                 $anciennePhoto = null;
@@ -518,6 +585,8 @@ class EquipementController extends AbstractController
         }
         
         return $this->render('equipement_form.twig', [
+            'date_facture' => $dateFacture,
+            'date_mes_verrouillee' => $dateMesVerrouillee,
             'categories' => $categorieManager->findAll(),
             'emplacements' => $emplacementManager->findAll(),
             'equipement_statuts' => EquipementStatut::forSelect(),

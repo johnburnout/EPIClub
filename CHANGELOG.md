@@ -10,6 +10,32 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Added
+
+- **Acquisition — référence proposée** : à l'ajout d'une ligne, dès que
+  la catégorie est choisie, le champ « Référence équipement » est
+  pré-rempli selon le modèle de référence (Administration › Référence)
+  avec le n° de suivi suivant. Les équipements existants et les lignes
+  en attente sont pris en compte (une ligne de N unités hors lot
+  réserve N numéros). Une saisie manuelle n'est jamais écrasée.
+- **Validation d'une acquisition** : une référence de ligne conforme au
+  modèle devient la référence de la 1re unité, les suivantes prennent
+  les numéros suivants (repli sur la référence automatique si un n° a
+  été pris entre-temps). Une référence libre devient la référence forcée
+  (suffixée -1..-n pour plusieurs unités).
+
+### Changed
+
+- **Date de mise en service** : renseignée à la validation de
+  l'acquisition avec la date de facture. Dans la fiche équipement, elle
+  peut être modifiée une seule fois (confirmation demandée), jamais
+  avant la date de facture ; le verrouillage est appliqué côté serveur.
+  La fiche affiche désormais la vraie date d'achat (date de facture).
+- **Libellé d'un équipement** : défini à l'acquisition, il est
+  désormais modifiable dans la fiche équipement par un
+  super-administrateur (toujours en lecture seule pour les autres rôles,
+  contrôle côté serveur).
+
 ## [v1.0.0-beta.8] — 2026-10-20
 
 Photo groupée : une même photo pour plusieurs équipements identiques,

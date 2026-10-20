@@ -47,6 +47,22 @@ class AcquisitionLigneManager extends AbstractManager
         return $lignes;
     }
 
+    /**
+     * [Référencement] Lignes dont la référence matche le REGEXP MySQL
+     * donné (modèle de référence d'une catégorie / année).
+     *
+     * @return array<int, array{reference: string, nombre: int, regrouper_en_lot: int, equipements_generes: int}>
+     */
+    public function findReferencesMatching(string $regexp): array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT reference, nombre, regrouper_en_lot, equipements_generes
+               FROM acquisition_ligne WHERE reference REGEXP :pattern"
+        );
+        $stmt->execute(['pattern' => $regexp]);
+        return $stmt->fetchAll();
+    }
+
     public function findId(int $id)
     {
         $sql = "SELECT * FROM acquisition_ligne WHERE id=:id";
