@@ -47,13 +47,6 @@ class IndexController extends AbstractController
         return $this->redirectTo('/tableau_de_bord');
     }
 
-    public function dashboard(Request $request): Response
-    {
-        $this->deniAccessUnlessGranted('ROLE_USER');
-        
-        return $this->render('tableau_de_bord.twig', []);
-    }
-
     public function systemSettings(Request $request): Response
     {
         // ⚠️ Configuration système (SMTP) : réservée au SUPER_ADMIN

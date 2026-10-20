@@ -16,7 +16,8 @@ use Symfony\Component\HttpFoundation\Request;
  *
  * ⚠️ Périmètre :
  *  - index()      : 2 branches (authentifié / non authentifié) ;
- *  - dashboard()  : 1 branche (render) ;
+ *  - dashboard()  : déplacé dans TableauDeBordController (voir
+ *    TableauDeBordControllerTest) ;
  *  - updateSystemSettings() : branches SMTP non couvertes par les 7
  *    tests Integration (IndexControllerRootUrlTest) : champs vides,
  *    ROOT_URL invalide, mot de passe vide. (Renommée depuis
@@ -50,20 +51,6 @@ final class IndexControllerTest extends TestCase
 
         self::assertSame(302, $response->getStatusCode());
         self::assertSame('/tableau_de_bord', $response->headers->get('Location'));
-    }
-
-    public function testDashboardRendersTableauDeBord(): void
-    {
-        $session = $this->makeSessionMock(granted: true);
-        $controller = new TestableIndexController($session);
-        
-        $response = $controller->dashboard(Request::create('/tableau_de_bord'));
-        
-        // Le contrôleur retourne une Response 200 avec un contenu non vide.
-        // On ne teste PAS le contenu exact du template (fragile, rôle des
-        // tests de rendu Twig, pas d'un test de contrôleur).
-    self::assertSame(200, $response->getStatusCode());
-    self::assertNotEmpty($response->getContent());
     }
 
     public function testUpdateSystemSettingsRejectsWhenRequiredFieldsEmpty(): void

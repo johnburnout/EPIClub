@@ -10,6 +10,32 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Added
+
+- **Tableau de bord — bandeau du club** : la page d'accueil affiche, dans
+  un bandeau vertical à gauche (au-dessus de la photo sur mobile), le
+  logo et le nom du club, un lien direct vers le scan de QR codes et,
+  pour les administrateurs, un lien vers les réglages.
+- **Tableau de bord — notification « EPI à renouveler »** : nombre
+  d'équipements dont la date de fin d'utilisation tombe dans les N
+  prochains mois ou est déjà dépassée (hors équipements supprimés ou
+  « Hors service »). Un clic ouvre la liste des équipements concernés
+  triée par date de fin croissante (nouveau filtre `fin_avant` de la
+  liste, conservé dans les exports). La notification peut être fermée
+  jusqu'à la prochaine connexion.
+- **Réglages du tableau de bord** (`/admin/tableau-de-bord`, ROLE_ADMIN,
+  menu Administration) : logo du club, photo de fond (téléversement sûr
+  via `ImageUploader`, retour possible à l'image par défaut) et durée de
+  la notification (1 à 36 mois, 3 par défaut). Migration
+  `012_tableau_de_bord.sql` (`club.logo`, `club.image_fond`,
+  `club.alerte_renouvellement_mois`). + 25 tests.
+
+### Changed
+
+- La route `/tableau_de_bord` est servie par le nouveau
+  `TableauDeBordController` (l'action `IndexController::dashboard()` est
+  supprimée).
+
 ## [v1.0.0-beta.6] — 2026-10-20
 
 Import Excel/CSV : contrôle ligne à ligne avant l'import (sélection,

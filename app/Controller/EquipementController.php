@@ -115,6 +115,7 @@ class EquipementController extends AbstractController
             'order_dir' => $request->query->get('order_dir', 'asc'),
             'limit' => $limit,
             'acquisition' => $request->query->get('acquisition'), // AJOUT
+            'fin_avant' => self::dateFinAvant($request),
         ];
         // Nettoyer les valeurs vides pour l'URL
         $baseParams = array_filter($baseParams, function($v) {
@@ -146,6 +147,7 @@ class EquipementController extends AbstractController
             'page' => $page,
             'limit' => $limit,
             'acquisition' => $request->query->get('acquisition'), // AJOUT
+            'fin_avant' => self::dateFinAvant($request),
         ];
 
         return $this->render('equipement_list.twig', [
@@ -166,6 +168,20 @@ class EquipementController extends AbstractController
         ]);
     }
     
+    /**
+     * [Tableau de bord] Paramètre « fin_avant » (Y-m-d) validé ; null si
+     * absent ou mal formé (le filtre est alors ignoré).
+     */
+    private static function dateFinAvant(Request $request): ?string
+    {
+        $valeur = $request->query->get('fin_avant');
+        if (!is_string($valeur) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $valeur)) {
+            return null;
+        }
+        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $valeur);
+        return ($date !== false && $date->format('Y-m-d') === $valeur) ? $valeur : null;
+    }
+
     // --------------------------------------------------------------
     // MÉTHODE PRIVÉE DE FILTRAGE / TRI
     // --------------------------------------------------------------
@@ -249,7 +265,19 @@ class EquipementController extends AbstractController
                 });
             }
         }
-        if ($dernier_controle !== null) {
+        // [Tableau de bord] Équipements à renouveler : date de fin
+        // d'utilisation <= fin_avant (y compris déjà échus), hors
+        // équipements supprimés / « Hors service » — même périmètre que
+        // EquipementManager::statsARenouveler().
+        $fin_avant = self::dateFinAvant($request);
+        if ($fin_avant !== null) {
+            $equipements = array_filter($equipements, function($e) use ($fin_avant) {
+                return !empty($e['date_fin_utilisation'])
+                    && $e['date_fin_utilisation'] <= $fin_avant
+                    && (int) ($e['statut'] ?? 0) !== EquipementStatut::HORS_SERVICE->value;
+            });
+        }
+                if ($dernier_controle !== null) {
             $oneYearAgo = date('Y-m-d', strtotime('-1 year'));
             if ($dernier_controle === 'plus_1_an') {
                 $equipements = array_filter($equipements, function($e) use ($oneYearAgo) {
