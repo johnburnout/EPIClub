@@ -135,27 +135,17 @@
 
     {% set photoGroupee = isGranted('ROLE_ADMIN') and equipements is not empty %}
     {% if photoGroupee %}
-    {# [Photo groupée] Même photo pour tous les équipements cochés #}
-    <form method="post" action="/equipements/photo-groupee" enctype="multipart/form-data"
-          id="form-photo-groupee" class="card card-body bg-light mb-3">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    {# [Modification groupée] Les équipements cochés sont modifiés ensemble #}
+    <form method="get" action="/equipements/modification-groupee" id="form-selection"
+          class="d-flex flex-wrap align-items-center gap-3 mb-3">
         <input type="hidden" name="retour" value="{{ retour_query }}">
-        <div class="row g-2 align-items-end">
-            <div class="col-md-5">
-                <label for="photo-groupee" class="form-label mb-1">📷 Photo pour les équipements cochés</label>
-                <input type="file" name="photo" id="photo-groupee" class="form-control"
-                       accept="image/jpeg,image/png,image/webp,image/gif" required>
-            </div>
-            <div class="col-md-4">
-                <button type="submit" id="btn-photo-groupee" class="btn btn-primary" disabled>
-                    Appliquer à <span id="nb-coches">0</span> équipement(s)
-                </button>
-            </div>
-            <div class="col-md-3 small text-body-secondary">
-                Astuce : filtrez (recherche, catégorie…) et augmentez « Lignes par page » pour tout cocher d'un coup.
-                La photo existante est remplacée.
-            </div>
-        </div>
+        <button type="submit" id="btn-selection" class="btn btn-primary" disabled>
+            ✏️ Modifier la sélection (<span id="nb-coches">0</span>)
+        </button>
+        <span class="small text-body-secondary">
+            Cochez les équipements à modifier ensemble (statut, emplacement, dates, photo…).
+            Astuce : filtrez puis augmentez « Lignes par page » pour tout cocher d'un coup.
+        </span>
     </form>
     {% endif %}
 
@@ -187,7 +177,7 @@
                     {% if photoGroupee %}
                     <td>
                         <input type="checkbox" class="form-check-input case-equipement" name="ids[]"
-                               value="{{ equipement.id }}" form="form-photo-groupee"
+                               value="{{ equipement.id }}" form="form-selection"
                                aria-label="Sélectionner {{ equipement.reference }}">
                     </td>
                     {% endif %}
@@ -290,10 +280,10 @@
 {% block javascripts %}
     {{ parent() }}
     <script>
-        // [Photo groupée] compteur + « tout cocher »
+        // [Modification groupée] compteur + « tout cocher »
         document.addEventListener('DOMContentLoaded', function () {
             const toutCocher = document.getElementById('tout-cocher');
-            const bouton = document.getElementById('btn-photo-groupee');
+            const bouton = document.getElementById('btn-selection');
             if (!toutCocher || !bouton) {
                 return;
             }
@@ -311,12 +301,6 @@
                 majCompteur();
             });
             cases.forEach(c => c.addEventListener('change', majCompteur));
-            document.getElementById('form-photo-groupee').addEventListener('submit', function (e) {
-                const nb = cases.filter(c => c.checked).length;
-                if (!confirm('Appliquer cette photo à ' + nb + ' équipement(s) ? Les photos existantes seront remplacées.')) {
-                    e.preventDefault();
-                }
-            });
             majCompteur();
         });
     </script>

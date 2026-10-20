@@ -63,12 +63,12 @@ class EquipementManager extends AbstractManager
     }
 
     /**
-     * [Photo groupée] Équipements existants (non supprimés) parmi $ids.
+     * [Modification groupée] Équipements (non supprimés) parmi $ids,
+     * triés par référence.
      *
      * @param int[] $ids
-     * @return array<int, array{id: int, photo: ?string}>
      */
-    public function findPhotosByIds(array $ids): array
+    public function findByIds(array $ids): array
     {
         $ids = array_values(array_unique(array_map('intval', $ids)));
         if ($ids === []) {
@@ -76,33 +76,10 @@ class EquipementManager extends AbstractManager
         }
         $marqueurs = implode(',', array_fill(0, count($ids), '?'));
         $stmt = $this->db->prepare(
-            "SELECT id, photo FROM club_equipement WHERE deleted_at IS NULL AND id IN ($marqueurs)"
+            "SELECT * FROM club_equipement WHERE deleted_at IS NULL AND id IN ($marqueurs) ORDER BY reference"
         );
         $stmt->execute($ids);
-
         return $stmt->fetchAll();
-    }
-
-    /**
-     * [Photo groupée] Affecte la même photo à plusieurs équipements
-     * (non supprimés).
-     *
-     * @param int[] $ids
-     * @return int Nombre d'équipements mis à jour
-     */
-    public function updatePhotoForIds(array $ids, string $photo): int
-    {
-        $ids = array_values(array_unique(array_map('intval', $ids)));
-        if ($ids === []) {
-            return 0;
-        }
-        $marqueurs = implode(',', array_fill(0, count($ids), '?'));
-        $stmt = $this->db->prepare(
-            "UPDATE club_equipement SET photo = ? WHERE deleted_at IS NULL AND id IN ($marqueurs)"
-        );
-        $stmt->execute(array_merge([$photo], $ids));
-
-        return $stmt->rowCount();
     }
 
     /**

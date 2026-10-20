@@ -1369,26 +1369,44 @@ HTML;
      * Redimensionne et sauvegarde une image
      */
     // --------------------------------------------------------------
-    // PHOTO GROUPÉE
+    // MODIFICATION GROUPÉE
     // --------------------------------------------------------------
 
     /** Nombre maximal d'équipements traités en une fois. */
-    private const PHOTO_GROUPEE_MAX = 500;
+    private const GROUPE_MAX = 500;
+
+    /** Champs modifiables en groupe (le libellé : super-admin seulement). */
+    private const CHAMPS_GROUPE = [
+        'statut', 'emplacement_id', 'date_mise_en_service', 'date_fin_utilisation',
+        'duree_max_utilisation', 'remarques', 'photo', 'libelle',
+    ];
 
     /**
-     * Affecte une même photo à plusieurs équipements cochés dans la liste
-     * (équipements identiques). La photo est enregistrée une seule fois
-     * et partagée ; les photos remplacées sont effacées si plus aucun
-     * équipement ne les utilise.
+     * Modification groupée des équipements cochés dans la liste
+     * (2026-10-20). Chaque champ n'est appliqué que si sa case
+     * « Modifier » est cochée ; les champs proposés sont ceux que le
+     * rôle connecté peut modifier dans la fiche équipement.
+     *
+     *  - GET  : formulaire (ids[] en paramètres) ;
+     *  - POST : validation complète puis application (tout ou rien sur
+     *    les erreurs de saisie). La date de mise en service suit les
+     *    règles de la fiche, équipement par équipement : ceux qui ne
+     *    peuvent pas la recevoir sont ignorés et listés.
      */
-    public function photoGroupee(Request $request): Response
+    public function modificationGroupee(Request $request): Response
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
-        $this->validateCsrf($request);
 
-        $retour = self::urlRetourListe((string) $request->request->get('retour', ''));
+        $estPost = $request->getMethod() === 'POST';
+        if ($estPost) {
+            $this->validateCsrf($request);
+        }
+        $source = $estPost ? $request->request : $request->query;
+        $retourQuery = (string) $source->get('retour', '');
+        $retour = self::urlRetourListe($retourQuery);
+        $superAdmin = $this->isGranted('ROLE_SUPER_ADMIN');
 
-        if ($this->isPostTruncated($request)) {
+        if ($estPost && $this->isPostTruncated($request)) {
             $this->session->getFlashBag()->add('error', sprintf(
                 'Le fichier est trop volumineux pour être traité par le serveur (limite PHP : %s).',
                 ini_get('post_max_size')
@@ -1396,68 +1414,231 @@ HTML;
             return $this->redirectTo($retour);
         }
 
-        $ids = [];
+        $ids = self::idsSelectionnes($source);
+        if ($ids === []) {
+            $this->session->getFlashBag()->add('error', 'Aucun équipement sélectionné.');
+            return $this->redirectTo($retour);
+        }
+        if (count($ids) > self::GROUPE_MAX) {
+            $this->session->getFlashBag()->add('error', sprintf(
+                'Sélection trop importante (%d équipements maximum).',
+                self::GROUPE_MAX
+            ));
+            return $this->redirectTo($retour);
+        }
+
+        $equipementManager = $this->equipementManager();
+        $equipements = $equipementManager->findByIds($ids);
+        if ($equipements === []) {
+            $this->session->getFlashBag()->add('error', 'Aucun des équipements sélectionnés n\'existe.');
+            return $this->redirectTo($retour);
+        }
+
+        $emplacements = $this->emplacementManager()->findAll() ?: [];
+        $form_errors = [];
+        $saisie = [];
+
+        if ($estPost) {
+            $appliquer = $request->request->all('appliquer');
+            $appliquer = is_array($appliquer) ? $appliquer : [];
+            $actifs = array_values(array_filter(
+                self::CHAMPS_GROUPE,
+                fn(string $c) => !empty($appliquer[$c]) && ($c !== 'libelle' || $superAdmin)
+            ));
+            $saisie = ['appliquer' => array_fill_keys($actifs, true)] + $request->request->all();
+
+            if ($actifs === []) {
+                $form_errors['general'] = 'Cochez « Modifier » pour au moins un champ.';
+            }
+
+            $valeurs = [];
+            foreach ($actifs as $champ) {
+                $brut = $request->request->get($champ);
+                switch ($champ) {
+                    case 'statut':
+                        $statut = is_string($brut) && ctype_digit($brut) ? EquipementStatut::tryFrom((int) $brut) : null;
+                        if ($statut === null) {
+                            $form_errors['statut'] = 'Statut invalide.';
+                        } else {
+                            $valeurs['statut'] = $statut->value;
+                        }
+                        break;
+                    case 'emplacement_id':
+                        $idsEmplacements = array_map('intval', array_column($emplacements, 'id'));
+                        if ($brut === '' || $brut === null) {
+                            $valeurs['emplacement_id'] = null;
+                        } elseif (is_string($brut) && ctype_digit($brut) && in_array((int) $brut, $idsEmplacements, true)) {
+                            $valeurs['emplacement_id'] = (int) $brut;
+                        } else {
+                            $form_errors['emplacement_id'] = 'Emplacement invalide.';
+                        }
+                        break;
+                    case 'date_fin_utilisation':
+                    case 'date_mise_en_service':
+                        $brut = trim((string) $brut);
+                        if ($brut === '' && $champ === 'date_fin_utilisation') {
+                            $valeurs[$champ] = null;
+                        } elseif (self::dateValide($brut)) {
+                            $valeurs[$champ] = $brut;
+                        } else {
+                            $form_errors[$champ] = 'Date invalide.';
+                        }
+                        break;
+                    case 'duree_max_utilisation':
+                        $valeurs['duree_max_utilisation'] = $brut === '1' ? 1 : 0;
+                        break;
+                    case 'remarques':
+                        $valeurs['remarques'] = trim((string) $brut);
+                        $valeurs['remarques_mode'] = $request->request->get('remarques_mode') === 'ajouter' ? 'ajouter' : 'remplacer';
+                        break;
+                    case 'libelle':
+                        $libelle = trim((string) $brut);
+                        if ($libelle === '') {
+                            $form_errors['libelle'] = 'Le libellé est obligatoire.';
+                        } elseif (mb_strlen($libelle) > 255) {
+                            $form_errors['libelle'] = 'Le libellé ne doit pas dépasser 255 caractères.';
+                        } else {
+                            $valeurs['libelle'] = $libelle;
+                        }
+                        break;
+                    case 'photo':
+                        $fichier = $request->files->get('photo');
+                        if (!$fichier instanceof UploadedFile || !$fichier->isValid()) {
+                            $form_errors['photo'] = 'Choisissez une photo à appliquer.';
+                        } else {
+                            $valeurs['photo'] = $fichier;
+                        }
+                        break;
+                }
+            }
+
+            if ($form_errors === [] && isset($valeurs['photo'])) {
+                try {
+                    $valeurs['photo'] = $this->savePhoto($valeurs['photo']);
+                } catch (\Throwable $e) {
+                    error_log('[EquipementController] Modification groupée (photo) : ' . $e->getMessage());
+                    $form_errors['photo'] = 'Erreur lors du traitement de l\'image. '
+                        . 'Vérifiez que le fichier est bien une image (JPEG, PNG, WebP, GIF).';
+                }
+            }
+
+            if ($form_errors === []) {
+                return $this->appliquerModificationGroupee($equipements, $valeurs, $superAdmin, $retour);
+            }
+        }
+
+        return $this->render('equipement_modification_groupee.twig', [
+            'equipements' => $equipements,
+            'emplacements' => $emplacements,
+            'equipement_statuts' => EquipementStatut::forSelect(),
+            'super_admin' => $superAdmin,
+            'retour_query' => $retourQuery,
+            'retour_url' => $retour,
+            'saisie' => $saisie,
+            'form_errors' => $form_errors,
+        ]);
+    }
+
+    /**
+     * Applique les valeurs validées à chaque équipement sélectionné.
+     *
+     * @param array<int, array<string, mixed>> $equipements
+     * @param array<string, mixed>             $valeurs
+     */
+    private function appliquerModificationGroupee(array $equipements, array $valeurs, bool $superAdmin, string $retour): Response
+    {
+        $equipementManager = $this->equipementManager();
+        $datesFacture = [];
+        $ignores = [];
+        $anciennesPhotos = [];
+        $modifies = 0;
+
+        foreach ($equipements as $equipement) {
+            $data = ['id' => (int) $equipement['id']];
+
+            foreach (['statut', 'emplacement_id', 'date_fin_utilisation', 'duree_max_utilisation', 'libelle', 'photo'] as $champ) {
+                if (array_key_exists($champ, $valeurs)) {
+                    $data[$champ] = $valeurs[$champ];
+                }
+            }
+
+            if (array_key_exists('remarques', $valeurs)) {
+                $actuelles = trim((string) ($equipement['remarques'] ?? ''));
+                $data['remarques'] = ($valeurs['remarques_mode'] === 'ajouter' && $actuelles !== '')
+                    ? ($valeurs['remarques'] === '' ? $actuelles : $actuelles . "\n" . $valeurs['remarques'])
+                    : ($valeurs['remarques'] === '' ? null : $valeurs['remarques']);
+            }
+
+            // Date de mise en service : mêmes règles que la fiche.
+            if (array_key_exists('date_mise_en_service', $valeurs)) {
+                $aid = (int) ($equipement['acquisition_id'] ?? 0);
+                if (!array_key_exists($aid, $datesFacture)) {
+                    $acquisition = $aid > 0 ? $this->acquisitionManager()->findId($aid) : null;
+                    $datesFacture[$aid] = !empty($acquisition['facture_date'])
+                        ? date('Y-m-d', strtotime($acquisition['facture_date']))
+                        : null;
+                }
+                $dateFacture = $datesFacture[$aid];
+                $dms = $valeurs['date_mise_en_service'];
+
+                if (!$superAdmin && self::dateMiseEnServiceVerrouillee($equipement, $dateFacture)) {
+                    $ignores[] = ($equipement['reference'] ?? '#' . $equipement['id']) . ' (date déjà modifiée)';
+                } elseif ($dateFacture !== null && $dms < $dateFacture) {
+                    $ignores[] = ($equipement['reference'] ?? '#' . $equipement['id'])
+                        . ' (facture du ' . date('d/m/Y', strtotime($dateFacture)) . ')';
+                } else {
+                    $data['date_mise_en_service'] = $dms;
+                }
+            }
+
+            if (count($data) > 1) {
+                if (isset($data['photo']) && !empty($equipement['photo']) && $equipement['photo'] !== $data['photo']) {
+                    $anciennesPhotos[$equipement['photo']] = true;
+                }
+                $equipementManager->save($data);
+                $modifies++;
+            }
+        }
+
+        foreach (array_keys($anciennesPhotos) as $ancienne) {
+            $this->supprimerPhotoSiOrpheline($ancienne);
+        }
+
+        $this->session->getFlashBag()->add('success', sprintf(
+            '%d équipement%s modifié%s.',
+            $modifies,
+            $modifies > 1 ? 's' : '',
+            $modifies > 1 ? 's' : ''
+        ));
+        if ($ignores !== []) {
+            $this->session->getFlashBag()->add('warning',
+                'Date de mise en service non modifiée pour : ' . implode(', ', $ignores) . '.');
+        }
+
+        return $this->redirectTo($retour);
+    }
+
+    /** @return int[] ids[] valides et dédoublonnés */
+    private static function idsSelectionnes(\Symfony\Component\HttpFoundation\InputBag $source): array
+    {
         try {
-            $brut = $request->request->all('ids');
+            $brut = $source->all('ids');
         } catch (\Throwable $e) {
             $brut = [];
         }
+        $ids = [];
         foreach ($brut as $valeur) {
             if (is_string($valeur) && ctype_digit($valeur) && (int) $valeur > 0) {
                 $ids[(int) $valeur] = (int) $valeur;
             }
         }
-        $ids = array_values($ids);
+        return array_values($ids);
+    }
 
-        if ($ids === []) {
-            $this->session->getFlashBag()->add('error', 'Aucun équipement sélectionné.');
-            return $this->redirectTo($retour);
-        }
-        if (count($ids) > self::PHOTO_GROUPEE_MAX) {
-            $this->session->getFlashBag()->add('error', sprintf(
-                'Sélection trop importante (%d équipements maximum).',
-                self::PHOTO_GROUPEE_MAX
-            ));
-            return $this->redirectTo($retour);
-        }
-
-        $fichier = $request->files->get('photo');
-        if (!$fichier instanceof UploadedFile || !$fichier->isValid()) {
-            $this->session->getFlashBag()->add('error', 'Choisissez une photo à appliquer.');
-            return $this->redirectTo($retour);
-        }
-
-        $equipementManager = $this->equipementManager();
-        $existants = $equipementManager->findPhotosByIds($ids);
-        if ($existants === []) {
-            $this->session->getFlashBag()->add('error', 'Aucun des équipements sélectionnés n\'existe.');
-            return $this->redirectTo($retour);
-        }
-
-        try {
-            $photo = $this->savePhoto($fichier);
-        } catch (\Throwable $e) {
-            error_log('[EquipementController] Photo groupée : ' . $e->getMessage());
-            $this->session->getFlashBag()->add('error', 'Erreur lors du traitement de l\'image. '
-                . 'Vérifiez que le fichier est bien une image (JPEG, PNG, WebP, GIF).');
-            return $this->redirectTo($retour);
-        }
-
-        $nombre = $equipementManager->updatePhotoForIds(array_column($existants, 'id'), $photo);
-
-        $anciennes = array_unique(array_filter(array_column($existants, 'photo')));
-        foreach ($anciennes as $ancienne) {
-            if ($ancienne !== $photo) {
-                $this->supprimerPhotoSiOrpheline($ancienne);
-            }
-        }
-
-        $this->session->getFlashBag()->add('success', sprintf(
-            'Photo appliquée à %d équipement%s.',
-            $nombre,
-            $nombre > 1 ? 's' : ''
-        ));
-        return $this->redirectTo($retour);
+    private static function dateValide(string $valeur): bool
+    {
+        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $valeur);
+        return $date !== false && $date->format('Y-m-d') === $valeur;
     }
 
     /**
