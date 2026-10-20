@@ -10,6 +10,15 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Fixed
+
+- **Liste des utilisateurs** : le bouton « Supprimer » s'affiche
+  désactivé, avec la raison en info-bulle, quand la suppression est
+  impossible (son propre compte, compte protégé, dernier
+  super-administrateur, droits insuffisants) ; il reposait encore sur
+  l'ancienne protection du pseudo « admin ». Le compte protégé porte un
+  badge « 🔒 Protégé ».
+
 ## [v1.1.0] — 2026-10-20
 
 Compte super-administrateur protégé. **Migration** :

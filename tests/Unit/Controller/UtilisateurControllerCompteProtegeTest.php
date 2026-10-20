@@ -130,4 +130,23 @@ final class UtilisateurControllerCompteProtegeTest extends TestCase
         $request->attributes->set('id', '3');
         $this->controller()->delete($request);
     }
+
+    public function testListeMarqueLeCompteProtegeEtDesactiveLesSuppressionsImpossibles(): void
+    {
+        $this->manager = $this->createMock(UtilisateurManager::class);
+        $this->manager->method('findAll')->willReturn([
+            self::PROTEGE,
+            ['id' => 2, 'nom' => 'Moi', 'prenom' => 'M', 'username' => 'moi', 'email' => 'm@c.fr', 'role' => 'ROLE_SUPER_ADMIN', 'est_protege' => 0],
+            ['id' => 3, 'nom' => 'Autre', 'prenom' => 'A', 'username' => 'autre', 'email' => 'a@c.fr', 'role' => 'ROLE_USER', 'est_protege' => 0],
+        ]);
+
+        $html = (string) $this->controller()->list(Request::create('/admin/utilisateurs'))->getContent();
+
+        self::assertStringContainsString('jean <span class="badge bg-dark" title="Compte protégé', $html);
+        self::assertStringContainsString('title="Compte protégé (créé à l&#039;installation)."', $html);
+        self::assertStringContainsString('title="Vous ne pouvez pas supprimer votre propre compte."', $html);
+        self::assertStringContainsString('action="/admin/utilisateurs/utilisateur_supprimer-3"', $html);
+        self::assertStringNotContainsString('utilisateur_supprimer-1"', $html);
+        self::assertStringNotContainsString('utilisateur_supprimer-2"', $html);
+    }
 }
