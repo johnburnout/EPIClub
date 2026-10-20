@@ -10,6 +10,21 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Added
+
+- **Compte super-administrateur protégé** : le compte créé par le setup
+  est marqué protégé (🔒). Il ne peut être ni supprimé, ni rétrogradé,
+  et seul son titulaire peut modifier son email et son mot de passe
+  (contrôles côté serveur). Migration `013_utilisateur_protege.sql`
+  (`utilisateur.est_protege`) : sur les installations existantes, le
+  premier super-administrateur devient le compte protégé.
+
+### Changed
+
+- La protection historique du pseudo « admin » est remplacée par le
+  compte protégé. Le pseudo d'un utilisateur n'est plus modifiable
+  côté serveur non plus (il ne l'était déjà plus dans le formulaire).
+
 ## [v1.0.0] — 2026-10-20
 
 Première version stable d'EPIClub : gestion des équipements de

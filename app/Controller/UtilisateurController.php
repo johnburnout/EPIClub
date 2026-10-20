@@ -141,6 +141,9 @@ class UtilisateurController extends AbstractController
         }
         
         $form_errors = [];
+        $estProtege = !empty($utilisateur['est_protege']);
+        $estProtegePourActeur = $estProtege && !$isSelf;
+        $emailEnBase = $utilisateur['email'];
         
         if ($request->getMethod() === 'POST') {
             // [SÉCURITÉ] Vérification CSRF avant tout traitement (mise à jour de compte)
@@ -149,10 +152,21 @@ class UtilisateurController extends AbstractController
             // [SÉCURITÉ #53] Troncature défensive (colonnes varchar(32) en BDD).
             $utilisateur['nom']      = mb_substr(trim($request->request->get('nom')), 0, 32);
             $utilisateur['prenom']   = mb_substr(trim($request->request->get('prenom')), 0, 32);
-            $utilisateur['username'] = mb_substr(trim($request->request->get('username')), 0, 32);
-            $utilisateur['email']    = trim($request->request->get('email'));
+            // Le pseudo n'est pas modifiable (champ en lecture seule dans
+            // le formulaire) : la valeur en base est conservée, même si
+            // un POST forgé en soumet une autre.
+            $utilisateur['email']    = trim((string) $request->request->get('email'));
             $submittedRole = $request->request->get('role');
             $password = $request->request->get('password');
+
+            // [SÉCURITÉ 2026-10-20] Compte protégé (créé par le setup) :
+            // seul son titulaire peut modifier son email et son mot de
+            // passe ; son rôle ne change jamais.
+            if ($estProtegePourActeur) {
+                $utilisateur['email'] = $emailEnBase;
+                $password = null;
+                $submittedRole = $utilisateur['role'];
+            }
             
             // Validation
             if (empty($utilisateur['nom'])) $form_errors['nom'] = 'Le nom est obligatoire.';
@@ -192,7 +206,9 @@ class UtilisateurController extends AbstractController
                 } else {
                     // [SÉCURITÉ] Empêcher la rétrogradation du dernier SUPER_ADMIN
                     $isDemotingSuperAdmin = ($utilisateur['role'] === 'ROLE_SUPER_ADMIN' && $submittedRole !== 'ROLE_SUPER_ADMIN');
-                    if ($isDemotingSuperAdmin && $this->isLastSuperAdmin($utilisateur['id'])) {
+                    if ($estProtege && $submittedRole !== $utilisateur['role']) {
+                        $form_errors['role'] = "Le rôle du compte protégé ne peut pas être modifié.";
+                    } elseif ($isDemotingSuperAdmin && $this->isLastSuperAdmin($utilisateur['id'])) {
                         $form_errors['role'] = "Impossible de rétrograder le dernier SUPER_ADMIN de l'application.";
                     } else {
                         $newRole = $submittedRole;
@@ -233,16 +249,18 @@ class UtilisateurController extends AbstractController
         //
         // Trois cas bloquants :
         //   1. C'est soi-même (auto-suppression interdite)
-        //   2. C'est le compte 'admin' (protection historique)
+        //   2. C'est le compte protégé (créé par le setup)
         //   3. C'est le dernier SUPER_ADMIN (bloquerait l'accès aux réglages critiques)
         $canDelete = !$isSelf
-        && $utilisateur['username'] !== 'admin'
+        && !$estProtege
         && !($utilisateur['role'] === 'ROLE_SUPER_ADMIN' && $this->isLastSuperAdmin($utilisateur['id']));
         
         return $this->render('utilisateur_show.twig', [
             'utilisateur' => $utilisateur,
             'roles' => $assignableRoles,
             'is_self' => $isSelf,
+            'est_protege' => $estProtege,
+            'protege_pour_acteur' => $estProtegePourActeur,
             'can_delete' => $canDelete,
             'form_errors' => $form_errors
         ]);
@@ -290,9 +308,10 @@ class UtilisateurController extends AbstractController
             return new RedirectResponse("/admin/utilisateurs");
         }
 
-        // 🔒 PROTECTION DU SUPER ADMINISTRATEUR "admin" (protection historique)
-        if ($utilisateur['username'] === 'admin') {
-            $this->session->getFlashBag()->add('error', "❌ Le super administrateur 'admin' ne peut pas être supprimé.");
+        // 🔒 [2026-10-20] Compte protégé (créé par le setup) : jamais
+        // supprimé. Remplace l'ancienne protection du pseudo « admin ».
+        if (!empty($utilisateur['est_protege'])) {
+            $this->session->getFlashBag()->add('error', "❌ Le compte super-administrateur protégé ne peut pas être supprimé.");
             return new RedirectResponse("/admin/utilisateurs");
         }
 

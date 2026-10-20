@@ -27,7 +27,7 @@ final class UtilisateurManagerFindAllTest extends TestCase
 
         $rows = (new TestableUtilisateurManager($pdo))->findAll();
 
-        self::assertStringStartsWith('SELECT id, nom, prenom, username, email, role, date_creation FROM utilisateur', $captured->sql);
+        self::assertStringStartsWith('SELECT id, nom, prenom, username, email, role, date_creation, est_protege FROM utilisateur', $captured->sql);
         self::assertStringNotContainsString('SELECT *', $captured->sql);
         self::assertStringNotContainsString('password', $captured->sql);
         self::assertStringNotContainsString('reset_token', $captured->sql);

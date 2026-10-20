@@ -59,6 +59,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // C'est le seul moyen pour lui d'accéder aux réglages club,
         // SMTP et mise à jour, et de créer d'autres ADMIN/SUPER_ADMIN.
         $admin['role'] = 'ROLE_SUPER_ADMIN';
+        // [2026-10-20] Compte protégé : ni suppression, ni rétrogradation,
+        // email et mot de passe modifiables par son seul titulaire.
+        $admin['est_protege'] = 1;
         $admin['date_creation'] = (new DateTime())->format('Y-m-d H:i:s');
         $admin['derniere_connexion'] = null;
         $admin['last_activity'] = null;
