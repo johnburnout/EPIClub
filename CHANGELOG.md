@@ -10,6 +10,11 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.0.0-beta.12] — 2026-10-20
+
+Scan avec un contrôle ouvert : l'équipement est ajouté et sa fiche
+contrôle s'ouvre, retour au scanner après enregistrement.
+
 ### Changed
 
 - **Scan avec un contrôle ouvert** : dans le scanner de l'application,
