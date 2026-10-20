@@ -227,7 +227,21 @@
                         {% endif %}
                     </td>
                     <td>{{ equipement.etat|default('-') }}</td>
-                    <td>{{ equipement.statut|default('-') }}</td>
+                    <td class="text-center">
+                        {# Statut : 0 disponible (vert), 1 maintenance (jaune), 2 hors service (rouge) #}
+                        {% set statuts = {
+                            0: {couleur: '#28a745', libelle: 'Disponible'},
+                            1: {couleur: '#ffd60a', libelle: 'En maintenance'},
+                            2: {couleur: '#dc3545', libelle: 'Hors service'}
+                        } %}
+                        {% set s = statuts[equipement.statut|default(-1)] ?? null %}
+                        {% if s %}
+                            <span class="d-inline-block rounded-1 border" style="width: 1rem; height: 1rem; vertical-align: middle; background-color: {{ s.couleur }};"
+                                  title="{{ s.libelle }}" role="img" aria-label="{{ s.libelle }}"></span>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
                     <td>
                         <a href="/equipements/equipement-{{ equipement.id }}" class="btn btn-sm btn-primary">Voir</a>
                         <a href="/equipements/equipement_modification-{{ equipement.id }}" class="btn btn-sm btn-warning">Modifier</a>

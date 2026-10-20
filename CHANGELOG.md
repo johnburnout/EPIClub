@@ -10,6 +10,12 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Changed
+
+- **Liste des équipements — statut** : le numéro de statut est remplacé
+  par un carré de couleur (vert : disponible, jaune : en maintenance,
+  rouge : hors service), avec le libellé en info-bulle.
+
 ## [v1.0.0-beta.10] — 2026-10-20
 
 Modification groupée des équipements sélectionnés dans la liste
