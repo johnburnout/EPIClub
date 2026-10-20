@@ -62,6 +62,62 @@ class EquipementManager extends AbstractManager
         ];
     }
 
+    /**
+     * [Photo groupée] Équipements existants (non supprimés) parmi $ids.
+     *
+     * @param int[] $ids
+     * @return array<int, array{id: int, photo: ?string}>
+     */
+    public function findPhotosByIds(array $ids): array
+    {
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+        if ($ids === []) {
+            return [];
+        }
+        $marqueurs = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->db->prepare(
+            "SELECT id, photo FROM club_equipement WHERE deleted_at IS NULL AND id IN ($marqueurs)"
+        );
+        $stmt->execute($ids);
+
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * [Photo groupée] Affecte la même photo à plusieurs équipements
+     * (non supprimés).
+     *
+     * @param int[] $ids
+     * @return int Nombre d'équipements mis à jour
+     */
+    public function updatePhotoForIds(array $ids, string $photo): int
+    {
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+        if ($ids === []) {
+            return 0;
+        }
+        $marqueurs = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $this->db->prepare(
+            "UPDATE club_equipement SET photo = ? WHERE deleted_at IS NULL AND id IN ($marqueurs)"
+        );
+        $stmt->execute(array_merge([$photo], $ids));
+
+        return $stmt->rowCount();
+    }
+
+    /**
+     * [Photo groupée] Nombre d'équipements (y compris supprimés) qui
+     * référencent ce fichier photo. Une photo pouvant être partagée,
+     * le fichier ne doit être effacé que lorsqu'il n'est plus utilisé.
+     */
+    public function countPhotoReferences(string $photo): int
+    {
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM club_equipement WHERE photo = :photo");
+        $stmt->execute(['photo' => $photo]);
+
+        return (int) $stmt->fetchColumn();
+    }
+
     public function findId(int $id)
     {
         $sql = "SELECT * FROM club_equipement WHERE id=:id AND deleted_at IS NULL";

@@ -19,8 +19,19 @@ final class TestableEquipementController extends EquipementController
         private readonly CategorieManager $categorieManager,
         private readonly EmplacementManager $emplacementManager,
         private readonly AcquisitionManager $acquisitionManager,
+        private readonly ?string $publicPathOverride = null,
     ) {
         parent::__construct($session);
+    }
+
+    /** [Photo groupée] Dossier public temporaire pour les photos. */
+    protected function getPublicPath(string $subpath = ''): string
+    {
+        if ($this->publicPathOverride === null) {
+            return parent::getPublicPath($subpath);
+        }
+        $subpath = ltrim($subpath, '/');
+        return $subpath === '' ? $this->publicPathOverride : $this->publicPathOverride . '/' . $subpath;
     }
 
     protected function equipementManager(): EquipementManager

@@ -63,6 +63,12 @@
                     <option value="non" {% if filtres.en_service == 'non' %}selected{% endif %}>Hors service</option>
                 </select>
             </div>
+            <!-- Recherche (référence ou libellé) -->
+            <div class="col-md-3">
+                <label for="q" class="form-label">Recherche</label>
+                <input type="search" name="q" id="q" value="{{ filtres.q }}" maxlength="100"
+                       class="form-control" placeholder="Libellé ou référence">
+            </div>
             <!-- Filtre Dernier contrôle -->
             <div class="col-md-2">
                 <label for="dernier_controle" class="form-label">Dernier contrôle</label>
@@ -127,9 +133,41 @@
 
     <hr>
 
+    {% set photoGroupee = isGranted('ROLE_ADMIN') and equipements is not empty %}
+    {% if photoGroupee %}
+    {# [Photo groupée] Même photo pour tous les équipements cochés #}
+    <form method="post" action="/equipements/photo-groupee" enctype="multipart/form-data"
+          id="form-photo-groupee" class="card card-body bg-light mb-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="retour" value="{{ retour_query }}">
+        <div class="row g-2 align-items-end">
+            <div class="col-md-5">
+                <label for="photo-groupee" class="form-label mb-1">📷 Photo pour les équipements cochés</label>
+                <input type="file" name="photo" id="photo-groupee" class="form-control"
+                       accept="image/jpeg,image/png,image/webp,image/gif" required>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" id="btn-photo-groupee" class="btn btn-primary" disabled>
+                    Appliquer à <span id="nb-coches">0</span> équipement(s)
+                </button>
+            </div>
+            <div class="col-md-3 small text-body-secondary">
+                Astuce : filtrez (recherche, catégorie…) et augmentez « Lignes par page » pour tout cocher d'un coup.
+                La photo existante est remplacée.
+            </div>
+        </div>
+    </form>
+    {% endif %}
+
     <table class="table table-striped">
 		<thead>
 			<tr>
+				{% if photoGroupee %}
+				<th style="width: 2rem;">
+					<input type="checkbox" class="form-check-input" id="tout-cocher"
+					       title="Tout cocher / décocher" aria-label="Tout cocher">
+				</th>
+				{% endif %}
 				<th>Référence</th>
 				<th>Nom</th>
 				<th>Photo</th>
@@ -146,6 +184,13 @@
         <tbody>
             {% for equipement in equipements %}
                 <tr>
+                    {% if photoGroupee %}
+                    <td>
+                        <input type="checkbox" class="form-check-input case-equipement" name="ids[]"
+                               value="{{ equipement.id }}" form="form-photo-groupee"
+                               aria-label="Sélectionner {{ equipement.reference }}">
+                    </td>
+                    {% endif %}
                     <td>{{ equipement.reference }}</td>
                     <td>
                         {{ equipement.libelle }}
@@ -240,4 +285,39 @@
         </div>
     </div>
     {% endif %}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        // [Photo groupée] compteur + « tout cocher »
+        document.addEventListener('DOMContentLoaded', function () {
+            const toutCocher = document.getElementById('tout-cocher');
+            const bouton = document.getElementById('btn-photo-groupee');
+            if (!toutCocher || !bouton) {
+                return;
+            }
+            const cases = Array.from(document.querySelectorAll('.case-equipement'));
+            const compteur = document.getElementById('nb-coches');
+            function majCompteur() {
+                const nb = cases.filter(c => c.checked).length;
+                compteur.textContent = nb;
+                bouton.disabled = nb === 0;
+                toutCocher.checked = nb > 0 && nb === cases.length;
+                toutCocher.indeterminate = nb > 0 && nb < cases.length;
+            }
+            toutCocher.addEventListener('change', function () {
+                cases.forEach(c => { c.checked = toutCocher.checked; });
+                majCompteur();
+            });
+            cases.forEach(c => c.addEventListener('change', majCompteur));
+            document.getElementById('form-photo-groupee').addEventListener('submit', function (e) {
+                const nb = cases.filter(c => c.checked).length;
+                if (!confirm('Appliquer cette photo à ' + nb + ' équipement(s) ? Les photos existantes seront remplacées.')) {
+                    e.preventDefault();
+                }
+            });
+            majCompteur();
+        });
+    </script>
 {% endblock %}
