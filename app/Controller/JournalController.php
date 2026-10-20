@@ -91,13 +91,14 @@ class JournalController extends AbstractController
             return $this->redirectTo('/se_connecter');
         }
 
-        $id = $request->attributes->get('id');
-        if (!$id) {
+        // getValidId() : id de route strictement numérique, sinon null.
+        $id = $this->getValidId($request);
+        if ($id === null) {
             $this->session->getFlashBag()->add('danger', 'Identifiant du journal manquant');
             return $this->redirectTo('/journaux');
         }
 
-        $controle = $this->journalManager->getControleCloture((int)$id);
+        $controle = $this->journalManager->getControleCloture($id);
         if (!$controle) {
             $this->session->getFlashBag()->add('danger', 'Journal de contrôle non trouvé');
             return $this->redirectTo('/journaux');
@@ -131,13 +132,14 @@ class JournalController extends AbstractController
             return $this->redirectTo('/se_connecter');
         }
 
-        $id = $request->attributes->get('id');
-        if (!$id) {
+        // getValidId() : id de route strictement numérique, sinon null.
+        $id = $this->getValidId($request);
+        if ($id === null) {
             $this->session->getFlashBag()->add('danger', 'Identifiant du journal manquant');
             return $this->redirectTo('/journaux');
         }
 
-        $controle = $this->journalManager->getControleCloture((int)$id);
+        $controle = $this->journalManager->getControleCloture($id);
         if (!$controle) {
             $this->session->getFlashBag()->add('danger', 'Journal de contrôle non trouvé');
             return $this->redirectTo('/journaux');

@@ -10,6 +10,12 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Security
+
+- **Journaux** : l'id de route de `voir` / `pdf` passe par
+  `getValidId()` (strictement numérique) au lieu d'un cast `(int)` —
+  dernier écart relevé par l'audit des contrôleurs.
+
 ## [v1.1.1] — 2026-10-21
 
 Correction de la liste des utilisateurs (bouton « Supprimer » et badge
