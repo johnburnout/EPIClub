@@ -8,9 +8,10 @@
 # que l'updater intégré (AppUpdateController) télécharge et vérifie.
 # Les notes de version écrites à la création ne sont pas modifiées.
 #
-# ⚠️ Ne pas marquer la release « pre-release », même pour un tag -beta :
-# /releases/latest ignore les pré-releases, et les instances en canal
-# « stable » ne verraient pas la mise à jour (cf. docs/REPRISE.md).
+# Depuis la v1.0.0 : une version bêta (ex. v1.2.0-beta.1) est publiée
+# avec --prerelease (invisible pour les instances en canal « stable »,
+# /releases/latest ignorant les pré-releases) ; une version stable sans
+# (cf. README, docs/REPRISE.md).
 name: Release
 
 on:
