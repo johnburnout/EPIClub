@@ -10,6 +10,12 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.0.0-beta.9] — 2026-10-20
+
+Acquisitions : référence proposée selon le modèle, date de mise en
+service issue de la facture ; libellé et date modifiables par un
+super-administrateur ; code technique masqué.
+
 ### Added
 
 - **Acquisition — référence proposée** : à l'ajout d'une ligne, dès que
