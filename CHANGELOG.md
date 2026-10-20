@@ -10,6 +10,11 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.0.0-beta.10] — 2026-10-20
+
+Modification groupée des équipements sélectionnés dans la liste
+(administrateurs), photo comprise.
+
 ### Added
 
 - **Modification groupée des équipements** (ROLE_ADMIN) : les cases à
