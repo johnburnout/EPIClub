@@ -10,6 +10,11 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.0.0-beta.11] — 2026-10-20
+
+Liste des équipements plus lisible : statut en couleur, « État »
+retiré.
+
 ### Changed
 
 - **Liste des équipements — statut** : le numéro de statut est remplacé
