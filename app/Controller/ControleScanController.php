@@ -19,8 +19,10 @@ use Symfony\Component\HttpFoundation\Response;
  *                local — pas de dépendance réseau sur le terrain) ;
  *  - ajouter() : endpoint AJAX appelé à chaque scan. Contrôleur avec
  *                un contrôle ouvert → l'équipement est ajouté au
- *                contrôle sans quitter la page ; sinon → redirection
- *                côté client vers la fiche équipement.
+ *                contrôle (s'il n'y est pas déjà) puis le client ouvre
+ *                la fiche contrôle de l'équipement (décision 2026-10-20),
+ *                qui ramène au scanner après enregistrement ; sinon →
+ *                redirection côté client vers la fiche équipement.
  *
  * ⚠️ La caméra exige un contexte sécurisé (HTTPS ou localhost) :
  *    la page le détecte et affiche un message explicite.
@@ -121,12 +123,20 @@ class ControleScanController extends AbstractController
 
         // Déjà dans le contrôle ? (addEquipement() retourne true aussi
         // dans ce cas — le doublon est distingué ici pour l'affichage)
+        $statut = 'ajoute';
         if ($this->controleLigneManager()->findByControleAndEquipement($controle['id'], $equipementId)) {
-            return new JsonResponse(['statut' => 'deja'] + $base);
+            $statut = 'deja';
+        } else {
+            $this->controleLigneManager()->addEquipement((int) $controle['id'], $equipementId);
         }
 
-        $this->controleLigneManager()->addEquipement((int) $controle['id'], $equipementId);
+        // [2026-10-20] Ouverture de la fiche contrôle de l'équipement,
+        // avec retour au scanner après enregistrement.
+        $ligne = $this->controleLigneManager()->findByControleAndEquipement((int) $controle['id'], $equipementId);
+        if ($ligne) {
+            $base['redirect'] = '/admin/controles/update-ligne/' . $ligne['id'] . '?retour=scanner';
+        }
 
-        return new JsonResponse(['statut' => 'ajoute'] + $base);
+        return new JsonResponse(['statut' => $statut] + $base);
     }
 }
