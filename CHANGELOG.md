@@ -10,6 +10,12 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.1.0] — 2026-10-20
+
+Compte super-administrateur protégé. **Migration** :
+`013_utilisateur_protege.sql` (appliquée automatiquement par la mise à
+jour intégrée).
+
 ### Added
 
 - **Compte super-administrateur protégé** : le compte créé par le setup
