@@ -129,6 +129,13 @@ class AcquisitionProcess
             // → date_fin_utilisation de l'équipement.
             $datePeremption = !empty($ligne['date_peremption']) ? $ligne['date_peremption'] : null;
             
+            // [MÉTIER] Date de mise en service = date de la facture
+            // (décision produit 2026-10-20) ; modifiable une seule fois
+            // ensuite dans la fiche équipement, jamais avant la facture.
+            $dateMiseEnService = !empty($acquisition['facture_date'])
+                ? date('Y-m-d', strtotime($acquisition['facture_date']))
+                : null;
+
             $regrouper_en_lot = isset($ligne['regrouper_en_lot']) && $ligne['regrouper_en_lot'] == 1;
 
             // [MÉTIER] Référence de la fiche équipement (décision
@@ -144,6 +151,31 @@ class AcquisitionProcess
                     (int) $ligne['categorie_id'],
                     (int) $annee
                 );
+            };
+
+            //  - [2026-10-20] référence de ligne conforme au modèle
+            //    (proposée à la saisie) → elle devient la référence de
+            //    la 1re unité, les suivantes prennent les n° suivants ;
+            //    un n° déjà pris entre-temps → référence auto.
+            $compteurDepart = $referenceForcee === ''
+                ? $this->referenceGenerator()->compteurSiConforme(
+                    (string) ($ligne['reference'] ?? ''),
+                    (int) $ligne['categorie_id'],
+                    (int) $annee
+                )
+                : null;
+            $referenceUnite = function (int $rang) use ($ligne, $annee, $compteurDepart, $equipementManager, $referenceAuto): string {
+                if ($compteurDepart !== null) {
+                    $candidate = $this->referenceGenerator()->referenceAuRang(
+                        (int) $ligne['categorie_id'],
+                        (int) $annee,
+                        $compteurDepart + $rang
+                    );
+                    if (!$equipementManager->referenceExists($candidate)) {
+                        return $candidate;
+                    }
+                }
+                return $referenceAuto();
             };
 
             // [MÉTIER] Stock actuel d'un lot (import Excel/CSV —
@@ -166,7 +198,7 @@ class AcquisitionProcess
                 $new_equipement = [
                     'acquisition_id' => $ligne['acquisition_id'],
                     'categorie_id' => $ligne['categorie_id'],
-                    'reference' => $referenceForcee !== '' ? $referenceForcee : $referenceAuto(),
+                    'reference' => $referenceForcee !== '' ? $referenceForcee : $referenceUnite(0),
                     'libelle' => $ligne['designation'],
                     'code' => $code,
                     'statut' => 0,
@@ -174,7 +206,7 @@ class AcquisitionProcess
                     'date_dernier_controle' => null,
                     'controle_en_cours' => 0,
                     'emplacement_id' => null,
-                    'date_mise_en_service' => null,
+                    'date_mise_en_service' => $dateMiseEnService,
                     'date_fin_utilisation' => $datePeremption,
                     'nombre' => $nombreActuel,
                     // [MÉTIER] Nombre initial du lot : plafond non
@@ -200,7 +232,7 @@ class AcquisitionProcess
                         // Référence auto : le compteur se recalcule à
                         // chaque passage (l'unité précédente est déjà
                         // enregistrée).
-                        $reference = $referenceAuto();
+                        $reference = $referenceUnite($i - 1);
                     }
                     
                     $new_equipement = [
@@ -214,7 +246,7 @@ class AcquisitionProcess
                         'date_dernier_controle' => null,
                         'controle_en_cours' => 0,
                         'emplacement_id' => null,
-                        'date_mise_en_service' => null,
+                        'date_mise_en_service' => $dateMiseEnService,
                         'date_fin_utilisation' => $datePeremption,
                         'nombre' => 1,
                         'nombre_initial' => 1,

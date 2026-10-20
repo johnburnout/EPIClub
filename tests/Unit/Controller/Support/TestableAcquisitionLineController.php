@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Epiclub\Tests\Unit\Controller\Support;
 
+use Epiclub\Domain\ReferenceGenerator;
+
 use Epiclub\Controller\AcquisitionLineController;
 use Epiclub\Domain\AcquisitionLigneManager;
 use Epiclub\Domain\AcquisitionManager;
@@ -59,5 +61,23 @@ final class TestableAcquisitionLineController extends AcquisitionLineController
     protected function acquisitionProcess(): AcquisitionProcess
     {
         return $this->acquisitionProcessMock ?? parent::acquisitionProcess();
+    }
+
+    /** [Référencement] Doublure injectable ; par défaut : référence libre, pas de proposition. */
+    public ?ReferenceGenerator $referenceGeneratorMock = null;
+
+    protected function referenceGenerator(): ReferenceGenerator
+    {
+        return $this->referenceGeneratorMock ?? new class extends ReferenceGenerator {
+            public function compteurSiConforme(string $reference, int $categorieId, int $annee): ?int
+            {
+                return null;
+            }
+
+            public function suggest(string $libelleCategorie, int $annee): string
+            {
+                return '';
+            }
+        };
     }
 }

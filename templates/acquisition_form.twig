@@ -105,7 +105,7 @@
 			<!-- Formulaire d'ajout de ligne -->
 			<div class="row mb-3">
 				<div class="col-lg-2">
-					<label for="ligne_reference">Référence *</label>
+					<label for="ligne_reference" title="Proposée automatiquement selon le modèle de référence dès que la catégorie est choisie">Référence équipement *</label>
 					<input type="text" class="form-control {% if form_errors.ligne_reference %}is-invalid{% endif %}" 
 					       list="equipement_references" name="ligne[reference]" id="ligne_reference" 
 					       value="{{ ligne_data.reference ?? '' }}" {{ is_readonly }}/>
@@ -258,4 +258,55 @@
 			{% endif %}
 		</div>
 	</form>
+{% endblock %}
+
+{% block javascripts %}
+	{{ parent() }}
+	{% if acquisition.id and not acquisition.est_validee %}
+	<script>
+		// [Référencement — 2026-10-20] Dès que la catégorie est choisie,
+		// la référence est proposée selon le modèle (Administration ›
+		// Référence) avec le n° de suivi suivant. Une référence saisie à
+		// la main n'est jamais écrasée.
+		document.addEventListener('DOMContentLoaded', function () {
+			const categorie = document.getElementById('ligne_categorie');
+			const reference = document.getElementById('ligne_reference');
+			if (!categorie || !reference || reference.disabled) {
+				return;
+			}
+			let derniereProposition = '';
+			let minuteur = null;
+
+			function proposer() {
+				const libelle = categorie.value.trim();
+				if (libelle === '') {
+					return;
+				}
+				if (reference.value.trim() !== '' && reference.value !== derniereProposition) {
+					return; // saisie manuelle : on n'écrase pas
+				}
+				const url = '/admin/acquisitions/reference-suggestion?'
+					+ new URLSearchParams({ categorie: libelle, acquisition: '{{ acquisition.id }}' });
+				fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' })
+					.then(r => r.ok ? r.json() : null)
+					.then(data => {
+						if (!data || !data.reference) {
+							return;
+						}
+						if (reference.value.trim() === '' || reference.value === derniereProposition) {
+							reference.value = data.reference;
+							derniereProposition = data.reference;
+						}
+					})
+					.catch(() => {});
+			}
+
+			categorie.addEventListener('change', proposer);
+			categorie.addEventListener('input', function () {
+				clearTimeout(minuteur);
+				minuteur = setTimeout(proposer, 400);
+			});
+		});
+	</script>
+	{% endif %}
 {% endblock %}

@@ -206,6 +206,14 @@ class EquipementManager extends AbstractManager
      *
      * @return string[]
      */
+    /** [Référencement] Une fiche équipement porte-t-elle déjà cette référence ? */
+    public function referenceExists(string $reference): bool
+    {
+        $stmt = $this->db->prepare("SELECT COUNT(*) FROM club_equipement WHERE reference = :reference");
+        $stmt->execute(['reference' => $reference]);
+        return (int) $stmt->fetchColumn() > 0;
+    }
+
     public function findReferencesMatching(string $regexp): array
     {
         $sql = "SELECT reference FROM club_equipement WHERE reference REGEXP :pattern";

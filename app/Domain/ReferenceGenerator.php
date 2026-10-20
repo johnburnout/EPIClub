@@ -48,6 +48,11 @@ class ReferenceGenerator
         return new EquipementManager();
     }
 
+    protected function acquisitionLigneManager(): AcquisitionLigneManager
+    {
+        return new AcquisitionLigneManager();
+    }
+
     // ==================================================================
     // Code catégorie
     // ==================================================================
@@ -238,6 +243,80 @@ class ReferenceGenerator
         }
 
         return $this->render($modele, $code, $annee, $max + 1);
+    }
+
+    // ==================================================================
+    // Proposition à la saisie d'une ligne d'acquisition
+    // ==================================================================
+
+    /**
+     * Propose la référence de la prochaine ligne d'acquisition pour une
+     * catégorie (existante ou à créer) : n° de suivi suivant le plus
+     * grand déjà utilisé par les équipements ET réservé par les lignes
+     * d'acquisition (une ligne de N unités hors lot réserve N numéros
+     * tant que ses équipements ne sont pas générés).
+     *
+     * Catégorie inconnue → code suggéré (sans collision), non persisté.
+     */
+    public function suggest(string $libelleCategorie, int $annee): string
+    {
+        $categorie = $this->categorieManager()->findOneByCriteria(['libelle' => trim($libelleCategorie)]);
+        if ($categorie) {
+            $code = $this->codeForCategorie($categorie);
+        } else {
+            $codes = array_values(array_filter(array_map(
+                static fn($c) => $c['code'] ?? null,
+                $this->categorieManager()->findAll() ?: []
+            )));
+            $code = $this->suggestCode($libelleCategorie, $codes);
+        }
+
+        $modele = $this->getModele();
+        $regexp = $this->buildRegexp($modele, $code, $annee);
+
+        $max = 0;
+        foreach ($this->equipementManager()->findReferencesMatching($regexp) as $reference) {
+            if (preg_match('/' . $regexp . '/', (string) $reference, $m)) {
+                $max = max($max, (int) $m[1]);
+            }
+        }
+        foreach ($this->acquisitionLigneManager()->findReferencesMatching($regexp) as $ligne) {
+            if (preg_match('/' . $regexp . '/', (string) $ligne['reference'], $m)) {
+                $fin = (int) $m[1];
+                if ((int) ($ligne['equipements_generes'] ?? 0) === 0
+                    && (int) ($ligne['regrouper_en_lot'] ?? 0) === 0
+                ) {
+                    $fin += max(1, (int) ($ligne['nombre'] ?? 1)) - 1;
+                }
+                $max = max($max, $fin);
+            }
+        }
+
+        return $this->render($modele, $code, $annee, $max + 1);
+    }
+
+    /**
+     * N° de suivi d'une référence si elle est conforme au modèle pour
+     * cette catégorie et cette année ; null sinon (référence libre).
+     */
+    public function compteurSiConforme(string $reference, int $categorieId, int $annee): ?int
+    {
+        $categorie = $this->categorieManager()->findId($categorieId);
+        if (!$categorie) {
+            return null;
+        }
+        $regexp = $this->buildRegexp($this->getModele(), $this->codeForCategorie($categorie), $annee);
+        return preg_match('/' . $regexp . '/', trim($reference), $m) ? (int) $m[1] : null;
+    }
+
+    /** Référence au n° de suivi donné (catégorie, année). */
+    public function referenceAuRang(int $categorieId, int $annee, int $compteur): string
+    {
+        $categorie = $this->categorieManager()->findId($categorieId);
+        if (!$categorie) {
+            throw new \RuntimeException("Catégorie introuvable (id=$categorieId).");
+        }
+        return $this->render($this->getModele(), $this->codeForCategorie($categorie), $annee, $compteur);
     }
 
     // ==================================================================

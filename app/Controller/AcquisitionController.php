@@ -10,6 +10,7 @@ use Epiclub\Domain\AcquisitionValidator;
 use Epiclub\Domain\FournisseurManager;
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\CategorieManager;
+use Epiclub\Domain\ReferenceGenerator;
 use Epiclub\Domain\AcquisitionValidatorInterface;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\FactureUploader; 
@@ -19,6 +20,7 @@ use Epiclub\Exception\DuplicateReferenceException;
 use Epiclub\Exception\FactureUploadException;
 use Epiclub\Exception\NotFoundException;
 use Epiclub\Process\AcquisitionProcess;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -63,6 +65,63 @@ class AcquisitionController extends AbstractController
         return new EquipementManager();
     }
     
+    protected function referenceGenerator(): ReferenceGenerator
+    {
+        return new ReferenceGenerator();
+    }
+
+    /**
+     * [Référencement — 2026-10-20] Proposition de référence pour une
+     * nouvelle ligne d'acquisition, dès que la catégorie est choisie
+     * (appel AJAX du formulaire). Format du modèle global, n° de suivi
+     * suivant (équipements existants + lignes en attente).
+     */
+    public function suggestionReference(Request $request): Response
+    {
+        $this->deniAccessUnlessGranted('ROLE_ADMIN');
+
+        $libelle = trim((string) $request->query->get('categorie', ''));
+        if ($libelle === '' || mb_strlen($libelle) > 64) {
+            return new JsonResponse(['reference' => null]);
+        }
+
+        $annee = (int) date('Y');
+        $acquisitionId = (int) $request->query->get('acquisition', 0);
+        if ($acquisitionId > 0) {
+            $acquisition = $this->acquisitionManager()->findId($acquisitionId);
+            if (!empty($acquisition['facture_date'])) {
+                $annee = (int) date('Y', strtotime($acquisition['facture_date']));
+            }
+        }
+
+        try {
+            $reference = $this->referenceGenerator()->suggest($libelle, $annee);
+        } catch (\Throwable $e) {
+            error_log('[AcquisitionController] suggestionReference: ' . $e->getMessage());
+            $reference = null;
+        }
+
+        return new JsonResponse(['reference' => $reference]);
+    }
+
+    /**
+     * [Référencement — 2026-10-20] Une référence de ligne conforme au
+     * modèle sert de n° de départ des équipements (cf.
+     * AcquisitionProcess) ; une référence libre devient la référence
+     * forcée des équipements (suffixée -1..-n pour plusieurs unités).
+     */
+    protected function referenceForceePour(string $reference, int $categorieId, ?string $factureDate): ?string
+    {
+        $annee = !empty($factureDate) ? (int) date('Y', strtotime($factureDate)) : (int) date('Y');
+        try {
+            $conforme = $this->referenceGenerator()->compteurSiConforme($reference, $categorieId, $annee) !== null;
+        } catch (\Throwable $e) {
+            error_log('[AcquisitionController] compteurSiConforme: ' . $e->getMessage());
+            $conforme = false;
+        }
+        return $conforme ? null : $reference;
+    }
+
     protected function acquisitionProcess(): AcquisitionProcess
     {
         return new AcquisitionProcess();
@@ -519,6 +578,11 @@ class AcquisitionController extends AbstractController
         try {
             $acquisitionProcess = $this->acquisitionProcess();
             $ligne['categorie_id'] = $acquisitionProcess->categorie_process($ligne);
+            $ligne['reference_forcee'] = $this->referenceForceePour(
+                $ligne['reference'],
+                (int) $ligne['categorie_id'],
+                $acquisition['facture_date'] ?? null
+            );
             $ligne['acquisition_id'] = $acquisition['id'];
             $ligne['equipements_generes'] = 0;
             

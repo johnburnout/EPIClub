@@ -277,6 +277,11 @@ $routes->add('acquisition_valider', new Route(
     ['_controller' => 'Epiclub\\Controller\\AcquisitionController', 'action' => 'valider'],
     [], [], '', [], ['POST']
 ));
+// ROLE_ADMIN : proposition de référence (AJAX) à la saisie d'une ligne
+$routes->add('acquisition_reference_suggestion', new Route(
+    '/admin/acquisitions/reference-suggestion',
+    ['_controller' => 'Epiclub\\Controller\\AcquisitionController', 'action' => 'suggestionReference']
+));
 $routes->add('acquisition_ligne_edit', new Route(
     '/admin/acquisitions/ligne_modification-{id}',
     ['_controller' => 'Epiclub\\Controller\\AcquisitionLineController', 'action' => 'modifyLine']

@@ -7,7 +7,7 @@
 	<form method="post">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 		<div class="mb-3">
-			<label for="reference">Référence *</label>
+			<label for="reference">Référence équipement *</label>
 			<input type="text" class="form-control {% if form_errors.reference %}is-invalid{% endif %}" 
 			       name="reference" id="reference" value="{{ ligne.reference }}" required>
 			{% if form_errors.reference %}

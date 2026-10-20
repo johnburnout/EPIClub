@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Epiclub\Tests\Unit\Domain\Support;
 
+use Epiclub\Domain\AcquisitionLigneManager;
 use Epiclub\Domain\CategorieManager;
 use Epiclub\Domain\ClubManager;
 use Epiclub\Domain\EquipementManager;
@@ -18,6 +19,7 @@ final class TestableReferenceGenerator extends ReferenceGenerator
     public ?CategorieManager $categorieManagerMock = null;
     public ?ClubManager $clubManagerMock = null;
     public ?EquipementManager $equipementManagerMock = null;
+    public ?AcquisitionLigneManager $acquisitionLigneManagerMock = null;
 
     protected function categorieManager(): CategorieManager
     {
@@ -32,5 +34,10 @@ final class TestableReferenceGenerator extends ReferenceGenerator
     protected function equipementManager(): EquipementManager
     {
         return $this->equipementManagerMock ?? throw new \LogicException('equipementManagerMock non injecté');
+    }
+
+    protected function acquisitionLigneManager(): AcquisitionLigneManager
+    {
+        return $this->acquisitionLigneManagerMock ?? throw new \LogicException('acquisitionLigneManagerMock non injecté');
     }
 }

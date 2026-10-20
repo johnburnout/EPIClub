@@ -9,6 +9,7 @@ use Epiclub\Domain\AcquisitionManager;
 use Epiclub\Domain\CategorieManager;
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\FournisseurManager;
+use Epiclub\Domain\ReferenceGenerator;
 use Epiclub\Process\AcquisitionProcess;
 
 /**
@@ -29,7 +30,13 @@ final class TestableAcquisitionProcess extends AcquisitionProcess
         private readonly FournisseurManager $fournisseurManager,
         private readonly CategorieManager $categorieManager,
         private readonly EquipementManager $equipementManager,
+        private readonly ?ReferenceGenerator $referenceGeneratorMock = null,
     ) {}
+
+    protected function referenceGenerator(): ReferenceGenerator
+    {
+        return $this->referenceGeneratorMock ?? parent::referenceGenerator();
+    }
 
     // ==================================================================
     // Surcharges des factories (injection des mocks)
