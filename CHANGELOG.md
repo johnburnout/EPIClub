@@ -10,6 +10,11 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.1.1] — 2026-10-21
+
+Correction de la liste des utilisateurs (bouton « Supprimer » et badge
+du compte protégé).
+
 ### Fixed
 
 - **Liste des utilisateurs** : le bouton « Supprimer » s'affiche
