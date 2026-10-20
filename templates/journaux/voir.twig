@@ -51,7 +51,6 @@
                     <thead>
                         <tr>
                             <th>Référence</th>
-                            <th>Code</th>
                             <th>Désignation</th>
                             <th>Catégorie</th>
                             <th>EPI</th>
@@ -65,7 +64,6 @@
                         {% for ligne in lignes %}
                             <tr>
                                 <td><strong>{{ ligne.reference }}</strong></td>
-                                <td><code>{{ ligne.equipement_code }}</code></td>
                                 <td>{{ ligne.equipement_libelle }}</td>
                                 <td>{{ ligne.categorie_libelle|default('N/A') }}</td>
                                 <td>

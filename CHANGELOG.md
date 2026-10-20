@@ -35,6 +35,11 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
   désormais modifiable dans la fiche équipement par un
   super-administrateur (toujours en lecture seule pour les autres rôles,
   contrôle côté serveur).
+- **Code équipement masqué** : le code technique (`AAAA-acquisition-ligne-unité`)
+  n'est plus affiché (fiche, formulaire, PDF, exports Excel/CSV, journaux
+  de contrôle) : la référence identifie l'équipement. La colonne est
+  conservée en base, toujours renseignée à la validation, pour la
+  traçabilité vers la ligne d'acquisition.
 
 ## [v1.0.0-beta.8] — 2026-10-20
 
