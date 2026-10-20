@@ -10,6 +10,15 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Changed
+
+- **Scan avec un contrôle ouvert** : dans le scanner de l'application,
+  l'équipement scanné est ajouté au contrôle (s'il n'y est pas déjà)
+  puis sa **fiche contrôle s'ouvre** ; après enregistrement (ou « Retour
+  au scanner »), on revient au scanner pour enchaîner. Le scan par
+  l'appareil photo du téléphone (`/qr/{id}`) ouvrait déjà la fiche
+  contrôle.
+
 ## [v1.0.0-beta.11] — 2026-10-20
 
 Liste des équipements plus lisible : statut en couleur, « État »

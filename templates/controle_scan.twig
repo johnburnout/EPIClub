@@ -19,7 +19,8 @@
 	{% if controle %}
 		<div class="alert alert-info" style="max-width: 40rem;">
 			Contrôle ouvert : <strong>{{ controle.libelle }}</strong> — chaque équipement
-			scanné est ajouté au contrôle <strong>sans quitter cette page</strong>.
+			scanné est ajouté au contrôle et sa <strong>fiche contrôle</strong> s'ouvre ;
+			après enregistrement, vous revenez ici pour scanner le suivant.
 		</div>
 	{% else %}
 		<div class="alert alert-info" style="max-width: 40rem;">
@@ -123,6 +124,16 @@
 				.then((data) => {
 					if (data.statut === 'hors_controle' && data.redirect) {
 						window.location.href = data.redirect;
+						return;
+					}
+					// Fiche contrôle de l'équipement (retour au scanner après enregistrement)
+					if ((data.statut === 'ajoute' || data.statut === 'deja') && data.redirect) {
+						bip(data.statut === 'ajoute');
+						afficher(data.statut === 'ajoute' ? 'success' : 'warning',
+							(data.statut === 'ajoute' ? '✅ ' : '⚠️ ') + data.reference + ' — ' + data.libelle
+							+ (data.statut === 'ajoute' ? ' : ajouté au contrôle.' : ' : déjà dans le contrôle.')
+							+ ' Ouverture de la fiche…');
+						scanner.stop().catch(() => {}).finally(() => { window.location.href = data.redirect; });
 						return;
 					}
 					if (data.statut === 'ajoute') {

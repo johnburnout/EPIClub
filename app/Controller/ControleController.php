@@ -942,6 +942,8 @@ class ControleController extends AbstractController
             return $this->redirectTo("/admin/controles/edit/{$controle['id']}");
         }
 
+        $retourScanner = $request->query->get('retour') === 'scanner';
+
         if ($request->getMethod() === 'POST') {
             // [SÉCURITÉ] Vérification CSRF avant mise à jour de la ligne
             $this->validateCsrf($request);
@@ -978,6 +980,16 @@ class ControleController extends AbstractController
                 $equipementManager->save($equipement);
             }
 
+            // [2026-10-20] Fiche ouverte depuis le scanner → on y revient
+            // pour enchaîner les scans.
+            if ($retourScanner) {
+                $this->session->getFlashBag()->add('success', sprintf(
+                    'Contrôle de %s enregistré.',
+                    $equipement['reference'] ?? 'l\'équipement'
+                ));
+                return $this->redirectTo('/controles/scanner');
+            }
+
             return $this->redirectTo("/admin/controles/edit/{$controle['id']}");
         }
 
@@ -994,7 +1006,8 @@ class ControleController extends AbstractController
         }
 
         return $this->render('controle_ligne_form.twig', [
-            'ligne' => $ligne
+            'ligne' => $ligne,
+            'retour_scanner' => $retourScanner,
         ]);
     }
 

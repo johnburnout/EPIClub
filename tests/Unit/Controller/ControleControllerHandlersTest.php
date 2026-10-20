@@ -176,6 +176,48 @@ final class ControleControllerHandlersTest extends TestCase
         );
     }
     
+    /**
+     * [2026-10-20] Fiche contrôle ouverte depuis le scanner : après
+     * enregistrement, retour au scanner pour enchaîner les scans.
+     */
+    public function testUpdateLigneDepuisLeScannerRevientAuScanner(): void
+    {
+        $ligneManager = $this->getMockBuilder(ControleLigneManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $ligneManager->method('findId')->willReturn([
+            'id' => 10, 'controle_id' => 5, 'equipement_id' => 42, 'statut' => 'a_controler',
+        ]);
+        $ligneManager->expects(self::once())->method('save');
+
+        $controleManager = $this->getMockBuilder(ControleManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $controleManager->method('findId')->willReturn([
+            'id' => 5, 'statut' => 'ouvert', 'controleur_id' => 42, 'date_debut' => date('Y-m-d H:i:s'),
+        ]);
+
+        $equipementManager = $this->getMockBuilder(EquipementManager::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+        $equipementManager->method('findId')->willReturn(['id' => 42, 'reference' => '26CAS042']);
+
+        $controller = $this->makeControllerWith(
+            controleManager: $controleManager,
+            controleLigneManager: $ligneManager,
+            equipementManager: $equipementManager,
+        );
+
+        $request = Request::create('/admin/controles/update-ligne/10?retour=scanner', 'POST', [
+            'id' => '10', 'statut' => 'controle_ok', 'csrf_token' => 'test-csrf-token',
+        ]);
+
+        $result = $controller->updateLigne($request);
+
+        self::assertInstanceOf(RedirectResponse::class, $result);
+        self::assertSame('/controles/scanner', $result->headers->get('Location'));
+    }
+
     // ==================================================================
     // cloturer — switch exhaustif sur ControleLigneStatut (commit 3)
     // ==================================================================

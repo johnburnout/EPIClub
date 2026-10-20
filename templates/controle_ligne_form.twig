@@ -39,6 +39,10 @@
         </div>
 
         <button type="submit" class="btn btn-primary">Enregistrer</button>
-        <a href="/admin/controles/edit/{{ ligne.controle_id }}" class="btn btn-secondary">Annuler</a>
+        {% if retour_scanner|default(false) %}
+            <a href="/controles/scanner" class="btn btn-secondary">Retour au scanner</a>
+        {% else %}
+            <a href="/admin/controles/edit/{{ ligne.controle_id }}" class="btn btn-secondary">Annuler</a>
+        {% endif %}
     </form>
 {% endblock %}
