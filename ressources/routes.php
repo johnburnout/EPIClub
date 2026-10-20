@@ -111,6 +111,13 @@ $routes->add('equipement_etiquettes', new Route('/equipements/etiquettes',      
 $routes->add('equipement_pdf',        new Route('/equipements/equipement-pdf-{id}',      ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'pdf']));
 $routes->add('equipement_show',       new Route('/equipements/equipement-{id}',          ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'show']));
 
+// ROLE_ADMIN : même photo pour plusieurs équipements cochés dans la liste
+$routes->add('equipement_photo_groupee', new Route(
+    '/equipements/photo-groupee',
+    ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'photoGroupee'],
+    [], [], '', [], ['POST']
+));
+
 // ROLE_ADMIN : modification et suppression
 $routes->add('equipement_edit', new Route(
     '/equipements/equipement_modification-{id}',

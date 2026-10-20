@@ -116,6 +116,7 @@ class EquipementController extends AbstractController
             'limit' => $limit,
             'acquisition' => $request->query->get('acquisition'), // AJOUT
             'fin_avant' => self::dateFinAvant($request),
+            'q' => self::recherche($request),
         ];
         // Nettoyer les valeurs vides pour l'URL
         $baseParams = array_filter($baseParams, function($v) {
@@ -148,9 +149,12 @@ class EquipementController extends AbstractController
             'limit' => $limit,
             'acquisition' => $request->query->get('acquisition'), // AJOUT
             'fin_avant' => self::dateFinAvant($request),
+            'q' => self::recherche($request),
         ];
 
         return $this->render('equipement_list.twig', [
+            // [Photo groupée] retour sur la même vue après l'affectation
+            'retour_query' => (string) $request->getQueryString(),
             'equipements' => $equipements,
             'categories' => $categories,
             'emplacements' => $emplacements,
@@ -168,6 +172,17 @@ class EquipementController extends AbstractController
         ]);
     }
     
+    /** Texte recherché (« q »), nettoyé ; null si vide. */
+    private static function recherche(Request $request): ?string
+    {
+        $valeur = $request->query->get('q');
+        if (!is_string($valeur)) {
+            return null;
+        }
+        $valeur = trim(mb_substr($valeur, 0, 100));
+        return $valeur === '' ? null : $valeur;
+    }
+
     /**
      * [Tableau de bord] Paramètre « fin_avant » (Y-m-d) validé ; null si
      * absent ou mal formé (le filtre est alors ignoré).
@@ -265,7 +280,18 @@ class EquipementController extends AbstractController
                 });
             }
         }
-        // [Tableau de bord] Équipements à renouveler : date de fin
+        // Recherche texte (référence ou libellé, insensible à la casse) —
+        // utile pour retrouver les équipements identiques.
+        $recherche = self::recherche($request);
+        if ($recherche !== null) {
+            $aiguille = mb_strtolower($recherche);
+            $equipements = array_filter($equipements, function($e) use ($aiguille) {
+                return str_contains(mb_strtolower((string) ($e['libelle'] ?? '')), $aiguille)
+                    || str_contains(mb_strtolower((string) ($e['reference'] ?? '')), $aiguille);
+            });
+        }
+
+                // [Tableau de bord] Équipements à renouveler : date de fin
         // d'utilisation <= fin_avant (y compris déjà échus), hors
         // équipements supprimés / « Hors service » — même périmètre que
         // EquipementManager::statsARenouveler().
@@ -398,7 +424,7 @@ class EquipementController extends AbstractController
             $uploadedPhoto = $request->files->get('photo');
             if ($uploadedPhoto !== null && $uploadedPhoto->isValid()) {
                 try {
-                    $photoPath = $this->resizeAndSaveImage($uploadedPhoto);
+                    $photoPath = $this->savePhoto($uploadedPhoto);
                 } catch (\Exception $e) {
                     // [ROBUSTESSE] Clé nommée pour cibler le champ photo dans le template.
                     // On ne remonte pas $e->getMessage() tel quel : il peut contenir
@@ -472,18 +498,21 @@ class EquipementController extends AbstractController
                     $equipementData['nombre'] = $nombreLot;
                 }
                 
+                $anciennePhoto = null;
                 if ($photoPath !== null) {
-                    if (!empty($equipement['photo'])) {
-                        $oldPhotoPath = $this->getPublicPath($equipement['photo']);
-                        if (file_exists($oldPhotoPath)) {
-                            unlink($oldPhotoPath);
-                        }
-                    }
+                    $anciennePhoto = $equipement['photo'] ?? null;
                     $equipementData['photo'] = $photoPath;
                 }
                 
                 $equipement = array_merge($equipement, $equipementData);
                 $equipementManager->save($equipement);
+
+                // [Photo groupée] La photo remplacée peut être partagée
+                // avec d'autres équipements : on n'efface le fichier que
+                // s'il n'est plus référencé (vérifié après l'enregistrement).
+                if (!empty($anciennePhoto)) {
+                    $this->supprimerPhotoSiOrpheline($anciennePhoto);
+                }
                 return $this->redirectTo("/equipements");
             }
         }
@@ -1273,6 +1302,140 @@ HTML;
     /**
      * Redimensionne et sauvegarde une image
      */
+    // --------------------------------------------------------------
+    // PHOTO GROUPÉE
+    // --------------------------------------------------------------
+
+    /** Nombre maximal d'équipements traités en une fois. */
+    private const PHOTO_GROUPEE_MAX = 500;
+
+    /**
+     * Affecte une même photo à plusieurs équipements cochés dans la liste
+     * (équipements identiques). La photo est enregistrée une seule fois
+     * et partagée ; les photos remplacées sont effacées si plus aucun
+     * équipement ne les utilise.
+     */
+    public function photoGroupee(Request $request): Response
+    {
+        $this->deniAccessUnlessGranted('ROLE_ADMIN');
+        $this->validateCsrf($request);
+
+        $retour = self::urlRetourListe((string) $request->request->get('retour', ''));
+
+        if ($this->isPostTruncated($request)) {
+            $this->session->getFlashBag()->add('error', sprintf(
+                'Le fichier est trop volumineux pour être traité par le serveur (limite PHP : %s).',
+                ini_get('post_max_size')
+            ));
+            return $this->redirectTo($retour);
+        }
+
+        $ids = [];
+        try {
+            $brut = $request->request->all('ids');
+        } catch (\Throwable $e) {
+            $brut = [];
+        }
+        foreach ($brut as $valeur) {
+            if (is_string($valeur) && ctype_digit($valeur) && (int) $valeur > 0) {
+                $ids[(int) $valeur] = (int) $valeur;
+            }
+        }
+        $ids = array_values($ids);
+
+        if ($ids === []) {
+            $this->session->getFlashBag()->add('error', 'Aucun équipement sélectionné.');
+            return $this->redirectTo($retour);
+        }
+        if (count($ids) > self::PHOTO_GROUPEE_MAX) {
+            $this->session->getFlashBag()->add('error', sprintf(
+                'Sélection trop importante (%d équipements maximum).',
+                self::PHOTO_GROUPEE_MAX
+            ));
+            return $this->redirectTo($retour);
+        }
+
+        $fichier = $request->files->get('photo');
+        if (!$fichier instanceof UploadedFile || !$fichier->isValid()) {
+            $this->session->getFlashBag()->add('error', 'Choisissez une photo à appliquer.');
+            return $this->redirectTo($retour);
+        }
+
+        $equipementManager = $this->equipementManager();
+        $existants = $equipementManager->findPhotosByIds($ids);
+        if ($existants === []) {
+            $this->session->getFlashBag()->add('error', 'Aucun des équipements sélectionnés n\'existe.');
+            return $this->redirectTo($retour);
+        }
+
+        try {
+            $photo = $this->savePhoto($fichier);
+        } catch (\Throwable $e) {
+            error_log('[EquipementController] Photo groupée : ' . $e->getMessage());
+            $this->session->getFlashBag()->add('error', 'Erreur lors du traitement de l\'image. '
+                . 'Vérifiez que le fichier est bien une image (JPEG, PNG, WebP, GIF).');
+            return $this->redirectTo($retour);
+        }
+
+        $nombre = $equipementManager->updatePhotoForIds(array_column($existants, 'id'), $photo);
+
+        $anciennes = array_unique(array_filter(array_column($existants, 'photo')));
+        foreach ($anciennes as $ancienne) {
+            if ($ancienne !== $photo) {
+                $this->supprimerPhotoSiOrpheline($ancienne);
+            }
+        }
+
+        $this->session->getFlashBag()->add('success', sprintf(
+            'Photo appliquée à %d équipement%s.',
+            $nombre,
+            $nombre > 1 ? 's' : ''
+        ));
+        return $this->redirectTo($retour);
+    }
+
+    /**
+     * URL de retour vers la liste en conservant filtres / tri / page.
+     * Le chemin est fixe : seuls les paramètres de requête sont repris
+     * (reconstruits, sans « action » pour ne pas relancer un export).
+     */
+    private static function urlRetourListe(string $query): string
+    {
+        parse_str(ltrim($query, '?'), $params);
+        unset($params['action'], $params['export_type']);
+        $params = array_filter($params, 'is_string');
+        return $params === [] ? '/equipements' : '/equipements?' . http_build_query($params);
+    }
+
+    /** Efface le fichier photo s'il n'est plus utilisé par aucun équipement. */
+    private function supprimerPhotoSiOrpheline(string $photo): void
+    {
+        try {
+            if ($this->equipementManager()->countPhotoReferences($photo) > 0) {
+                return;
+            }
+        } catch (\Throwable $e) {
+            // Dans le doute, on conserve le fichier.
+            error_log('[EquipementController] countPhotoReferences : ' . $e->getMessage());
+            return;
+        }
+        $chemin = $this->getPublicPath(self::UPLOAD_DIR . basename($photo));
+        if (is_file($chemin)) {
+            @unlink($chemin);
+        }
+    }
+
+    /**
+     * Enregistre une photo d'équipement (redimensionnée, réencodée).
+     * Factory protected — surchargeable en test Unit.
+     *
+     * @return string Chemin public (ex. /images/equipements/xxx.webp)
+     */
+    protected function savePhoto(UploadedFile $file): string
+    {
+        return $this->resizeAndSaveImage($file);
+    }
+
     private function resizeAndSaveImage(UploadedFile $file): string
     {
         // [ROBUSTESSE] getMimeType() utilise finfo côté serveur (non spoofable)

@@ -10,6 +10,24 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Added
+
+- **Photo groupée** : dans la liste des équipements, les administrateurs
+  peuvent cocher plusieurs équipements (case « tout cocher » incluse) et
+  leur affecter une même photo en un seul envoi. La photo est
+  enregistrée une seule fois et partagée ; les photos remplacées sont
+  effacées dès qu'aucun équipement ne les utilise plus. Retour sur la
+  même vue (filtres, tri, page conservés). Limite : 500 équipements.
+- **Liste des équipements — recherche** : nouveau champ « Recherche »
+  (libellé ou référence, insensible à la casse), pratique pour
+  retrouver des équipements identiques ; pris en compte par les exports.
+
+### Changed
+
+- **Photo d'un équipement** : lors du remplacement depuis la fiche,
+  l'ancienne photo n'est effacée que si plus aucun équipement ne
+  l'utilise (photos partagées par l'affectation groupée).
+
 ## [v1.0.0-beta.7] — 2026-10-20
 
 Tableau de bord personnalisable : bandeau du club, notification des EPI
