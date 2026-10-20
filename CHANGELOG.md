@@ -10,6 +10,11 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.0.0-beta.7] — 2026-10-20
+
+Tableau de bord personnalisable : bandeau du club, notification des EPI
+à renouveler et accès direct au scan de QR codes.
+
 ### Added
 
 - **Tableau de bord — bandeau du club** : la page d'accueil affiche, dans
