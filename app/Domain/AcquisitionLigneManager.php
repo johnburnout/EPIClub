@@ -128,7 +128,7 @@ class AcquisitionLigneManager extends AbstractManager
      * [REFACTOR #92] Champs autorisés en écriture (filteredInsert /
      * filteredUpdate).
      */
-    private const ALLOWED_FIELDS = ['acquisition_id', 'reference', 'designation', 'categorie_id', 'nombre', 'equipements_generes', 'regrouper_en_lot', 'reference_forcee', 'date_peremption'];
+    private const ALLOWED_FIELDS = ['acquisition_id', 'reference', 'designation', 'categorie_id', 'nombre', 'equipements_generes', 'regrouper_en_lot', 'reference_forcee', 'date_peremption', 'nombre_actuel'];
 
     /**
      * @throws DuplicateReferenceException

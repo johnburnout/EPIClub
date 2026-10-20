@@ -146,6 +146,14 @@ class AcquisitionProcess
                 );
             };
 
+            // [MÉTIER] Stock actuel d'un lot (import Excel/CSV —
+            // décision 2026-10-20) : entre 1 et le nombre initial,
+            // sinon le lot est complet.
+            $nombreActuel = (int) ($ligne['nombre_actuel'] ?? 0);
+            if ($nombreActuel < 1 || $nombreActuel > (int) $ligne['nombre']) {
+                $nombreActuel = (int) $ligne['nombre'];
+            }
+
             if ($regrouper_en_lot) {
                 // [MÉTIER] Pas de suffixe « LOT » dans le code
                 // (décision produit 2026-10-19) : le lot porte le n° 001
@@ -168,7 +176,7 @@ class AcquisitionProcess
                     'emplacement_id' => null,
                     'date_mise_en_service' => null,
                     'date_fin_utilisation' => $datePeremption,
-                    'nombre' => $ligne['nombre'],
+                    'nombre' => $nombreActuel,
                     // [MÉTIER] Nombre initial du lot : plafond non
                     // dépassable du nombre actuel (décision 2026-10-19).
                     'nombre_initial' => $ligne['nombre'],

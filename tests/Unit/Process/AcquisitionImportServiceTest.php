@@ -247,7 +247,7 @@ final class AcquisitionImportServiceTest extends TestCase
         self::assertSame('date_achat', $champs['ACHAT']);
         self::assertSame('date_peremption', $champs['HA- Périme']);
         self::assertSame('nombre', $champs['stock théorique']);
-        self::assertSame('ignorer', $champs['stock réel']);
+        self::assertSame('nombre_actuel', $champs['stock réel']); // stock actuel (2026-10-20)
         self::assertSame('ignorer', $champs['Manque']);
         self::assertSame('ignorer', $champs['Remarque']);
     }

@@ -63,10 +63,14 @@ Fichier de référence : `EPI au 25 juin 2026.xlsx` (fichier réel fourni).
 |---|---|---|---|---|
 | 5.1 | Lancer l'import et charger le fichier | La ligne d'en-tête est détectée automatiquement (même si ce n'est pas la ligne 1) | ☐ | |
 | 5.2 | Écran de **mapping des colonnes** | Chaque colonne du fichier peut être associée à un champ ; vérifier les correspondances proposées | ☐ | |
-| 5.3 | **Lignes non conformes** (cases fusionnées, données incompatibles) | Affichées **en entier** avant l'import avec l'avertissement qu'elles seront ignorées ; présentes dans le rapport final | ☐ | |
-| 5.4 | **Catégories inconnues** du fichier | Pour chacune : proposition de rattachement à une catégorie existante **ou** création d'une nouvelle | ☐ | |
+| 5.3 | **Lignes non conformes** (cases fusionnées, données incompatibles) | Affichées **en entier** avant l'import, **décochées**, avec l'avertissement qu'elles seront ignorées ; présentes dans le rapport final | ☐ | |
+| 5.3b | **Sélection des lignes** : décocher quelques lignes conformes, puis importer | Seules les lignes cochées sont importées ; le rapport indique le nombre de lignes non sélectionnées | ☐ | |
+| 5.4 | **Catégories inconnues** du fichier | Pour chacune : création (nom et code modifiables, case durée de vie limitée), regroupement avec une autre catégorie à créer, ou rattachement à une catégorie existante | ☐ | |
+| 5.4b | **Catégorie par ligne** : affecter une ligne à une catégorie à créer d'une autre valeur du fichier | La catégorie n'est créée qu'une fois ; la ligne y est rattachée | ☐ | |
 | 5.5 | **Dates** : année seule (ex. « 2019 ») | Date d'achat → 1er janvier de l'année ; date de péremption → 31 décembre ; case vide → date du jour pour l'achat | ☐ | |
 | 5.6 | **Lots** : ligne avec un nombre > 1 | Un lot est créé ; la fiche club-équipement indique le **nombre initial** d'objets | ☐ | |
+| 5.6b | **Stock actuel** (colonne « stock réel ») inférieur au stock max ; puis case vide ; puis valeur modifiée dans le tableau | Lot X/Y conforme ; case vide → stock actuel = stock max ; valeur saisie prise en compte ; stock actuel > stock max refusé | ☐ | |
+| 5.6c | **EPI à durée de vie limitée** sans date d'achat, puis date saisie dans le tableau | Ligne décochée et signalée tant que la date manque ; après saisie, fin de vie proposée au 31/12 achat + 10 ans (modifiable) et reportée sur la fiche équipement | ☐ | |
 | 5.7 | **Groupement en acquisitions** : équipements d'une même facture → une acquisition auto-validée ; sans facture → regroupés par date d'achat (même année seule) | Les acquisitions créées correspondent ; chacune porte un fichier facture « facture à importer » | ☐ | |
 | 5.8 | **Rapport d'import** final | Liste les équipements créés, les lignes ignorées (complètes), les acquisitions créées | ☐ | |
 | 5.9 | Référence automatique des équipements importés sans référence | Format `YY + code catégorie + n° d'ordre` (ex. `26COR001` pour la première corde de 2026) | ☐ | |

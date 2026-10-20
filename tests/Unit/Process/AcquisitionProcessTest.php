@@ -291,6 +291,38 @@ final class AcquisitionProcessTest extends TestCase
     self::assertTrue($process->create_equipement_process(10));
     }
     
+    public function testCreateEquipementProcessLotAvecStockActuelInferieur(): void
+    {
+        // Import Excel/CSV (décision 2026-10-20) : stock actuel 3 sur un
+        // lot de 5 → nombre = 3, nombre_initial = 5.
+        $ligne = $this->makeLigneFixture(regrouperEnLot: 1, nombre: 5);
+        $ligne['nombre_actuel'] = 3;
+
+        $ligneManager = $this->makeAcquisitionLigneManagerMock();
+        $ligneManager->method('findId')->willReturn($ligne);
+
+        $acquisitionManager = $this->makeAcquisitionManagerMock();
+        $acquisitionManager->method('findId')->willReturn(['id' => 42, 'facture_date' => '2025-01-15']);
+
+        $categorieManager = $this->makeCategorieManagerMock();
+        $categorieManager->method('findId')->willReturn(['id' => 3, 'est_epi' => 1]);
+
+        $equipementManager = $this->makeEquipementManagerMock();
+        $equipementManager->method('codeExists')->willReturn(false);
+        $equipementManager->expects(self::once())
+        ->method('save')
+        ->with(self::callback(fn(array $e): bool => $e['nombre'] === 3 && $e['nombre_initial'] === 5));
+
+        $process = $this->makeProcessWith(
+        acquisitionManager: $acquisitionManager,
+        acquisitionLigneManager: $ligneManager,
+        categorieManager: $categorieManager,
+        equipementManager: $equipementManager,
+        );
+
+        self::assertTrue($process->create_equipement_process(10));
+    }
+
     public function testCreateEquipementProcessCreatesNEquipementsWhenNotRegrouper(): void
     {
         $ligneManager = $this->makeAcquisitionLigneManagerMock();

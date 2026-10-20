@@ -15,6 +15,9 @@ use Symfony\Component\HttpFoundation\Request;
  *     « seront ignorées ». Le fichier est conservé côté serveur
  *     (chemin en session) en attendant la confirmation.
  *  2. POST avec confirmation + mapping → import effectif, rapport.
+ *     Seules les lignes cochées sont importées ; les catégories à créer
+ *     reçoivent le nom et le code choisis, et chaque ligne peut être
+ *     affectée à une autre catégorie (décision produit 2026-10-20).
  */
 class AcquisitionImportController extends AbstractController
 {
@@ -52,12 +55,32 @@ class AcquisitionImportController extends AbstractController
                 } else {
                     $mapping = $this->nettoyerMapping($request->request->all('mapping'));
                     $choixCategories = $this->nettoyerChoixCategories($request->request->all('categories'));
+                    // Sélection des lignes : absente (anciens formulaires,
+                    // appels directs) → toutes les lignes.
+                    $selection = $request->request->get('selection_active') === '1'
+                        ? $this->nettoyerSelection($request->request->all('lignes'))
+                        : null;
+                    $categoriesParLigne = $this->nettoyerCategoriesParLigne(
+                        $request->request->all('ligne_categorie')
+                    );
+                    $nombresParLigne = $this->nettoyerNombresParLigne(
+                        $request->request->all('ligne_nombre'),
+                        $request->request->all('ligne_nombre_actuel')
+                    );
+                    $datesParLigne = $this->nettoyerDatesParLigne(
+                        $request->request->all('ligne_date_achat'),
+                        $request->request->all('ligne_date_peremption')
+                    );
                     try {
                         $rapport = $this->acquisitionImportService()->import(
                             $chemin,
                             (int) $this->session->get('user')['id'],
                             $mapping,
-                            $choixCategories
+                            $choixCategories,
+                            $selection,
+                            $categoriesParLigne,
+                            $nombresParLigne,
+                            $datesParLigne
                         );
                         if ($rapport['erreur_globale'] !== null) {
                             $erreur = $rapport['erreur_globale'];
@@ -99,6 +122,10 @@ class AcquisitionImportController extends AbstractController
                                     ->enrichirCategories($analyse['categories_fichier']);
                                 $analyse['categories'] = $enrichissement['categories'];
                                 $analyse['categories_existantes'] = $enrichissement['existantes'];
+                                // EPI à durée de vie limitée : date d'achat
+                                // obligatoire, fin de vie par défaut (2026-10-20)
+                                $analyse = $this->acquisitionImportService()
+                                    ->marquerDureeDeVieLimitee($analyse);
                                 // Le fichier reste disponible pour l'étape 2
                                 $this->session->set(self::SESSION_CLE, $chemin);
                             }
@@ -140,24 +167,128 @@ class AcquisitionImportController extends AbstractController
     }
 
     /**
-     * Nettoie les choix de rattachement des catégories : valeur du
-     * fichier (chaîne) => 'nouvelle' ou id numérique (sinon ignoré).
+     * Nettoie les choix des catégories du fichier (décisions
+     * 2026-10-19/20) : valeur du fichier => {cible, libelle, code}.
+     * cible : 'nouvelle', id numérique, ou 'v:<autre valeur>' (même
+     * catégorie que cette autre valeur du fichier). Une simple chaîne
+     * (ancien formulaire) vaut cible.
      *
-     * @return array<string, string>
+     * @return array<string, array{cible:string, libelle:string, code:string}>
      */
     private function nettoyerChoixCategories(array $choix): array
     {
         $out = [];
-        foreach ($choix as $valeur => $cible) {
+        foreach ($choix as $valeur => $c) {
             $valeur = trim((string) $valeur);
-            $cible = trim((string) $cible);
             if ($valeur === '') {
                 continue;
             }
-            if ($cible === 'nouvelle' || (ctype_digit($cible) && (int) $cible > 0)) {
-                $out[$valeur] = $cible;
+            if (!is_array($c)) {
+                $c = ['cible' => $c];
+            }
+            $cible = isset($c['cible']) && is_scalar($c['cible']) ? trim((string) $c['cible']) : '';
+            if (!$this->cibleCategorieValide($cible, true)) {
+                continue;
+            }
+            $out[$valeur] = [
+                'cible' => $cible,
+                'libelle' => isset($c['libelle']) && is_scalar($c['libelle'])
+                    ? mb_substr(trim((string) $c['libelle']), 0, 32) : '',
+                'code' => isset($c['code']) && is_scalar($c['code'])
+                    ? mb_substr(trim((string) $c['code']), 0, 8) : '',
+                // Durée de vie limitée (case cochée — 2026-10-20)
+                'duree_max' => !empty($c['duree_max']) ? 1 : 0,
+            ];
+        }
+        return $out;
+    }
+
+    /**
+     * Numéros (1-based) des lignes cochées pour l'import.
+     *
+     * @return int[]
+     */
+    private function nettoyerSelection(array $lignes): array
+    {
+        $out = [];
+        foreach ($lignes as $numero) {
+            if (is_scalar($numero) && ctype_digit((string) $numero) && (int) $numero > 0) {
+                $out[] = (int) $numero;
+            }
+        }
+        return array_values(array_unique($out));
+    }
+
+    /**
+     * Catégorie imposée par ligne : numéro => id existant ou
+     * 'v:<valeur du fichier>' ; valeur vide = selon le fichier.
+     *
+     * @return array<int, string>
+     */
+    private function nettoyerCategoriesParLigne(array $choix): array
+    {
+        $out = [];
+        foreach ($choix as $numero => $cible) {
+            if (!ctype_digit((string) $numero) || (int) $numero < 1 || !is_scalar($cible)) {
+                continue;
+            }
+            $cible = trim((string) $cible);
+            if ($cible !== '' && $this->cibleCategorieValide($cible, false)) {
+                $out[(int) $numero] = $cible;
             }
         }
         return $out;
+    }
+
+    /**
+     * Stock max / stock actuel saisis par ligne (2026-10-20) :
+     * numéro => {nombre?, nombre_actuel?} (chaînes, validées par le
+     * service ; 10 caractères max).
+     *
+     * @return array<int, array{nombre?:string, nombre_actuel?:string}>
+     */
+    private function nettoyerNombresParLigne(array $nombres, array $actuels): array
+    {
+        $out = [];
+        foreach (['nombre' => $nombres, 'nombre_actuel' => $actuels] as $champ => $valeurs) {
+            foreach ($valeurs as $numero => $valeur) {
+                if (!ctype_digit((string) $numero) || (int) $numero < 1 || !is_scalar($valeur)) {
+                    continue;
+                }
+                $out[(int) $numero][$champ] = mb_substr(trim((string) $valeur), 0, 10);
+            }
+        }
+        return $out;
+    }
+
+    /**
+     * Dates saisies par ligne (2026-10-20) : numéro => {date_achat?,
+     * date_peremption?} au format AAAA-MM-JJ, ou chaîne vide (date
+     * effacée) ; toute autre valeur est ignorée.
+     *
+     * @return array<int, array{date_achat?:string, date_peremption?:string}>
+     */
+    private function nettoyerDatesParLigne(array $achats, array $peremptions): array
+    {
+        $out = [];
+        foreach (['date_achat' => $achats, 'date_peremption' => $peremptions] as $champ => $valeurs) {
+            foreach ($valeurs as $numero => $valeur) {
+                if (!ctype_digit((string) $numero) || (int) $numero < 1 || !is_scalar($valeur)) {
+                    continue;
+                }
+                $valeur = trim((string) $valeur);
+                if ($valeur === '' || preg_match('/^\d{4}-\d{2}-\d{2}$/', $valeur) === 1) {
+                    $out[(int) $numero][$champ] = $valeur;
+                }
+            }
+        }
+        return $out;
+    }
+
+    private function cibleCategorieValide(string $cible, bool $nouvelleAutorisee): bool
+    {
+        return ($nouvelleAutorisee && $cible === 'nouvelle')
+            || (ctype_digit($cible) && (int) $cible > 0)
+            || (str_starts_with($cible, 'v:') && trim(substr($cible, 2)) !== '');
     }
 }

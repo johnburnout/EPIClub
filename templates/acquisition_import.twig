@@ -23,9 +23,11 @@
 					<li>Fichier Excel (<code>.xlsx</code>, <code>.xls</code>) ou CSV ; la <strong>ligne d'en-tête est détectée automatiquement</strong> (dans les 10 premières lignes) ;</li>
 					<li>après le téléversement, vous pourrez <strong>vérifier la correspondance des colonnes</strong> avec les champs attendus avant de lancer l'import ;</li>
 					<li>les lignes d'une même facture — ou, à défaut de n° de facture, d'une même date d'achat — sont groupées dans <strong>une même acquisition automatiquement validée</strong>, dont le document sera marqué « facture à importer » (téléversé plus tard) ;</li>
-					<li>un <code>nombre</code> supérieur à 1 indique un <strong>lot</strong> (un seul équipement) ;</li>
-					<li>la catégorie est recherchée par <strong>code</strong> (ex. <code>COR</code>), puis par libellé, puis créée ;</li>
+					<li>un <code>nombre</code> supérieur à 1 indique un <strong>lot</strong> (un seul équipement) ; le <strong>stock actuel</strong> d'un lot (colonne « stock réel », ≤ nombre) peut être importé — si un seul des deux est fourni, l'autre prend la même valeur, et à défaut les deux valent 1 (modifiables avant l'import) ;</li>
+					<li>la catégorie est recherchée par <strong>code</strong> (ex. <code>COR</code>), puis par libellé ; les catégories inconnues peuvent être créées (nom et code au choix), regroupées ou rattachées à une catégorie existante ;</li>
+					<li>chaque ligne peut être <strong>cochée ou décochée</strong> avant l'import, et affectée à une autre catégorie ;</li>
 					<li>dates : année seule → 1er janvier (achat) ou 31 décembre (péremption) ; date d'achat vide → date du jour ;</li>
+					<li>EPI à <strong>durée de vie limitée</strong> : date d'achat obligatoire (modifiable dans le tableau d'import) ; fin de vie vide → 31 décembre, 10 ans après l'achat (modifiable) ;</li>
 					<li>référence vide → <a href="/admin/references">référence automatique</a>.</li>
 				</ul>
 			</div>
@@ -59,7 +61,17 @@
 			Vérifiez que chaque colonne correspond au bon champ, puis lancez l'import.
 		</p>
 
-		<form method="post">
+		{% set limiteesExistantes = {} %}
+		{% for e in analyse.categories_existantes ?? [] %}
+			{% set limiteesExistantes = limiteesExistantes|merge({('c' ~ e.id): (e.duree_max_utilisation ?? 0) == 1}) %}
+		{% endfor %}
+		{% set existantesFichier = {} %}
+		{% for c in analyse.categories ?? [] %}
+			{% set existantesFichier = existantesFichier|merge({('v' ~ c.valeur): c.existante ? ('c' ~ c.existante.id) : ''}) %}
+		{% endfor %}
+		<form method="post" id="js-form-import"
+		      data-limitees-existantes="{{ limiteesExistantes|json_encode }}"
+		      data-existantes-fichier="{{ existantesFichier|json_encode }}">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 			<input type="hidden" name="confirmation" value="1">
 
@@ -91,25 +103,72 @@
 			{% if analyse.categories %}
 				<h6>Catégories du fichier</h6>
 				<p class="text-muted mb-1">
-					Pour chaque catégorie inconnue, choisissez une catégorie existante à laquelle la rattacher, ou créez-la.
+					Pour chaque catégorie inconnue : créez-la en choisissant son <strong>nom</strong> et son <strong>code</strong>
+					(utilisé dans les références, ex. <code>COR</code>), regroupez-la avec une autre catégorie à créer,
+					ou rattachez-la à une catégorie existante.
 				</p>
 				<table class="table" style="max-width: 60rem;">
 					<tbody>
 						{% for categorie in analyse.categories %}
 							<tr>
-								<td><strong>{{ categorie.valeur }}</strong></td>
+								<td style="width: 30%;">
+									<strong>{{ categorie.valeur }}</strong>
+									<br><small class="text-muted">{{ analyse.lignes|filter(l => l.categorie == categorie.valeur)|length }} ligne(s)</small>
+								</td>
 								<td>
 									{% if categorie.existante %}
 										<span class="text-success">✓ catégorie existante :
 											« {{ categorie.existante.libelle }} »{% if categorie.existante.code %} ({{ categorie.existante.code }}){% endif %}
 										</span>
+										{% if (categorie.existante.duree_max_utilisation ?? 0) == 1 %}
+											<span class="badge bg-warning text-dark">⏳ durée de vie limitée</span>
+										{% endif %}
 									{% else %}
-										<select name="categories[{{ categorie.valeur }}]" class="form-select form-select-sm" style="max-width: 24rem;">
-											<option value="nouvelle" selected>➕ Créer la catégorie « {{ categorie.valeur }} »</option>
-											{% for existante in analyse.categories_existantes %}
-												<option value="{{ existante.id }}">Rattacher à : {{ existante.libelle }}{% if existante.code %} ({{ existante.code }}){% endif %}</option>
-											{% endfor %}
+										<select name="categories[{{ categorie.valeur }}][cible]"
+										        class="form-select form-select-sm js-cat-cible"
+										        data-valeur="{{ categorie.valeur }}" style="max-width: 28rem;">
+											<option value="nouvelle" selected>➕ Créer la catégorie (nom et code ci-dessous)</option>
+											{% set autres = analyse.categories|filter(c => not c.existante and c.valeur != categorie.valeur) %}
+											{% if autres %}
+												<optgroup label="Regrouper avec une autre catégorie à créer">
+													{% for autre in autres %}
+														<option value="v:{{ autre.valeur }}" class="js-opt-nouvelle" data-valeur="{{ autre.valeur }}">Même catégorie que « {{ autre.libelle_propose }} »</option>
+													{% endfor %}
+												</optgroup>
+											{% endif %}
+											{% if analyse.categories_existantes %}
+												<optgroup label="Rattacher à une catégorie existante">
+													{% for existante in analyse.categories_existantes %}
+														<option value="{{ existante.id }}">Rattacher à : {{ existante.libelle }}{% if existante.code %} ({{ existante.code }}){% endif %}</option>
+													{% endfor %}
+												</optgroup>
+											{% endif %}
 										</select>
+										<div class="row g-2 mt-1 js-cat-nouvelle" data-valeur="{{ categorie.valeur }}" style="max-width: 28rem;">
+											<div class="col-8">
+												<label class="form-label small mb-0">Nom</label>
+												<input type="text" name="categories[{{ categorie.valeur }}][libelle]"
+												       class="form-control form-control-sm js-cat-libelle" data-valeur="{{ categorie.valeur }}"
+												       value="{{ categorie.libelle_propose }}" maxlength="32">
+											</div>
+											<div class="col-4">
+												<label class="form-label small mb-0">Code</label>
+												<input type="text" name="categories[{{ categorie.valeur }}][code]"
+												       class="form-control form-control-sm text-uppercase"
+												       value="{{ categorie.code_propose }}" maxlength="8"
+												       pattern="[A-Za-z0-9]{2,8}" title="2 à 8 lettres sans accent ou chiffres (vide = automatique)">
+											</div>
+											<div class="col-12">
+												<div class="form-check">
+													<input type="checkbox" class="form-check-input js-cat-duree" value="1"
+													       name="categories[{{ categorie.valeur }}][duree_max]"
+													       id="duree_{{ loop.index }}" data-valeur="{{ categorie.valeur }}">
+													<label class="form-check-label small" for="duree_{{ loop.index }}">
+														Durée de vie limitée (date d'achat obligatoire, fin de vie par défaut à 10 ans)
+													</label>
+												</div>
+											</div>
+										</div>
 									{% endif %}
 								</td>
 							</tr>
@@ -118,47 +177,268 @@
 				</table>
 			{% endif %}
 
-			{% if analyse.apercu %}
-				<h6>Aperçu des premières lignes</h6>
-				<div class="table-responsive" style="max-width: 60rem;">
-					<table class="table table-sm table-striped">
-						{% for ligne in analyse.apercu %}
-							<tr>
-								{% for cellule in ligne %}
-									<td>{{ cellule }}</td>
-								{% endfor %}
-							</tr>
-						{% endfor %}
-					</table>
-				</div>
-			{% endif %}
-
 			{% if analyse.lignes_non_conformes %}
 				<div class="alert alert-warning" style="max-width: 60rem;">
-					<strong>⚠️ {{ analyse.lignes_non_conformes|length }} ligne(s) non conforme(s) — seront ignorées</strong>
+					<strong>⚠️ {{ analyse.lignes_non_conformes|length }} ligne(s) non conforme(s) — décochées, seront ignorées</strong>
 					(cases fusionnées, données incompatibles avec le champ de la colonne, champs obligatoires manquants…) :
 					<ul class="mb-0">
 						{% for ligne in analyse.lignes_non_conformes %}
-							<li>
-								Ligne {{ ligne.ligne }} : {{ ligne.raison }}
-								{% if ligne.donnees is defined %}
-									<br><small class="text-muted">Contenu : {{ ligne.donnees|join(' | ') }}</small>
-								{% endif %}
-							</li>
+							<li>Ligne {{ ligne.ligne }} : {{ ligne.raison }}</li>
 						{% endfor %}
 					</ul>
 				</div>
 			{% endif %}
 
+			{% if analyse.lignes %}
+				<h6>Lignes à importer</h6>
+				<p class="text-muted mb-1">
+					Décochez les lignes à ne pas importer. « Stock max » et « Stock actuel » sont modifiables
+					(un stock max supérieur à 1 crée un lot ; le stock actuel ne peut pas le dépasser).
+					Les dates sont modifiables : pour un EPI à durée de vie limitée (⏳), la date d'achat est
+					obligatoire et la fin de vie est proposée au 31 décembre, 10 ans après l'achat.
+					La colonne « Catégorie » permet d'affecter une ligne à une autre catégorie
+					(du fichier, y compris une catégorie à créer, ou existante).
+				</p>
+				<input type="hidden" name="selection_active" value="1">
+				<div class="table-responsive mb-3" style="max-height: 70vh;">
+					<table class="table table-sm table-hover align-middle">
+						<thead class="sticky-top bg-body">
+							<tr>
+								<th><input type="checkbox" class="form-check-input" id="js-tout-cocher" title="Tout cocher / décocher"></th>
+								<th>Ligne</th>
+								{% for colonne in analyse.colonnes %}
+									<th>{{ colonne.entete }}</th>
+								{% endfor %}
+								<th title="Nombre d'éléments à l'achat (> 1 → lot)">Stock max</th>
+								<th title="Éléments encore présents (≤ stock max)">Stock actuel</th>
+								<th>Date d'achat</th>
+								<th>Fin de vie</th>
+								<th>Catégorie</th>
+							</tr>
+						</thead>
+						<tbody>
+							{% for ligne in analyse.lignes %}
+								<tr class="{{ ligne.conforme ? '' : 'table-warning' }} js-tr-ligne" data-categorie="{{ ligne.categorie }}">
+									<td>
+										<input type="checkbox" class="form-check-input js-ligne" name="lignes[]"
+										       id="ligne_{{ ligne.ligne }}" value="{{ ligne.ligne }}" {% if ligne.conforme %}checked{% endif %}>
+									</td>
+									<td>
+										<label for="ligne_{{ ligne.ligne }}">{{ ligne.ligne }}</label>
+										{% if not ligne.conforme %}
+											<i class="fas fa-exclamation-triangle text-warning" title="{{ ligne.raison }}"></i>
+										{% endif %}
+										<span class="js-indic-limitee" title="Durée de vie limitée"{% if not ligne.limitee %} style="display: none;"{% endif %}>⏳</span>
+									</td>
+									{% for colonne in analyse.colonnes %}
+										<td>{{ ligne.donnees[colonne.index] ?? '' }}</td>
+									{% endfor %}
+									<td>
+										<input type="number" min="1" step="1" name="ligne_nombre[{{ ligne.ligne }}]"
+										       class="form-control form-control-sm js-nombre" style="width: 5.5rem;"
+										       value="{{ ligne.nombre }}" data-origine="{{ ligne.nombre }}">
+									</td>
+									<td>
+										<input type="number" min="1" step="1" name="ligne_nombre_actuel[{{ ligne.ligne }}]"
+										       class="form-control form-control-sm js-nombre-actuel" style="width: 5.5rem;"
+										       value="{{ ligne.nombre_actuel }}" data-origine="{{ ligne.nombre_actuel }}"
+										       {% if ligne.nombre %}max="{{ ligne.nombre }}"{% endif %}>
+									</td>
+									<td>
+										<input type="date" name="ligne_date_achat[{{ ligne.ligne }}]"
+										       class="form-control form-control-sm js-date-achat" style="width: 9.5rem;"
+										       value="{{ ligne.date_achat }}" data-origine="{{ ligne.date_achat }}"
+										       {% if ligne.limitee and ligne.conforme %}required{% endif %}>
+									</td>
+									<td>
+										<input type="date" name="ligne_date_peremption[{{ ligne.ligne }}]"
+										       class="form-control form-control-sm js-date-fin" style="width: 9.5rem;"
+										       value="{{ ligne.date_peremption }}" data-origine="{{ ligne.date_peremption }}"
+										       data-auto="{{ (ligne.date_peremption_auto or ligne.date_peremption == '') ? '1' : '0' }}">
+									</td>
+									<td>
+										<select name="ligne_categorie[{{ ligne.ligne }}]" class="form-select form-select-sm js-ligne-cat" style="min-width: 12rem;">
+											<option value="">Selon le fichier{% if ligne.categorie %} (« {{ ligne.categorie }} »){% endif %}</option>
+											{% if analyse.categories|length > 1 or (analyse.categories|length == 1 and analyse.categories[0].valeur != ligne.categorie) %}
+												<optgroup label="Catégories du fichier">
+													{% for categorie in analyse.categories %}
+														{% if categorie.valeur != ligne.categorie %}
+															{% if categorie.existante %}
+																<option value="v:{{ categorie.valeur }}">{{ categorie.existante.libelle }}</option>
+															{% else %}
+																<option value="v:{{ categorie.valeur }}" class="js-opt-nouvelle" data-valeur="{{ categorie.valeur }}">{{ categorie.libelle_propose }} (à créer)</option>
+															{% endif %}
+														{% endif %}
+													{% endfor %}
+												</optgroup>
+											{% endif %}
+											{% if analyse.categories_existantes %}
+												<optgroup label="Catégories existantes">
+													{% for existante in analyse.categories_existantes %}
+														<option value="{{ existante.id }}">{{ existante.libelle }}{% if existante.code %} ({{ existante.code }}){% endif %}</option>
+													{% endfor %}
+												</optgroup>
+											{% endif %}
+										</select>
+									</td>
+								</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+			{% endif %}
+
 			<div class="form-actions">
-				<button type="submit" class="btn btn-success"
-				        onclick="return confirm('Lancer l\\'import de {{ analyse.nb_lignes }} ligne(s) ?');">
-					✅ Lancer l'import
+				<button type="submit" class="btn btn-success">
+					✅ Lancer l'import (<span id="js-nb-selection">{{ analyse.lignes|filter(l => l.conforme)|length }}</span> ligne(s))
 				</button>
 				<a href="/admin/acquisitions/import" class="btn btn-secondary">Annuler</a>
 			</div>
 		</form>
+
+		<script>
+			(function () {
+				var form = document.getElementById('js-form-import');
+				if (!form) { return; }
+				var cases = form.querySelectorAll('.js-ligne');
+				var tout = document.getElementById('js-tout-cocher');
+				var compteur = document.getElementById('js-nb-selection');
+
+				function majCompteur() {
+					var n = 0;
+					cases.forEach(function (c) { if (c.checked) { n++; } });
+					if (compteur) { compteur.textContent = n; }
+					if (tout) {
+						tout.checked = n > 0 && n === cases.length;
+						tout.indeterminate = n > 0 && n < cases.length;
+					}
+					return n;
+				}
+				cases.forEach(function (c) { c.addEventListener('change', majCompteur); });
+				if (tout) {
+					tout.addEventListener('change', function () {
+						cases.forEach(function (c) { c.checked = tout.checked; });
+						majCompteur();
+					});
+				}
+				majCompteur();
+
+				// Catégorie à créer : nom/code visibles seulement si « Créer »
+				form.querySelectorAll('.js-cat-cible').forEach(function (sel) {
+					var bloc = form.querySelector('.js-cat-nouvelle[data-valeur="' + CSS.escape(sel.dataset.valeur) + '"]');
+					function maj() { if (bloc) { bloc.style.display = sel.value === 'nouvelle' ? '' : 'none'; } }
+					sel.addEventListener('change', maj);
+					maj();
+				});
+
+				// Le nom choisi pour une catégorie à créer est repris dans les listes
+				form.querySelectorAll('.js-cat-libelle').forEach(function (input) {
+					input.addEventListener('input', function () {
+						var nom = input.value.trim() || input.dataset.valeur;
+						form.querySelectorAll('.js-opt-nouvelle[data-valeur="' + CSS.escape(input.dataset.valeur) + '"]').forEach(function (opt) {
+							opt.textContent = opt.closest('select').classList.contains('js-cat-cible')
+								? 'Même catégorie que « ' + nom + ' »'
+								: nom + ' (à créer)';
+						});
+					});
+				});
+
+				// Stock actuel : suit le stock max tant qu'il n'a pas été
+				// modifié à la main, et ne peut pas le dépasser
+				form.querySelectorAll('.js-nombre').forEach(function (nombre) {
+					var actuel = nombre.closest('tr').querySelector('.js-nombre-actuel');
+					if (!actuel) { return; }
+					var lie = actuel.value === nombre.value;
+					actuel.addEventListener('input', function () { lie = actuel.value === nombre.value; });
+					nombre.addEventListener('input', function () {
+						if (lie) { actuel.value = nombre.value; }
+						if (nombre.value) { actuel.max = nombre.value; } else { actuel.removeAttribute('max'); }
+					});
+				});
+
+				// Durée de vie limitée (2026-10-20) : selon la catégorie
+				// effective de chaque ligne (choix des catégories du
+				// fichier + catégorie imposée), date d'achat obligatoire
+				// et fin de vie proposée à 10 ans (31 décembre).
+				var limiteesExistantes = JSON.parse(form.dataset.limiteesExistantes || '{}');
+				var existantesFichier = JSON.parse(form.dataset.existantesFichier || '{}');
+				function selParValeur(classe, valeur) {
+					return form.querySelector(classe + '[data-valeur="' + CSS.escape(valeur) + '"]');
+				}
+				function limiteeValeur(valeur, vues) {
+					var existante = existantesFichier['v' + valeur];
+					if (existante) { return !!limiteesExistantes[existante]; }
+					var sel = selParValeur('.js-cat-cible', valeur);
+					if (!sel) { return false; }
+					if (sel.value === 'nouvelle') {
+						var duree = selParValeur('.js-cat-duree', valeur);
+						return !!(duree && duree.checked);
+					}
+					if (sel.value.indexOf('v:') === 0) {
+						if (vues[valeur]) { return false; }
+						vues[valeur] = true;
+						return limiteeValeur(sel.value.slice(2), vues);
+					}
+					return !!limiteesExistantes['c' + sel.value];
+				}
+				function limiteeLigne(tr) {
+					var sel = tr.querySelector('.js-ligne-cat');
+					var v = sel ? sel.value : '';
+					if (v === '') { return limiteeValeur(tr.dataset.categorie, {}); }
+					if (v.indexOf('v:') === 0) { return limiteeValeur(v.slice(2), {}); }
+					return !!limiteesExistantes['c' + v];
+				}
+				function majDurees() {
+					form.querySelectorAll('.js-tr-ligne').forEach(function (tr) {
+						var lim = limiteeLigne(tr);
+						var coche = tr.querySelector('.js-ligne');
+						var achat = tr.querySelector('.js-date-achat');
+						var fin = tr.querySelector('.js-date-fin');
+						var indic = tr.querySelector('.js-indic-limitee');
+						if (indic) { indic.style.display = lim ? '' : 'none'; }
+						if (achat) { achat.required = lim && coche && coche.checked; }
+						if (fin && fin.dataset.auto === '1') {
+							fin.value = (lim && achat && achat.value)
+								? (parseInt(achat.value.slice(0, 4), 10) + 10) + '-12-31'
+								: '';
+						}
+					});
+				}
+				form.querySelectorAll('.js-date-fin').forEach(function (fin) {
+					fin.addEventListener('input', function () { fin.dataset.auto = fin.value === '' ? '1' : '0'; });
+				});
+				form.addEventListener('change', function (e) {
+					if (e.target.matches('.js-cat-cible, .js-cat-duree, .js-ligne-cat, .js-ligne, .js-date-achat')) { majDurees(); }
+				});
+				form.querySelectorAll('.js-date-achat').forEach(function (a) { a.addEventListener('input', majDurees); });
+				if (tout) { tout.addEventListener('change', majDurees); }
+				majDurees();
+
+				form.addEventListener('submit', function (e) {
+					var n = majCompteur();
+					if (n === 0) {
+						e.preventDefault();
+						alert('Aucune ligne sélectionnée.');
+						return;
+					}
+					if (!confirm('Lancer l\'import de ' + n + ' ligne(s) ?')) {
+						e.preventDefault();
+						return;
+					}
+					// Seules les valeurs modifiées remplacent celles du fichier
+					// (la correspondance des colonnes a pu changer entre-temps)
+					form.querySelectorAll('.js-nombre, .js-nombre-actuel, .js-date-achat, .js-date-fin').forEach(function (input) {
+						if (input.value === input.dataset.origine) { input.disabled = true; }
+					});
+				});
+				// Retour arrière navigateur : champs réactivés
+				window.addEventListener('pageshow', function () {
+					form.querySelectorAll('.js-nombre, .js-nombre-actuel, .js-date-achat, .js-date-fin').forEach(function (input) { input.disabled = false; });
+				});
+			})();
+		</script>
 	{% endif %}
+
 
 	{# ==============================================================
 	   ÉTAT 3 — Rapport d'import
@@ -196,6 +476,10 @@
 			</table>
 		{% else %}
 			<div class="alert alert-warning">Aucune acquisition n'a été créée.</div>
+		{% endif %}
+
+		{% if rapport.lignes_exclues is defined and rapport.lignes_exclues > 0 %}
+			<div class="alert alert-secondary">{{ rapport.lignes_exclues }} ligne(s) non sélectionnée(s) : non importée(s).</div>
 		{% endif %}
 
 		{% if rapport.notes %}

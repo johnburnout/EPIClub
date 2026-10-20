@@ -120,24 +120,30 @@ Ils sont générés automatiquement à partir des **factures d'acquisition** val
 1. Aller dans **Administration → Acquisitions**, cliquer sur **« Importer (Excel / CSV) »** et envoyer un fichier Excel (`.xlsx`, `.xls`) ou CSV. La **ligne d'en-tête est détectée automatiquement** (dans les 10 premières lignes) : les lignes au-dessus (titre, lignes vides…) sont ignorées.
 2. L'écran **d'analyse** s'affiche alors :
    - pour chaque colonne du fichier, choisissez le **champ correspondant** (une correspondance est proposée automatiquement d'après l'en-tête ; vous pouvez la modifier ou ignorer la colonne) ;
-   - pour chaque **catégorie du fichier inconnue** de la base, choisissez une **catégorie existante à laquelle la rattacher**, ou laissez « Créer la catégorie » (choix par défaut) ;
-   - un **aperçu des premières lignes** permet de vérifier ;
-   - les **lignes non conformes** (données incompatibles avec le champ de la colonne, cellules fusionnées…) sont listées **avec leur contenu complet** : elles **seront ignorées** si vous poursuivez ;
+   - pour chaque **catégorie du fichier inconnue** de la base : laissez « Créer la catégorie » (choix par défaut) en choisissant son **nom**, son **code** (proposé automatiquement) et, si besoin, la case **« Durée de vie limitée »** ; ou **regroupez-la** avec une autre catégorie à créer (« Même catégorie que… ») ; ou **rattachez-la à une catégorie existante** ;
+   - le tableau **« Lignes à importer »** présente **toutes les lignes** du fichier :
+     - chaque ligne a une **case à cocher** : seules les lignes cochées sont importées (case d'en-tête pour tout cocher / décocher ; le bouton d'import indique le nombre de lignes cochées) ;
+     - les **lignes non conformes** (données incompatibles avec le champ de la colonne, cellules fusionnées, date d'achat manquante pour un EPI à durée de vie limitée…) sont surlignées et **décochées** ; elles sont aussi listées au-dessus du tableau. Corrigez-les dans le tableau puis cochez-les, sinon elles **seront ignorées** ;
+     - **Stock max** et **Stock actuel** sont modifiables (voir les règles ci-dessous) ;
+     - **Date d'achat** et **Fin de vie** sont modifiables ; ⏳ signale un EPI à durée de vie limitée ;
+     - la colonne **Catégorie** permet d'**affecter la ligne à une autre catégorie** (une autre catégorie du fichier, y compris une catégorie à créer, ou une catégorie existante) ;
    - validez pour lancer l'import.
 
-**Champs reconnus :** `reference` (optionnelle — vide ⇒ référence automatique selon le modèle, ex. `25COR005`), `designation` et `categorie` (**requis**), `nombre`, `date_achat`, `date_peremption`, `facture_reference`, `fournisseur`.
+**Champs reconnus :** `reference` (optionnelle — vide ⇒ référence automatique selon le modèle, ex. `25COR005`), `designation` et `categorie` (**requis**), `nombre` (stock max), `nombre_actuel` (stock actuel — colonne « stock réel » reconnue), `date_achat`, `date_peremption`, `facture_reference`, `fournisseur`.
 
 **Règles de l'import :**
 
 - **`categorie`** : le **code** de la catégorie (ex. `TCI`) est reconnu, sinon son libellé ; si la catégorie est inconnue, l'écran d'analyse propose de la **rattacher à une catégorie existante** ou de la créer ;
-- **`nombre` > 1** ⇒ les unités sont regroupées en un **lot** (un seul équipement) ;
+- **`nombre` > 1** ⇒ les unités sont regroupées en un **lot** (un seul équipement) dont le **nombre initial** est ce nombre (stock max) ;
+- **stock actuel** d'un lot : compris entre 1 et le stock max (sinon la ligne est refusée) ; si une seule des deux valeurs est fournie, l'autre prend la même ; si aucune ne l'est, les deux valent 1 ;
 - **dates** : si seule l'année est indiquée ⇒ 1er janvier (date d'achat) / 31 décembre (date de péremption) ; date d'achat vide ⇒ date du jour ; date de péremption vide ⇒ pas de limite ;
+- **EPI à durée de vie limitée** (catégorie avec « Durée maximum d'utilisation ») : la **date d'achat est obligatoire** (pas de date du jour par défaut) ; une fin de vie vide est fixée au **31 décembre de l'année d'achat + 10 ans** (ex. achat 2019 ⇒ 31/12/2029) ;
 - **groupement en acquisitions** : les lignes d'une même `facture_reference` sont groupées dans **une même acquisition, automatiquement validée** ; sans référence de facture, les équipements de **même date d'achat** sont groupés ensemble ;
 - l'acquisition créée porte le document **« facture à importer »**, remplaçable ensuite depuis la fiche de l'acquisition par le PDF réel (qui peut regrouper plusieurs factures) ; le fournisseur vide devient « Divers » ;
 - une référence de facture **déjà connue est ignorée** (jamais de fusion) ;
 - la date de facture est reportée comme **date de mise en service** sur les équipements qui n'en ont pas.
 
-3. Un **rapport d'import** liste les acquisitions créées, les groupes ignorés, les lignes non conformes écartées et les éventuelles notes (ex. fournisseurs différents groupés par date).
+3. Un **rapport d'import** liste les acquisitions créées, les groupes ignorés, les lignes non conformes écartées, le nombre de lignes non sélectionnées et les éventuelles notes (ex. fournisseurs différents groupés par date, code de catégorie déjà pris remplacé par un code automatique).
 
 ---
 

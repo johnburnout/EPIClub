@@ -10,6 +10,50 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.0.0-beta.6] — 2026-10-20
+
+Import Excel/CSV : contrôle ligne à ligne avant l'import (sélection,
+catégories, stock des lots, dates des EPI à durée de vie limitée).
+
+### Added
+
+- **Import Excel/CSV — sélection des lignes** : à l'étape d'analyse,
+  toutes les lignes de données sont listées avec une case à cocher
+  (tout cocher/décocher, compteur sur le bouton d'import). Seules les
+  lignes cochées sont importées ; les lignes non conformes sont
+  décochées par défaut. Le rapport indique les lignes non
+  sélectionnées.
+- **Import Excel/CSV — catégories à créer** : nom et code (pré-remplis,
+  codes suggérés sans collision) modifiables pour chaque catégorie
+  inconnue ; possibilité de regrouper plusieurs valeurs du fichier dans
+  une même catégorie à créer. Chaque ligne peut être affectée à une
+  autre catégorie (du fichier, y compris à créer, ou existante). Une
+  catégorie n'est créée que si une ligne importée l'utilise ; code
+  invalide ou déjà pris → code automatique, noté au rapport. + 10 tests.
+- **Import Excel/CSV — stock des lots** : nouvelle colonne « Stock
+  actuel » (alias « stock réel », « stock actuel »…) à côté du nombre
+  (stock max). Si une seule des deux valeurs est fournie, l'autre prend
+  la même ; à défaut, les deux valent 1. Stock max et stock actuel sont
+  modifiables ligne à ligne avant l'import (une ligne non conforme peut
+  ainsi être corrigée puis cochée). Stock actuel > stock max → ligne
+  refusée. Migration `011_nombre_actuel_import.sql`
+  (`acquisition_ligne.nombre_actuel`), reporté sur
+  `club_equipement.nombre` à la génération du lot. + 5 tests.
+- **Import Excel/CSV — EPI à durée de vie limitée** (catégorie
+  « durée maximum d'utilisation ») : importés seulement si la date
+  d'achat est renseignée (plus de date du jour par défaut pour eux) ;
+  fin de vie vide → 31 décembre de l'année d'achat + 10 ans. Colonnes
+  « Date d'achat » et « Fin de vie » modifiables dans le tableau
+  d'import ; la fin de vie proposée suit la date d'achat et la
+  catégorie choisie (y compris catégorie imposée à la ligne). Case
+  « Durée de vie limitée » pour les catégories créées à l'import.
+  + 5 tests ; test d'intégration mis à jour (fin de vie 2029-12-31).
+
+### Changed
+
+- Pied de page : « (beta) » retiré, le numéro de version portant déjà
+  la mention bêta.
+
 ## [v1.0.0-beta.5] — 2026-10-19
 
 Deuxième cycle de correction de l'audit de sécurité du 2026-10-19 :
