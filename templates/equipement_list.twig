@@ -166,7 +166,6 @@
 				<th>Emplacement</th>
 				<th>Mise en service</th>
 				<th>Fin d'utilisation</th>
-				<th>État</th>
 				<th>Statut</th>
 				<th>Actions</th>
 			</tr>
@@ -226,7 +225,6 @@
                         {{ equipement.date_fin_utilisation|date("d/m/Y") }}
                         {% endif %}
                     </td>
-                    <td>{{ equipement.etat|default('-') }}</td>
                     <td class="text-center">
                         {# Statut : 0 disponible (vert), 1 maintenance (jaune), 2 hors service (rouge) #}
                         {% set statuts = {
