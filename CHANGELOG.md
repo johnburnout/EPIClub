@@ -10,6 +10,23 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.0.0] — 2026-10-20
+
+Première version stable d'EPIClub : gestion des équipements de
+protection individuelle d'un club (acquisitions, import Excel/CSV,
+référencement automatique, QR codes, contrôles et journaux, tableau de
+bord, modification groupée, mise à jour intégrée).
+
+Aucun changement fonctionnel depuis la v1.0.0-beta.12 ; voir les
+versions bêta ci-dessous pour le détail.
+
+### Changed
+
+- Mention « (beta) » retirée de la page de connexion et de
+  l'installateur.
+- Publication : les futures versions bêta sont marquées
+  « pre-release » sur GitHub (invisibles en canal `stable`).
+
 ## [v1.0.0-beta.12] — 2026-10-20
 
 Scan avec un contrôle ouvert : l'équipement est ajouté et sa fiche

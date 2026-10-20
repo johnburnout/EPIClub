@@ -13,6 +13,11 @@
 > GitHub ne sont plus marquées « prerelease » (la bêta vit dans le
 > numéro de version) — sinon le code déjà déployé ne verrait pas la
 > correction.
+>
+> **Depuis la v1.0.0 (stable, 2026-10-20)** : les bêtas suivantes
+> (`v1.1.0-beta.N`…) sont publiées avec `--prerelease` pour que le
+> canal `stable` ne les propose pas ; les versions stables (`v1.0.1`,
+> `v1.1.0`…) sans.
 
 ---
 
