@@ -10,6 +10,11 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.0.0-beta.8] — 2026-10-20
+
+Photo groupée : une même photo pour plusieurs équipements identiques,
+et recherche dans la liste des équipements.
+
 ### Added
 
 - **Photo groupée** : dans la liste des équipements, les administrateurs
