@@ -31,6 +31,8 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
   peut être modifiée une seule fois (confirmation demandée), jamais
   avant la date de facture ; le verrouillage est appliqué côté serveur.
   La fiche affiche désormais la vraie date d'achat (date de facture).
+  Un super-administrateur peut la modifier à tout moment, toujours pas
+  avant la date de facture.
 - **Libellé d'un équipement** : défini à l'acquisition, il est
   désormais modifiable dans la fiche équipement par un
   super-administrateur (toujours en lecture seule pour les autres rôles,

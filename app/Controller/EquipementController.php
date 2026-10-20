@@ -435,7 +435,10 @@ class EquipementController extends AbstractController
         if (is_array($equipement)) {
             $equipement['date_achat'] = $dateFacture;
         }
+        // [MÉTIER 2026-10-20] Un super-administrateur peut toujours la
+        // modifier (sans verrou), mais jamais avant la date de facture.
         $dateMesVerrouillee = is_array($equipement)
+            && !$this->isGranted('ROLE_SUPER_ADMIN')
             && self::dateMiseEnServiceVerrouillee($equipement, $dateFacture);
         
         if ($request->getMethod() === 'POST') {

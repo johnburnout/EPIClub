@@ -27,10 +27,10 @@ final class EquipementControllerDateMiseEnServiceTest extends TestCase
 
     private ?array $enregistre = null;
 
-    private function editer(?string $dmsActuelle, array $post): \Symfony\Component\HttpFoundation\Response
+    private function editer(?string $dmsActuelle, array $post, string $role = 'ROLE_ADMIN'): \Symfony\Component\HttpFoundation\Response
     {
         $session = new Session(new MockArraySessionStorage());
-        $session->set('user', ['id' => 1, 'username' => 'a', 'role' => 'ROLE_ADMIN']);
+        $session->set('user', ['id' => 1, 'username' => 'a', 'role' => $role]);
         $session->set('csrf_token', self::CSRF);
 
         $equipements = $this->createMock(EquipementManager::class);
@@ -107,6 +107,32 @@ final class EquipementControllerDateMiseEnServiceTest extends TestCase
 
         self::assertStringContainsString('ne peut plus l\'être', $html);
         self::assertStringNotContainsString('name="date_mise_en_service"', $html);
+    }
+
+    public function testSuperAdminModifieUneDateDejaModifiee(): void
+    {
+        $response = $this->editer('2026-04-01', ['date_mise_en_service' => '2026-05-01'], 'ROLE_SUPER_ADMIN');
+
+        self::assertSame(302, $response->getStatusCode());
+        self::assertSame('2026-05-01', $this->enregistre['date_mise_en_service']);
+    }
+
+    public function testSuperAdminJamaisAvantLaFacture(): void
+    {
+        $response = $this->editer('2026-04-01', ['date_mise_en_service' => '2026-01-01'], 'ROLE_SUPER_ADMIN');
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertNull($this->enregistre);
+        self::assertStringContainsString('antérieure à la date de facture', (string) $response->getContent());
+    }
+
+    public function testFormulaireSuperAdminJamaisVerrouille(): void
+    {
+        $html = (string) $this->editer('2026-04-01', [], 'ROLE_SUPER_ADMIN')->getContent();
+
+        self::assertStringContainsString('name="date_mise_en_service"', $html);
+        self::assertStringContainsString('min="2026-03-15"', $html);
+        self::assertStringContainsString('modifiable à tout moment', $html);
     }
 
     #[DataProvider('verrous')]
