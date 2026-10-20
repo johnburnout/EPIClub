@@ -111,11 +111,12 @@ $routes->add('equipement_etiquettes', new Route('/equipements/etiquettes',      
 $routes->add('equipement_pdf',        new Route('/equipements/equipement-pdf-{id}',      ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'pdf']));
 $routes->add('equipement_show',       new Route('/equipements/equipement-{id}',          ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'show']));
 
-// ROLE_ADMIN : même photo pour plusieurs équipements cochés dans la liste
-$routes->add('equipement_photo_groupee', new Route(
-    '/equipements/photo-groupee',
-    ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'photoGroupee'],
-    [], [], '', [], ['POST']
+// ROLE_ADMIN : modification groupée des équipements cochés dans la liste
+// (GET : formulaire, POST : application)
+$routes->add('equipement_modification_groupee', new Route(
+    '/equipements/modification-groupee',
+    ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'modificationGroupee'],
+    [], [], '', [], ['GET', 'POST']
 ));
 
 // ROLE_ADMIN : modification et suppression

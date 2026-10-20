@@ -10,6 +10,24 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Added
+
+- **Modification groupée des équipements** (ROLE_ADMIN) : les cases à
+  cocher de la liste mènent à une page « Modifier la sélection » où
+  chaque champ n'est appliqué que si sa case « Modifier » est cochée :
+  statut, emplacement, date de mise en service, date de fin
+  d'utilisation, durée maximum, remarques (ajout à la suite ou
+  remplacement), photo (partagée), et libellé pour un
+  super-administrateur. Saisie validée en entier avant enregistrement ;
+  la date de mise en service suit les règles de la fiche, équipement par
+  équipement (équipements ignorés signalés). Les cases à cocher ne sont
+  pas affichées en dessous du rôle administrateur.
+
+### Changed
+
+- La « photo groupée » de la v1.0.0-beta.8 est intégrée à la
+  modification groupée (route `/equipements/photo-groupee` supprimée).
+
 ## [v1.0.0-beta.9] — 2026-10-20
 
 Acquisitions : référence proposée selon le modèle, date de mise en

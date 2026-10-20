@@ -161,7 +161,12 @@ Ils sont générés automatiquement à partir des **factures d'acquisition** val
 - Changer l’**état d’usure** (si défini)
 - Pour un **lot** : ajuster le **nombre actuel d'éléments**, entre 1 et le **nombre initial** du lot (affiché, non modifiable) — par exemple lorsque des éléments du lot sont perdus ou retirés.
 
-> **Important :** la référence, le code et la catégorie ne sont **pas modifiables** car ils sont hérités de l’acquisition. Le nombre initial d'un lot ne l'est pas non plus.
+- La **date de mise en service** vaut la date de facture : elle ne peut être modifiée qu'**une seule fois**, jamais avant la date de facture (un super-administrateur peut la modifier à tout moment, toujours pas avant la facture).
+- Le **libellé** n'est modifiable que par un **super-administrateur**.
+
+> **Important :** la référence et la catégorie ne sont **pas modifiables** car elles sont héritées de l’acquisition. Le nombre initial d'un lot ne l'est pas non plus.
+
+**Modification groupée** (`ROLE_ADMIN`) : dans la liste des équipements, cocher plusieurs équipements (la case d'en-tête coche toute la page), puis cliquer sur **« Modifier la sélection »**. Sur la page suivante, activer **« Modifier »** pour chaque champ à changer (statut, emplacement, dates, durée maximum, remarques — ajoutées à la suite ou remplacées —, photo, et libellé pour un super-administrateur) ; les champs non activés restent inchangés. La photo est la même pour tous les équipements sélectionnés. Pour la date de mise en service, les équipements qui ne peuvent pas la recevoir (date déjà modifiée, facture postérieure) sont ignorés et signalés.
 
 ---
 
