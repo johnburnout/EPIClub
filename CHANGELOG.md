@@ -10,11 +10,20 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.1.2] — 2026-10-21
+
+Correctif de sécurité mineur (journaux) et correction de la CI.
+
 ### Security
 
 - **Journaux** : l'id de route de `voir` / `pdf` passe par
   `getValidId()` (strictement numérique) au lieu d'un cast `(int)` —
   dernier écart relevé par l'audit des contrôleurs.
+
+### Fixed
+
+- **CI (workflow Build)** : sur une pull request, le nom d'archive
+  contenait un « / » (`85/merge`) et faisait échouer le job.
 
 ## [v1.1.1] — 2026-10-21
 
