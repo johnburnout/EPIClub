@@ -51,11 +51,14 @@ jobs:
 
       # 7. (Optionnel) Créer les archives
       - name: Create release archives
+        # Sur une pull request, GITHUB_REF_NAME vaut « 85/merge » : le « / »
+        # créerait un sous-dossier inexistant. On le remplace par « - ».
         run: |
           mkdir -p releases
-          git archive --format=zip --output=releases/epiclub-${GITHUB_REF_NAME}.zip HEAD
-          git archive --format=tar --output=releases/epiclub-${GITHUB_REF_NAME}.tar HEAD
-          gzip releases/epiclub-${GITHUB_REF_NAME}.tar
+          NOM="epiclub-${GITHUB_REF_NAME//\//-}"
+          git archive --format=zip --output="releases/${NOM}.zip" HEAD
+          git archive --format=tar --output="releases/${NOM}.tar" HEAD
+          gzip "releases/${NOM}.tar"
 
       # 8. Uploader les archives en tant qu'artéfacts (pour pouvoir les récupérer)
       - name: Upload archives
