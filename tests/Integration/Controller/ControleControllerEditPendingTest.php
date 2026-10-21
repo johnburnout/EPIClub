@@ -18,12 +18,11 @@ namespace Epiclub\Tests\Integration\Controller;
  * doit PAS réapparaître dans « équipements disponibles » (doublons
  * de lignes possibles sinon, addEquipement() n'a pas de garde).
  *
- * ⚠️ Prérequis : MySQL + compte admin/adminadmin (id = 2 attendu) —
+ * ⚠️ Prérequis : MySQL + compte admin/adminadmin (id lu par adminId()) —
  * le serveur HTTP est auto-démarré par AbstractControllerTestCase.
  */
 final class ControleControllerEditPendingTest extends AbstractControllerTestCase
 {
-    private const ADMIN_ID = 2;
 
     /**
      * #113 — Filtre actif masquant une ligne « a_controler » :
@@ -127,7 +126,7 @@ final class ControleControllerEditPendingTest extends AbstractControllerTestCase
     {
         $acqId = $this->fixture->createDraftAcquisition('TEST-113-PENDING');
         $controleId = $this->fixture->createControle(
-            controleurId: self::ADMIN_ID,
+            controleurId: $this->adminId(),
             libelle: 'TEST-113-PENDING',
             statut: 'ouvert',
         );
