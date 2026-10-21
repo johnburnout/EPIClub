@@ -208,6 +208,18 @@ final class EquipementControllerHorsServiceTest extends TestCase
         self::assertSame('/equipements', $reponse->headers->get('Location'));
     }
 
+    /** [migration 017] Égaré depuis plus que le délai (12 mois par défaut) : supprimable. */
+    public function testSuppressionDUnEquipementEgareDepuisLeDelai(): void
+    {
+        $this->equipement(['statut' => 4, 'date_egare' => date('Y-m-d', strtotime('-13 months'))]);
+        $this->historique(['egare']);
+
+        $reponse = $this->controleur()->delete($this->suppression());
+
+        self::assertTrue($this->supprime);
+        self::assertSame('/equipements', $reponse->headers->get('Location'));
+    }
+
     /**
      * @return iterable<string, array{array<string, mixed>, list<string>}>
      */
@@ -217,6 +229,8 @@ final class EquipementControllerHorsServiceTest extends TestCase
         yield 'hors service sans contrôle'     => [['statut' => 2], []];
         yield 'dernier contrôle non HS'        => [['statut' => 2], ['controle_ok', 'hors_service']];
         yield 'contrôle en cours'              => [['statut' => 2, 'controle_en_cours' => 1], ['hors_service']];
+        yield 'égaré depuis moins d\'un an'      => [['statut' => 4, 'date_egare' => date('Y-m-d', strtotime('-6 months'))], ['egare']];
+        yield 'égaré sans date'                => [['statut' => 4, 'date_egare' => null], ['egare']];
     }
 
     /**

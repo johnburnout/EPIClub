@@ -40,6 +40,17 @@
 						</div>
 					{% endif %}
 
+					{% if prets_en_retard|default(0) > 0 %}
+						<div id="alerte-prets-retard" class="alert alert-danger mb-0" role="alert">
+							<a href="/prets?retard=1" class="alert-link text-decoration-none d-block"
+							   title="Afficher les prêts en retard">
+								⏰ <strong>{{ prets_en_retard }} prêt{{ prets_en_retard > 1 ? 's' : '' }} en retard</strong>
+								<span class="d-block small fw-normal">Date de retour prévue dépassée</span>
+								<span class="d-block small mt-1">Voir les prêts →</span>
+							</a>
+						</div>
+					{% endif %}
+
 					<a href="/controles/scanner" class="btn btn-primary w-100 py-2">
 						📷 Scanner un QR code
 					</a>

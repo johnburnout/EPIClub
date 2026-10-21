@@ -1209,6 +1209,15 @@ class ControleController extends AbstractController
                 )),
             };
             
+            // [migration 017] Date de déclaration « Égaré » (délai avant
+            // suppression) ; effacée quand l'équipement quitte ce statut.
+            if ($statutLigne === ControleLigneStatut::EGARE) {
+                $dateLigne = substr(trim((string) ($ligne['date_controle'] ?? '')), 0, 10);
+                $equipement['date_egare'] = \Epiclub\Domain\PretRegles::dateValide($dateLigne) ? $dateLigne : date('Y-m-d');
+            } elseif ($statutLigne !== ControleLigneStatut::A_CONTROLER) {
+                $equipement['date_egare'] = null;
+            }
+
             $equipement['controle_en_cours'] = 0;
             $equipementManager->save($equipement);
         }

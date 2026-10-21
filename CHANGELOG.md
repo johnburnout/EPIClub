@@ -10,6 +10,25 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.6.0] — 2026-10-21
+
+Prêts en retard sur le tableau de bord, suppression des équipements égarés.
+
+### Added
+
+- **Tableau de bord** : notification « N prêts en retard » (prêts en
+  cours dont la date de retour prévue est dépassée) pour les
+  contrôleurs, module de prêt activé ; lien vers la liste filtrée.
+- **Suppression d'un équipement égaré** (administrateur) : possible
+  une fois écoulé un délai depuis sa déclaration « Égaré » — **12 mois
+  par défaut**, réglable sur la page Club (1 à 120 mois). La fiche
+  affiche la date de déclaration et la date à partir de laquelle la
+  suppression sera possible.
+- Migration 017 : `club_equipement.date_egare` (posée par la clôture
+  d'un contrôle ou le retour d'un prêt, effacée quand l'équipement
+  quitte ce statut), `club.delai_suppression_egare_mois`. Les
+  équipements déjà égarés prennent la date de la migration.
+
 ## [v1.5.1] — 2026-10-21
 
 Correctif de la mise à jour intégrée.

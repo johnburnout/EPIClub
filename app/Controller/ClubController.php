@@ -54,6 +54,24 @@ class ClubController extends AbstractController
             $club['phone']       = trim($request->request->get('phone'));
             // [Prêt de matériel — migration 016] Module facultatif.
             $club['pret_actif']  = $request->request->has('pret_actif') ? 1 : 0;
+            // [migration 017] Délai avant suppression d'un équipement égaré.
+            // Champ absent du POST (ancien formulaire) : valeur inchangée.
+            $delai = trim((string) $request->request->get('delai_suppression_egare_mois', ''));
+            if (!$request->request->has('delai_suppression_egare_mois')) {
+                // rien
+            } elseif (!ctype_digit($delai)
+                || (int) $delai < \Epiclub\Domain\SuppressionEgare::DELAI_MIN
+                || (int) $delai > \Epiclub\Domain\SuppressionEgare::DELAI_MAX
+            ) {
+                $club['delai_suppression_egare_mois'] = $delai;
+                $form_errors['delai_suppression_egare_mois'] = sprintf(
+                    'Le délai doit être un nombre de mois entre %d et %d.',
+                    \Epiclub\Domain\SuppressionEgare::DELAI_MIN,
+                    \Epiclub\Domain\SuppressionEgare::DELAI_MAX
+                );
+            } else {
+                $club['delai_suppression_egare_mois'] = (int) $delai;
+            }
             
             // Validation
             if (empty($club['nom'])) {

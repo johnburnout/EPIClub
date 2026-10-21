@@ -122,6 +122,38 @@ final class ClubControllerTest extends TestCase
         ];
     }
 
+    /** @return array<string, array{string, bool}> */
+    public static function delaiEgareProvider(): array
+    {
+        return [
+            'valide'      => ['18', false],
+            'zéro'        => ['0', true],
+            'trop grand'  => ['121', true],
+            'texte'       => ['un an', true],
+        ];
+    }
+
+    /** [migration 017] Délai avant suppression d'un équipement égaré. */
+    #[DataProvider('delaiEgareProvider')]
+    public function testShowPostDelaiSuppressionEgare(string $delai, bool $expectError): void
+    {
+        $clubManager = $this->mockManager(ClubManager::class);
+        $clubManager->method('findParameters')->willReturn(['id' => 1]);
+        if ($expectError) {
+            $clubManager->expects(self::never())->method('save');
+        } else {
+            $clubManager->expects(self::once())->method('save')
+                ->with(self::callback(fn(array $c) => $c['delai_suppression_egare_mois'] === 18));
+        }
+
+        $response = $this->makeControllerWith($clubManager)->show($this->postRequest([
+            'nom' => 'Club Test', 'activite' => '', 'description' => '', 'email' => '', 'phone' => '',
+            'delai_suppression_egare_mois' => $delai,
+        ]));
+
+        self::assertSame(!$expectError, $response instanceof RedirectResponse);
+    }
+
     #[DataProvider('emailProvider')]
     public function testShowPostEmailValidation(string $email, bool $expectError): void
     {
