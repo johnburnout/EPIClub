@@ -188,6 +188,8 @@ class EquipementController extends AbstractController
             'retour_query' => (string) $request->getQueryString(),
             // [Prêt de matériel] « Ajouter au prêt » depuis la liste
             'prets_en_saisie' => $this->pretsEnSaisiePourVue(),
+            // [migration 017] bouton « Supprimer » des équipements égarés
+            'date_limite_egare' => $this->isGranted('ROLE_ADMIN') ? $this->dateLimiteEgare() : null,
             'equipements' => $equipements,
             'categories' => $categories,
             'emplacements' => $emplacements,
@@ -405,12 +407,43 @@ class EquipementController extends AbstractController
      * @param list<array<string, mixed>>       $historique Lignes de contrôles clôturés,
      *                                                     les plus récents d'abord
      *                                                     (EquipementManager::getHistoriqueControles).
+     * @param string|null                      $dateLimiteEgare [migration 017] Un équipement
+     *                                                     « Égaré » au plus tard à cette date
+     *                                                     (Y-m-d) est aussi supprimable.
      */
-    public static function suppressionAutorisee(array $equipement, array $historique): bool
+    public static function suppressionAutorisee(array $equipement, array $historique, ?string $dateLimiteEgare = null): bool
     {
+        if ($dateLimiteEgare !== null && \Epiclub\Domain\SuppressionEgare::autorisee($equipement, $dateLimiteEgare)) {
+            return true;
+        }
         return (int) ($equipement['statut'] ?? -1) === EquipementStatut::HORS_SERVICE->value
             && empty($equipement['controle_en_cours'])
             && ($historique[0]['statut'] ?? null) === \Epiclub\Enum\ControleLigneStatut::HORS_SERVICE->value;
+    }
+
+    /**
+     * [migration 017] Délai (mois) avant suppression d'un équipement égaré
+     * (page Club) ; défaut si la base est inaccessible.
+     */
+    protected function delaiSuppressionEgare(): int
+    {
+        try {
+            $club = $this->clubManagerModules()->findParameters() ?: [];
+        } catch (\Throwable) {
+            $club = [];
+        }
+        return \Epiclub\Domain\SuppressionEgare::normaliserDelai($club['delai_suppression_egare_mois'] ?? null);
+    }
+
+    /** Date du jour (Y-m-d) — surchargeable en test. */
+    protected function aujourdhuiYmd(): string
+    {
+        return date('Y-m-d');
+    }
+
+    private function dateLimiteEgare(): string
+    {
+        return \Epiclub\Domain\SuppressionEgare::dateLimite($this->aujourdhuiYmd(), $this->delaiSuppressionEgare());
     }
 
     public function show(Request $request): Response
@@ -468,7 +501,9 @@ class EquipementController extends AbstractController
             'historique_prets' => $historiquePrets,
             'pret_motif' => \Epiclub\Domain\PretRegles::motifIneligibilite($equipement, null, date('Y-m-d')),
             'equipement' => $equipement,
-            'suppression_autorisee' => self::suppressionAutorisee($equipement, $historiqueControles),
+            'suppression_autorisee' => self::suppressionAutorisee($equipement, $historiqueControles, $this->dateLimiteEgare()),
+            // [migration 017] Équipement égaré : date à partir de laquelle il sera supprimable
+            'egare_supprimable_le' => \Epiclub\Domain\SuppressionEgare::dateSuppressionPossible($equipement, $this->delaiSuppressionEgare()),
             'historiqueControles' => $historiqueControles,
             'acquisition' => $acquisition,
         ]);
@@ -723,11 +758,15 @@ class EquipementController extends AbstractController
         }
         
         // [MÉTIER 2026-10-21] Seul un équipement déclaré « Hors service »
-        // par son dernier contrôle clôturé peut être supprimé.
-        if (!self::suppressionAutorisee($equipement, $equipementManager->getHistoriqueControles($id))) {
+        // par son dernier contrôle clôturé peut être supprimé — ou, depuis
+        // la migration 017, égaré depuis le délai réglé sur la page Club.
+        if (!self::suppressionAutorisee($equipement, $equipementManager->getHistoriqueControles($id), $this->dateLimiteEgare())) {
             $this->session->getFlashBag()->add(
                 'error',
-                "Impossible de supprimer cet équipement : il doit avoir été déclaré « Hors service » lors de son dernier contrôle clôturé."
+                sprintf(
+                    "Impossible de supprimer cet équipement : il doit avoir été déclaré « Hors service » lors de son dernier contrôle clôturé, ou être égaré depuis au moins %d mois.",
+                    $this->delaiSuppressionEgare()
+                )
             );
             return $this->redirectTo("/equipements/equipement-{$id}");
         }

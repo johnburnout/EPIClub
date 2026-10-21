@@ -61,6 +61,12 @@ class TableauDeBordController extends AbstractController
         return new EquipementManager();
     }
 
+    /** [Prêt de matériel] Factory — surchargeable en test. */
+    protected function pretManager(): \Epiclub\Domain\PretManager
+    {
+        return new \Epiclub\Domain\PretManager();
+    }
+
     /** Dossier (servi par le serveur web) des images du club. */
     protected function imagesDir(): string
     {
@@ -122,7 +128,20 @@ class TableauDeBordController extends AbstractController
             }
         }
 
+        // [Prêt de matériel] Prêts en cours dont la date de retour prévue
+        // est dépassée (contrôleurs, module activé). Non fermable : la
+        // notification disparaît quand les prêts sont terminés.
+        $pretsEnRetard = 0;
+        if ($this->isGranted('ROLE_CONTROLLEUR') && $this->pretActif()) {
+            try {
+                $pretsEnRetard = $this->pretManager()->countEnRetard($aujourdhui->format('Y-m-d'));
+            } catch (\Throwable $e) {
+                error_log('[TableauDeBordController] countEnRetard: ' . $e->getMessage());
+            }
+        }
+
         return $this->render('tableau_de_bord.twig', [
+            'prets_en_retard' => $pretsEnRetard,
             'club' => $club,
             'logo_url' => self::imageUrl($club['logo'] ?? null, self::LOGO_DEFAUT),
             'fond_url' => self::imageUrl($club['image_fond'] ?? null, self::FOND_DEFAUT),

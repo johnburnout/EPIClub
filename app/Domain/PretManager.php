@@ -147,8 +147,14 @@ class PretManager extends AbstractManager
             return;
         }
         $marqueurs = implode(',', array_fill(0, count($ids), '?'));
-        $stmt = $this->db->prepare("UPDATE club_equipement SET statut = ? WHERE id IN ($marqueurs)");
-        $stmt->execute(array_merge([$statut], $ids));
+        // [migration 017] date_egare posée au passage en « Égaré » (4),
+        // effacée sinon.
+        $stmt = $this->db->prepare(
+            "UPDATE club_equipement
+                SET statut = ?, date_egare = CASE WHEN ? = 4 THEN COALESCE(date_egare, CURDATE()) ELSE NULL END
+              WHERE id IN ($marqueurs)"
+        );
+        $stmt->execute(array_merge([$statut, $statut], $ids));
     }
 
     /**

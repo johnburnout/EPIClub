@@ -256,7 +256,8 @@
                     <td>
                         <a href="/equipements/equipement-{{ equipement.id }}" class="btn btn-sm btn-primary">Voir</a>
                         <a href="/equipements/equipement_modification-{{ equipement.id }}" class="btn btn-sm btn-warning">Modifier</a>
-                        {% if isGranted('ROLE_ADMIN') and equipement.statut == 2 and not equipement.controle_en_cours %}
+                        {% if isGranted('ROLE_ADMIN') and not equipement.controle_en_cours and (equipement.statut == 2
+                              or (equipement.statut == 4 and equipement.date_egare|default(null) and date_limite_egare|default(null) and equipement.date_egare|date('Y-m-d') <= date_limite_egare)) %}
                         <form method="post" action="/equipements/equipement_supprimer-{{ equipement.id }}" style="display:inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                             <button type="submit" class="btn btn-sm btn-danger"

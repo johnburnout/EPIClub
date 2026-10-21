@@ -53,6 +53,16 @@
 			</small>
 		</div>
 
+		<h5 class="mt-4">Équipements</h5>
+		<div class="mb-3" style="max-width: 24rem;">
+			<label for="delai_suppression_egare_mois" class="form-label">Délai avant suppression d'un équipement égaré (mois)</label>
+			<input type="number" min="1" max="120" step="1" id="delai_suppression_egare_mois" name="delai_suppression_egare_mois"
+				value="{{ club.delai_suppression_egare_mois|default(12) }}"
+				class="form-control {% if form_errors.delai_suppression_egare_mois is defined %}is-invalid{% endif %}">
+			{% if form_errors.delai_suppression_egare_mois is defined %}<div class="invalid-feedback">{{ form_errors.delai_suppression_egare_mois }}</div>{% endif %}
+			<small class="form-text text-muted">Un équipement « Égaré » peut être supprimé par un administrateur une fois ce délai écoulé depuis sa déclaration (12 mois par défaut).</small>
+		</div>
+
 		<div class="form-actions">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 			<button type="submit" class="btn btn-primary">Enregistrer</button>

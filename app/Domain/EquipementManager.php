@@ -224,6 +224,8 @@ class EquipementManager extends AbstractManager
         'emplacement_id', 'date_mise_en_service', 'date_fin_utilisation',
         'nombre', 'nombre_initial', 'photo', 'est_epi', 'duree_max_utilisation',
         'textile_remplacable',
+        // [migration 017] date de déclaration « Égaré »
+        'date_egare',
     ];
 
     /** [REFACTOR #92] Défaut null des colonnes sans coercition spécifique. */

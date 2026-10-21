@@ -80,6 +80,9 @@
 							{% else %}
 							{% set s = statut_equipement(equipement.statut) %}
 							<span class="badge bg-{{ s.badge }}">{{ s.libelle }}</span>
+							{% if equipement.statut == 4 and equipement.date_egare|default(null) %}
+								<span class="small text-body-secondary">depuis le {{ equipement.date_egare|date('d/m/Y') }}{% if egare_supprimable_le|default(null) %} — supprimable à partir du {{ egare_supprimable_le|date('d/m/Y') }}{% endif %}</span>
+							{% endif %}
 							{% endif %}
 						</p>
 						<p><strong>Date dernier contrôle :</strong> 
@@ -382,7 +385,7 @@
 				</form>
 				{% else %}
 				<button type="button" class="btn btn-danger" disabled
-					title="Seul un équipement déclaré hors service par son dernier contrôle clôturé (et sans contrôle en cours) peut être supprimé">
+					title="{% if egare_supprimable_le|default(null) %}Équipement égaré : supprimable à partir du {{ egare_supprimable_le|date('d/m/Y') }}{% else %}Seul un équipement déclaré hors service par son dernier contrôle clôturé, ou égaré depuis le délai réglé sur la page Club (et sans contrôle en cours), peut être supprimé{% endif %}">
 					<i class="fas fa-trash"></i> Supprimer
 				</button>
 				{% endif %}

@@ -168,7 +168,7 @@ Ils sont générés automatiquement à partir des **factures d'acquisition** val
 
 **Modification groupée** (`ROLE_ADMIN`) : dans la liste des équipements, cocher plusieurs équipements (la case d'en-tête coche toute la page), puis cliquer sur **« Modifier la sélection »**. Sur la page suivante, activer **« Modifier »** pour chaque champ à changer (statut, emplacement, dates, durée maximum, remarques — ajoutées à la suite ou remplacées —, photo, et libellé pour un super-administrateur) ; les champs non activés restent inchangés. La photo est la même pour tous les équipements sélectionnés. Pour la date de mise en service, les équipements qui ne peuvent pas la recevoir (date déjà modifiée, facture postérieure) sont ignorés et signalés. De même, le statut des équipements hors service n'est pas modifié (signalés).
 
-**Supprimer un équipement** (`ROLE_ADMIN`) : possible uniquement si l'équipement a été déclaré **Hors service par son dernier contrôle clôturé** et qu'aucun contrôle n'est en cours. Le bouton « Supprimer » de la fiche reste grisé sinon.
+**Supprimer un équipement** (`ROLE_ADMIN`) : possible uniquement si l'équipement a été déclaré **Hors service par son dernier contrôle clôturé**, ou s'il est **Égaré depuis au moins 12 mois** (délai réglable sur la page **Club**), et qu'aucun contrôle n'est en cours. Le bouton « Supprimer » de la fiche reste grisé sinon (au survol : date à partir de laquelle un équipement égaré pourra être supprimé).
 
 ---
 
@@ -222,7 +222,7 @@ Module à activer par un super-administrateur : **Administration → Club → «
 ### Fiche PDF
 Disponible dès que le prêt est en cours (et une fois terminé) : emprunteur, dates, liste du matériel, engagement de restitution, cadres de signature (emprunteur — avec la signature recueillie à l'écran le cas échéant — et club).
 
-Les prêts **en retard** (date de retour prévue dépassée) sont signalés en rouge dans la liste (filtre « En retard »). L'historique des prêts d'un équipement figure sur sa fiche.
+Les prêts **en retard** (date de retour prévue dépassée) sont signalés en rouge dans la liste (filtre « En retard ») et par une notification sur le **tableau de bord** des contrôleurs. L'historique des prêts d'un équipement figure sur sa fiche.
 
 ---
 

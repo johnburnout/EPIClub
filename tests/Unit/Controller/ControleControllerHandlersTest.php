@@ -341,7 +341,9 @@ final class ControleControllerHandlersTest extends TestCase
         ->method('save')
         ->with(self::callback(static function (array $e) use ($expectedEquipementStatut) {
             return (int) $e['statut'] === $expectedEquipementStatut
-            && (int) $e['controle_en_cours'] === 0;
+            && (int) $e['controle_en_cours'] === 0
+            // [migration 017] date_egare posée pour « Égaré », effacée sinon
+            && ($expectedEquipementStatut === 4 ? !empty($e['date_egare']) : array_key_exists('date_egare', $e) && $e['date_egare'] === null);
         }));
         
         $controller = $this->makeControllerWith(

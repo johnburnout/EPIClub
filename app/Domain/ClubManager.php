@@ -12,6 +12,8 @@ class ClubManager extends AbstractManager
         'logo', 'image_fond', 'alerte_renouvellement_mois',
         // [Prêt de matériel — migration 016]
         'pret_actif',
+        // [migration 017]
+        'delai_suppression_egare_mois',
     ];
 
     public function findParameters()
