@@ -3,6 +3,8 @@
 namespace Epiclub\Controller;
 
 use Epiclub\Engine\AbstractController;
+use Epiclub\Engine\DatabaseBackup;
+use Epiclub\Engine\MySqlDatabaseDumper;
 use Epiclub\Engine\GitHubReleaseProvider;
 use Epiclub\Engine\GitHubReleaseProviderInterface;
 use Symfony\Component\HttpFoundation\Request;
@@ -89,6 +91,50 @@ class AppUpdateController extends AbstractController
         return 'mysql:host=' . $config->get('DB_HOST')
             . ';dbname=' . $config->get('DB_NAME')
             . ';charset=utf8mb4';
+    }
+
+    /**
+     * [v1.4.0] Sauvegarde SQL de la base si la nouvelle version apporte
+     * des migrations non encore appliquées. Retention : BACKUP_RETENTION
+     * (.env.local.php, défaut 5).
+     *
+     * @param string $migrationsLivrees Dossier migrations/ de l'archive.
+     * @return string|null Fichier créé, ou null si aucune migration en attente.
+     * @throws \Throwable si la sauvegarde échoue (la mise à jour doit s'arrêter).
+     */
+    protected function sauvegarderAvantMigrations(string $migrationsLivrees): ?string
+    {
+        $livrees = array_map(
+            static fn (string $f) => basename($f, '.sql'),
+            glob(rtrim($migrationsLivrees, '/') . '/*.sql') ?: []
+        );
+        if ($livrees === []) {
+            return null;
+        }
+        $enAttente = array_diff($livrees, $this->migrationsAppliquees());
+        if ($enAttente === []) {
+            return null;
+        }
+
+        $backup = $this->databaseBackup();
+        $fichier = $backup->dump();
+        $backup->cleanup(DatabaseBackup::retention($this->configProvider()->get('BACKUP_RETENTION')));
+        return $fichier;
+    }
+
+    /** @return string[] */
+    protected function migrationsAppliquees(): array
+    {
+        return (new \Epiclub\Engine\MigrationManager($this->databasePdo(), __DIR__ . '/../../migrations'))
+            ->getAppliedVersions();
+    }
+
+    protected function databaseBackup(): DatabaseBackup
+    {
+        return new DatabaseBackup(
+            new MySqlDatabaseDumper($this->databasePdo()),
+            __DIR__ . '/../../var/backups'
+        );
     }
 
     // --------------------------------------------------------------
@@ -283,6 +329,26 @@ class AppUpdateController extends AbstractController
                     'message' => "L'archive complète de la version " . $version . ' n\'est pas encore disponible '
                         . '(GitHub la prépare quelques minutes après la publication). Rien n\'a été modifié : '
                         . 'réessayez dans quelques minutes.',
+                ]);
+            }
+
+            // [v1.4.0] Sauvegarde SQL de la base AVANT toute modification,
+            // si la version installée apporte des migrations. Échec → rien
+            // n'est copié ni migré (les fichiers et la base restent cohérents).
+            try {
+                $sauvegarde = $this->sauvegarderAvantMigrations($sourceDir . '/migrations');
+                if ($sauvegarde !== null) {
+                    error_log('[AppUpdateController] Sauvegarde de la base avant migrations : ' . $sauvegarde);
+                }
+            } catch (\Throwable $e) {
+                error_log('[AppUpdateController] Mise à jour annulée, sauvegarde impossible : ' . $e->getMessage());
+                $this->deleteDirectory($extractPath);
+                $this->cleanupTempDir();
+                return $this->render('update_result.twig', [
+                    'success' => false,
+                    'message' => 'La base de données n\'a pas pu être sauvegardée avant les migrations : '
+                        . 'mise à jour annulée, rien n\'a été modifié. Consultez les journaux du serveur '
+                        . '(espace disque, droits d\'écriture sur var/backups/).',
                 ]);
             }
 

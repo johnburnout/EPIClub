@@ -10,6 +10,34 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.4.0] — 2026-10-21
+
+Sauvegarde automatique de la base avant les migrations.
+
+### Added
+
+- **Dump SQL avant migrations** : la mise à jour intégrée sauvegarde la
+  base dans `var/backups/db_AAAA-MM-JJ_HHMMSS.sql` dès que la nouvelle
+  version apporte une migration non appliquée (aucun dump sinon). Le
+  dump est fait **avant** la copie des fichiers : s'il échoue (espace
+  disque < 50 Mo, droits d'écriture…), la mise à jour est annulée sans
+  rien modifier. `bin/migrate.php` fait de même (option
+  `--sans-sauvegarde`). Écriture atomique, avertissement journalisé
+  au-delà de 200 Mo. Classe `Epiclub\Engine\DatabaseBackup`, export
+  par `MySqlDatabaseDumper` (PHP pur : ni `mysqldump`, ni shell, ni mot
+  de passe exposé).
+- **Rétention** : les 5 derniers dumps sont conservés ; réglable par
+  `BACKUP_RETENTION` dans `.env.local.php`.
+- README : section « Sauvegardes » (restauration avec `mysql … < db_….sql`).
+
+### Notes
+
+- La sauvegarde est faite par l'outil de mise à jour **déjà installé** :
+  elle protège les mises à jour faites **depuis** la v1.4.0, pas le
+  passage de la v1.3.0 à la v1.4.0 (qui n'a d'ailleurs pas de migration).
+- L'installateur n'est pas concerné : il refuse une base non vide, il
+  n'y a donc rien à sauvegarder.
+
 ## [v1.3.0] — 2026-10-21
 
 Remplacement de l'élément textile des équipements (ex. sangles de

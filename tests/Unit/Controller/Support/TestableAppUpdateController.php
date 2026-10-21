@@ -6,6 +6,7 @@ namespace Epiclub\Tests\Unit\Controller\Support;
 
 use Epiclub\Controller\AppUpdateController;
 use Epiclub\Engine\ConfigProvider;
+use Epiclub\Engine\DatabaseBackup;
 use Epiclub\Engine\GitHubReleaseProviderInterface;
 use Epiclub\Engine\Session;
 
@@ -86,6 +87,27 @@ final class TestableAppUpdateController extends AppUpdateController
         // Court-circuite la connexion réelle : le test ne vérifie que
         // la construction des paramètres, pas MySQL.
         throw new \PDOException('Connexion court-circuitée (test #101)');
+    }
+
+    /** [v1.4.0] Migrations « appliquées » simulées (null = parent). */
+    public ?array $migrationsAppliqueesOverride = null;
+
+    /** [v1.4.0] Sauvegarde injectée (null = parent). */
+    public ?DatabaseBackup $databaseBackupOverride = null;
+
+    protected function migrationsAppliquees(): array
+    {
+        return $this->migrationsAppliqueesOverride ?? parent::migrationsAppliquees();
+    }
+
+    protected function databaseBackup(): DatabaseBackup
+    {
+        return $this->databaseBackupOverride ?? parent::databaseBackup();
+    }
+
+    public function sauvegarderAvantMigrationsForTest(string $dossier): ?string
+    {
+        return $this->sauvegarderAvantMigrations($dossier);
     }
 
     /**

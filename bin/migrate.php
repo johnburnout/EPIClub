@@ -50,6 +50,23 @@ if ($manager->isUpToDate()) {
     exit(0);
 }
 
+// --- [v1.4.0] Sauvegarde SQL avant migrations (option --sans-sauvegarde) ---
+if (!in_array('--sans-sauvegarde', $argv ?? [], true)) {
+    try {
+        $backup = new \Epiclub\Engine\DatabaseBackup(
+            new \Epiclub\Engine\MySqlDatabaseDumper($pdo),
+            __DIR__ . '/../var/backups'
+        );
+        $fichier = $backup->dump();
+        $backup->cleanup(\Epiclub\Engine\DatabaseBackup::retention($config['BACKUP_RETENTION'] ?? null));
+        echo "💾 Sauvegarde de la base : " . $fichier . "\n\n";
+    } catch (\Throwable $e) {
+        fwrite(STDERR, "❌ Sauvegarde impossible, migrations non lancées : " . $e->getMessage() . "\n");
+        fwrite(STDERR, "   (relancer avec --sans-sauvegarde pour passer outre)\n");
+        exit(1);
+    }
+}
+
 try {
     $applied = $manager->migrate(function (string $version) {
         echo "  ➜ $version appliquée\n";
