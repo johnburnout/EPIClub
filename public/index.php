@@ -1,5 +1,6 @@
 <?php
 
+use Epiclub\Engine\SecurityHeaders;
 use Epiclub\Engine\Session;
 use Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage;
 use Symfony\Component\HttpFoundation\Request;
@@ -41,7 +42,7 @@ $isLoggedIn = $session->has('user');
 if (time() - $session->getMetadataBag()->getLastUsed() > Session::SESSION_LIFETIME) {
     $session->invalidate();
     $response = new RedirectResponse('/');
-    $response->send();
+    SecurityHeaders::apply($response)->send();
     exit();
 }
 
@@ -105,4 +106,4 @@ try {
     );
 }
 
-$response->send();
+SecurityHeaders::apply($response)->send();
