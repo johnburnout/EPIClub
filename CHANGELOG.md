@@ -20,6 +20,15 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ### Fixed
 
+- **Photos prises au téléphone** : une photo prise téléphone vertical
+  n'apparaît plus couchée. L'orientation enregistrée par l'appareil
+  (EXIF, JPEG) est appliquée aux pixels avant le réencodage, qui
+  supprime l'EXIF — sans dépendre de l'extension PHP exif. Concerne
+  les photos d'équipement, les images de catégorie et celles du club.
+  Les photos déjà enregistrées ne sont pas modifiées.
+- **Photos d'équipement** : enregistrées par `ImageUploader`, comme les
+  autres images (refus au-delà de 40 mégapixels avant décodage, nom
+  de fichier `equipement-….webp`).
 - **Tests d'intégration** : le nettoyage ne supprime plus les vraies
   données d'une base de développement. Les acquisitions `IMP-…` (même
   préfixe que les vrais imports Excel/CSV) et les équipements sans

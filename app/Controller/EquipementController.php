@@ -8,6 +8,7 @@ use Epiclub\Domain\EmplacementManager;
 use Epiclub\Domain\AcquisitionManager;
 use Epiclub\Enum\EquipementStatut;
 use Epiclub\Engine\AbstractController;
+use Epiclub\Engine\ImageUploader;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -1722,66 +1723,19 @@ HTML;
     }
 
     /**
-     * Enregistre une photo d'équipement (redimensionnée, réencodée).
-     * Factory protected — surchargeable en test Unit.
+     * Photo d'équipement : contrôles, orientation EXIF, redimensionnement
+     * (1000 px max), réencodage WebP — délégués à ImageUploader, comme les
+     * images de catégorie et du club. Surchargeable en test Unit.
      *
-     * @return string Chemin public (ex. /images/equipements/xxx.webp)
+     * @return string Chemin public (ex. /images/equipements/equipement-….webp)
      */
     protected function savePhoto(UploadedFile $file): string
     {
-        return $this->resizeAndSaveImage($file);
+        return self::UPLOAD_DIR . $this->photoUploader()->save($file, 'equipement');
     }
 
-    private function resizeAndSaveImage(UploadedFile $file): string
+    protected function photoUploader(): ImageUploader
     {
-        // [ROBUSTESSE] getMimeType() utilise finfo côté serveur (non spoofable)
-        $mimeType = $file->getMimeType();
-        $allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-        if (!in_array($mimeType, $allowedTypes, true)) {
-            throw new \Exception("Type de fichier non autorisé. Seuls JPEG, PNG, WebP et GIF sont acceptés.");
-        }
-        
-        // [ROBUSTESSE] getPathname() pointe sur le fichier temporaire uploadé
-        $image = imagecreatefromstring(file_get_contents($file->getPathname()));
-        if ($image === false) {
-            throw new \Exception("Impossible de décoder l'image. Fichier corrompu ou format non supporté.");
-        }
-
-        $originalWidth = imagesx($image);
-        $originalHeight = imagesy($image);
-
-        $maxDimension = 1000;
-        $ratio = min($maxDimension / $originalWidth, $maxDimension / $originalHeight, 1);
-        $newWidth = (int) ($originalWidth * $ratio);
-        $newHeight = (int) ($originalHeight * $ratio);
-
-        $resizedImage = imagecreatetruecolor($newWidth, $newHeight);
-        if ($mimeType === 'image/png' || $mimeType === 'image/gif') {
-            imagealphablending($resizedImage, false);
-            imagesavealpha($resizedImage, true);
-            $transparent = imagecolorallocatealpha($resizedImage, 255, 255, 255, 127);
-            imagefilledrectangle($resizedImage, 0, 0, $newWidth, $newHeight, $transparent);
-        }
-        imagecopyresampled($resizedImage, $image, 0, 0, 0, 0, $newWidth, $newHeight, $originalWidth, $originalHeight);
-
-        $uploadDir = $this->getPublicPath(self::UPLOAD_DIR);
-        if (!is_dir($uploadDir)) {
-            mkdir($uploadDir, 0775, true);
-        }
-
-        $filename = uniqid() . '.webp';
-        $filepath = $uploadDir . $filename;
-
-        $saved = imagewebp($resizedImage, $filepath, 80);
-        if (!$saved) {
-            $filename = uniqid() . '.jpg';
-            $filepath = $uploadDir . $filename;
-            imagejpeg($resizedImage, $filepath, 85);
-        }
-
-        unset($image); // imagedestroy() est dépréciée en PHP 8.5 (no-op depuis 8.0)
-        unset($resizedImage); // imagedestroy() est dépréciée en PHP 8.5 (no-op depuis 8.0)
-
-        return self::UPLOAD_DIR . $filename;
+        return new ImageUploader($this->getPublicPath(self::UPLOAD_DIR));
     }
 }
