@@ -34,15 +34,35 @@ final class ImageUploader
         'image/png',
         'image/webp',
         'image/gif',
+        'image/avif',
     ];
+
+    /** [2026-10-21] Message si le GD du serveur ne lit pas l'AVIF. */
+    public const MESSAGE_AVIF_NON_PRIS_EN_CHARGE =
+        'Les images AVIF ne sont pas prises en charge par ce serveur : envoyez un JPEG ou un PNG.';
 
     /** Plafond de pixels avant décodage (anti « image bomb »). */
     private const MAX_PIXELS = 40_000_000;
 
+    /**
+     * @param bool|null $avifPrisEnCharge null = détection (GD compilé avec
+     *                                    libavif) ; forcé en test Unit.
+     */
     public function __construct(
         private readonly string $targetDir,
         private readonly int $maxDimension = 1000,
+        private readonly ?bool $avifPrisEnCharge = null,
     ) {
+    }
+
+    /**
+     * Le GD de ce serveur sait-il décoder l'AVIF ? (PHP ≥ 8.1 compilé
+     * avec libavif : gd_info()['AVIF Support'].)
+     */
+    public static function avifDisponible(): bool
+    {
+        return function_exists('imagecreatefromavif')
+            && !empty(gd_info()['AVIF Support']);
     }
 
     /**
@@ -61,8 +81,14 @@ final class ImageUploader
         $mimeType = $file->getMimeType();
         if (!in_array($mimeType, self::ALLOWED_MIME, true)) {
             throw new \InvalidArgumentException(
-                'Type de fichier non autorisé. Formats acceptés : JPEG, PNG, WebP, GIF.'
+                'Type de fichier non autorisé. Formats acceptés : JPEG, PNG, WebP, GIF, AVIF.'
             );
+        }
+        // AVIF : accepté seulement si GD sait le lire ; converti en WebP
+        // comme les autres formats.
+        $avif = $mimeType === 'image/avif';
+        if ($avif && !(($this->avifPrisEnCharge ?? self::avifDisponible()) && function_exists('imagecreatefromavif'))) {
+            throw new \InvalidArgumentException(self::MESSAGE_AVIF_NON_PRIS_EN_CHARGE);
         }
 
         $infos = @getimagesize($file->getPathname());
@@ -73,7 +99,12 @@ final class ImageUploader
         }
 
         $contenu = file_get_contents($file->getPathname());
-        $source = $contenu === false ? false : @imagecreatefromstring($contenu);
+        if ($avif) {
+            // imagecreatefromstring() ne reconnaît pas l'AVIF partout.
+            $source = $contenu === false ? false : @imagecreatefromavif($file->getPathname());
+        } else {
+            $source = $contenu === false ? false : @imagecreatefromstring($contenu);
+        }
         if ($source === false) {
             throw new \InvalidArgumentException(
                 "Impossible de décoder l'image. Fichier corrompu ou format non supporté."
