@@ -1,0 +1,133 @@
+{% extends "_layout.twig" %}
+
+{% macro taille(octets) %}{% if octets >= 1048576 %}{{ (octets / 1048576)|number_format(1, ',', ' ') }} Mo{% else %}{{ (octets / 1024)|number_format(0, ',', ' ') }} Ko{% endif %}{% endmacro %}
+
+{% block body %}
+<div class="container mt-4">
+    <h3>Sauvegarde et restauration</h3>
+    <hr>
+
+    {% if erreur_dossier %}
+        <div class="alert alert-danger">{{ erreur_dossier }}</div>
+    {% endif %}
+
+    <div class="row g-4">
+        {# ------------------------------------------------------------ #}
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <i class="fas fa-download"></i> Sauvegarder
+                </div>
+                <div class="card-body">
+                    <p>Télécharge une archive <code>.zip</code> contenant :</p>
+                    <ul>
+                        <li>toute la base de données (équipements, contrôles, acquisitions, utilisateurs, réglages…) ;</li>
+                        <li>les photos des équipements, les images du club et des catégories, les QR codes enregistrés ;</li>
+                        <li>les factures jointes aux acquisitions.</li>
+                    </ul>
+                    <p class="text-muted"><small>
+                        La configuration du serveur (<code>.env.local.php</code> : accès à la base, SMTP, clé de chiffrement)
+                        n'est pas incluse. Conservez-en une copie à part : sa clé <code>SECRET_KEY</code> est indispensable
+                        pour restaurer sur une nouvelle installation.
+                    </small></p>
+                    <form method="post" action="/admin/sauvegarde/exporter">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-file-archive"></i> Télécharger une sauvegarde
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        {# ------------------------------------------------------------ #}
+        <div class="col-lg-6">
+            <div class="card h-100 border-danger">
+                <div class="card-header bg-danger text-white">
+                    <i class="fas fa-upload"></i> Restaurer
+                </div>
+                <div class="card-body">
+                    <p>
+                        Remplace <strong>toutes</strong> les données actuelles (base et fichiers) par celles d'une sauvegarde.
+                        L'archive est d'abord vérifiée sans rien modifier ; la restauration ne démarre qu'après votre confirmation.
+                        L'état actuel est sauvegardé automatiquement juste avant.
+                    </p>
+                    <form method="post" action="/admin/sauvegarde/televerser" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mb-2">
+                            <input type="file" name="archive" accept=".zip,application/zip" class="form-control" required>
+                        </div>
+                        <button type="submit" class="btn btn-outline-danger">
+                            <i class="fas fa-search"></i> Vérifier l'archive
+                        </button>
+                    </form>
+                    <p class="text-muted mt-2 mb-0"><small>
+                        Taille maximale acceptée par le serveur : <strong>{{ limite_upload }}</strong>.
+                        Au-delà, déposez l'archive par FTP dans le dossier <code>var/backups/</code> d'EPIClub :
+                        elle apparaîtra ci-dessous.
+                    </small></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ---------------------------------------------------------------- #}
+    <div class="card mt-4">
+        <div class="card-header">
+            <i class="fas fa-archive"></i> Sauvegardes conservées sur le serveur
+        </div>
+        <div class="card-body">
+            {% if archives is empty %}
+                <p class="text-muted mb-0">
+                    Aucune. Les sauvegardes automatiques faites avant chaque restauration
+                    (les 3 dernières) apparaîtront ici.
+                </p>
+            {% else %}
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle">
+                        <thead>
+                            <tr>
+                                <th>Archive</th>
+                                <th>Date</th>
+                                <th>Taille</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% for a in archives %}
+                            <tr>
+                                <td>
+                                    <code>{{ a.nom }}</code>
+                                    {% if a.type == 'avant-restauration' %}
+                                        <span class="badge bg-secondary">avant restauration</span>
+                                    {% elseif a.type == 'televersee' %}
+                                        <span class="badge bg-warning text-dark">téléversée, non restaurée</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ a.date|date('d/m/Y H:i') }}</td>
+                                <td>{{ _self.taille(a.taille) }}</td>
+                                <td class="text-end text-nowrap">
+                                    <a class="btn btn-sm btn-outline-danger" href="/admin/sauvegarde/verifier/{{ a.nom|url_encode }}" title="Vérifier puis restaurer">
+                                        <i class="fas fa-undo"></i> Restaurer…
+                                    </a>
+                                    <a class="btn btn-sm btn-outline-secondary" href="/admin/sauvegarde/telecharger/{{ a.nom|url_encode }}" title="Télécharger">
+                                        <i class="fas fa-download"></i>
+                                    </a>
+                                    <form method="post" action="/admin/sauvegarde/supprimer/{{ a.nom|url_encode }}" class="d-inline"
+                                          onsubmit="return confirm('Supprimer définitivement {{ a.nom|e('js') }} ?');">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary" title="Supprimer">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

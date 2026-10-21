@@ -1,0 +1,88 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+<div class="container mt-4">
+    <h3>Restaurer une sauvegarde</h3>
+    <hr>
+
+    <p><a href="/admin/sauvegarde">&larr; Retour aux sauvegardes</a></p>
+
+    {% if erreur %}
+        <div class="alert alert-danger">
+            <strong>Cette archive ne peut pas être restaurée.</strong><br>
+            {{ erreur }}
+        </div>
+        <p class="text-muted"><small>Rien n'a été modifié. Archive : <code>{{ nom }}</code></small></p>
+    {% else %}
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i> Archive vérifiée : complète, intacte et compatible avec cette installation.
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-header">Contenu de la sauvegarde</div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Créée le</dt>
+                    <dd class="col-sm-8">{{ manifeste.cree_le|date('d/m/Y à H:i') }}</dd>
+
+                    <dt class="col-sm-4">Version d'EPIClub</dt>
+                    <dd class="col-sm-8">{{ manifeste.version }}</dd>
+
+                    <dt class="col-sm-4">Fichiers (photos, images, factures)</dt>
+                    <dd class="col-sm-8">{{ manifeste.nb_fichiers }}</dd>
+
+                    <dt class="col-sm-4">Base de données</dt>
+                    <dd class="col-sm-8">
+                        {% set tables = manifeste.tables|default({}) %}
+                        {{ tables|length }} tables
+                        <ul class="small mb-0">
+                            {% for t, libelle in {'club_equipement': 'équipements', 'controle': 'contrôles', 'acquisition': 'acquisitions', 'utilisateur': 'utilisateurs'} %}
+                                {% if tables[t] is defined %}
+                                    <li>{{ libelle }} : {{ tables[t] }}</li>
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <i class="fas fa-exclamation-triangle"></i> Confirmation
+            </div>
+            <div class="card-body">
+                <p>
+                    <strong>Toutes les données actuelles seront remplacées</strong> par celles de cette sauvegarde :
+                    équipements, contrôles, acquisitions, utilisateurs et mots de passe, réglages, photos et factures.
+                    Ce qui a été saisi depuis le {{ manifeste.cree_le|date('d/m/Y') }} sera perdu.
+                </p>
+                <ul>
+                    <li>L'état actuel est sauvegardé automatiquement juste avant (archive « avant restauration »).</li>
+                    <li>En cas d'erreur pendant l'opération, cet état est rétabli automatiquement.</li>
+                    <li>Si votre compte n'existe pas dans la sauvegarde, vous serez déconnecté.</li>
+                </ul>
+                <form method="post" action="/admin/sauvegarde/restaurer/{{ nom|url_encode }}" id="formRestaurer">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <label for="confirmation" class="form-label">
+                        Pour confirmer, saisissez <strong>{{ mot_confirmation }}</strong> :
+                    </label>
+                    <div class="input-group" style="max-width: 420px;">
+                        <input type="text" id="confirmation" name="confirmation" class="form-control" autocomplete="off" required>
+                        <button type="submit" class="btn btn-danger" id="btnRestaurer">
+                            <i class="fas fa-undo"></i> Restaurer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <script>
+            document.getElementById('formRestaurer').addEventListener('submit', function () {
+                var b = document.getElementById('btnRestaurer');
+                b.disabled = true;
+                b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Restauration en cours… ne fermez pas la page';
+            });
+        </script>
+    {% endif %}
+</div>
+{% endblock %}

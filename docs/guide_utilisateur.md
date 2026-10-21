@@ -227,6 +227,15 @@ Ils sont générés automatiquement à partir des **factures d'acquisition** val
 - Gérer les achats d'équipements avec factures et génération automatique des équipements.
 - **Importer (Excel / CSV)** : création groupée d'acquisitions validées à partir d'un fichier (voir §2.3).
 
+### Sauvegarde et restauration (super-administrateur)
+- **Administration → 💾 Sauvegarde / restauration**.
+- **Télécharger une sauvegarde** : une archive `.zip` contenant toute la base (équipements, contrôles, acquisitions, utilisateurs, réglages) et tous les fichiers (photos, images du club et des catégories, QR codes, factures). Conservez-la hors du serveur (ordinateur, clé USB, cloud).
+- La configuration du serveur (`.env.local.php`) n'est **pas** dans l'archive. Gardez-en une copie à part : sa clé `SECRET_KEY` est indispensable pour restaurer sur une nouvelle installation.
+- **Restaurer** : choisir l'archive puis **Vérifier l'archive**. Rien n'est modifié à ce stade : EPIClub contrôle que l'archive est complète, intacte et compatible (version, clé de chiffrement). La restauration ne démarre qu'après avoir saisi **RESTAURER**.
+- La restauration **remplace toutes les données actuelles**. Juste avant, l'état actuel est sauvegardé automatiquement (archive « avant restauration », les 3 dernières sont conservées sur le serveur) ; en cas d'erreur pendant l'opération, il est rétabli automatiquement.
+- Une sauvegarde faite avec une version plus ancienne d'EPIClub est mise à niveau après la restauration. Une sauvegarde d'une version plus récente est refusée : mettez d'abord EPIClub à jour.
+- Archive trop volumineuse pour le téléversement : déposez-la par FTP dans le dossier `var/backups/` d'EPIClub ; elle apparaît dans la liste des sauvegardes du serveur.
+
 ---
 
 ## Support

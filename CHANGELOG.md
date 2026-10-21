@@ -10,6 +10,34 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+Sauvegarde et restauration complètes depuis l'application.
+
+### Added
+
+- **Sauvegarde / restauration** (super-administrateur, menu
+  Administration → 💾 Sauvegarde / restauration) :
+  - **export** en un clic d'une archive `.zip` : base complète (export
+    SQL en PHP pur, sans `mysqldump`) + fichiers des utilisateurs
+    (`public/images` : photos, images du club et des catégories, QR
+    codes ; `_storage/uploads` : factures), avec un manifeste et une
+    somme SHA-256 par fichier. La configuration (`.env.local.php`)
+    n'est jamais incluse ; seule une empreinte de `SECRET_KEY` l'est ;
+  - **restauration** en deux temps : l'archive téléversée est d'abord
+    analysée sans rien modifier (structure, liste blanche
+    d'extensions, anti « zip slip », sommes de contrôle, version
+    d'EPIClub, migrations connues, clé de chiffrement identique), puis
+    appliquée après saisie de « RESTAURER » ;
+  - **garde-fous** : sauvegarde automatique de l'état courant juste
+    avant (les 3 dernières conservées dans `var/backups/`), retour
+    automatique à cet état en cas d'échec, une seule opération à la
+    fois, migrations appliquées après la restauration d'une archive
+    plus ancienne ;
+  - archives conservées sur le serveur listées (restaurer, télécharger,
+    supprimer) ; une archive déposée par FTP dans `var/backups/`
+    contourne la limite de téléversement de PHP.
+- Lien vers la sauvegarde depuis la page de mise à jour ; section
+  « Sauvegarde et restauration » dans le guide.
+
 ## [v1.1.2] — 2026-10-21
 
 Correctif de sécurité mineur (journaux) et correction de la CI.
