@@ -10,6 +10,14 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.2.0] — 2026-10-21
+
+Version stable : sauvegarde / restauration complètes, statut « Hors
+service » réservé au contrôle, date limite d'utilisation automatique,
+photos de téléphone remises à l'endroit, images AVIF, et tests complets
+en CI. Reprend les nouveautés des pré-versions v1.2.0-beta.1 et
+v1.2.0-beta.2 (détaillées plus bas), plus celles-ci :
+
 ### Added
 
 - **Date limite d'utilisation à la validation d'une acquisition** : pour
@@ -18,6 +26,11 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
   (ex. 15/03/2026 → 31/03/2036). Une date de péremption saisie à
   l'import reste prioritaire ; les autres catégories restent sans date
   limite. Règle commune `Epiclub\Domain\DureeDeVie`.
+- **Rattrapage des équipements existants** (migration 014, appliquée
+  par la mise à jour) : les équipements à « durée maximum
+  d'utilisation » sans date limite reçoivent la même date (facture
+  + 10 ans, fin de mois). Une date déjà renseignée n'est jamais
+  modifiée ; équipements supprimés exclus.
 - **Images AVIF** (photos d'équipement, images de catégorie et du club) :
   acceptées et converties en WebP quand le GD du serveur sait les lire
   (PHP compilé avec libavif, `gd_info()` « AVIF Support ») ; sinon,
