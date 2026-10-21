@@ -10,6 +10,30 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.6.2] — 2026-10-21
+
+Mise à jour intégrée : ménagement de la limite de l'API GitHub.
+
+### Fixed
+
+- **« Impossible de contacter GitHub »** : la limite de l'API GitHub
+  (60 requêtes/heure par IP sans authentification) était vite atteinte,
+  chaque affichage de la page Mise à jour réinterrogeant GitHub même
+  juste après un refus. Un échec est désormais mémorisé 10 minutes, et
+  une release dont l'archive n'est pas encore attachée par la CI est
+  mise en cache 2 minutes (au lieu de pas du tout).
+
+### Added
+
+- **Jeton GitHub facultatif** : `GITHUB_TOKEN` dans `.env.local.php`
+  porte la limite à 5 000 requêtes/heure (utile sur une IP partagée).
+  Il n'est envoyé qu'à `api.github.com`.
+
+### Changed
+
+- Message d'erreur de la page Mise à jour plus explicite (limite de
+  l'API ou réseau, nouvel essai automatique).
+
 ## [v1.6.1] — 2026-10-21
 
 Correctifs issus d'un audit : sauvegarde SQL et chiffrement des remarques.
