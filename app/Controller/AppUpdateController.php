@@ -55,6 +55,9 @@ class AppUpdateController extends AbstractController
             // Canal de mise à jour : « stable » (défaut) ou « beta »
             // (pré-releases incluses) — lu depuis .env.local.php.
             (string) $this->configProvider()->get('UPDATE_CHANNEL', 'stable'),
+            // [v1.6.2] Jeton GitHub facultatif : limite de l'API portée de
+            // 60 à 5 000 requêtes/heure (utile sur une IP partagée).
+            is_string($t = $this->configProvider()->get('GITHUB_TOKEN')) ? $t : null,
         );
     }
 
@@ -182,7 +185,9 @@ class AppUpdateController extends AbstractController
             'update_available' => $updateAvailable,
             'can_update' => $canUpdate,
             'release_notes' => $latestRelease ? $latestRelease['body'] : null,
-            'error' => $latestRelease === null ? 'Impossible de contacter GitHub.' : null,
+            'error' => $latestRelease === null
+                ? 'Impossible de contacter GitHub (limite de l\'API ou réseau). Nouvel essai automatique dans quelques minutes.'
+                : null,
             'csrf_token' => $csrfToken,
             'cleanup_needed' => $cleanupNeeded,
             'update_channel' => $canal,

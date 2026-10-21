@@ -14,15 +14,35 @@ final class GitHubReleaseProvider implements GitHubReleaseProviderInterface
     /** Canaux de mise à jour : stable = /releases/latest ; beta = pré-releases incluses. */
     public const CANAUX = ['stable', 'beta'];
 
-    private readonly string $channel;
+    /**
+     * [v1.6.2] Durée de mise en cache d'une release dont l'archive complète
+     * n'est pas encore attachée (CI en cours) : courte, pour proposer la
+     * mise à jour peu après la fin de la CI sans interroger GitHub à
+     * chaque affichage.
+     */
+    public const TTL_ARCHIVE_EN_PREPARATION = 120;
 
+    private readonly string $channel;
+    private readonly ?string $token;
+
+    /**
+     * @param ?string $token      [v1.6.2] Jeton GitHub facultatif (GITHUB_TOKEN) :
+     *                            limite de l'API portée de 60 à 5 000 requêtes/heure.
+     *                            Envoyé UNIQUEMENT à api.github.com.
+     * @param int     $failureTtl [v1.6.2] Après un échec (limite atteinte, réseau…),
+     *                            GitHub n'est pas réinterrogé pendant ce délai (s).
+     */
     public function __construct(
         private readonly string $repo,
         private readonly string $cacheFile,
         private readonly int $cacheTtl = 3600,
         string $channel = 'stable',
+        ?string $token = null,
+        private readonly int $failureTtl = 600,
     ) {
         $this->channel = in_array($channel, self::CANAUX, true) ? $channel : 'stable';
+        $token = $token !== null ? trim($token) : null;
+        $this->token = $token !== null && $token !== '' && !preg_match('/[\r\n]/', $token) ? $token : null;
     }
 
     /**
@@ -43,7 +63,13 @@ final class GitHubReleaseProvider implements GitHubReleaseProviderInterface
             }
         }
 
-        // 2. Appel HTTP
+        // 2. [v1.6.2] Échec récent : on n'insiste pas (chaque requête
+        //    refusée consomme le quota de l'API pendant le blocage).
+        if ($this->isEchecRecent()) {
+            return null;
+        }
+
+        // 3. Appel HTTP
         if ($this->channel === 'beta') {
             $releases = $this->fetchJson(
                 'https://api.github.com/repos/' . $this->repo . '/releases?per_page=10'
@@ -56,20 +82,21 @@ final class GitHubReleaseProvider implements GitHubReleaseProviderInterface
         }
 
         if (!is_array($release)) {
+            $this->marquerEchec();
             return null;
         }
 
         $result = self::construireResultat($release);
         if ($result === null) {
+            $this->marquerEchec();
             return null;
         }
 
-        // [v1.2.0-beta.2] Une release dont l'archive complète n'est pas
-        // encore attachée (CI en cours) n'est pas mise en cache : le
-        // prochain affichage de la page interroge à nouveau GitHub.
-        if ($result['bundle']) {
-            $this->writeCache($result);
-        }
+        // [v1.2.0-beta.2 / v1.6.2] Une release dont l'archive complète
+        // n'est pas encore attachée (CI en cours) est mise en cache
+        // brièvement (TTL_ARCHIVE_EN_PREPARATION, cf. isCacheFresh()).
+        $this->effacerEchec();
+        $this->writeCache($result);
 
         return $result;
     }
@@ -192,12 +219,30 @@ final class GitHubReleaseProvider implements GitHubReleaseProviderInterface
      * Appel HTTP GET JSON vers l'API GitHub. Retourne null en cas
      * d'échec (réseau, HTTP >= 400, JSON inattendu).
      */
+    /**
+     * En-têtes HTTP des appels à l'API. Le jeton n'est ajouté que pour
+     * une URL HTTPS vers api.github.com (jamais vers un autre hôte).
+     */
+    public static function entetesApi(string $url, ?string $token): string
+    {
+        $entetes = "User-Agent: EPIClub-Update\r\n"
+                 . "Accept: application/vnd.github.v3+json\r\n";
+
+        $parts = parse_url($url);
+        $versApi = strtolower((string) ($parts['scheme'] ?? '')) === 'https'
+            && strtolower((string) ($parts['host'] ?? '')) === 'api.github.com';
+
+        if ($token !== null && $token !== '' && $versApi) {
+            $entetes .= 'Authorization: Bearer ' . $token . "\r\n";
+        }
+        return $entetes;
+    }
+
     private function fetchJson(string $url): ?array
     {
         $context = stream_context_create([
             'http' => [
-                'header' => "User-Agent: EPIClub-Update\r\n"
-                          . "Accept: application/vnd.github.v3+json\r\n",
+                'header' => self::entetesApi($url, $this->token),
                 'timeout' => 10,
             ],
         ]);
@@ -298,8 +343,56 @@ final class GitHubReleaseProvider implements GitHubReleaseProviderInterface
     private function isCacheFresh(): bool
     {
         $fichier = $this->cacheFileEffectif();
-        return is_file($fichier)
-            && (time() - filemtime($fichier) < $this->cacheTtl);
+        clearstatcache(true, $fichier);
+        if (!is_file($fichier)) {
+            return false;
+        }
+        $age = time() - filemtime($fichier);
+        if ($age >= $this->cacheTtl) {
+            return false;
+        }
+
+        // [v1.6.2] Archive pas encore attachée : cache bref seulement.
+        $cached = json_decode((string) @file_get_contents($fichier), true);
+        if (is_array($cached) && array_key_exists('bundle', $cached) && $cached['bundle'] === false) {
+            return $age < self::TTL_ARCHIVE_EN_PREPARATION;
+        }
+        return true;
+    }
+
+    // ------------------------------------------------------------------
+    // [v1.6.2] Mémorisation des échecs (limite de l'API, réseau…)
+    // ------------------------------------------------------------------
+
+    private function fichierEchec(): string
+    {
+        return $this->cacheFileEffectif() . '.echec';
+    }
+
+    private function isEchecRecent(): bool
+    {
+        $fichier = $this->fichierEchec();
+        clearstatcache(true, $fichier);
+        return $this->failureTtl > 0
+            && is_file($fichier)
+            && (time() - filemtime($fichier) < $this->failureTtl);
+    }
+
+    private function marquerEchec(): void
+    {
+        $fichier = $this->fichierEchec();
+        $dir = dirname($fichier);
+        if (!is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+        @touch($fichier);
+    }
+
+    private function effacerEchec(): void
+    {
+        if (is_file($this->fichierEchec())) {
+            @unlink($this->fichierEchec());
+        }
     }
 
     /**

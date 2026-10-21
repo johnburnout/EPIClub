@@ -101,6 +101,14 @@ avec `--prerelease` : les instances en canal `stable` ne la voient pas,
 celles en canal `beta` (`UPDATE_CHANNEL=beta`) la reçoivent. Une
 version stable se publie sans `--prerelease`.
 
+L'updater interroge l'API GitHub, limitée à 60 requêtes/heure par adresse
+IP sans authentification (partagées avec les autres sites du serveur).
+Après un échec, GitHub n'est pas réinterrogé avant 10 minutes. Sur une IP
+partagée, ajouter un jeton dans `.env.local.php` porte la limite à 5 000
+requêtes/heure : `'GITHUB_TOKEN' => 'github_pat_…'` (jeton « fine-grained »
+sans aucune permission, « Public repositories » ; il n'est envoyé qu'à
+`api.github.com`).
+
 ### Tests
 
 ```bash

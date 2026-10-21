@@ -338,6 +338,83 @@ final class GitHubReleaseProviderTest extends TestCase
     }
 
     // ==================================================================
+    // [v1.6.2] Limite de l'API GitHub : échecs mémorisés, jeton facultatif
+    // ==================================================================
+
+    public function testUnEchecEstMemorisePourNePasReinterrogerGitHub(): void
+    {
+        $cacheFile = $this->tmpDir . '/release.json';
+        $provider = new GitHubReleaseProvider('fake/repo-does-not-exist-999', $cacheFile, 3600);
+
+        self::assertNull($provider->getLatestRelease());
+        self::assertFileExists($cacheFile . '.echec', 'échec mémorisé');
+    }
+
+    public function testEchecRecentAucunAppelHttp(): void
+    {
+        $cacheFile = $this->tmpDir . '/release.json';
+        touch($cacheFile . '.echec');
+        $journal = $this->tmpDir . '/php-error.log';
+        $ancien = ini_set('error_log', $journal);
+
+        try {
+            $r = (new GitHubReleaseProvider('fake/repo-does-not-exist-999', $cacheFile, 3600))->getLatestRelease();
+        } finally {
+            ini_set('error_log', (string) $ancien);
+        }
+
+        self::assertNull($r);
+        self::assertFalse(
+            is_file($journal) && str_contains((string) file_get_contents($journal), '[GitHubReleaseProvider]'),
+            'aucune requête HTTP pendant le délai après échec'
+        );
+    }
+
+    public function testEchecAncienOnReessaie(): void
+    {
+        $cacheFile = $this->tmpDir . '/release.json';
+        touch($cacheFile . '.echec', time() - 601);
+        $journal = $this->tmpDir . '/php-error.log';
+        $ancien = ini_set('error_log', $journal);
+
+        try {
+            (new GitHubReleaseProvider('fake/repo-does-not-exist-999', $cacheFile, 3600))->getLatestRelease();
+        } finally {
+            ini_set('error_log', (string) $ancien);
+        }
+
+        self::assertStringContainsString('[GitHubReleaseProvider]', (string) @file_get_contents($journal));
+        self::assertGreaterThan(time() - 60, filemtime($cacheFile . '.echec'), 'échec re-daté');
+    }
+
+    public function testArchiveEnPreparationCacheBrefSeulement(): void
+    {
+        $cacheFile = $this->tmpDir . '/release.json';
+        file_put_contents($cacheFile, json_encode([
+            'tag' => 'v9.9.9', 'zip_url' => 'https://github.com/a.zip', 'bundle' => false,
+        ]));
+        $provider = new GitHubReleaseProvider('fake/repo-does-not-exist-999', $cacheFile, 3600);
+
+        // Récent (< 2 min) : servi depuis le cache
+        self::assertSame('v9.9.9', $provider->getLatestRelease()['tag'] ?? null);
+
+        // Plus ancien : ignoré (HTTP → échec sur le faux dépôt → null)
+        touch($cacheFile, time() - GitHubReleaseProvider::TTL_ARCHIVE_EN_PREPARATION - 1);
+        self::assertNull($provider->getLatestRelease());
+    }
+
+    public function testJetonEnvoyeUniquementAApiGitHub(): void
+    {
+        $api = GitHubReleaseProvider::entetesApi('https://api.github.com/repos/o/r/releases', 'ghp_x');
+        self::assertStringContainsString("Authorization: Bearer ghp_x\r\n", $api);
+
+        foreach (['https://github.com/o/r/releases', 'http://api.github.com/x', 'https://evil.example/x'] as $url) {
+            self::assertStringNotContainsString('Authorization', GitHubReleaseProvider::entetesApi($url, 'ghp_x'), $url);
+        }
+        self::assertStringNotContainsString('Authorization', GitHubReleaseProvider::entetesApi('https://api.github.com/x', null));
+    }
+
+    // ==================================================================
     // Helpers
     // ==================================================================
 
