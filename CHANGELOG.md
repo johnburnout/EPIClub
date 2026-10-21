@@ -10,6 +10,12 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.3.0] — 2026-10-21
+
+Remplacement de l'élément textile des équipements (ex. sangles de
+dégaines) suivi par le contrôle, avec report de la date de fin
+d'utilisation.
+
 ### Added
 
 - **Élément textile remplaçable** (migration 015) : case sur la
