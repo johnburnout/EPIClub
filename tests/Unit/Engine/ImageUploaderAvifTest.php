@@ -26,8 +26,14 @@ final class ImageUploaderAvifTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (glob($this->dir . '*') ?: [] as $f) {
-            unlink($f);
+        // Le dossier contient le sous-dossier « cible/ » quand la
+        // conversion a réussi : suppression récursive.
+        $it = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($this->dir, \FilesystemIterator::SKIP_DOTS),
+            \RecursiveIteratorIterator::CHILD_FIRST
+        );
+        foreach ($it as $f) {
+            $f->isDir() ? rmdir($f->getPathname()) : unlink($f->getPathname());
         }
         @rmdir($this->dir);
     }
