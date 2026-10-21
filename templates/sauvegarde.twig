@@ -62,7 +62,10 @@
                         </button>
                     </form>
                     <p class="text-muted mt-2 mb-0"><small>
-                        Taille maximale acceptée par le serveur : <strong>{{ limite_upload }}</strong>.
+                        Taille maximale acceptée par le serveur : <strong>{{ limite_upload }}</strong>
+                        (64 Mo prévus par EPIClub ; si la valeur affichée est plus basse, l'hébergement
+                        ignore <code>public/.user.ini</code> : réglez <code>upload_max_filesize</code> et
+                        <code>post_max_size</code> dans les options PHP du domaine).
                         Au-delà, déposez l'archive par FTP dans le dossier <code>var/backups/</code> d'EPIClub :
                         elle apparaîtra ci-dessous.
                     </small></p>

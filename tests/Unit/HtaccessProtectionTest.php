@@ -59,6 +59,21 @@ final class HtaccessProtectionTest extends TestCase
     }
 
     /**
+     * [Sauvegarde] Téléversement d'une archive jusqu'à 64 Mo (.user.ini),
+     * et ce fichier de réglages n'est jamais servi.
+     */
+    public function testUserIniAutoriseLesArchivesDe64MoEtNEstPasServi(): void
+    {
+        $ini = parse_ini_file(self::ROOT . '/public/.user.ini');
+        self::assertIsArray($ini);
+        self::assertSame('64M', $ini['upload_max_filesize']);
+        self::assertGreaterThan(64, (int) $ini['post_max_size']);
+
+        $htaccess = (string) file_get_contents(self::ROOT . '/public/.htaccess');
+        self::assertMatchesRegularExpression('/<Files "\.user\.ini">\s*Require all denied\s*<\/Files>/', $htaccess);
+    }
+
+    /**
      * [SÉCURITÉ — audit 2026-10-19 S1] Le dossier d'images téléversées
      * ne doit servir aucun fichier interprétable (PHP, HTML, SVG, JS).
      */
