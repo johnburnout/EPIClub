@@ -10,6 +10,21 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.6.3] — 2026-10-21
+
+En-têtes de sécurité HTTP.
+
+### Security
+
+- **En-têtes de sécurité sur toutes les pages** de l'application
+  (`Engine\SecurityHeaders`, posés par `public/index.php`, quel que soit
+  le serveur web) : protection contre le *clickjacking*
+  (`Content-Security-Policy: frame-ancestors 'self'`,
+  `X-Frame-Options: SAMEORIGIN`), `X-Content-Type-Options: nosniff`,
+  `Referrer-Policy: strict-origin-when-cross-origin`,
+  `Permissions-Policy` (caméra réservée à l'application pour le scan QR,
+  micro et géolocalisation désactivés).
+
 ## [v1.6.2] — 2026-10-21
 
 Mise à jour intégrée : ménagement de la limite de l'API GitHub.
