@@ -191,15 +191,20 @@ final class MySqlDatabaseDumper implements DatabaseDumperInterface
         // Lecture non bufferisée : la table n'est pas chargée entière en
         // mémoire (aucune autre requête n'est lancée pendant le parcours).
         $nonBufferise = $this->pdo->getAttribute(\PDO::ATTR_DRIVER_NAME) === 'mysql';
+        // PHP ≥ 8.4 : Pdo\Mysql::ATTR_USE_BUFFERED_QUERY (l'ancienne
+        // constante PDO::MYSQL_ATTR_* est dépréciée depuis PHP 8.5).
+        $attribut = class_exists(\Pdo\Mysql::class)
+            ? \Pdo\Mysql::ATTR_USE_BUFFERED_QUERY
+            : \PDO::MYSQL_ATTR_USE_BUFFERED_QUERY;
         if ($nonBufferise) {
-            $this->pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
+            $this->pdo->setAttribute($attribut, false);
         }
         try {
             $stmt = $this->pdo->query('SELECT ' . $listeColonnes . ' FROM ' . $nom);
             $compte = $this->ecrireDonnees($f, $stmt, $debut, $colonnes, $binaires);
         } finally {
             if ($nonBufferise) {
-                $this->pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, true);
+                $this->pdo->setAttribute($attribut, true);
             }
         }
 
