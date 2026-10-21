@@ -7,10 +7,12 @@ namespace Epiclub\Tests\Unit\Process\Support;
 use Epiclub\Domain\AcquisitionLigneManager;
 use Epiclub\Domain\AcquisitionManager;
 use Epiclub\Domain\CategorieManager;
+use Epiclub\Domain\ClubManager;
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\FournisseurManager;
 use Epiclub\Domain\ReferenceGenerator;
 use Epiclub\Process\AcquisitionProcess;
+use Epiclub\Tests\Unit\Domain\Support\TestableReferenceGenerator;
 
 /**
  * [REFACTOR VAGUE 9] Sous-classe de test d'AcquisitionProcess.
@@ -33,9 +35,62 @@ final class TestableAcquisitionProcess extends AcquisitionProcess
         private readonly ?ReferenceGenerator $referenceGeneratorMock = null,
     ) {}
 
+    /**
+     * Sans doublure fournie, le générateur de références utilise les
+     * managers mockés de ce process (aucune connexion PDO) : avant, le
+     * générateur réel interrogeait la base locale et les tests
+     * dépendaient de son contenu (catégorie id=3, cf. CI MySQL vierge).
+     */
     protected function referenceGenerator(): ReferenceGenerator
     {
-        return $this->referenceGeneratorMock ?? parent::referenceGenerator();
+        if ($this->referenceGeneratorMock !== null) {
+            return $this->referenceGeneratorMock;
+        }
+        // Doublures propres au générateur (distinctes des mocks du
+        // process, pour ne pas fausser leurs attentes d'appels).
+        $generateur = new TestableReferenceGenerator();
+        $generateur->categorieManagerMock = new class extends CategorieManager {
+            public function __construct()
+            {
+            }
+
+            public function findId(int $id)
+            {
+                return ['id' => $id, 'libelle' => 'Catégorie test', 'code' => 'TST'];
+            }
+        };
+        $generateur->equipementManagerMock = new class extends EquipementManager {
+            public function __construct()
+            {
+            }
+
+            public function findReferencesMatching(string $regexp): array
+            {
+                return [];
+            }
+        };
+        $generateur->acquisitionLigneManagerMock = new class extends AcquisitionLigneManager {
+            public function __construct()
+            {
+            }
+
+            public function findReferencesMatching(string $regexp): array
+            {
+                return [];
+            }
+        };
+        $generateur->clubManagerMock = new class extends ClubManager {
+            public function __construct()
+            {
+                // pas de connexion : paramètres du club vides (modèle par défaut)
+            }
+
+            public function findParameters()
+            {
+                return [];
+            }
+        };
+        return $generateur;
     }
 
     // ==================================================================
