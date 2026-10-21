@@ -170,11 +170,15 @@ final class MySqlDatabaseDumper implements DatabaseDumperInterface
         $this->ecrire($f, $sqlCreation . ';');
 
         // Colonnes à exporter (les colonnes générées sont recalculées par
-        // le serveur et refusent une valeur explicite).
+        // le serveur et refusent une valeur explicite). Seuls « VIRTUAL
+        // GENERATED » et « STORED GENERATED » désignent une colonne calculée :
+        // MySQL ≥ 8.0.13 affiche aussi « DEFAULT_GENERATED » pour une simple
+        // valeur par défaut (ex. DEFAULT CURRENT_TIMESTAMP), qui doit être
+        // exportée sous peine de perdre la valeur à la restauration.
         $colonnes = [];
         $binaires = [];
         foreach ($this->pdo->query('SHOW COLUMNS FROM ' . $nom)->fetchAll(\PDO::FETCH_ASSOC) as $c) {
-            if (stripos((string) ($c['Extra'] ?? ''), 'GENERATED') !== false) {
+            if (preg_match('/\b(VIRTUAL|STORED) GENERATED\b/i', (string) ($c['Extra'] ?? '')) === 1) {
                 continue;
             }
             $colonnes[] = (string) $c['Field'];

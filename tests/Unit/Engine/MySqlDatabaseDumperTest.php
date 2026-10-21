@@ -63,6 +63,33 @@ final class MySqlDatabaseDumperTest extends TestCase
         );
     }
 
+    /**
+     * Régression : MySQL ≥ 8.0.13 affiche Extra = DEFAULT_GENERATED pour une
+     * colonne DEFAULT CURRENT_TIMESTAMP (ex. pret.created_at). Elle doit être
+     * exportée ; seules les colonnes VIRTUAL/STORED GENERATED sont exclues.
+     */
+    public function testColonneAvecDefautGenereEstExportee(): void
+    {
+        $this->pdo->exec("CREATE TABLE `pret` (\n  id INTEGER PRIMARY KEY,\n  created_at TEXT,\n  maj TEXT,\n  total TEXT\n)");
+        $this->pdo->exec("INSERT INTO pret VALUES (1, '2026-01-02 03:04:05', 'm', 't')");
+        $this->pdo->extras['pret'] = [
+            'created_at' => 'DEFAULT_GENERATED',
+            'maj'        => 'DEFAULT_GENERATED on update CURRENT_TIMESTAMP',
+            'total'      => 'STORED GENERATED',
+        ];
+
+        (new MySqlDatabaseDumper($this->pdo))->exporter($this->fichier);
+
+        $insert = array_values(array_filter(
+            file($this->fichier, FILE_IGNORE_NEW_LINES),
+            fn ($l) => str_starts_with($l, 'INSERT INTO `pret`')
+        ));
+        self::assertSame(
+            "INSERT INTO `pret` (`id`, `created_at`, `maj`) VALUES (1, '2026-01-02 03:04:05', 'm');",
+            $insert[0] ?? null
+        );
+    }
+
     public function testMigrationsAppliquees(): void
     {
         self::assertSame(['001_a', '002_b'], (new MySqlDatabaseDumper($this->pdo))->migrationsAppliquees());
