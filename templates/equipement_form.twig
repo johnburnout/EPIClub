@@ -151,14 +151,24 @@
 			</select>
 		</div>
 
-		<!-- Statut (modifiable) -->
+		<!-- Statut : « Hors service » n'est attribué / levé que par un contrôle -->
 		<div class="mb-3">
 			<label for="statut">Statut</label>
-			<select class="form-select" name="statut" id="statut">
+			{% if equipement.statut is defined and equipement.statut == 2 %}
+			<input type="hidden" name="statut" value="2">
+			<input type="text" class="form-control {% if form_errors.statut is defined %}is-invalid{% endif %}" id="statut" value="Hors service" disabled>
+			<small class="text-muted">Statut fixé par un contrôle : seul un nouveau contrôle peut le lever.</small>
+			{% else %}
+			<select class="form-select {% if form_errors.statut is defined %}is-invalid{% endif %}" name="statut" id="statut">
 				{% for name, value in equipement_statuts %}
-				<option value="{{ value }}" {% if equipement.statut == value %}selected{% endif %}>{{ name }}</option>
+				<option value="{{ value }}" {% if equipement.statut is defined and equipement.statut == value %}selected{% endif %}>{{ name }}</option>
 				{% endfor %}
 			</select>
+			<small class="text-muted">« Hors service » s'attribue à l'issue d'un contrôle.</small>
+			{% endif %}
+			{% if form_errors.statut is defined %}
+			<div class="invalid-feedback d-block">{{ form_errors.statut }}</div>
+			{% endif %}
 		</div>
 
 		<!-- Remarques (modifiable) -->

@@ -129,7 +129,8 @@ final class EquipementControllerHandlersTest extends TestCase
         return [
             'statut 0 → Disponible'     => ['0', 0],
             'statut 1 → En maintenance' => ['1', 1],
-            'statut 2 → Hors service'   => ['2', 2],
+            // « Hors service » (2) : réservé au contrôle, cf.
+            // EquipementControllerHorsServiceTest.
         ];
     }
 

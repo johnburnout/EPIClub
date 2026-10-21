@@ -37,6 +37,20 @@ Sauvegarde et restauration complètes depuis l'application.
     contourne la limite de téléversement de PHP.
 - Lien vers la sauvegarde depuis la page de mise à jour ; section
   « Sauvegarde et restauration » dans le guide.
+- `public/.user.ini` : téléversement jusqu'à 64 Mo (`upload_max_filesize`
+  64M, `post_max_size` 66M) pour PHP-FPM / FastCGI ; fichier interdit
+  au téléchargement par `public/.htaccess`.
+
+### Changed
+
+- **Statut « Hors service »** : ne s'attribue et ne se lève qu'à la
+  clôture d'un contrôle. Il n'est plus proposé dans la fiche ni dans
+  la modification groupée ; un équipement hors service garde ce statut
+  (la modification groupée l'ignore et le signale).
+- **Suppression d'un équipement** (administrateur) : uniquement si son
+  dernier contrôle clôturé l'a déclaré hors service, sans contrôle en
+  cours. Un équipement passé « Hors service » à la main avant cette
+  version doit d'abord passer par un contrôle.
 
 ## [v1.1.2] — 2026-10-21
 

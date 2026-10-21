@@ -157,7 +157,7 @@ Ils sont générés automatiquement à partir des **factures d'acquisition** val
 - Changer l’**emplacement**
 - Modifier les **remarques**
 - Mettre à jour les **dates** (mise en service, fin d’utilisation)
-- Changer le **statut** (Disponible, En maintenance, Hors service)
+- Changer le **statut** (Disponible, En maintenance). Le statut **Hors service** ne s'attribue et ne se lève qu'à la **clôture d'un contrôle** : il n'est pas proposé dans la fiche, et un équipement hors service garde ce statut tant qu'un nouveau contrôle ne le change pas.
 - Changer l’**état d’usure** (si défini)
 - Pour un **lot** : ajuster le **nombre actuel d'éléments**, entre 1 et le **nombre initial** du lot (affiché, non modifiable) — par exemple lorsque des éléments du lot sont perdus ou retirés.
 
@@ -166,7 +166,9 @@ Ils sont générés automatiquement à partir des **factures d'acquisition** val
 
 > **Important :** la référence et la catégorie ne sont **pas modifiables** car elles sont héritées de l’acquisition. Le nombre initial d'un lot ne l'est pas non plus.
 
-**Modification groupée** (`ROLE_ADMIN`) : dans la liste des équipements, cocher plusieurs équipements (la case d'en-tête coche toute la page), puis cliquer sur **« Modifier la sélection »**. Sur la page suivante, activer **« Modifier »** pour chaque champ à changer (statut, emplacement, dates, durée maximum, remarques — ajoutées à la suite ou remplacées —, photo, et libellé pour un super-administrateur) ; les champs non activés restent inchangés. La photo est la même pour tous les équipements sélectionnés. Pour la date de mise en service, les équipements qui ne peuvent pas la recevoir (date déjà modifiée, facture postérieure) sont ignorés et signalés.
+**Modification groupée** (`ROLE_ADMIN`) : dans la liste des équipements, cocher plusieurs équipements (la case d'en-tête coche toute la page), puis cliquer sur **« Modifier la sélection »**. Sur la page suivante, activer **« Modifier »** pour chaque champ à changer (statut, emplacement, dates, durée maximum, remarques — ajoutées à la suite ou remplacées —, photo, et libellé pour un super-administrateur) ; les champs non activés restent inchangés. La photo est la même pour tous les équipements sélectionnés. Pour la date de mise en service, les équipements qui ne peuvent pas la recevoir (date déjà modifiée, facture postérieure) sont ignorés et signalés. De même, le statut des équipements hors service n'est pas modifié (signalés).
+
+**Supprimer un équipement** (`ROLE_ADMIN`) : possible uniquement si l'équipement a été déclaré **Hors service par son dernier contrôle clôturé** et qu'aucun contrôle n'est en cours. Le bouton « Supprimer » de la fiche reste grisé sinon.
 
 ---
 

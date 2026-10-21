@@ -38,4 +38,16 @@ enum EquipementStatut: int
         }
         return $out;
     }
+
+    /**
+     * [MÉTIER 2026-10-21] Statuts attribuables à la main (fiche,
+     * modification groupée) : « Hors service » est exclu, il ne peut
+     * être attribué — ou levé — que par la clôture d'un contrôle.
+     *
+     * @return array<string, int>
+     */
+    public static function forSelectManuel(): array
+    {
+        return array_filter(self::forSelect(), static fn (int $v) => $v !== self::HORS_SERVICE->value);
+    }
 }
