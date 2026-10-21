@@ -126,6 +126,9 @@ class AcquisitionProcess
             // (décision produit 2026-10-19), modifiable ensuite sur
             // la fiche équipement.
             $dureeMax = $categorie ? (int) ($categorie['duree_max_utilisation'] ?? 0) : 0;
+            // [MÉTIER 2026-10-21] Élément textile remplaçable : hérité de
+            // la catégorie, modifiable sur la fiche équipement.
+            $textileRemplacable = $categorie ? (int) ($categorie['textile_remplacable'] ?? 0) : 0;
             // [MÉTIER] Date limite d'utilisation de l'équipement :
             //  - date de péremption de la ligne (saisie à l'import) ;
             //  - sinon, si durée de vie limitée (case « durée max »
@@ -221,7 +224,8 @@ class AcquisitionProcess
                     // dépassable du nombre actuel (décision 2026-10-19).
                     'nombre_initial' => $ligne['nombre'],
                     'est_epi' => $est_epi,
-                    'duree_max_utilisation' => $dureeMax
+                    'duree_max_utilisation' => $dureeMax,
+                    'textile_remplacable' => $textileRemplacable,
                 ];
                 $this->saveEquipementAvecGardeDoublon($equipementManager, $new_equipement);
             } else {
@@ -259,7 +263,8 @@ class AcquisitionProcess
                         'nombre' => 1,
                         'nombre_initial' => 1,
                         'est_epi' => $est_epi,
-                        'duree_max_utilisation' => $dureeMax
+                        'duree_max_utilisation' => $dureeMax,
+                        'textile_remplacable' => $textileRemplacable,
                     ];
                     $this->saveEquipementAvecGardeDoublon($equipementManager, $new_equipement);
                 }

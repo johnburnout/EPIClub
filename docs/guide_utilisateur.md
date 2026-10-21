@@ -192,6 +192,12 @@ Ils sont générés automatiquement à partir des **factures d'acquisition** val
 - Si un contrôle est en cours, l'équipement est automatiquement ajouté à la ligne de contrôle.
 - **Scan intégré (menu Contrôles → « Scanner un équipement »)** : la caméra du téléphone s'ouvre **dans la page** — chaque équipement scanné est ajouté au contrôle en cours sans quitter la page (confirmation visuelle et sonore, doublons signalés), avec un bouton « Terminer » vers la fiche contrôle. ⚠️ Nécessite que le site soit servi en **HTTPS** (contrainte des navigateurs pour l'accès caméra).
 
+### Remplacer l'élément textile d'un équipement
+- Concerne les équipements marqués **« Élément textile remplaçable »** (case de la catégorie, ex. dégaines, reprise par les équipements générés et modifiable sur chaque fiche).
+1. Passez l'équipement **« En maintenance »** (fiche équipement, ou contrôle KO).
+2. Une fois le textile changé, contrôlez l'équipement : la fiche de contrôle propose la case **« Élément textile remplacé »**. Cochez-la et mettez le statut à **OK**.
+3. À la **clôture du contrôle**, l'équipement redevient disponible et sa **date de fin d'utilisation devient la date du contrôle + 10 ans, au dernier jour du mois** (ex. contrôle du 21/10/2026 ⇒ 31/10/2036). Le remplacement apparaît dans l'historique des contrôles de la fiche (« Textile remplacé »).
+
 ---
 
 ## 4. Gestion des utilisateurs

@@ -124,6 +124,17 @@
 			</small>
 		</div>
 
+		<!-- Élément textile remplaçable (hérité de la catégorie, modifiable) -->
+		<div class="mb-3 form-check">
+			<input type="checkbox" id="textile_remplacable" name="textile_remplacable" class="form-check-input" {% if equipement.textile_remplacable|default(false) %}checked{% endif %}>
+			<label class="form-check-label" for="textile_remplacable">Élément textile remplaçable</label>
+			<small class="form-text text-muted d-block">
+				Passez l'équipement « En maintenance » pour changer son élément textile : au contrôle suivant, le
+				contrôleur indique le remplacement et met le statut à OK ; la date de fin d'utilisation devient
+				alors la date du contrôle + 10 ans (fin de mois).
+			</small>
+		</div>
+
 		<!-- Date de fin d'utilisation (modifiable si vide) -->
 		<div class="mb-3">
 			<label for="date_fin_utilisation">Date de fin d'utilisation (péremption)</label>

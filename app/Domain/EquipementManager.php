@@ -222,7 +222,8 @@ class EquipementManager extends AbstractManager
         'acquisition_id', 'categorie_id', 'reference', 'libelle', 'code',
         'statut', 'remarques', 'date_dernier_controle', 'controle_en_cours',
         'emplacement_id', 'date_mise_en_service', 'date_fin_utilisation',
-        'nombre', 'nombre_initial', 'photo', 'est_epi', 'duree_max_utilisation'
+        'nombre', 'nombre_initial', 'photo', 'est_epi', 'duree_max_utilisation',
+        'textile_remplacable',
     ];
 
     /** [REFACTOR #92] Défaut null des colonnes sans coercition spécifique. */
@@ -249,6 +250,7 @@ class EquipementManager extends AbstractManager
         $equipement['photo'] = $equipement['photo'] ?? null;
         $equipement['est_epi'] = $equipement['est_epi'] ?? 1;
         $equipement['duree_max_utilisation'] = $equipement['duree_max_utilisation'] ?? 0;
+        $equipement['textile_remplacable'] = $equipement['textile_remplacable'] ?? 0;
 
         return $this->filteredInsert($equipement, self::ALLOWED_FIELDS, self::CREATE_NULL_DEFAULTS);
     }

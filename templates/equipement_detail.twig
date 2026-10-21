@@ -55,6 +55,11 @@
 							<span class="text-muted">Non</span>
 							{% endif %}
 						</p>
+						{% if equipement.textile_remplacable|default(false) %}
+						<p><strong>Élément textile :</strong>
+							<span class="badge bg-info text-dark">Remplaçable</span>
+						</p>
+						{% endif %}
 						<p><strong>Date de fin d'utilisation :</strong> 
 							{% if not equipement.date_fin_utilisation or equipement.date_fin_utilisation > "now"|date("Y-m-d") %}
 							<span class="text-muted">
@@ -249,6 +254,9 @@
 											<span class="badge bg-{{ statutClasses[ligne.statut]|default('secondary') }}">
 												{{ statutLabels[ligne.statut]|default(ligne.statut) }}
 											</span>
+											{% if ligne.textile_remplace|default(false) %}
+												<span class="badge bg-info text-dark">Textile remplacé</span>
+											{% endif %}
 										</td>
 										<td>
 											{% if ligne.remarque %}

@@ -595,6 +595,9 @@ class EquipementController extends AbstractController
                     // à la génération, modifiable ici (checkbox absente
                     // du POST = décochée).
                     'duree_max_utilisation' => $request->request->has('duree_max_utilisation') ? 1 : 0,
+                    // [MÉTIER 2026-10-21] Élément textile remplaçable :
+                    // hérité de la catégorie, modifiable ici.
+                    'textile_remplacable' => $request->request->has('textile_remplacable') ? 1 : 0,
                 ];
 
                 if ($nombreLot !== null) {

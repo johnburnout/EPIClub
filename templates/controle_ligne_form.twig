@@ -27,6 +27,19 @@
             </select>
         </div>
 
+        {% if textile_remplacement_possible|default(false) %}
+        <div class="mb-3 form-check border rounded p-2 ps-5 bg-light">
+            <input type="checkbox" class="form-check-input" id="textile_remplace" name="textile_remplace" value="1"
+                {% if ligne.textile_remplace|default(false) %}checked{% endif %}>
+            <label class="form-check-label" for="textile_remplace"><strong>Élément textile remplacé</strong></label>
+            <small class="form-text text-muted d-block">
+                Équipement en maintenance avec élément textile remplaçable. Avec le statut <strong>OK</strong>,
+                la date de fin d'utilisation deviendra, à la clôture du contrôle, la date du contrôle + 10 ans
+                (dernier jour du mois).
+            </small>
+        </div>
+        {% endif %}
+
         <div class="mb-3">
             <label for="date_controle" class="form-label">Date du contrôle</label>
             <input type="datetime-local" name="date_controle" id="date_controle" class="form-control"
