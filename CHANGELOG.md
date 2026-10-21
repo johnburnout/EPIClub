@@ -10,6 +10,14 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Added
+
+- **CI : workflow « Tests »** — PHPUnit complet sur GitHub (suites Unit
+  et Integration) avec un service MySQL 8 : schéma créé par les
+  migrations, compte `admin` de test (`tests/Fixtures/ci-seed.php`),
+  configuration `tests/Fixtures/env.ci.php`. Les ≈16 tests qui
+  demandaient une base locale tournent désormais à chaque PR.
+
 ## [v1.2.0-beta.2] — 2026-10-21
 
 Correctif de la mise à jour intégrée (incident v1.2.0-beta.1 : page

@@ -13,12 +13,11 @@ namespace Epiclub\Tests\Integration\Controller;
  * /admin/controles/update-ligne/{ligne_id}) — en plus de l'ajout de
  * l'équipement dans la liste des équipements contrôlés.
  *
- * ⚠️ Prérequis : MySQL + compte admin/adminadmin (id = 2 attendu) —
+ * ⚠️ Prérequis : MySQL + compte admin/adminadmin (id lu par adminId()) —
  * le serveur HTTP est auto-démarré par AbstractControllerTestCase.
  */
 final class ControleControllerAddEquipementTest extends AbstractControllerTestCase
 {
-    private const ADMIN_ID = 2;
 
     /**
      * Parcours complet : liste des disponibles → clic « Contrôler » →
@@ -30,7 +29,7 @@ final class ControleControllerAddEquipementTest extends AbstractControllerTestCa
         // Arrange : contrôle ouvert + équipement libre (jamais ajouté)
         $acqId = $this->fixture->createDraftAcquisition('TEST-ADDEQ');
         $controleId = $this->fixture->createControle(
-            controleurId: self::ADMIN_ID,
+            controleurId: $this->adminId(),
             libelle: 'TEST-ADDEQ',
             statut: 'ouvert',
         );

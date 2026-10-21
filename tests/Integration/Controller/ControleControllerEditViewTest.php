@@ -17,12 +17,11 @@ namespace Epiclub\Tests\Integration\Controller;
  *
  * ⚠️ Prérequis :
  *   - un serveur HTTP lancé sur BASE_URL (défaut : localhost:8000)
- *   - un compte `admin` / `adminadmin` en BDD (id = 2 attendu)
+ *   - un compte `admin` / `adminadmin` en BDD (id lu par adminId())
  *   - le serveur doit utiliser le .env.local.php du projet
  */
 final class ControleControllerEditViewTest extends AbstractControllerTestCase
 {
-    private const ADMIN_ID = 2;
 
     /**
      * Cas 1 — Contrôle OUVERT, hash chiffré.
@@ -36,7 +35,7 @@ final class ControleControllerEditViewTest extends AbstractControllerTestCase
         $ciphertext = $this->encrypt($plaintext);
 
         $id = $this->fixture->createControle(
-            controleurId: self::ADMIN_ID,
+            controleurId: $this->adminId(),
             libelle: 'TEST-OUVERT-CHIFFRE',
             statut: 'ouvert',
             hashRemarques: $ciphertext,
@@ -70,7 +69,7 @@ final class ControleControllerEditViewTest extends AbstractControllerTestCase
         $ciphertext = $this->encrypt($plaintext);
 
         $id = $this->fixture->createControle(
-            controleurId: self::ADMIN_ID,
+            controleurId: $this->adminId(),
             libelle: 'TEST-CLOTURE-CHIFFRE',
             statut: 'cloture',
             hashRemarques: $ciphertext,
@@ -100,7 +99,7 @@ final class ControleControllerEditViewTest extends AbstractControllerTestCase
     public function testEditViewHandlesEmptyHash(): void
     {
         $id = $this->fixture->createControle(
-            controleurId: self::ADMIN_ID,
+            controleurId: $this->adminId(),
             libelle: 'TEST-VIDE',
             statut: 'ouvert',
             hashRemarques: null,

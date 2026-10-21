@@ -76,6 +76,21 @@ abstract class AbstractControllerTestCase extends TestCase
         $stmt->execute();
     }
 
+    /**
+     * Id du compte « admin » utilisé pour la connexion (jamais codé en
+     * dur : il vaut 2 sur une base de dev, 1 sur la base vierge de la CI).
+     */
+    protected function adminId(): int
+    {
+        $id = $this->createPdo()
+            ->query("SELECT id FROM utilisateur WHERE username = 'admin'")
+            ->fetchColumn();
+        if ($id === false) {
+            self::fail("Compte « admin » absent de la base de test.");
+        }
+        return (int) $id;
+    }
+
     protected function tearDown(): void
     {
         if (isset($this->fixture)) {

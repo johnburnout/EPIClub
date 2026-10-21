@@ -97,13 +97,6 @@ final class ControleScanControllerTest extends AbstractControllerTestCase
     // Helpers
     // ==================================================================
 
-    private function adminId(): int
-    {
-        return (int) $this->createPdo()
-            ->query("SELECT id FROM utilisateur WHERE username = 'admin'")
-            ->fetchColumn();
-    }
-
     private function creerEquipement(): int
     {
         $acquisitionId = $this->fixture->createValidatedAcquisition(
