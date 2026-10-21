@@ -10,6 +10,34 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.6.1] — 2026-10-21
+
+Correctifs issus d'un audit : sauvegarde SQL et chiffrement des remarques.
+
+### Fixed
+
+- **Sauvegarde / restauration SQL** : les colonnes `DEFAULT
+  CURRENT_TIMESTAMP` (MySQL 8 : `Extra = DEFAULT_GENERATED`) étaient
+  prises pour des colonnes calculées et omises du dump ; à la
+  restauration, `pret.created_at` reprenait la date du jour. Seules les
+  colonnes `VIRTUAL GENERATED` / `STORED GENERATED` sont désormais
+  exclues.
+
+### Security
+
+- **Chiffrement des remarques en AES-256-GCM** (chiffrement authentifié) :
+  toute altération du texte chiffré est détectée. Nouveau format
+  `v2:base64(nonce ‖ tag ‖ ciphertext)`, clé dérivée de `SECRET_KEY`
+  (HKDF-SHA256) ; aucune configuration à modifier. Les remarques
+  chiffrées auparavant (AES-256-CBC) restent lisibles et passent au
+  nouveau format lorsqu'elles sont réenregistrées.
+
+### Changed
+
+- Tests d'intégration : mot de passe du compte `admin` configurable par
+  la variable d'environnement `EPICLUB_TEST_ADMIN_PASSWORD`
+  (`adminadmin` par défaut, comme la fixture CI).
+
 ## [v1.6.0] — 2026-10-21
 
 Prêts en retard sur le tableau de bord, suppression des équipements égarés.
