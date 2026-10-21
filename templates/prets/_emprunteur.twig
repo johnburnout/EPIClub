@@ -1,0 +1,27 @@
+{# Champs de l'emprunteur. Variables : pret, form_errors, mode ('tout' | 'telephone' | 'lecture') #}
+{% set lecture = mode != 'tout' %}
+{% macro champ(nom, libelle, valeur, type, form_errors, desactive, attrs) %}
+	<div class="col-md-6 mb-3">
+		<label for="{{ nom }}" class="form-label">{{ libelle }}</label>
+		<input type="{{ type }}" id="{{ nom }}" name="{{ nom }}" value="{{ valeur }}"
+			class="form-control {% if form_errors[nom] is defined %}is-invalid{% endif %}"
+			{% if desactive %}disabled{% endif %} {{ attrs|raw }}>
+		{% if form_errors[nom] is defined %}<div class="invalid-feedback">{{ form_errors[nom] }}</div>{% endif %}
+	</div>
+{% endmacro %}
+{% import _self as f %}
+<div class="row">
+	{{ f.champ('emprunteur_nom', 'Nom *', pret.emprunteur_nom, 'text', form_errors, lecture, 'maxlength="64" autocomplete="family-name" required') }}
+	{{ f.champ('emprunteur_prenom', 'Prénom *', pret.emprunteur_prenom, 'text', form_errors, lecture, 'maxlength="64" autocomplete="given-name" required') }}
+	{{ f.champ('emprunteur_telephone', 'Téléphone *', pret.emprunteur_telephone, 'tel', form_errors, mode == 'lecture', 'maxlength="20" autocomplete="tel" inputmode="tel"') }}
+	{{ f.champ('emprunteur_licence', 'Numéro de licence *', pret.emprunteur_licence, 'text', form_errors, lecture, 'maxlength="32"') }}
+	{{ f.champ('date_pret', 'Date du prêt *', pret.date_pret ? pret.date_pret|date('Y-m-d') : '', 'date', form_errors, lecture, 'required') }}
+	{{ f.champ('date_retour_prevue', 'Date de retour prévue *', pret.date_retour_prevue ? pret.date_retour_prevue|date('Y-m-d') : '', 'date', form_errors, lecture, 'required') }}
+	<div class="col-12 mb-3">
+		<label for="remarques" class="form-label">Remarques</label>
+		<textarea id="remarques" name="remarques" class="form-control" rows="2" maxlength="2000" {% if lecture %}disabled{% endif %}>{{ pret.remarques }}</textarea>
+	</div>
+</div>
+{% if mode == 'tout' %}
+	<p class="small text-muted">* obligatoire. Le téléphone et le numéro de licence peuvent être complétés plus tard, mais sont exigés pour valider le prêt.</p>
+{% endif %}

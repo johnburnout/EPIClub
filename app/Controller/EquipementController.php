@@ -41,6 +41,36 @@ class EquipementController extends AbstractController
         return new EquipementManager();
     }
     
+    /** [Prêt de matériel] Factories — surchargeables en test Unit. */
+    protected function pretManager(): \Epiclub\Domain\PretManager
+    {
+        return new \Epiclub\Domain\PretManager();
+    }
+
+    protected function pretLigneManager(): \Epiclub\Domain\PretLigneManager
+    {
+        return new \Epiclub\Domain\PretLigneManager();
+    }
+
+    /**
+     * [Prêt de matériel] Prêts en saisie proposés pour « Ajouter au
+     * prêt » (contrôleur, module activé) ; [] sinon ou en cas d'erreur.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function pretsEnSaisiePourVue(): array
+    {
+        if (!$this->isGranted('ROLE_CONTROLLEUR') || !$this->pretActif()) {
+            return [];
+        }
+        try {
+            return $this->pretManager()->findEnSaisie();
+        } catch (\Throwable $e) {
+            error_log('[EquipementController] Prêts en saisie indisponibles : ' . $e->getMessage());
+            return [];
+        }
+    }
+
     protected function categorieManager(): CategorieManager
     {
         return new CategorieManager();
@@ -156,6 +186,8 @@ class EquipementController extends AbstractController
         return $this->render('equipement_list.twig', [
             // [Photo groupée] retour sur la même vue après l'affectation
             'retour_query' => (string) $request->getQueryString(),
+            // [Prêt de matériel] « Ajouter au prêt » depuis la liste
+            'prets_en_saisie' => $this->pretsEnSaisiePourVue(),
             'equipements' => $equipements,
             'categories' => $categories,
             'emplacements' => $emplacements,
@@ -417,7 +449,24 @@ class EquipementController extends AbstractController
             $acquisition = $acquisitionManager->findId($equipement['acquisition_id']);
         }
         
+        // [Prêt de matériel] Prêt ouvert sur ce matériel + historique.
+        $pretsEnSaisie = $this->pretsEnSaisiePourVue();
+        $pretOuvert = null;
+        $historiquePrets = [];
+        if ($this->isGranted('ROLE_CONTROLLEUR') && $this->pretActif()) {
+            try {
+                $pretOuvert = $this->pretLigneManager()->findPretOuvertPourEquipement($id);
+                $historiquePrets = $this->pretLigneManager()->historiqueEquipement($id);
+            } catch (\Throwable $e) {
+                error_log('[EquipementController] Historique des prêts indisponible : ' . $e->getMessage());
+            }
+        }
+
         return $this->render('equipement_detail.twig', [
+            'prets_en_saisie' => $pretOuvert === null ? $pretsEnSaisie : [],
+            'pret_ouvert' => $pretOuvert,
+            'historique_prets' => $historiquePrets,
+            'pret_motif' => \Epiclub\Domain\PretRegles::motifIneligibilite($equipement, null, date('Y-m-d')),
             'equipement' => $equipement,
             'suppression_autorisee' => self::suppressionAutorisee($equipement, $historiqueControles),
             'historiqueControles' => $historiqueControles,
@@ -563,13 +612,16 @@ class EquipementController extends AbstractController
                     return $this->redirectTo('/equipements');
                 }
                 
-                // [MÉTIER 2026-10-21] « Hors service » ne s'attribue et ne
-                // se lève qu'à la clôture d'un contrôle : jamais par la fiche.
-                $etaitHorsService = (int) ($equipement['statut'] ?? 0) === EquipementStatut::HORS_SERVICE->value;
-                if ($etaitHorsService !== ($statutEnum === EquipementStatut::HORS_SERVICE)) {
-                    $form_errors['statut'] = $etaitHorsService
-                        ? self::MESSAGE_HS_LEVE
-                        : self::MESSAGE_HS_ATTRIBUE;
+                // [MÉTIER 2026-10-21] Statuts réservés (Hors service, Prêté,
+                // Égaré) : ni attribués ni levés par la fiche — seulement par
+                // un contrôle ou le cycle d'un prêt.
+                $statutActuel = EquipementStatut::tryFrom((int) ($equipement['statut'] ?? 0));
+                if ($statutActuel !== $statutEnum) {
+                    if ($statutActuel !== null && $statutActuel->estReserve()) {
+                        $form_errors['statut'] = $statutActuel->messageLevee();
+                    } elseif ($statutEnum->estReserve()) {
+                        $form_errors['statut'] = $statutEnum->messageAttribution();
+                    }
                 }
 
                 // [MÉTIER 2026-10-20] Libellé défini à l'acquisition :
@@ -836,6 +888,8 @@ class EquipementController extends AbstractController
                     .footer { margin-top: 40px; font-size: 12px; color: #888; text-align: center; border-top: 1px solid #ddd; padding-top: 10px; }
                     .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; color: #fff; font-size: 12px; }
                     .badge-success { background: #28a745; }
+                    .badge-primary { background: #0d6efd; }
+                    .badge-dark { background: #343a40; }
                     .badge-warning { background: #ffc107; color: #212529; }
                     .badge-danger { background: #dc3545; }
                     .badge-info { background: #17a2b8; }
@@ -887,12 +941,12 @@ HTML;
         if ($controleEnCours) {
             return '<span class="badge badge-info">En contrôle</span>';
         }
-        switch ($statut) {
-            case 0: return '<span class="badge badge-success">Disponible</span>';
-            case 1: return '<span class="badge badge-warning">En maintenance</span>';
-            case 2: return '<span class="badge badge-danger">Hors service</span>';
-            default: return '<span class="badge badge-secondary">Inconnu</span>';
+        $enum = is_numeric($statut) ? EquipementStatut::tryFrom((int) $statut) : null;
+        if ($enum === null) {
+            return '<span class="badge badge-secondary">Inconnu</span>';
         }
+        // Classes du PDF (badge-success…) ; « primary » / « dark » pour Prêté / Égaré.
+        return sprintf('<span class="badge badge-%s">%s</span>', $enum->badge(), htmlspecialchars($enum->label()));
     }
 
     // --------------------------------------------------------------
@@ -1499,8 +1553,8 @@ HTML;
                         $statut = is_string($brut) && ctype_digit($brut) ? EquipementStatut::tryFrom((int) $brut) : null;
                         if ($statut === null) {
                             $form_errors['statut'] = 'Statut invalide.';
-                        } elseif ($statut === EquipementStatut::HORS_SERVICE) {
-                            $form_errors['statut'] = self::MESSAGE_HS_ATTRIBUE;
+                        } elseif ($statut->estReserve()) {
+                            $form_errors['statut'] = $statut->messageAttribution();
                         } else {
                             $valeurs['statut'] = $statut->value;
                         }
@@ -1609,8 +1663,9 @@ HTML;
 
             // [MÉTIER 2026-10-21] Un équipement hors service ne quitte cet
             // état que par un contrôle : son statut n'est pas modifié.
+            // [Prêt de matériel] Idem pour « Prêté » et « Égaré » (statuts réservés).
             if (array_key_exists('statut', $data)
-                && (int) ($equipement['statut'] ?? 0) === EquipementStatut::HORS_SERVICE->value
+                && (EquipementStatut::tryFrom((int) ($equipement['statut'] ?? 0))?->estReserve() ?? false)
             ) {
                 unset($data['statut']);
                 $horsService[] = $equipement['reference'] ?? '#' . $equipement['id'];
@@ -1671,7 +1726,7 @@ HTML;
         if ($horsService !== []) {
             $this->session->getFlashBag()->add('warning',
                 'Statut non modifié pour : ' . implode(', ', $horsService)
-                . ' (hors service : seul un contrôle peut lever ce statut).');
+                . ' (hors service, prêté ou égaré : statut fixé par un contrôle ou un prêt).');
         }
 
         return $this->redirectTo($retour);

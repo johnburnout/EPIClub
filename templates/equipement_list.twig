@@ -134,6 +134,24 @@
     <hr>
 
     {% set photoGroupee = isGranted('ROLE_ADMIN') and equipements is not empty %}
+    {# [Prêt de matériel] les cases servent aussi à « Ajouter au prêt » #}
+    {% set pretSelection = prets_en_saisie|default([]) is not empty and equipements is not empty %}
+    {% set selection = photoGroupee or pretSelection %}
+    {% if pretSelection %}
+    <form method="post" action="/prets/ajouter" id="form-pret" class="d-flex flex-wrap align-items-center gap-2 mb-3">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <input type="hidden" name="retour" value="/equipements{{ retour_query ? '?' ~ retour_query : '' }}">
+        <select name="pret_id" class="form-select" style="max-width: 22rem;" aria-label="Prêt en saisie">
+            {% for p in prets_en_saisie %}
+                <option value="{{ p.id }}">Prêt n° {{ p.id }} — {{ p.emprunteur_prenom }} {{ p.emprunteur_nom }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" id="btn-pret" class="btn btn-outline-primary" disabled>
+            🤝 Ajouter la sélection au prêt (<span class="nb-coches-pret">0</span>)
+        </button>
+        <span class="small text-body-secondary">Seul le matériel disponible (hors contrôle, non périmé) est ajouté.</span>
+    </form>
+    {% endif %}
     {% if photoGroupee %}
     {# [Modification groupée] Les équipements cochés sont modifiés ensemble #}
     <form method="get" action="/equipements/modification-groupee" id="form-selection"
@@ -152,7 +170,7 @@
     <table class="table table-striped">
 		<thead>
 			<tr>
-				{% if photoGroupee %}
+				{% if selection %}
 				<th style="width: 2rem;">
 					<input type="checkbox" class="form-check-input" id="tout-cocher"
 					       title="Tout cocher / décocher" aria-label="Tout cocher">
@@ -173,10 +191,10 @@
         <tbody>
             {% for equipement in equipements %}
                 <tr>
-                    {% if photoGroupee %}
+                    {% if selection %}
                     <td>
                         <input type="checkbox" class="form-check-input case-equipement" name="ids[]"
-                               value="{{ equipement.id }}" form="form-selection"
+                               value="{{ equipement.id }}" {% if photoGroupee %}form="form-selection"{% else %}form="form-pret"{% endif %}
                                aria-label="Sélectionner {{ equipement.reference }}">
                     </td>
                     {% endif %}
@@ -226,14 +244,9 @@
                         {% endif %}
                     </td>
                     <td class="text-center">
-                        {# Statut : 0 disponible (vert), 1 maintenance (jaune), 2 hors service (rouge) #}
-                        {% set statuts = {
-                            0: {couleur: '#28a745', libelle: 'Disponible'},
-                            1: {couleur: '#ffd60a', libelle: 'En maintenance'},
-                            2: {couleur: '#dc3545', libelle: 'Hors service'}
-                        } %}
-                        {% set s = statuts[equipement.statut|default(-1)] ?? null %}
-                        {% if s %}
+                        {# Statut : carré de couleur (EquipementStatut::couleur()) #}
+                        {% set s = equipement.statut is not null ? statut_equipement(equipement.statut) : null %}
+                        {% if s and s.libelle != 'Inconnu' %}
                             <span class="d-inline-block rounded-1 border" style="width: 1rem; height: 1rem; vertical-align: middle; background-color: {{ s.couleur }};"
                                   title="{{ s.libelle }}" role="img" aria-label="{{ s.libelle }}"></span>
                         {% else %}
@@ -296,15 +309,32 @@
         document.addEventListener('DOMContentLoaded', function () {
             const toutCocher = document.getElementById('tout-cocher');
             const bouton = document.getElementById('btn-selection');
-            if (!toutCocher || !bouton) {
+            const boutonPret = document.getElementById('btn-pret');
+            const formPret = document.getElementById('form-pret');
+            if (!toutCocher || (!bouton && !boutonPret)) {
                 return;
             }
             const cases = Array.from(document.querySelectorAll('.case-equipement'));
             const compteur = document.getElementById('nb-coches');
+            const compteurPret = document.querySelector('.nb-coches-pret');
+            // [Prêt de matériel] les cases cochées sont recopiées dans le
+            // formulaire « Ajouter au prêt » à l'envoi.
+            if (formPret && bouton) {
+                formPret.addEventListener('submit', function () {
+                    formPret.querySelectorAll('input.copie-id').forEach(i => i.remove());
+                    cases.filter(c => c.checked).forEach(function (c) {
+                        const h = document.createElement('input');
+                        h.type = 'hidden'; h.name = 'ids[]'; h.value = c.value; h.className = 'copie-id';
+                        formPret.appendChild(h);
+                    });
+                });
+            }
             function majCompteur() {
                 const nb = cases.filter(c => c.checked).length;
-                compteur.textContent = nb;
-                bouton.disabled = nb === 0;
+                if (compteur) compteur.textContent = nb;
+                if (bouton) bouton.disabled = nb === 0;
+                if (compteurPret) compteurPret.textContent = nb;
+                if (boutonPret) boutonPret.disabled = nb === 0;
                 toutCocher.checked = nb > 0 && nb === cases.length;
                 toutCocher.indeterminate = nb > 0 && nb < cases.length;
             }

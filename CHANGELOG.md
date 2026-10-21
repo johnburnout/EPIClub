@@ -10,6 +10,41 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.5.0] — 2026-10-21
+
+Gestionnaire de prêt de matériel (module facultatif).
+
+### Added
+
+- **Prêts de matériel** (migration 016), à activer sur la page Club
+  (super-admin), accessibles aux contrôleurs (menu « Prêts ») :
+  - fiche de prêt : nom, prénom, téléphone, numéro de licence de
+    l'emprunteur, date du prêt, date de retour prévue, remarques ;
+  - **en saisie** : emprunteur modifiable, ajout de matériel depuis la
+    fiche (liste filtrable), par **scan QR** dans la page, depuis la
+    **liste** (cases à cocher) ou la **fiche** d'un équipement ; seul le
+    matériel disponible, hors contrôle, non périmé et sur aucun autre
+    prêt est accepté ;
+  - **prêt en cours** (validation en transaction, éligibilité revérifiée) :
+    matériel au statut **Prêté**, signature de l'emprunteur **à l'écran**
+    (téléphone) facultative ; seul le téléphone reste modifiable ;
+  - **prêt terminé** : vérification de chaque matériel rendu →
+    Disponible, En maintenance ou **Égaré** (définitif) ;
+  - **export PDF** (prêt en cours ou terminé) avec cadres de signature
+    (signature recueillie à l'écran incluse) ;
+  - prêts en retard signalés, historique des prêts sur la fiche équipement.
+- **Statuts d'équipement « Prêté » et « Égaré »** (carré bleu / violet dans
+  la liste). « Égaré » peut être saisi sur la fiche de contrôle ; à la
+  clôture, l'équipement passe Égaré. Un contrôle OK le remet Disponible.
+
+### Changed
+
+- « Prêté » et « Égaré » sont, comme « Hors service », des statuts
+  réservés : ni attribués ni levés depuis la fiche ou la modification
+  groupée.
+- Un équipement prêté ne peut pas être ajouté à un contrôle (liste,
+  ajout, scan).
+
 ## [v1.4.0] — 2026-10-21
 
 Sauvegarde automatique de la base avant les migrations.

@@ -162,20 +162,25 @@
 			</select>
 		</div>
 
-		<!-- Statut : « Hors service » n'est attribué / levé que par un contrôle -->
+		<!-- Statut : les statuts réservés (Hors service, Prêté, Égaré) ne sont attribués / levés que par un contrôle ou un prêt -->
 		<div class="mb-3">
 			<label for="statut">Statut</label>
-			{% if equipement.statut is defined and equipement.statut == 2 %}
-			<input type="hidden" name="statut" value="2">
-			<input type="text" class="form-control {% if form_errors.statut is defined %}is-invalid{% endif %}" id="statut" value="Hors service" disabled>
-			<small class="text-muted">Statut fixé par un contrôle : seul un nouveau contrôle peut le lever.</small>
+			{% set statut_actuel = equipement.statut is defined and equipement.statut is not null ? statut_equipement(equipement.statut) : null %}
+			{% if statut_actuel and statut_actuel.reserve %}
+			<input type="hidden" name="statut" value="{{ equipement.statut }}">
+			<input type="text" class="form-control {% if form_errors.statut is defined %}is-invalid{% endif %}" id="statut" value="{{ statut_actuel.libelle }}" disabled>
+			{% if equipement.statut == 3 %}
+			<small class="text-muted">Matériel prêté : son statut changera à la vérification du retour du prêt.</small>
+			{% else %}
+			<small class="text-muted">Statut fixé par un contrôle{% if equipement.statut == 4 %} ou un prêt{% endif %} : seul un nouveau contrôle peut le lever.</small>
+			{% endif %}
 			{% else %}
 			<select class="form-select {% if form_errors.statut is defined %}is-invalid{% endif %}" name="statut" id="statut">
 				{% for name, value in equipement_statuts %}
 				<option value="{{ value }}" {% if equipement.statut is defined and equipement.statut == value %}selected{% endif %}>{{ name }}</option>
 				{% endfor %}
 			</select>
-			<small class="text-muted">« Hors service » s'attribue à l'issue d'un contrôle.</small>
+			<small class="text-muted">« Hors service » et « Égaré » s'attribuent à l'issue d'un contrôle ; « Prêté » par un prêt.</small>
 			{% endif %}
 			{% if form_errors.statut is defined %}
 			<div class="invalid-feedback d-block">{{ form_errors.statut }}</div>

@@ -10,6 +10,8 @@ class ClubManager extends AbstractManager
         'nom', 'activite', 'description', 'email', 'phone', 'ref_modele',
         // [Tableau de bord — migration 012]
         'logo', 'image_fond', 'alerte_renouvellement_mois',
+        // [Prêt de matériel — migration 016]
+        'pret_actif',
     ];
 
     public function findParameters()

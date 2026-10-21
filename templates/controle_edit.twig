@@ -306,6 +306,8 @@
                 <span class="badge bg-danger">KO</span>
                 {% elseif ligne.statut == 'hors_service' %}
                 <span class="badge bg-dark">Hors service</span>
+                {% elseif ligne.statut == 'egare' %}
+                <span class="badge bg-secondary">Égaré</span>
                 {% endif %}
             </td>
             <td>{{ ligne.remarque|default('-') }}</td>

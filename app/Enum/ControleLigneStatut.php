@@ -9,7 +9,8 @@ namespace Epiclub\Enum;
  *
  * Correspond à l'ENUM MySQL `controle_ligne.statut`
  * (cf. migrations/001_initial.sql) :
- *   enum('a_controler','controle_ok','controle_ko','hors_service')
+ *   enum('a_controler','controle_ok','controle_ko','hors_service','egare')
+ *   ('egare' : migration 016, prêt de matériel)
  *
  * Utilisé par ControleController::updateLigne() pour valider la
  * valeur soumise via POST (protection contre le mass-assignment).
@@ -24,6 +25,7 @@ enum ControleLigneStatut: string
     case CONTROLE_OK  = 'controle_ok';
     case CONTROLE_KO  = 'controle_ko';
     case HORS_SERVICE = 'hors_service';
+    case EGARE        = 'egare';
 
     /**
      * Libellé humain (utilisable en template ou flash).
@@ -35,6 +37,7 @@ enum ControleLigneStatut: string
             self::CONTROLE_OK  => 'Contrôle OK',
             self::CONTROLE_KO  => 'Contrôle KO',
             self::HORS_SERVICE => 'Hors service',
+            self::EGARE        => 'Égaré',
         };
     }
 

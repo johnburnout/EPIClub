@@ -1,0 +1,271 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+	{% set s = statut.value %}
+	<div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+		<h3 class="mb-0">
+			🤝 Prêt n° {{ pret.id }}
+			<span class="badge bg-{{ statut.badge }} align-middle fs-6">{{ statut.label }}</span>
+			{% if en_retard %}<span class="badge bg-danger align-middle fs-6">En retard</span>{% endif %}
+		</h3>
+		<div class="d-flex flex-wrap gap-2">
+			{% if statut.exportable %}
+				<a href="/prets/pret-{{ pret.id }}/pdf" class="btn btn-outline-danger" target="_blank">📄 Fiche PDF</a>
+			{% endif %}
+			{% if s == 'en_cours' and not pret.signature %}
+				<a href="/prets/pret-{{ pret.id }}/valider" class="btn btn-outline-primary">✍️ Faire signer</a>
+			{% endif %}
+			<a href="/prets" class="btn btn-secondary">Retour à la liste</a>
+		</div>
+	</div>
+	<hr>
+
+	{# ---------------- Emprunteur ---------------- #}
+	<div class="card mb-4">
+		<div class="card-header"><h5 class="mb-0">Emprunteur</h5></div>
+		<div class="card-body">
+			<form method="post">
+				<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+				{% include 'prets/_emprunteur.twig' with {mode: s == 'saisie' ? 'tout' : (s == 'en_cours' ? 'telephone' : 'lecture')} %}
+				{% if s == 'saisie' %}
+					<button type="submit" class="btn btn-primary">Enregistrer</button>
+				{% elseif s == 'en_cours' %}
+					<button type="submit" class="btn btn-primary">Mettre à jour le téléphone</button>
+					<small class="text-muted ms-2">Prêt en cours : seules les coordonnées de l'emprunteur restent modifiables.</small>
+				{% endif %}
+			</form>
+			<p class="small text-muted mt-3 mb-0">
+				Fiche créée le {{ pret.created_at|date('d/m/Y à H:i') }}{% if pret.cree_par_nom %} par {{ pret.cree_par_prenom }} {{ pret.cree_par_nom }}{% endif %}.
+				{% if pret.date_validation %}Prêt validé le {{ pret.date_validation|date('d/m/Y à H:i') }}{% if pret.valide_par_nom %} par {{ pret.valide_par_prenom }} {{ pret.valide_par_nom }}{% endif %}.{% endif %}
+				{% if pret.date_retour %}Matériel rendu le {{ pret.date_retour|date('d/m/Y') }}{% if pret.termine_par_nom %} (fin enregistrée par {{ pret.termine_par_prenom }} {{ pret.termine_par_nom }}){% endif %}.{% endif %}
+			</p>
+			{% if pret.signature %}
+				<div class="mt-2">
+					<span class="small text-muted">Signature de l'emprunteur ({{ pret.date_signature|date('d/m/Y H:i') }}) :</span><br>
+					<img src="{{ pret.signature }}" alt="Signature de l'emprunteur" class="border rounded bg-white" style="max-width: 18rem; max-height: 7rem;">
+				</div>
+			{% endif %}
+		</div>
+	</div>
+
+	{# ---------------- Matériel ---------------- #}
+	<div class="card mb-4" id="retour">
+		<div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+			<h5 class="mb-0">Matériel prêté ({{ lignes|length }})</h5>
+			{% if s == 'termine' %}
+				{% if nb_a_verifier > 0 %}
+					<span class="badge bg-warning text-dark">{{ nb_a_verifier }} à vérifier</span>
+				{% else %}
+					<span class="badge bg-success">Retour vérifié</span>
+				{% endif %}
+			{% endif %}
+		</div>
+		<div class="card-body p-0">
+			{% if lignes is empty %}
+				<p class="text-muted p-3 mb-0">Aucun matériel pour l'instant.</p>
+			{% else %}
+				{% if s == 'termine' and nb_a_verifier > 0 %}
+					<form method="post" action="/prets/pret-{{ pret.id }}/retour" id="form-retour">
+						<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+				{% endif %}
+				<div class="table-responsive">
+					<table class="table table-striped align-middle mb-0">
+						<thead>
+							<tr>
+								<th>Référence</th>
+								<th>Désignation</th>
+								<th class="d-none d-md-table-cell">Catégorie</th>
+								<th>{{ s == 'termine' ? 'Retour' : 'Statut' }}</th>
+								{% if s == 'saisie' %}<th></th>{% endif %}
+							</tr>
+						</thead>
+						<tbody>
+							{% for l in lignes %}
+								<tr {% if l.motif|default(null) %}class="table-warning"{% endif %}>
+									<td><a href="/equipements/equipement-{{ l.equipement_id }}">{{ l.reference }}</a></td>
+									<td>
+										{{ l.libelle }}
+										{% if l.motif|default(null) %}<div class="small text-danger">⚠️ {{ l.motif }}</div>{% endif %}
+									</td>
+									<td class="d-none d-md-table-cell">{{ l.categorie_libelle|default('-') }}</td>
+									<td>
+										{% if s == 'termine' %}
+											{% if l.etat_retour %}
+												{% set er = {'disponible': ['success', 'Rendu — disponible'], 'maintenance': ['warning', 'Rendu — en maintenance'], 'egare': ['dark', 'Égaré']} %}
+												<span class="badge bg-{{ er[l.etat_retour][0] }}">✔ {{ er[l.etat_retour][1] }}</span>
+											{% else %}
+												<div class="d-flex flex-wrap gap-2">
+													{% for e in etats_retour %}
+														<div class="form-check form-check-inline m-0">
+															<input class="form-check-input" type="radio" name="etats[{{ l.id }}]" id="etat-{{ l.id }}-{{ e.value }}" value="{{ e.value }}">
+															<label class="form-check-label" for="etat-{{ l.id }}-{{ e.value }}">{{ e.label }}</label>
+														</div>
+													{% endfor %}
+												</div>
+											{% endif %}
+										{% else %}
+											{% set st = statut_equipement(l.equipement_statut) %}
+											<span class="badge bg-{{ st.badge }}">{{ st.libelle }}</span>
+										{% endif %}
+									</td>
+									{% if s == 'saisie' %}
+										<td class="text-end">
+											<form method="post" action="/prets/ligne-{{ l.id }}/retirer" class="d-inline">
+												<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+												<button type="submit" class="btn btn-sm btn-outline-danger">Retirer</button>
+											</form>
+										</td>
+									{% endif %}
+								</tr>
+							{% endfor %}
+						</tbody>
+					</table>
+				</div>
+				{% if s == 'termine' and nb_a_verifier > 0 %}
+						<div class="p-3 d-flex flex-wrap gap-2 align-items-center">
+							<button type="button" class="btn btn-outline-success btn-sm" id="tout-disponible">Tout le reste : rendu — disponible</button>
+							<button type="submit" class="btn btn-primary"
+								onclick="return confirm('Enregistrer l\'état des matériels cochés ? Ce choix est définitif.');">
+								Enregistrer la vérification
+							</button>
+							<small class="text-muted">Le matériel sans état coché reste « Prêté » jusqu'à sa vérification.</small>
+						</div>
+					</form>
+				{% endif %}
+			{% endif %}
+		</div>
+	</div>
+
+	{# ---------------- Actions selon le statut ---------------- #}
+	{% if s == 'saisie' %}
+		<div class="card mb-4 border-primary">
+			<div class="card-body">
+				<h5>Valider le prêt</h5>
+				{% if erreurs_validation is empty %}
+					<p>Le matériel passera au statut « Prêté ». L'emprunteur pourra signer sur l'écran (téléphone) ; sinon, imprimez la fiche PDF pour la faire signer.</p>
+					<a href="/prets/pret-{{ pret.id }}/valider" class="btn btn-primary">✅ Valider le prêt</a>
+				{% else %}
+					<ul class="mb-2">
+						{% for e in erreurs_validation %}<li>{{ e }}</li>{% endfor %}
+					</ul>
+					<button class="btn btn-primary" disabled>✅ Valider le prêt</button>
+				{% endif %}
+				<form method="post" action="/prets/pret-{{ pret.id }}/supprimer" class="d-inline">
+					<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+					<button type="submit" class="btn btn-outline-danger"
+						onclick="return confirm('Supprimer cette fiche de prêt en saisie ?');">Supprimer la fiche</button>
+				</form>
+			</div>
+		</div>
+
+		<div class="card mb-4" id="ajout">
+			<div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+				<h5 class="mb-0">Ajouter du matériel</h5>
+				<a href="/prets/pret-{{ pret.id }}/scanner" class="btn btn-success">📷 Scanner des QR codes</a>
+			</div>
+			<div class="card-body">
+				<form method="get" action="/prets/pret-{{ pret.id }}#ajout" class="d-flex flex-wrap gap-2 align-items-end mb-3">
+					<div>
+						<label for="q" class="form-label">Recherche</label>
+						<input type="search" id="q" name="q" value="{{ recherche }}" class="form-control" placeholder="Référence ou désignation">
+					</div>
+					<div>
+						<label for="categorie" class="form-label">Catégorie</label>
+						<select id="categorie" name="categorie" class="form-select">
+							<option value="">Toutes</option>
+							{% for c in categories %}
+								<option value="{{ c.id }}" {% if categorie_id == c.id %}selected{% endif %}>{{ c.libelle }}</option>
+							{% endfor %}
+						</select>
+					</div>
+					<button type="submit" class="btn btn-secondary">Filtrer</button>
+				</form>
+
+				{% if disponibles is empty %}
+					<p class="text-muted mb-0">Aucun matériel disponible ne correspond.</p>
+				{% else %}
+					<form method="post" action="/prets/ajouter">
+						<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+						<input type="hidden" name="pret_id" value="{{ pret.id }}">
+						<input type="hidden" name="retour" value="/prets/pret-{{ pret.id }}">
+						<div class="table-responsive">
+							<table class="table table-sm table-striped align-middle">
+								<thead>
+									<tr>
+										<th style="width: 2rem;"></th>
+										<th>Référence</th>
+										<th>Désignation</th>
+										<th class="d-none d-md-table-cell">Catégorie</th>
+										<th></th>
+									</tr>
+								</thead>
+								<tbody>
+									{% for e in disponibles %}
+										<tr>
+											<td><input type="checkbox" class="form-check-input" name="ids[]" value="{{ e.id }}" aria-label="Sélectionner {{ e.reference }}"></td>
+											<td>{{ e.reference }}</td>
+											<td>{{ e.libelle }}</td>
+											<td class="d-none d-md-table-cell">{{ e.categorie_libelle|default('-') }}</td>
+											<td class="text-end">
+												<button type="submit" name="equipement_id" value="{{ e.id }}" class="btn btn-sm btn-outline-primary">Ajouter</button>
+											</td>
+										</tr>
+									{% endfor %}
+								</tbody>
+							</table>
+						</div>
+						<button type="submit" class="btn btn-primary">➕ Ajouter la sélection</button>
+					</form>
+					{% if pagination.pages > 1 %}
+						<nav class="mt-2 d-flex align-items-center gap-2">
+							{% if pagination.precedente %}<a class="btn btn-sm btn-outline-secondary" href="{{ pagination.precedente }}">‹ Précédent</a>{% endif %}
+							<span class="small">Page {{ pagination.page }} / {{ pagination.pages }} ({{ pagination.total }} matériels)</span>
+							{% if pagination.suivante %}<a class="btn btn-sm btn-outline-secondary" href="{{ pagination.suivante }}">Suivant ›</a>{% endif %}
+						</nav>
+					{% endif %}
+				{% endif %}
+			</div>
+		</div>
+	{% elseif s == 'en_cours' %}
+		<div class="card mb-4 border-primary">
+			<div class="card-body">
+				<h5>Retour du matériel</h5>
+				<form method="post" action="/prets/pret-{{ pret.id }}/terminer" class="d-flex flex-wrap gap-2 align-items-end">
+					<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+					<div>
+						<label for="date_retour" class="form-label">Date de retour</label>
+						<input type="date" id="date_retour" name="date_retour" value="{{ aujourdhui }}" class="form-control"
+							min="{{ pret.date_pret|date('Y-m-d') }}">
+					</div>
+					<button type="submit" class="btn btn-primary"
+						onclick="return confirm('Terminer le prêt ? Vous vérifierez ensuite chaque matériel rendu.');">
+						🏁 Terminer le prêt
+					</button>
+				</form>
+				<small class="text-muted">Après la fin du prêt, chaque matériel est vérifié et repasse Disponible, En maintenance ou Égaré.</small>
+			</div>
+		</div>
+	{% endif %}
+{% endblock %}
+
+{% block javascripts %}
+	{{ parent() }}
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			const bouton = document.getElementById('tout-disponible');
+			if (!bouton) return;
+			bouton.addEventListener('click', function () {
+				const groupes = {};
+				document.querySelectorAll('#form-retour input[type=radio]').forEach(function (r) {
+					(groupes[r.name] = groupes[r.name] || []).push(r);
+				});
+				Object.values(groupes).forEach(function (radios) {
+					if (!radios.some(r => r.checked)) {
+						const dispo = radios.find(r => r.value === 'disponible');
+						if (dispo) dispo.checked = true;
+					}
+				});
+			});
+		});
+	</script>
+{% endblock %}

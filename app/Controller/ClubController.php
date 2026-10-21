@@ -52,6 +52,8 @@ class ClubController extends AbstractController
             $club['description'] = trim($request->request->get('description'));
             $club['email']       = trim($request->request->get('email'));
             $club['phone']       = trim($request->request->get('phone'));
+            // [Prêt de matériel — migration 016] Module facultatif.
+            $club['pret_actif']  = $request->request->has('pret_actif') ? 1 : 0;
             
             // Validation
             if (empty($club['nom'])) {

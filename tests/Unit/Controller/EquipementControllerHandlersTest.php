@@ -112,7 +112,7 @@ final class EquipementControllerHandlersTest extends TestCase
 
         $request = $this->makePostRequest([
             'id'     => '7',
-            'statut' => '3',
+            'statut' => '9',
         ]);
 
         $result = $controller->edit($request);

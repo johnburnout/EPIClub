@@ -157,7 +157,7 @@ Ils sont générés automatiquement à partir des **factures d'acquisition** val
 - Changer l’**emplacement**
 - Modifier les **remarques**
 - Mettre à jour les **dates** (mise en service, fin d’utilisation)
-- Changer le **statut** (Disponible, En maintenance). Le statut **Hors service** ne s'attribue et ne se lève qu'à la **clôture d'un contrôle** : il n'est pas proposé dans la fiche, et un équipement hors service garde ce statut tant qu'un nouveau contrôle ne le change pas.
+- Changer le **statut** (Disponible, En maintenance). Le statut **Hors service** ne s'attribue et ne se lève qu'à la **clôture d'un contrôle** : il n'est pas proposé dans la fiche, et un équipement hors service garde ce statut tant qu'un nouveau contrôle ne le change pas. Il en va de même pour **Prêté** (posé par la validation d'un prêt, levé par la vérification du retour) et **Égaré** (posé par un contrôle ou le retour d'un prêt, levé par un contrôle) — voir « Prêts de matériel ».
 - Changer l’**état d’usure** (si défini)
 - Pour un **lot** : ajuster le **nombre actuel d'éléments**, entre 1 et le **nombre initial** du lot (affiché, non modifiable) — par exemple lorsque des éléments du lot sont perdus ou retirés.
 
@@ -197,6 +197,32 @@ Ils sont générés automatiquement à partir des **factures d'acquisition** val
 1. Passez l'équipement **« En maintenance »** (fiche équipement, ou contrôle KO).
 2. Une fois le textile changé, contrôlez l'équipement : la fiche de contrôle propose la case **« Élément textile remplacé »**. Cochez-la et mettez le statut à **OK**.
 3. À la **clôture du contrôle**, l'équipement redevient disponible et sa **date de fin d'utilisation devient la date du contrôle + 10 ans, au dernier jour du mois** (ex. contrôle du 21/10/2026 ⇒ 31/10/2036). Le remplacement apparaît dans l'historique des contrôles de la fiche (« Textile remplacé »).
+
+### Déclarer un matériel égaré
+- Sur la fiche de contrôle d'un équipement introuvable, choisissez le statut **« Égaré »**. À la clôture du contrôle, l'équipement passe **Égaré**.
+- Un équipement égaré retrouvé est contrôlé normalement : un contrôle **OK** le remet **Disponible** (KO : en maintenance).
+- Un équipement **prêté** ne peut pas être ajouté à un contrôle tant que son prêt n'est pas rendu et vérifié.
+
+---
+
+## 3 bis. Prêts de matériel (module facultatif)
+
+Module à activer par un super-administrateur : **Administration → Club → « Gestionnaire de prêt de matériel »**. Il est ensuite accessible aux **contrôleurs** et administrateurs (menu **Prêts**).
+
+### Cycle d'une fiche de prêt
+1. **En saisie** — *Prêts → Nouvelle fiche de prêt* : nom, prénom, téléphone, numéro de licence de l'emprunteur, date du prêt et date de retour prévue. Ajoutez le matériel :
+   - depuis la fiche du prêt (liste filtrable du matériel disponible, ajout unitaire ou par cases à cocher) ;
+   - par **scan des QR codes** (bouton « Scanner des QR codes », HTTPS requis) ;
+   - depuis la **liste des équipements** (cocher puis « Ajouter la sélection au prêt ») ou la **fiche d'un équipement** (« Ajouter au prêt »), en choisissant parmi les prêts en saisie.
+
+   Seul le matériel **disponible**, hors contrôle, dont la date limite d'utilisation n'est pas atteinte et qui n'est sur aucun autre prêt peut être ajouté. La fiche peut être supprimée tant qu'elle est en saisie.
+2. **Prêt en cours** — « Valider le prêt » (téléphone et licence obligatoires, au moins un matériel) : le matériel passe **Prêté**. L'emprunteur peut **signer à l'écran** (doigt sur le téléphone) ; sinon, imprimez la **fiche PDF** et faites-la signer. La signature peut aussi être recueillie plus tard (« Faire signer »). Seul le **téléphone** de l'emprunteur reste modifiable ; plus d'ajout de matériel.
+3. **Prêt terminé** — « Terminer le prêt » (date de retour), puis vérifiez **chaque matériel rendu** : *Rendu — disponible*, *Rendu — en maintenance* ou *Égaré*. Le choix est définitif ; le matériel non encore vérifié reste « Prêté ».
+
+### Fiche PDF
+Disponible dès que le prêt est en cours (et une fois terminé) : emprunteur, dates, liste du matériel, engagement de restitution, cadres de signature (emprunteur — avec la signature recueillie à l'écran le cas échéant — et club).
+
+Les prêts **en retard** (date de retour prévue dépassée) sont signalés en rouge dans la liste (filtre « En retard »). L'historique des prêts d'un équipement figure sur sa fiche.
 
 ---
 

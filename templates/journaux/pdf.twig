@@ -199,13 +199,15 @@
                         'a_controler': 'badge-warning',
                         'controle_ok': 'badge-success',
                         'controle_ko': 'badge-danger',
-                        'hors_service': 'badge-dark'
+                        'hors_service': 'badge-dark',
+                        'egare': 'badge-secondary'
                     } %}
                     {% set statutLabels = {
                         'a_controler': 'À contrôler',
                         'controle_ok': 'OK',
                         'controle_ko': 'KO',
-                        'hors_service': 'Hors service'
+                        'hors_service': 'Hors service',
+                        'egare': 'Égaré'
                     } %}
                     <span class="badge {{ statutClasses[ligne.statut]|default('badge-secondary') }}">
                         {{ statutLabels[ligne.statut]|default(ligne.statut) }}

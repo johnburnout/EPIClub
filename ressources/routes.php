@@ -193,6 +193,72 @@ $routes->add('controle_scan_ajouter', new Route(
 
 
 // =====================================================================
+// PRÊT DE MATÉRIEL (module facultatif — migration 016)
+// =====================================================================
+// ROLE_CONTROLLEUR + module activé (club.pret_actif), vérifiés dans
+// PretController. Ordre : routes fixes avant /prets/pret-{id}.
+$routes->add('pret_list', new Route(
+    '/prets',
+    ['_controller' => 'Epiclub\\Controller\\PretController', 'action' => 'list']
+));
+$routes->add('pret_create', new Route(
+    '/prets/nouveau',
+    ['_controller' => 'Epiclub\\Controller\\PretController', 'action' => 'create'],
+    [], [], '', [], ['GET', 'POST']
+));
+// Ajout de matériel à un prêt en saisie (fiche du prêt, liste ou fiche
+// des équipements) : pret_id + ids[] / equipement_id
+$routes->add('pret_ajouter', new Route(
+    '/prets/ajouter',
+    ['_controller' => 'Epiclub\\Controller\\PretController', 'action' => 'ajouter'],
+    [], [], '', [], ['POST']
+));
+$routes->add('pret_scan_ajouter', new Route(
+    '/prets/scanner/ajouter',
+    ['_controller' => 'Epiclub\\Controller\\PretController', 'action' => 'scanAjouter'],
+    [], [], '', [], ['POST']
+));
+$routes->add('pret_retirer', new Route(
+    '/prets/ligne-{id}/retirer',
+    ['_controller' => 'Epiclub\\Controller\\PretController', 'action' => 'retirer'],
+    ['id' => '\d+'], [], '', [], ['POST']
+));
+$routes->add('pret_scanner', new Route(
+    '/prets/pret-{id}/scanner',
+    ['_controller' => 'Epiclub\\Controller\\PretController', 'action' => 'scanner'],
+    ['id' => '\d+']
+));
+$routes->add('pret_valider', new Route(
+    '/prets/pret-{id}/valider',
+    ['_controller' => 'Epiclub\\Controller\\PretController', 'action' => 'valider'],
+    ['id' => '\d+'], [], '', [], ['GET', 'POST']
+));
+$routes->add('pret_terminer', new Route(
+    '/prets/pret-{id}/terminer',
+    ['_controller' => 'Epiclub\\Controller\\PretController', 'action' => 'terminer'],
+    ['id' => '\d+'], [], '', [], ['POST']
+));
+$routes->add('pret_retour', new Route(
+    '/prets/pret-{id}/retour',
+    ['_controller' => 'Epiclub\\Controller\\PretController', 'action' => 'retour'],
+    ['id' => '\d+'], [], '', [], ['POST']
+));
+$routes->add('pret_supprimer', new Route(
+    '/prets/pret-{id}/supprimer',
+    ['_controller' => 'Epiclub\\Controller\\PretController', 'action' => 'supprimer'],
+    ['id' => '\d+'], [], '', [], ['POST']
+));
+$routes->add('pret_pdf', new Route(
+    '/prets/pret-{id}/pdf',
+    ['_controller' => 'Epiclub\\Controller\\PretController', 'action' => 'pdf'],
+    ['id' => '\d+']
+));
+$routes->add('pret_show', new Route(
+    '/prets/pret-{id}',
+    ['_controller' => 'Epiclub\\Controller\\PretController', 'action' => 'show'],
+    ['id' => '\d+'], [], '', [], ['GET', 'POST']
+));
+// =====================================================================
 // ADMINISTRATEUR — Réglages du club
 // =====================================================================
 // ⚠️ Réservé à ROLE_SUPER_ADMIN (vérification dans ClubController)

@@ -292,6 +292,8 @@ final class ControleControllerHandlersTest extends TestCase
     {
         return [
             'hors_service → 2' => ['hors_service', 2],
+            // [Prêt de matériel — migration 016]
+            'egare → 4'        => ['egare', 4],
             'controle_ko → 1'  => ['controle_ko', 1],
             'controle_ok → 0'  => ['controle_ok', 0],
         ];

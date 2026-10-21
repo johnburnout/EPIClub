@@ -1,0 +1,80 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+	<div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+		<h3 class="mb-0">🤝 Prêts de matériel</h3>
+		<a href="/prets/nouveau" class="btn btn-primary">➕ Nouvelle fiche de prêt</a>
+	</div>
+	<hr>
+
+	<form method="get" class="d-flex flex-wrap gap-2 align-items-end mb-3">
+		<div>
+			<label for="statut" class="form-label">Statut</label>
+			<select name="statut" id="statut" class="form-select">
+				<option value="">Tous</option>
+				{% for s in statuts %}
+					<option value="{{ s.value }}" {% if filtre_statut == s.value %}selected{% endif %}>{{ s.label }}</option>
+				{% endfor %}
+			</select>
+		</div>
+		<div class="form-check mb-2">
+			<input type="checkbox" class="form-check-input" id="retard" name="retard" value="1" {% if filtre_retard %}checked{% endif %}>
+			<label class="form-check-label" for="retard">En retard seulement</label>
+		</div>
+		<button type="submit" class="btn btn-secondary">Filtrer</button>
+	</form>
+
+	{% if prets is empty %}
+		<p class="text-muted">Aucune fiche de prêt.</p>
+	{% else %}
+		<div class="table-responsive">
+			<table class="table table-striped align-middle">
+				<thead>
+					<tr>
+						<th>N°</th>
+						<th>Emprunteur</th>
+						<th>Licence</th>
+						<th>Téléphone</th>
+						<th>Prêt</th>
+						<th>Retour prévu</th>
+						<th>Matériel</th>
+						<th>Statut</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for p in prets %}
+						<tr {% if p.en_retard %}class="table-danger"{% endif %}>
+							<td>{{ p.id }}</td>
+							<td>{{ p.emprunteur_prenom }} {{ p.emprunteur_nom }}</td>
+							<td>{{ p.emprunteur_licence|default('-') }}</td>
+							<td>{% if p.emprunteur_telephone %}<a href="tel:{{ p.emprunteur_telephone|replace({' ': ''}) }}">{{ p.emprunteur_telephone }}</a>{% else %}-{% endif %}</td>
+							<td>{{ p.date_pret|date('d/m/Y') }}</td>
+							<td>
+								{{ p.date_retour_prevue|date('d/m/Y') }}
+								{% if p.en_retard %}<span class="badge bg-danger">En retard</span>{% endif %}
+							</td>
+							<td>
+								{{ p.nb_materiels }}
+								{% if p.statut == 'termine' and p.nb_a_verifier > 0 %}
+									<span class="badge bg-warning text-dark" title="Matériel rendu à vérifier">{{ p.nb_a_verifier }} à vérifier</span>
+								{% endif %}
+							</td>
+							<td>
+								{% set libelles = {'saisie': ['secondary', 'En saisie'], 'en_cours': ['primary', 'En cours'], 'termine': ['success', 'Terminé']} %}
+								<span class="badge bg-{{ libelles[p.statut][0] }}">{{ libelles[p.statut][1] }}</span>
+								{% if p.statut != 'saisie' and not p.signe %}<span class="badge bg-light text-dark border" title="Pas de signature à l'écran">non signé</span>{% endif %}
+							</td>
+							<td class="text-nowrap">
+								<a href="/prets/pret-{{ p.id }}" class="btn btn-sm btn-primary">Ouvrir</a>
+								{% if p.statut != 'saisie' %}
+									<a href="/prets/pret-{{ p.id }}/pdf" class="btn btn-sm btn-outline-danger" target="_blank">PDF</a>
+								{% endif %}
+							</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	{% endif %}
+{% endblock %}
