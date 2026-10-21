@@ -40,7 +40,7 @@ jobs:
         run: bin/build-release.sh "${{ github.event.release.tag_name }}"
 
       - name: Publier la release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: |
             releases/epiclub-${{ github.event.release.tag_name }}.zip
