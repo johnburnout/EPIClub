@@ -62,6 +62,17 @@ abstract class AbstractController
         return new Response($this->renderer->render($template, $data));
     }
 
+    /**
+     * [v1.5.1] Compile et garde en mémoire un gabarit (et ce qu'il
+     * charge à la compilation) pour la suite de la requête : utilisé par
+     * la mise à jour, qui remplace les gabarits sur le disque pendant
+     * qu'elle s'exécute avec l'ancien code.
+     */
+    protected function prechargerGabarit(string $template): void
+    {
+        $this->renderer->load($template);
+    }
+
     public function createEmail(string $from, string $to, string $subject, string $template, array $data = [])
     {
         $response = $this->render($template, $data);

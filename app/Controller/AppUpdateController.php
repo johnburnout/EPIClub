@@ -210,7 +210,7 @@ class AppUpdateController extends AbstractController
             $token = $request->request->get('csrf_token');
             $expected = $this->session->get('csrf_token');
             if (!$token || !$expected || !hash_equals((string) $expected, (string) $token)) {
-                return $this->render('update_result.twig', [
+                return $this->resultat([
                     'success' => false,
                     'message' => 'Token CSRF invalide. Merci de recharger la page.',
                 ]);
@@ -218,7 +218,7 @@ class AppUpdateController extends AbstractController
             
             $latest = $this->githubReleaseProvider()->getLatestRelease();
             if (!$latest) {
-                return $this->render('update_result.twig', [
+                return $this->resultat([
                     'success' => false,
                     'message' => 'Impossible de récupérer la version distante.',
                 ]);
@@ -235,7 +235,7 @@ class AppUpdateController extends AbstractController
             // Télécharger le zip
             $zipContent = $this->githubReleaseProvider()->downloadUrl($zipUrl);
             if (empty($zipContent)) {
-                return $this->render('update_result.twig', [
+                return $this->resultat([
                     'success' => false,
                     'message' => 'Le fichier téléchargé est vide.',
                 ]);
@@ -248,7 +248,7 @@ class AppUpdateController extends AbstractController
                 $this->verifierSommeDeControle($latest, $zipContent);
             } catch (\RuntimeException $e) {
                 error_log('[AppUpdateController] Archive rejetée : ' . $e->getMessage());
-                return $this->render('update_result.twig', [
+                return $this->resultat([
                     'success' => false,
                     'message' => 'Archive invalide : le fichier téléchargé a été rejeté (somme de contrôle).',
                 ]);
@@ -259,7 +259,7 @@ class AppUpdateController extends AbstractController
             // Décompresser
             $zip = new ZipArchive();
             if ($zip->open($tempZip) !== true) {
-                return $this->render('update_result.twig', [
+                return $this->resultat([
                     'success' => false,
                     'message' => 'Impossible d\'ouvrir l\'archive téléchargée.',
                 ]);
@@ -275,7 +275,7 @@ class AppUpdateController extends AbstractController
                 $zip->close();
                 @unlink($tempZip);
                 error_log('[AppUpdateController] Archive rejetée : ' . $e->getMessage());
-                return $this->render('update_result.twig', [
+                return $this->resultat([
                     'success' => false,
                     'message' => 'Archive invalide : le fichier téléchargé a été rejeté pour des raisons de sécurité.',
                 ]);
@@ -286,7 +286,7 @@ class AppUpdateController extends AbstractController
                 mkdir($extractPath, 0755, true);
             }
             if (!$zip->extractTo($extractPath)) {
-                return $this->render('update_result.twig', [
+                return $this->resultat([
                     'success' => false,
                     'message' => 'Erreur lors de l\'extraction de l\'archive.',
                 ]);
@@ -304,7 +304,7 @@ class AppUpdateController extends AbstractController
                 }
             }
             if (!$sourceDir) {
-                return $this->render('update_result.twig', [
+                return $this->resultat([
                     'success' => false,
                     'message' => 'Aucun dossier trouvé après extraction.',
                 ]);
@@ -324,7 +324,7 @@ class AppUpdateController extends AbstractController
                 error_log('[AppUpdateController] Archive sans vendor/ refusée pour ' . $version);
                 $this->deleteDirectory($extractPath);
                 $this->cleanupTempDir();
-                return $this->render('update_result.twig', [
+                return $this->resultat([
                     'success' => false,
                     'message' => "L'archive complète de la version " . $version . ' n\'est pas encore disponible '
                         . '(GitHub la prépare quelques minutes après la publication). Rien n\'a été modifié : '
@@ -344,13 +344,20 @@ class AppUpdateController extends AbstractController
                 error_log('[AppUpdateController] Mise à jour annulée, sauvegarde impossible : ' . $e->getMessage());
                 $this->deleteDirectory($extractPath);
                 $this->cleanupTempDir();
-                return $this->render('update_result.twig', [
+                return $this->resultat([
                     'success' => false,
                     'message' => 'La base de données n\'a pas pu être sauvegardée avant les migrations : '
                         . 'mise à jour annulée, rien n\'a été modifié. Consultez les journaux du serveur '
                         . '(espace disque, droits d\'écriture sur var/backups/).',
                 ]);
             }
+
+            // [v1.5.1] La requête s'exécute avec l'ANCIEN code alors que
+            // copyFiles() remplace les gabarits : la page de résultat est
+            // compilée avant la copie (sinon un nouveau gabarit peut appeler
+            // une fonction Twig inconnue de l'ancien code — cas v1.4.0 →
+            // v1.5.0 avec pret_actif()).
+            $this->prechargerGabaritsResultat();
 
             $this->copyFiles($sourceDir, $targetDir);
 
@@ -385,7 +392,7 @@ class AppUpdateController extends AbstractController
                     $e->getLine()
                 ));
                 
-                return $this->render('update_result.twig', [
+                return $this->resultat([
                     'success' => false,
                     'message' => 'Les fichiers ont été mis à jour mais les migrations '
                     . 'de base de données ont échoué. Consultez les logs '
@@ -399,7 +406,7 @@ class AppUpdateController extends AbstractController
             // [audit 2026-10-19 F1] La page de résultat est rendue AVANT de
             // toucher à vendor/ : une fois vendor/ remplacé, la requête en
             // cours ne doit plus charger de classe Twig (versions mêlées).
-            $reponse = $this->render('update_result.twig', [
+            $reponse = $this->resultat([
                 'success' => true,
                 'message' => 'Mise à jour réussie. Version actuelle : ' . $version,
             ]);
@@ -412,7 +419,7 @@ class AppUpdateController extends AbstractController
                 $this->remplacerVendor($sourceDir . '/vendor', $targetDir . '/vendor');
             } catch (\Throwable $e) {
                 error_log('[AppUpdateController] vendor/ non remplacé : ' . $e->getMessage());
-                $reponse = $this->render('update_result.twig', [
+                $reponse = $this->resultat([
                     'success' => false,
                     'message' => 'Les fichiers et la base sont à jour, mais les dépendances (vendor/) '
                         . "n'ont pas pu être remplacées. L'ancienne version a été conservée : "
@@ -434,10 +441,49 @@ class AppUpdateController extends AbstractController
                 $e->getLine()
             ));
             
-            return $this->render('update_result.twig', [
+            return $this->resultat([
                 'success' => false,
                 'message' => 'Une erreur est survenue lors de la mise à jour. Merci de réessayer ou de contacter un administrateur.',
             ]);
+        }
+    }
+
+    /**
+     * [v1.5.1] Précharge la page de résultat et le gabarit parent avant
+     * la copie des fichiers (cf. perform()).
+     */
+    protected function prechargerGabaritsResultat(): void
+    {
+        try {
+            $this->prechargerGabarit('update_result.twig');
+            $this->prechargerGabarit('_layout.twig');
+        } catch (\Throwable $e) {
+            error_log('[AppUpdateController] Préchargement des gabarits impossible : ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * [v1.5.1] Page de résultat de la mise à jour. Si le rendu Twig
+     * échoue (gabarits remplacés par la version suivante), repli sur une
+     * page HTML minimale : le résultat réel de la mise à jour n'est
+     * jamais masqué par une erreur d'affichage.
+     *
+     * @param array{success: bool, message: string, details?: string} $data
+     */
+    protected function resultat(array $data): Response
+    {
+        try {
+            return $this->render('update_result.twig', $data);
+        } catch (\Throwable $e) {
+            error_log('[AppUpdateController] Page de résultat non affichable : ' . $e->getMessage());
+            $titre = !empty($data['success']) ? '✅ Mise à jour réussie' : '❌ Erreur lors de la mise à jour';
+            $html = '<!DOCTYPE html><html lang="fr"><head><meta charset="UTF-8"><title>Mise à jour</title></head>'
+                . '<body style="font-family: sans-serif; max-width: 40rem; margin: 3rem auto;">'
+                . '<h1>' . $titre . '</h1>'
+                . '<p>' . htmlspecialchars((string) ($data['message'] ?? ''), ENT_QUOTES) . '</p>'
+                . '<p><a href="/admin/update">← Retour à la page de mise à jour</a> · <a href="/">Tableau de bord</a></p>'
+                . '</body></html>';
+            return new Response($html);
         }
     }
 

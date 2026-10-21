@@ -10,6 +10,28 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.5.1] — 2026-10-21
+
+Correctif de la mise à jour intégrée.
+
+### Fixed
+
+- **Page de résultat de la mise à jour** : la requête de mise à jour
+  s'exécute avec l'ancien code alors qu'elle remplace les gabarits ; la
+  page de résultat pouvait donc appeler une fonction Twig inconnue de
+  l'ancien code (cas v1.4.0 → v1.5.0 : `pret_actif()`), afficher une
+  erreur après une mise à jour pourtant réussie, et sauter le
+  remplacement de `vendor/` et le nettoyage. Les gabarits de la page
+  de résultat sont désormais compilés **avant** la copie des fichiers,
+  avec repli sur une page HTML minimale si l'affichage échoue.
+
+### Notes
+
+- Le correctif agit à partir des mises à jour lancées **depuis** la
+  v1.5.1. Une instance mise à jour en v1.5.0 qui a affiché l'erreur
+  fonctionne (fichiers et migration 016 appliqués) ; passer en v1.5.1
+  remplace aussi `vendor/` et nettoie les fichiers temporaires.
+
 ## [v1.5.0] — 2026-10-21
 
 Gestionnaire de prêt de matériel (module facultatif).
