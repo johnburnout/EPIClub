@@ -8,6 +8,7 @@ use Epiclub\Domain\ControleLigneManager;
 use Epiclub\Domain\ControleManager;
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Engine\ConfigProvider;
+use Epiclub\Engine\EncryptionService;
 use Epiclub\Engine\Session;
 use Epiclub\Tests\Unit\Controller\Support\TestableControleController;
 use Epiclub\Tests\Unit\Controller\Support\TestableControleControllerBuilder;
@@ -53,20 +54,9 @@ final class ControleControllerEncryptionTest extends TestCase
                 if (!is_string($stored) || $stored === '') {
                     return false;
                 }
-                // Assertion forte : le ciphertext contient un IV + ciphertext
-                $data = base64_decode($stored, true);
-                if ($data === false) {
-                    return false;
-                }
-                $ivLength = openssl_cipher_iv_length(self::CIPHER_METHOD);
-                if (strlen($data) <= $ivLength) {
-                    return false;
-                }
-                $iv       = substr($data, 0, $ivLength);
-                $chiffre  = substr($data, $ivLength);
-                $key      = hex2bin(self::FIXTURE_SECRET_KEY_HEX);
-                $decrypted = openssl_decrypt($chiffre, self::CIPHER_METHOD, $key, 0, $iv);
-                return $decrypted === 'Ma remarque générale';
+                // Assertion forte : format v2 (AES-256-GCM), déchiffrable
+                return str_starts_with($stored, EncryptionService::PREFIX_V2)
+                    && self::fixtureService()->decrypt($stored) === 'Ma remarque générale';
             }))
             ->willReturn(true);
 
@@ -208,19 +198,8 @@ final class ControleControllerEncryptionTest extends TestCase
                 if (!is_string($stored) || $stored === '') {
                     return false;
                 }
-                $data = base64_decode($stored, true);
-                if ($data === false) {
-                    return false;
-                }
-                $ivLength = openssl_cipher_iv_length(self::CIPHER_METHOD);
-                if (strlen($data) <= $ivLength) {
-                    return false;
-                }
-                $iv        = substr($data, 0, $ivLength);
-                $chiffre   = substr($data, $ivLength);
-                $key       = hex2bin(self::FIXTURE_SECRET_KEY_HEX);
-                $decrypted = openssl_decrypt($chiffre, self::CIPHER_METHOD, $key, 0, $iv);
-                return $decrypted === 'Remarque legacy en clair';
+                return str_starts_with($stored, EncryptionService::PREFIX_V2)
+                    && self::fixtureService()->decrypt($stored) === 'Remarque legacy en clair';
             }))
             ->willReturn(true);
 
@@ -236,6 +215,12 @@ final class ControleControllerEncryptionTest extends TestCase
     // ==================================================================
     // Helpers
     // ==================================================================
+
+    /** Service configuré avec la fixture (même SECRET_KEY que le contrôleur). */
+    private static function fixtureService(): EncryptionService
+    {
+        return new EncryptionService(new ConfigProvider(dirname(__DIR__, 2) . '/Fixtures/env.test.php'));
+    }
 
     private function makeController(
         ControleManager $controleManager,

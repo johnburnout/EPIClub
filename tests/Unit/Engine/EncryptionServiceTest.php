@@ -138,4 +138,65 @@ final class EncryptionServiceTest extends TestCase
             @unlink($tmpFile);
         }
     }
+
+    // ==================================================================
+    // [SÉCURITÉ — audit 2026-10-21] Format v2 AES-256-GCM authentifié
+    // ==================================================================
+
+    public function testEncryptProduitLeFormatV2(): void
+    {
+        $encrypted = $this->service()->encrypt('hello');
+
+        self::assertStringStartsWith(EncryptionService::PREFIX_V2, $encrypted);
+        $data = base64_decode(substr($encrypted, strlen(EncryptionService::PREFIX_V2)), true);
+        self::assertIsString($data);
+        self::assertSame(12 + 16 + strlen('hello'), strlen($data), 'nonce + tag + ciphertext');
+    }
+
+    public function testCiphertextAltereEstRejete(): void
+    {
+        $encrypted = $this->service()->encrypt('Remarque secrète');
+        $data = base64_decode(substr($encrypted, strlen(EncryptionService::PREFIX_V2)), true);
+        self::assertIsString($data);
+
+        // Un bit inversé dans le nonce, le tag puis le ciphertext
+        foreach ([0, 12, strlen($data) - 1] as $position) {
+            $altere = $data;
+            $altere[$position] = chr(ord($altere[$position]) ^ 0x01);
+            self::assertNull(
+                $this->service()->decrypt(EncryptionService::PREFIX_V2 . base64_encode($altere)),
+                "altération à l'octet $position non détectée"
+            );
+        }
+    }
+
+    public function testPayloadV2TropCourtEstRejete(): void
+    {
+        self::assertNull($this->service()->decrypt(EncryptionService::PREFIX_V2 . base64_encode(str_repeat("\0", 27))));
+        self::assertNull($this->service()->decrypt(EncryptionService::PREFIX_V2 . 'pas-du-base64-!!!'));
+    }
+
+    public function testMauvaiseCleEstRejetee(): void
+    {
+        $encrypted = $this->service()->encrypt('hello');
+
+        $tmpFile = tempnam(sys_get_temp_dir(), 'env_') . '.php';
+        file_put_contents($tmpFile, "<?php\nreturn ['SECRET_KEY' => '" . str_repeat('cd', 32) . "'];\n");
+        try {
+            self::assertNull((new EncryptionService(new ConfigProvider($tmpFile)))->decrypt($encrypted));
+        } finally {
+            @unlink($tmpFile);
+        }
+    }
+
+    public function testLeFormatLegacyCbcResteLisible(): void
+    {
+        // Remarque chiffrée avant v2 : base64(IV || AES-256-CBC), clé brute
+        $key = hex2bin(str_repeat('ab', 32));
+        $iv = random_bytes(16);
+        $legacy = base64_encode($iv . openssl_encrypt('Remarque v1', 'AES-256-CBC', $key, 0, $iv));
+
+        self::assertSame('Remarque v1', $this->service()->decrypt($legacy));
+        self::assertTrue($this->service()->isEncrypted($legacy));
+    }
 }
