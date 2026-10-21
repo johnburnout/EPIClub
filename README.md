@@ -27,6 +27,39 @@ EpiClub est une application de gestion et de journalisation des contrôles des E
 > **À la fin de l'installation**, supprimez le dossier `setup/` de votre serveur.
 > Tant qu'il est présent, l'application affichera une erreur 403 sur `/setup/`.
 
+## Sauvegardes
+
+### Sauvegardes automatiques avant migration
+
+Avant chaque mise à jour qui contient des migrations de base de données
+(page *Mise à jour* de l'administration, ou `php bin/migrate.php`), un
+dump SQL complet est créé automatiquement dans `var/backups/`, sous le
+nom `db_AAAA-MM-JJ_HHMMSS.sql`. Si ce dump échoue (espace disque, droits
+d'écriture), la mise à jour est annulée avant toute modification.
+Les 5 derniers dumps sont conservés.
+
+Pour restaurer un dump :
+
+```bash
+mysql -u UTILISATEUR -p NOM_DE_LA_BASE < var/backups/db_2026-10-21_060000.sql
+```
+
+Pour ajuster la rétention, ajouter dans `.env.local.php` :
+
+```php
+'BACKUP_RETENTION' => 10,
+```
+
+Le dump est produit en PHP (aucune dépendance à `mysqldump`, rien
+n'apparaît dans la liste des processus). En ligne de commande,
+`php bin/migrate.php --sans-sauvegarde` permet de s'en passer.
+
+### Sauvegarde complète (base + fichiers)
+
+*Administration → Sauvegarde / restauration* (super-administrateur) :
+archive `.zip` de la base **et** des photos, images et factures, avec
+restauration vérifiée depuis l'application. Voir le guide utilisateur.
+
 ## Développement
 
 ### Réinitialiser une installation

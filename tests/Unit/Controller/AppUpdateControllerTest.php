@@ -175,6 +175,105 @@ final class AppUpdateControllerTest extends TestCase
         self::assertDirectoryDoesNotExist(__DIR__ . '/../../../var/tmp/update/extracted');
     }
 
+    // ==================================================================
+    // [v1.4.0] Sauvegarde SQL avant migrations
+    // ==================================================================
+
+    public function testPasDeSauvegardeSansMigrationEnAttente(): void
+    {
+        $dir = $this->dossierMigrations(['001_initial', '002_x']);
+        $controller = $this->makeControllerWith($this->makeProviderMock());
+        $controller->migrationsAppliqueesOverride = ['001_initial', '002_x'];
+        $controller->databaseBackupOverride = new \Epiclub\Engine\DatabaseBackup(
+            new \Epiclub\Tests\Unit\Engine\Support\FakeDatabaseDumper(), $dir . '/backups'
+        );
+
+        self::assertNull($controller->sauvegarderAvantMigrationsForTest($dir . '/migrations'));
+        self::assertDirectoryDoesNotExist($dir . '/backups');
+    }
+
+    public function testSauvegardeQuandUneMigrationEstEnAttente(): void
+    {
+        $dir = $this->dossierMigrations(['001_initial', '002_x', '015_nouvelle']);
+        $controller = $this->makeControllerWith($this->makeProviderMock());
+        $controller->migrationsAppliqueesOverride = ['001_initial', '002_x'];
+        $controller->databaseBackupOverride = new \Epiclub\Engine\DatabaseBackup(
+            new \Epiclub\Tests\Unit\Engine\Support\FakeDatabaseDumper(), $dir . '/backups'
+        );
+
+        $fichier = $controller->sauvegarderAvantMigrationsForTest($dir . '/migrations');
+
+        self::assertNotNull($fichier);
+        self::assertFileExists($fichier);
+        self::assertMatchesRegularExpression('#/backups/db_\d{4}-\d{2}-\d{2}_\d{6}\.sql$#', $fichier);
+    }
+
+    public function testPerformAnnuleToutSiLaSauvegardeEchoue(): void
+    {
+        $zipPath = tempnam(sys_get_temp_dir(), 'zip_test_');
+        $zip = new \ZipArchive();
+        self::assertTrue($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE));
+        $zip->addFromString('EPIClub-9.9.9/version.txt', '9.9.9');
+        $zip->addFromString('EPIClub-9.9.9/vendor/autoload.php', '<?php');
+        $zip->addFromString('EPIClub-9.9.9/migrations/999_future.sql', 'SELECT 1;');
+        $zip->addFromString('EPIClub-9.9.9/app/ZzNeDoitPasEtreCopie.php', '<?php');
+        $zip->close();
+        $contenu = file_get_contents($zipPath);
+        unlink($zipPath);
+
+        $provider = $this->makeProviderMock();
+        $provider->method('getLatestRelease')->willReturn([
+            'tag' => 'v9.9.9', 'zip_url' => 'https://api.github.com/repos/o/r/zipball/v9.9.9',
+            'body' => '', 'bundle' => false, 'sha256_url' => null,
+        ]);
+        $provider->method('downloadUrl')->willReturn($contenu);
+
+        $enPanne = new class implements \Epiclub\Engine\DatabaseDumperInterface {
+            public function exporter(string $fichierSql): array
+            {
+                throw new \RuntimeException('disque plein');
+            }
+
+            public function importer(string $fichierSql): void
+            {
+            }
+
+            public function migrationsAppliquees(): array
+            {
+                return [];
+            }
+        };
+        $controller = $this->makeControllerWith($provider);
+        $controller->migrationsAppliqueesOverride = [];
+        $controller->databaseBackupOverride = new \Epiclub\Engine\DatabaseBackup($enPanne, sys_get_temp_dir() . '/epiclub_bk_' . bin2hex(random_bytes(4)));
+        $versionAvant = file_get_contents(__DIR__ . '/../../../version.txt');
+
+        $errorLog = ini_set('error_log', '/dev/null');
+        try {
+            $html = (string) $controller->perform(
+                Request::create('/admin/update/perform', 'POST', ['csrf_token' => 'token_test'])
+            )->getContent();
+        } finally {
+            ini_set('error_log', (string) $errorLog);
+        }
+
+        self::assertStringContainsString('mise à jour annulée', html_entity_decode($html, ENT_QUOTES));
+        self::assertFileDoesNotExist(__DIR__ . '/../../../app/ZzNeDoitPasEtreCopie.php');
+        self::assertSame($versionAvant, file_get_contents(__DIR__ . '/../../../version.txt'));
+        self::assertDirectoryDoesNotExist(__DIR__ . '/../../../var/tmp/update/extracted');
+    }
+
+    /** @param string[] $versions */
+    private function dossierMigrations(array $versions): string
+    {
+        $dir = sys_get_temp_dir() . '/epiclub_maj_' . bin2hex(random_bytes(4));
+        mkdir($dir . '/migrations', 0777, true);
+        foreach ($versions as $v) {
+            file_put_contents($dir . '/migrations/' . $v . '.sql', 'SELECT 1;');
+        }
+        return $dir;
+    }
+
     public function testIndexNeProposePasUneVersionSansArchiveComplete(): void
     {
         $provider = $this->makeProviderMock();
