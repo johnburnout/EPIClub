@@ -10,6 +10,17 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Added
+
+- **Élément textile remplaçable** (migration 015) : case sur la
+  catégorie (valeur par défaut des équipements générés) et sur la fiche
+  équipement. Pour un tel équipement **en maintenance**, la fiche de
+  contrôle propose « Élément textile remplacé » ; avec le statut OK, la
+  clôture du contrôle remet l'équipement en service et fixe sa date de
+  fin d'utilisation à la date du contrôle + 10 ans, au dernier jour du
+  mois. Le remplacement est tracé sur la ligne de contrôle (badge
+  « Textile remplacé » dans l'historique de la fiche).
+
 ## [v1.2.0] — 2026-10-21
 
 Version stable : sauvegarde / restauration complètes, statut « Hors

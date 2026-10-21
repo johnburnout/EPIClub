@@ -2,6 +2,8 @@
 
 namespace Epiclub\Controller;
 
+use Epiclub\Enum\EquipementStatut;
+use Epiclub\Domain\DureeDeVie;
 use Epiclub\Domain\ControleManager;
 use Epiclub\Domain\ControleLigneManager;
 use Epiclub\Domain\EquipementManager;
@@ -970,11 +972,23 @@ class ControleController extends AbstractController
             : null;
             $ligne['date_controle'] = $request->request->get('date_controle');
             $ligne['statut'] = $statutEnum->value;
+
+            $equipementManager = $this->equipementManager();
+            $equipement = $equipementManager->findId($ligne['equipement_id']);
+
+            // [MÉTIER 2026-10-21] Remplacement de l'élément textile : pris
+            // en compte seulement pour un équipement « textile
+            // remplaçable » en maintenance, contrôlé OK.
+            $ligne['textile_remplace'] = (
+                $equipement
+                && self::textileRemplacementPossible($equipement)
+                && $statutEnum === ControleLigneStatut::CONTROLE_OK
+                && $request->request->has('textile_remplace')
+            ) ? 1 : 0;
+
             $ligneManager->save($ligne);
 
             // ✅ Mettre à jour le statut de l'équipement : "en contrôle"
-            $equipementManager = $this->equipementManager();
-            $equipement = $equipementManager->findId($ligne['equipement_id']);
             if ($equipement) {
                 $equipement['controle_en_cours'] = 1;
                 $equipementManager->save($equipement);
@@ -1008,7 +1022,41 @@ class ControleController extends AbstractController
         return $this->render('controle_ligne_form.twig', [
             'ligne' => $ligne,
             'retour_scanner' => $retourScanner,
+            'textile_remplacement_possible' => $equipement && self::textileRemplacementPossible($equipement),
         ]);
+    }
+
+    /**
+     * [MÉTIER 2026-10-21] Le contrôleur peut signaler le remplacement de
+     * l'élément textile d'un équipement « textile remplaçable » passé en
+     * maintenance.
+     *
+     * @param array<string, mixed> $equipement
+     */
+    public static function textileRemplacementPossible(array $equipement): bool
+    {
+        return (int) ($equipement['textile_remplacable'] ?? 0) === 1
+            && (int) ($equipement['statut'] ?? -1) === EquipementStatut::EN_MAINTENANCE->value;
+    }
+
+    /**
+     * [MÉTIER 2026-10-21] Nouvelle date limite après remplacement du
+     * textile : date du contrôle + 10 ans, fin de mois (null si la ligne
+     * ne valide pas un remplacement).
+     *
+     * @param array<string, mixed> $ligne
+     * @param array<string, mixed> $equipement État AVANT la clôture.
+     */
+    public static function dateLimiteApresRemplacementTextile(array $ligne, array $equipement): ?string
+    {
+        if ((int) ($ligne['textile_remplace'] ?? 0) !== 1
+            || ($ligne['statut'] ?? null) !== ControleLigneStatut::CONTROLE_OK->value
+            || !self::textileRemplacementPossible($equipement)
+        ) {
+            return null;
+        }
+        $date = trim((string) ($ligne['date_controle'] ?? ''));
+        return DureeDeVie::finDeVie($date !== '' ? $date : date('Y-m-d'));
     }
 
     public function cloturer(Request $request)
@@ -1127,6 +1175,15 @@ class ControleController extends AbstractController
                 continue;
             }
             
+            // [MÉTIER 2026-10-21] Textile remplacé (équipement en
+            // maintenance, contrôle OK) : la date limite repart de la
+            // date du contrôle + 10 ans. Calculé AVANT le changement de
+            // statut ci-dessous.
+            $nouvelleLimite = self::dateLimiteApresRemplacementTextile($ligne, $equipement);
+            if ($nouvelleLimite !== null) {
+                $equipement['date_fin_utilisation'] = $nouvelleLimite;
+            }
+
             match ($statutLigne) {
             ControleLigneStatut::HORS_SERVICE => $equipement['statut'] = 2,
             ControleLigneStatut::CONTROLE_KO  => $equipement['statut'] = 1,

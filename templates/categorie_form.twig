@@ -69,6 +69,16 @@
 			</small>
 		</div>
 
+		<div class="mb-3 form-check">
+			<input type="checkbox" id="textile_remplacable" name="textile_remplacable" class="form-check-input" {% if categorie.textile_remplacable|default(false) %}checked{% endif %}>
+			<label class="form-check-label" for="textile_remplacable">Élément textile remplaçable</label>
+			<small class="form-text text-muted d-block">
+				Cocher si l'élément textile de ces équipements peut être changé (ex. sangle de dégaine). Un équipement
+				en maintenance dont le contrôleur constate le remplacement repart alors pour 10 ans. Valeur par défaut,
+				modifiable sur chaque fiche équipement.
+			</small>
+		</div>
+
 		<div class="mb-3">
 			<label for="image">Image :</label>
 			<input type="file"

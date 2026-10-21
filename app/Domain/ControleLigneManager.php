@@ -11,7 +11,7 @@ class ControleLigneManager extends AbstractManager
      * controle_id / equipement_id : insertion seule.
      */
     private const CREATE_FIELDS = ['controle_id', 'equipement_id', 'remarque', 'date_controle', 'statut'];
-    private const PATCH_FIELDS = ['remarque', 'date_controle', 'statut'];
+    private const PATCH_FIELDS = ['remarque', 'date_controle', 'statut', 'textile_remplace'];
 
     public function findByControle(int $controle_id)
     {
