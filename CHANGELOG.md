@@ -10,7 +10,10 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
-Sauvegarde et restauration complètes depuis l'application.
+## [v1.2.0-beta.1] — 2026-10-21
+
+Sauvegarde et restauration complètes depuis l'application ; statut
+« Hors service » réservé au contrôle et garde-fou de suppression.
 
 ### Added
 
