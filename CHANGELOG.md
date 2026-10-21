@@ -18,6 +18,15 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
   configuration `tests/Fixtures/env.ci.php`. Les ≈16 tests qui
   demandaient une base locale tournent désormais à chaque PR.
 
+### Fixed
+
+- **Tests d'intégration** : le nettoyage ne supprime plus les vraies
+  données d'une base de développement. Les acquisitions `IMP-…` (même
+  préfixe que les vrais imports Excel/CSV) et les équipements sans
+  acquisition ne sont nettoyés que s'ils ont été créés pendant la
+  série de tests ; un test d'import dont l'acquisition `IMP-AAAA-MM-JJ`
+  existe déjà en base est ignoré (signalé) au lieu de l'écraser.
+
 ## [v1.2.0-beta.2] — 2026-10-21
 
 Correctif de la mise à jour intégrée (incident v1.2.0-beta.1 : page
