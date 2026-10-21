@@ -11,8 +11,36 @@ use PDO;
  */
 final class DatabaseFixture
 {
+    /**
+     * Plus grands id d'acquisition et d'équipement AVANT le premier test
+     * du processus PHPUnit. Le nettoyage des données sans préfixe TEST-
+     * (acquisitions IMP-AAAA-MM-JJ créées par l'import, équipements sans
+     * acquisition) ne touche qu'aux lignes créées après : une base de
+     * développement contenant de vrais imports « IMP- » n'est jamais
+     * vidée par les tests.
+     *
+     * @var array{acquisition: int, club_equipement: int}|null
+     */
+    private static ?array $idsMaxAvantTests = null;
+
     public function __construct(private PDO $pdo)
     {
+        self::$idsMaxAvantTests ??= [
+            'acquisition'     => (int) $pdo->query('SELECT COALESCE(MAX(id), 0) FROM acquisition')->fetchColumn(),
+            'club_equipement' => (int) $pdo->query('SELECT COALESCE(MAX(id), 0) FROM club_equipement')->fetchColumn(),
+        ];
+    }
+
+    /**
+     * Une acquisition portant cette référence existait-elle avant les
+     * tests ? (Les tests d'import la créent : sur une base de dev qui la
+     * contient déjà, l'import l'ignorerait — jamais de fusion.)
+     */
+    public function referenceAcquisitionPreexistante(string $factureReference): bool
+    {
+        $stmt = $this->pdo->prepare('SELECT COUNT(*) FROM acquisition WHERE facture_reference = ? AND id <= ?');
+        $stmt->execute([$factureReference, self::$idsMaxAvantTests['acquisition']]);
+        return (int) $stmt->fetchColumn() > 0;
     }
 
     public function createDraftAcquisition(
@@ -174,7 +202,8 @@ final class DatabaseFixture
     }
 
     /**
-     * Supprime toutes les acquisitions de test (préfixe TEST-).
+     * Supprime les données de test : préfixe TEST-, et données créées
+     * pendant les tests (acquisitions IMP-, équipements orphelins).
      */
     public function cleanupTestData(): void
     {
@@ -193,23 +222,27 @@ final class DatabaseFixture
         // une référence synthétique IMP-AAAA-MM-JJ (import sans facture) :
         // elles doivent être nettoyées elles aussi, sinon leurs lignes
         // bloquent la suppression des catégories TEST- (FK migration 005).
-        $stmt = $this->pdo->query(
+        // ⚠️ Seulement celles créées pendant les tests : les vrais imports
+        // d'une base de dev portent le même préfixe.
+        $stmt = $this->pdo->prepare(
             "SELECT id FROM acquisition
              WHERE facture_reference LIKE 'TEST-%'
-                OR facture_reference LIKE 'IMP-%'"
+                OR (facture_reference LIKE 'IMP-%' AND id > :max)"
         );
+        $stmt->execute(['max' => self::$idsMaxAvantTests['acquisition']]);
         $ids = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
         foreach ($ids as $id) {
             $this->deleteAcquisition((int) $id);
         }
 
-        // Nettoyer aussi les équipements orphelins
-        $this->pdo->exec(
+        // Nettoyer aussi les équipements orphelins créés par les tests
+        // (jamais ceux qui existaient avant).
+        $this->pdo->prepare(
             "DELETE ce FROM club_equipement ce
              LEFT JOIN acquisition a ON a.id = ce.acquisition_id
-             WHERE a.id IS NULL"
-        );
+             WHERE a.id IS NULL AND ce.id > :max"
+        )->execute(['max' => self::$idsMaxAvantTests['club_equipement']]);
         
         // [TEST #75] Filet de sécurité : équipements de test créés
         // avec une acquisition non-TEST- (cas rare).

@@ -67,6 +67,8 @@ final class AcquisitionImportTest extends AbstractControllerTestCase
 
     public function testImportCompletReglesMetier(): void
     {
+        $this->exigerReferencesLibres('IMP-2020-01-01');
+
         // Catégorie pré-existante identifiable par son CODE (TCI),
         // avec « durée max » cochée : l'équipement doit en hériter.
         $pdo = $this->createPdo();
@@ -154,6 +156,8 @@ final class AcquisitionImportTest extends AbstractControllerTestCase
 
     public function testImportDateAchatVideDonneDateCourante(): void
     {
+        $this->exigerReferencesLibres('IMP-' . date('Y-m-d'));
+
         $csv = implode("\n", [
             'designation;categorie;nombre;date_achat',
             'Corde;TEST-IMP3-CORDES;1;',
@@ -181,6 +185,8 @@ final class AcquisitionImportTest extends AbstractControllerTestCase
 
     public function testImportCategorieInconnueRattacheeAUneExistante(): void
     {
+        $this->exigerReferencesLibres('IMP-2019-01-01');
+
         // Catégorie cible pré-existante (décision produit 2026-10-19 :
         // à l'analyse, une catégorie inconnue du fichier peut être
         // rattachée à une existante au lieu d'être créée).
@@ -229,6 +235,8 @@ final class AcquisitionImportTest extends AbstractControllerTestCase
 
     public function testImportAvecEnteteDetecteAuDelaDeLaLigne1(): void
     {
+        $this->exigerReferencesLibres('IMP-2016-01-01');
+
         // Fichier réel type : lignes vides + titre avant l'en-tête,
         // en-têtes du fichier d'inventaire du club (décision 2026-10-19).
         $csv = implode("\n", [
@@ -432,6 +440,21 @@ final class AcquisitionImportTest extends AbstractControllerTestCase
                 \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
             ]
         );
+    }
+
+    /**
+     * Les imports « par date » créent des acquisitions IMP-AAAA-MM-JJ.
+     * Si la base de dev en contient déjà une (vrais imports), l'import la
+     * respecterait (pas de fusion) : le test n'a pas de sens, on l'ignore
+     * plutôt que de toucher aux données réelles.
+     */
+    private function exigerReferencesLibres(string ...$references): void
+    {
+        foreach ($references as $reference) {
+            if ($this->fixture->referenceAcquisitionPreexistante($reference)) {
+                self::markTestSkipped("La base contient déjà l'acquisition « $reference » (données réelles) : test ignoré.");
+            }
+        }
     }
 
     private function acquisitionParReference(string $factureReference): ?array
