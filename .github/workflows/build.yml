@@ -45,9 +45,8 @@ jobs:
       - name: Check PHP syntax
         run: find app/ -name "*.php" -exec php -l {} \;
 
-      # 6. (Optionnel) Lancer les tests si vous en avez
-      # - name: Run tests
-      #   run: vendor/bin/phpunit
+      # 6. Les tests PHPUnit (avec MySQL) tournent dans le workflow
+      #    « Tests » (.github/workflows/tests.yml).
 
       # 7. (Optionnel) Créer les archives
       - name: Create release archives

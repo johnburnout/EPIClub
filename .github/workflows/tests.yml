@@ -1,0 +1,67 @@
+# Tests PHPUnit complets, avec une vraie base MySQL :
+#  - suite Unit (dont les tests qui ouvrent une connexion PDO) ;
+#  - suite Integration (HTTP via php -S démarré par les tests, contrôle
+#    d'accès des routes, export / import SQL de la sauvegarde).
+# Le schéma vient des migrations (bin/migrate.php), comme en production.
+name: Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  phpunit:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ALLOW_EMPTY_PASSWORD: 'yes'
+          MYSQL_DATABASE: epiclub
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: gd, mbstring, pdo_mysql, zip, fileinfo
+          tools: composer
+          coverage: none
+
+      - name: Cache Composer
+        uses: actions/cache@v5
+        with:
+          path: vendor/
+          key: composer-dev-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-dev-
+
+      - name: Dépendances (avec outils de test)
+        run: composer install --no-progress --prefer-dist
+
+      - name: Configuration de test
+        run: cp tests/Fixtures/env.ci.php .env.local.php
+
+      - name: Schéma (migrations)
+        run: php bin/migrate.php
+
+      - name: Données de test
+        run: php tests/Fixtures/ci-seed.php
+
+      - name: Suite Unit
+        run: vendor/bin/phpunit --testsuite Unit
+
+      - name: Suite Integration
+        run: vendor/bin/phpunit --testsuite Integration
