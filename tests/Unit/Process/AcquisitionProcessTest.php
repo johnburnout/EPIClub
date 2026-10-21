@@ -11,6 +11,7 @@ use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\FournisseurManager;
 use Epiclub\Tests\Unit\Process\Support\TestableAcquisitionProcess;
 use PHPUnit\Framework\MockObject\MockBuilder;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -412,6 +413,61 @@ final class AcquisitionProcessTest extends TestCase
         $process->create_equipement_process(10);
     }
     
+    /**
+     * [MÉTIER 2026-10-21] Date limite d'utilisation à la validation.
+     *
+     * @return array<string, array{int, ?string, ?string, ?string}>
+     *         durée max de la catégorie, péremption de la ligne,
+     *         date de facture, date limite attendue
+     */
+    public static function dateLimiteProvider(): array
+    {
+        return [
+            'durée limitée → achat + 10 ans fin de mois' => [1, null, '2025-01-15', '2035-01-31'],
+            'durée limitée, facture avec heure'           => [1, null, '2026-03-15 10:00:00', '2036-03-31'],
+            'péremption de la ligne prioritaire'          => [1, '2030-06-30', '2025-01-15', '2030-06-30'],
+            'sans durée limitée → pas de date'            => [0, null, '2025-01-15', null],
+            'sans durée limitée, péremption conservée'    => [0, '2031-12-31', '2025-01-15', '2031-12-31'],
+        ];
+    }
+
+    #[DataProvider('dateLimiteProvider')]
+    public function testCreateEquipementProcessDateLimiteUtilisation(
+        int $dureeMax,
+        ?string $peremptionLigne,
+        string $factureDate,
+        ?string $attendue,
+    ): void {
+        $ligne = $this->makeLigneFixture(regrouperEnLot: 0, nombre: 2);
+        $ligne['date_peremption'] = $peremptionLigne;
+        $ligneManager = $this->makeAcquisitionLigneManagerMock();
+        $ligneManager->method('findId')->willReturn($ligne);
+        $ligneManager->method('save');
+
+        $acquisitionManager = $this->makeAcquisitionManagerMock();
+        $acquisitionManager->method('findId')->willReturn(['id' => 42, 'facture_date' => $factureDate]);
+
+        $categorieManager = $this->makeCategorieManagerMock();
+        $categorieManager->method('findId')->willReturn(['id' => 3, 'est_epi' => 1, 'duree_max_utilisation' => $dureeMax]);
+
+        $dates = [];
+        $equipementManager = $this->makeEquipementManagerMock();
+        $equipementManager->method('codeExists')->willReturn(false);
+        $equipementManager->method('save')->willReturnCallback(function (array $e) use (&$dates) {
+            $dates[] = $e['date_fin_utilisation'];
+            return true;
+        });
+
+        $this->makeProcessWith(
+            acquisitionManager: $acquisitionManager,
+            acquisitionLigneManager: $ligneManager,
+            categorieManager: $categorieManager,
+            equipementManager: $equipementManager,
+        )->create_equipement_process(10);
+
+        self::assertSame([$attendue, $attendue], $dates, 'Chaque unité reçoit la même date limite');
+    }
+
     public function testCreateEquipementProcessDefaultsEstEpiToOneWhenCategorieMissing(): void
     {
         $ligneManager = $this->makeAcquisitionLigneManagerMock();

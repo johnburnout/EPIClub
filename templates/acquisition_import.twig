@@ -399,10 +399,19 @@
 						if (achat) { achat.required = lim && coche && coche.checked; }
 						if (fin && fin.dataset.auto === '1') {
 							fin.value = (lim && achat && achat.value)
-								? (parseInt(achat.value.slice(0, 4), 10) + 10) + '-12-31'
+								? finDeVie(achat.value)
 								: '';
 						}
 					});
+				}
+				// Achat + 10 ans, dernier jour du mois (même règle que le
+				// serveur, Epiclub\Domain\DureeDeVie).
+				function finDeVie(achat) {
+					var a = parseInt(achat.slice(0, 4), 10) + 10;
+					var m = parseInt(achat.slice(5, 7), 10);
+					if (!a || !m) { return ''; }
+					var j = new Date(a, m, 0).getDate();
+					return a + '-' + String(m).padStart(2, '0') + '-' + String(j).padStart(2, '0');
 				}
 				form.querySelectorAll('.js-date-fin').forEach(function (fin) {
 					fin.addEventListener('input', function () { fin.dataset.auto = fin.value === '' ? '1' : '0'; });

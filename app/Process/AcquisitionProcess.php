@@ -2,6 +2,7 @@
 
 namespace Epiclub\Process;
 
+use Epiclub\Domain\DureeDeVie;
 use Epiclub\Domain\AcquisitionLigneManager;
 use Epiclub\Domain\AcquisitionManager;
 use Epiclub\Domain\FournisseurManager;
@@ -125,9 +126,16 @@ class AcquisitionProcess
             // (décision produit 2026-10-19), modifiable ensuite sur
             // la fiche équipement.
             $dureeMax = $categorie ? (int) ($categorie['duree_max_utilisation'] ?? 0) : 0;
-            // [MÉTIER] Date de péremption issue de l'import Excel/CSV
-            // → date_fin_utilisation de l'équipement.
+            // [MÉTIER] Date limite d'utilisation de l'équipement :
+            //  - date de péremption de la ligne (saisie à l'import) ;
+            //  - sinon, si durée de vie limitée (case « durée max »
+            //    héritée de la catégorie) : date d'achat + 10 ans, fin de
+            //    mois (décision produit 2026-10-21) ;
+            //  - sinon aucune.
             $datePeremption = !empty($ligne['date_peremption']) ? $ligne['date_peremption'] : null;
+            if ($datePeremption === null && $dureeMax === 1 && !empty($acquisition['facture_date'])) {
+                $datePeremption = DureeDeVie::finDeVie((string) $acquisition['facture_date']);
+            }
             
             // [MÉTIER] Date de mise en service = date de la facture
             // (décision produit 2026-10-20) ; modifiable une seule fois

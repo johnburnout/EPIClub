@@ -323,7 +323,7 @@ final class AcquisitionImportSelectionTest extends TestCase
         $fichier = $this->csv(implode("\n", [
             'designation;categorie;date_achat;date_peremption',
             'Harnais A;HAR;;',          // ligne 2 : refusée
-            'Harnais B;HAR;2019-05-10;', // ligne 3 : fin de vie 2029-12-31
+            'Harnais B;HAR;2019-05-10;', // ligne 3 : fin de vie 2029-05-31 (fin de mois)
             'Harnais C;HAR;2019;2027',   // ligne 4 : fin de vie conservée
             'Corde;Cordes;;',            // ligne 5 : pas limitée → date du jour
             '',
@@ -336,7 +336,7 @@ final class AcquisitionImportSelectionTest extends TestCase
             $rapport['lignes_en_erreur']
         );
         self::assertSame(['Harnais B', 'Harnais C', 'Corde'], array_column($this->lignesSauvees, 'designation'));
-        self::assertSame(['2029-12-31', '2027-12-31', null], array_column($this->lignesSauvees, 'date_peremption'));
+        self::assertSame(['2029-05-31', '2027-12-31', null], array_column($this->lignesSauvees, 'date_peremption'));
     }
 
     public function testDatesSaisiesAvantImport(): void
@@ -363,7 +363,7 @@ final class AcquisitionImportSelectionTest extends TestCase
         );
 
         self::assertSame([], $rapport['lignes_en_erreur']);
-        self::assertSame(['2031-12-31', '2030-06-30'], array_column($this->lignesSauvees, 'date_peremption'));
+        self::assertSame(['2031-03-31', '2030-06-30'], array_column($this->lignesSauvees, 'date_peremption'));
     }
 
     public function testCategorieACreerADureeLimitee(): void
@@ -382,7 +382,7 @@ final class AcquisitionImportSelectionTest extends TestCase
         self::assertCount(1, $rapport['lignes_en_erreur']);
         $creee = end($this->categories);
         self::assertSame(1, $creee['duree_max_utilisation']);
-        self::assertSame(['2030-12-31'], array_column($this->lignesSauvees, 'date_peremption'));
+        self::assertSame(['2030-01-31'], array_column($this->lignesSauvees, 'date_peremption'), 'Année seule → 01/01 → +10 ans fin de mois');
     }
 
     public function testLigneAffecteeAUneCategorieLimitee(): void
@@ -415,7 +415,7 @@ final class AcquisitionImportSelectionTest extends TestCase
 
         self::assertSame([true, true, false], array_column($analyse['lignes'], 'limitee'));
         self::assertSame([false, true, true], array_column($analyse['lignes'], 'conforme'));
-        self::assertSame(['', '2029-12-31', ''], array_column($analyse['lignes'], 'date_peremption'));
+        self::assertSame(['', '2029-01-31', ''], array_column($analyse['lignes'], 'date_peremption'));
         self::assertSame([2], array_column($analyse['lignes_non_conformes'], 'ligne'));
     }
 

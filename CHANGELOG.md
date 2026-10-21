@@ -12,6 +12,12 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ### Added
 
+- **Date limite d'utilisation à la validation d'une acquisition** : pour
+  les catégories à « durée maximum d'utilisation », chaque équipement
+  généré reçoit date d'achat (facture) + 10 ans, au dernier jour du mois
+  (ex. 15/03/2026 → 31/03/2036). Une date de péremption saisie à
+  l'import reste prioritaire ; les autres catégories restent sans date
+  limite. Règle commune `Epiclub\Domain\DureeDeVie`.
 - **Images AVIF** (photos d'équipement, images de catégorie et du club) :
   acceptées et converties en WebP quand le GD du serveur sait les lire
   (PHP compilé avec libavif, `gd_info()` « AVIF Support ») ; sinon,
@@ -24,6 +30,14 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
   migrations, compte `admin` de test (`tests/Fixtures/ci-seed.php`),
   configuration `tests/Fixtures/env.ci.php`. Les ≈16 tests qui
   demandaient une base locale tournent désormais à chaque PR.
+
+### Changed
+
+- **Import Excel/CSV** : la fin de vie proposée pour un EPI à durée de
+  vie limitée suit la même règle (achat + 10 ans, fin de mois) au lieu
+  du 31/12 de l'année d'achat + 10 ans — y compris dans le formulaire
+  d'import. Une date d'achat donnée en année seule (« 2019 » → 01/01)
+  donne donc le 31/01/2029.
 
 ### Fixed
 

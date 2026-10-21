@@ -2,6 +2,7 @@
 
 namespace Epiclub\Process;
 
+use Epiclub\Domain\DureeDeVie;
 use Epiclub\Domain\AcquisitionLigneManager;
 use Epiclub\Domain\AcquisitionManager;
 use Epiclub\Domain\CategorieManager;
@@ -107,7 +108,7 @@ class AcquisitionImportService
         "Date d'achat obligatoire pour un EPI à durée de vie limitée.";
 
     /** Durée de vie par défaut (années) d'un EPI à durée limitée. */
-    public const DUREE_VIE_LIMITEE_ANS = 10;
+    public const DUREE_VIE_LIMITEE_ANS = DureeDeVie::ANS;
 
     /** Fournisseur de repli quand la colonne est absente/vide. */
     private const FOURNISSEUR_DEFAUT = 'Divers';
@@ -879,7 +880,10 @@ class AcquisitionImportService
      */
     public function finDeVieParDefaut(string $dateAchat): string
     {
-        return ((int) substr($dateAchat, 0, 4) + self::DUREE_VIE_LIMITEE_ANS) . '-12-31';
+        // [MÉTIER 2026-10-21] Même règle qu'à la validation d'une
+        // acquisition : achat + 10 ans, fin de mois.
+        return DureeDeVie::finDeVie($dateAchat)
+            ?? ((int) substr($dateAchat, 0, 4) + self::DUREE_VIE_LIMITEE_ANS) . '-12-31';
     }
 
     /**
@@ -1187,8 +1191,8 @@ class AcquisitionImportService
      */
     private function finaliserLigne(array $d, bool $limitee = false): array
     {
-        // [MÉTIER] Fin de vie d'un EPI à durée limitée : 31/12 de
-        // l'année d'achat + 10 ans (2026-10-20). Date d'achat vide →
+        // [MÉTIER] Fin de vie d'un EPI à durée limitée : date d'achat
+        // + 10 ans, fin de mois (2026-10-21 ; 31/12 auparavant). Date d'achat vide →
         // date courante (impossible si durée limitée : refusé avant).
         if ($limitee && $d['date_peremption'] === null && is_string($d['date_achat'])) {
             $d['date_peremption'] = $this->finDeVieParDefaut($d['date_achat']);

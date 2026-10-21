@@ -137,7 +137,7 @@ Ils sont générés automatiquement à partir des **factures d'acquisition** val
 - **`nombre` > 1** ⇒ les unités sont regroupées en un **lot** (un seul équipement) dont le **nombre initial** est ce nombre (stock max) ;
 - **stock actuel** d'un lot : compris entre 1 et le stock max (sinon la ligne est refusée) ; si une seule des deux valeurs est fournie, l'autre prend la même ; si aucune ne l'est, les deux valent 1 ;
 - **dates** : si seule l'année est indiquée ⇒ 1er janvier (date d'achat) / 31 décembre (date de péremption) ; date d'achat vide ⇒ date du jour ; date de péremption vide ⇒ pas de limite ;
-- **EPI à durée de vie limitée** (catégorie avec « Durée maximum d'utilisation ») : la **date d'achat est obligatoire** (pas de date du jour par défaut) ; une fin de vie vide est fixée au **31 décembre de l'année d'achat + 10 ans** (ex. achat 2019 ⇒ 31/12/2029) ;
+- **EPI à durée de vie limitée** (catégorie avec « Durée maximum d'utilisation ») : la **date d'achat est obligatoire** (pas de date du jour par défaut) ; une fin de vie vide est fixée à la **date d'achat + 10 ans, au dernier jour du mois** (ex. achat le 15/03/2019 ⇒ 31/03/2029 ; achat « 2019 » ⇒ 01/01/2019 ⇒ 31/01/2029) ;
 - **groupement en acquisitions** : les lignes d'une même `facture_reference` sont groupées dans **une même acquisition, automatiquement validée** ; sans référence de facture, les équipements de **même date d'achat** sont groupés ensemble ;
 - l'acquisition créée porte le document **« facture à importer »**, remplaçable ensuite depuis la fiche de l'acquisition par le PDF réel (qui peut regrouper plusieurs factures) ; le fournisseur vide devient « Divers » ;
 - une référence de facture **déjà connue est ignorée** (jamais de fusion) ;
@@ -213,7 +213,7 @@ Ils sont générés automatiquement à partir des **factures d'acquisition** val
 ### Catégories
 - Définir des catégories d'équipements (avec possibilité de marquer un équipement comme EPI).
 - Chaque catégorie possède un **code** (ex. `COR` pour « Cordes »), proposé automatiquement à partir du libellé (3 premières lettres ; `CO1`, `CO2`… en cas de collision) et modifiable. Ce code sert au référencement automatique et est reconnu à l'import.
-- La case **« Durée maximum d'utilisation »** indique que les équipements de cette catégorie ont une durée de vie limitée par le fabricant (généralement 10 ans). Elle est cochée par défaut sur les équipements générés, et reste modifiable équipement par équipement dans la fiche équipement (avec la date de fin d'utilisation / péremption).
+- La case **« Durée maximum d'utilisation »** indique que les équipements de cette catégorie ont une durée de vie limitée par le fabricant (généralement 10 ans). Elle est cochée par défaut sur les équipements générés, et reste modifiable équipement par équipement dans la fiche équipement (avec la date de fin d'utilisation / péremption). À la **validation d'une acquisition**, les équipements de ces catégories reçoivent une date limite d'utilisation égale à la **date d'achat (facture) + 10 ans, au dernier jour du mois** (ex. facture du 15/03/2026 ⇒ 31/03/2036), modifiable ensuite dans la fiche.
 
 ### Référence
 - **Administration → Référence** : définit le **modèle de référence** global des équipements (défaut `YYCATNNN`).

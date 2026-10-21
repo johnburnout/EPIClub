@@ -135,11 +135,11 @@ final class AcquisitionImportTest extends AbstractControllerTestCase
         self::assertSame('1', (string) $equipementsA[1]['nombre_initial'], 'Unité : nombre initial = 1');
 
         // Ligne 2 : référence forcée, péremption vide sur une catégorie
-        // à durée de vie limitée → 31/12 de l'année d'achat + 10 ans
-        // (décision produit 2026-10-20)
+        // à durée de vie limitée → date d'achat + 10 ans, fin de mois
+        // (décision produit 2026-10-21 ; achat « 2019 » = 01/01/2019)
         $mousqueton = $equipementsA[1];
         self::assertSame('REF-FORCEE-02', $mousqueton['reference']);
-        self::assertSame('2029-12-31', $mousqueton['date_fin_utilisation']);
+        self::assertSame('2029-01-31', $mousqueton['date_fin_utilisation']);
         self::assertSame('2019-01-01', $mousqueton['date_mise_en_service']);
 
         // --- Acquisition SANS FACTURE (groupement par date) ---
