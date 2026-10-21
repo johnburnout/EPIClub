@@ -4,6 +4,25 @@ use Epiclub\Controller\AppSetupController;
 
 require __DIR__ . '/../vendor/autoload.php';
 
+// [v1.2.0-beta.2] Filet d'autoload PSR-4 pour le code de l'application.
+// L'archive de release génère un classmap « authoritative » : si vendor/
+// n'est pas régénéré en même temps que app/ (mise à jour partielle,
+// copie manuelle de fichiers), une nouvelle classe Epiclub\… ne serait
+// jamais trouvée. Ce chargeur n'intervient qu'en dernier recours.
+spl_autoload_register(static function (string $classe): void {
+    if (!str_starts_with($classe, 'Epiclub\\')) {
+        return;
+    }
+    $relatif = str_replace('\\', '/', substr($classe, strlen('Epiclub\\')));
+    if (str_contains($relatif, '..')) {
+        return;
+    }
+    $fichier = __DIR__ . '/' . $relatif . '.php';
+    if (is_file($fichier)) {
+        require $fichier;
+    }
+});
+
 $envFile = __DIR__ . '/../.env.local.php';
 
 // [SÉCURITÉ — audit P2] Garde-fous avant d'exécuter le fichier de

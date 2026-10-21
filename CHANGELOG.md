@@ -10,6 +10,30 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.2.0-beta.2] — 2026-10-21
+
+Correctif de la mise à jour intégrée (incident v1.2.0-beta.1 : page
+« Sauvegarde / restauration » en erreur après la mise à jour).
+
+### Fixed
+
+- **Mise à jour** : une archive sans dépendances (`vendor/`) n'est plus
+  installée. Lancée avant que GitHub ait attaché l'archive complète,
+  la mise à jour v1.2.0-beta.1 avait copié les sources sans régénérer
+  l'autoloader : les nouvelles classes étaient introuvables
+  (« Class "Epiclub\Controller\SauvegardeController" not found »).
+  La page Mise à jour indique désormais que l'archive est en cours de
+  préparation, et une release sans archive complète n'est plus mise
+  en cache (la page réinterroge GitHub au rechargement).
+- **Autoload** : filet PSR-4 pour les classes `Epiclub\…` en complément
+  du classmap « authoritative » de l'archive, si `vendor/` n'est pas
+  à jour.
+
+### Removed
+
+- Repli « composer install » de la mise à jour (composer absent des
+  hébergements ; une archive sans `vendor/` est refusée).
+
 ## [v1.2.0-beta.1] — 2026-10-21
 
 Sauvegarde et restauration complètes depuis l'application ; statut

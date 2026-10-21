@@ -50,7 +50,12 @@
                     <i class="fas fa-check-circle"></i> Une mise à jour est disponible !
                 </div>
 
-                {% if can_update %}
+                {% if archive_en_preparation|default(false) %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-hourglass-half"></i> L'archive complète de cette version est en cours de préparation sur GitHub
+                        (quelques minutes après la publication). Rechargez cette page dans quelques minutes pour l'installer.
+                    </div>
+                {% elseif can_update %}
                     <form method="post" action="/admin/update/perform" onsubmit="return confirm('Confirmer la mise à jour vers la version {{ latest_version }} ?')">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-warning">
