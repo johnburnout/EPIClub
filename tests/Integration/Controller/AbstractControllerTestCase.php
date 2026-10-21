@@ -54,8 +54,9 @@ abstract class AbstractControllerTestCase extends TestCase
             return;
         }
         
-        // Login admin (username 'admin', mot de passe 'adminadmin')
-        $this->client->loginAsAdmin('admin', 'adminadmin');
+        // Login admin (username 'admin', mot de passe EPICLUB_TEST_ADMIN_PASSWORD
+        // ou 'adminadmin' par défaut — cf. HttpTestClient::defaultAdminPassword())
+        $this->client->loginAsAdmin('admin');
     }
     
     /**

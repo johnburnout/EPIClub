@@ -122,12 +122,22 @@ final class HttpTestClient
 
     /**
      * Login admin par défaut.
+     *
+     * Mot de passe : variable d'environnement EPICLUB_TEST_ADMIN_PASSWORD
+     * si définie (base de dev locale), sinon « adminadmin » (fixture CI,
+     * tests/Fixtures/ci-seed.php).
      */
     public function loginAsAdmin(
         string $email = 'admin',
-        string $password = 'adminadmin',
+        ?string $password = null,
     ): void {
-        $this->login($email, $password);
+        $this->login($email, $password ?? self::defaultAdminPassword());
+    }
+
+    public static function defaultAdminPassword(): string
+    {
+        $env = getenv('EPICLUB_TEST_ADMIN_PASSWORD');
+        return is_string($env) && $env !== '' ? $env : 'adminadmin';
     }
 
     /**
