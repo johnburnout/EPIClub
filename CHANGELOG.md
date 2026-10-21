@@ -10,6 +10,51 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.2.0-beta.1] — 2026-10-21
+
+Sauvegarde et restauration complètes depuis l'application ; statut
+« Hors service » réservé au contrôle et garde-fou de suppression.
+
+### Added
+
+- **Sauvegarde / restauration** (super-administrateur, menu
+  Administration → 💾 Sauvegarde / restauration) :
+  - **export** en un clic d'une archive `.zip` : base complète (export
+    SQL en PHP pur, sans `mysqldump`) + fichiers des utilisateurs
+    (`public/images` : photos, images du club et des catégories, QR
+    codes ; `_storage/uploads` : factures), avec un manifeste et une
+    somme SHA-256 par fichier. La configuration (`.env.local.php`)
+    n'est jamais incluse ; seule une empreinte de `SECRET_KEY` l'est ;
+  - **restauration** en deux temps : l'archive téléversée est d'abord
+    analysée sans rien modifier (structure, liste blanche
+    d'extensions, anti « zip slip », sommes de contrôle, version
+    d'EPIClub, migrations connues, clé de chiffrement identique), puis
+    appliquée après saisie de « RESTAURER » ;
+  - **garde-fous** : sauvegarde automatique de l'état courant juste
+    avant (les 3 dernières conservées dans `var/backups/`), retour
+    automatique à cet état en cas d'échec, une seule opération à la
+    fois, migrations appliquées après la restauration d'une archive
+    plus ancienne ;
+  - archives conservées sur le serveur listées (restaurer, télécharger,
+    supprimer) ; une archive déposée par FTP dans `var/backups/`
+    contourne la limite de téléversement de PHP.
+- Lien vers la sauvegarde depuis la page de mise à jour ; section
+  « Sauvegarde et restauration » dans le guide.
+- `public/.user.ini` : téléversement jusqu'à 64 Mo (`upload_max_filesize`
+  64M, `post_max_size` 66M) pour PHP-FPM / FastCGI ; fichier interdit
+  au téléchargement par `public/.htaccess`.
+
+### Changed
+
+- **Statut « Hors service »** : ne s'attribue et ne se lève qu'à la
+  clôture d'un contrôle. Il n'est plus proposé dans la fiche ni dans
+  la modification groupée ; un équipement hors service garde ce statut
+  (la modification groupée l'ignore et le signale).
+- **Suppression d'un équipement** (administrateur) : uniquement si son
+  dernier contrôle clôturé l'a déclaré hors service, sans contrôle en
+  cours. Un équipement passé « Hors service » à la main avant cette
+  version doit d'abord passer par un contrôle.
+
 ## [v1.1.2] — 2026-10-21
 
 Correctif de sécurité mineur (journaux) et correction de la CI.

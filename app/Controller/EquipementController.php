@@ -359,6 +359,27 @@ class EquipementController extends AbstractController
     // --------------------------------------------------------------
     // AFFICHAGE D'UN ÉQUIPEMENT
     // --------------------------------------------------------------
+    public const MESSAGE_HS_ATTRIBUE = "Le statut « Hors service » ne peut être attribué qu'à l'issue d'un contrôle.";
+    public const MESSAGE_HS_LEVE = "Cet équipement est hors service : seul un contrôle peut lever ce statut.";
+
+    /**
+     * [MÉTIER 2026-10-21] Garde-fou de suppression : l'équipement est
+     * « Hors service », aucun contrôle n'est en cours, et c'est son DERNIER
+     * contrôle clôturé qui l'a déclaré hors service (un statut posé à la
+     * main avant cette règle ne suffit pas).
+     *
+     * @param array<string, mixed>             $equipement
+     * @param list<array<string, mixed>>       $historique Lignes de contrôles clôturés,
+     *                                                     les plus récents d'abord
+     *                                                     (EquipementManager::getHistoriqueControles).
+     */
+    public static function suppressionAutorisee(array $equipement, array $historique): bool
+    {
+        return (int) ($equipement['statut'] ?? -1) === EquipementStatut::HORS_SERVICE->value
+            && empty($equipement['controle_en_cours'])
+            && ($historique[0]['statut'] ?? null) === \Epiclub\Enum\ControleLigneStatut::HORS_SERVICE->value;
+    }
+
     public function show(Request $request): Response
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
@@ -397,6 +418,7 @@ class EquipementController extends AbstractController
         
         return $this->render('equipement_detail.twig', [
             'equipement' => $equipement,
+            'suppression_autorisee' => self::suppressionAutorisee($equipement, $historiqueControles),
             'historiqueControles' => $historiqueControles,
             'acquisition' => $acquisition,
         ]);
@@ -536,6 +558,15 @@ class EquipementController extends AbstractController
                     return $this->redirectTo('/equipements');
                 }
                 
+                // [MÉTIER 2026-10-21] « Hors service » ne s'attribue et ne
+                // se lève qu'à la clôture d'un contrôle : jamais par la fiche.
+                $etaitHorsService = (int) ($equipement['statut'] ?? 0) === EquipementStatut::HORS_SERVICE->value;
+                if ($etaitHorsService !== ($statutEnum === EquipementStatut::HORS_SERVICE)) {
+                    $form_errors['statut'] = $etaitHorsService
+                        ? self::MESSAGE_HS_LEVE
+                        : self::MESSAGE_HS_ATTRIBUE;
+                }
+
                 // [MÉTIER 2026-10-20] Libellé défini à l'acquisition :
                 // modifiable uniquement par un super-administrateur.
                 if ($this->isGranted('ROLE_SUPER_ADMIN') && $request->request->has('libelle')) {
@@ -592,7 +623,7 @@ class EquipementController extends AbstractController
             'date_mes_verrouillee' => $dateMesVerrouillee,
             'categories' => $categorieManager->findAll(),
             'emplacements' => $emplacementManager->findAll(),
-            'equipement_statuts' => EquipementStatut::forSelect(),
+            'equipement_statuts' => EquipementStatut::forSelectManuel(),
             'equipement' => $equipement,
             'form_errors' => $form_errors
         ]);
@@ -622,20 +653,21 @@ class EquipementController extends AbstractController
             return $this->redirectTo('/equipements');
         }
         
-        // [MÉTIER] Seul un équipement hors service peut être supprimé
-        if ((int) ($equipement['statut'] ?? -1) !== 2) {
-            $this->session->getFlashBag()->add(
-                'error',
-                "Impossible de supprimer cet équipement : il doit d'abord être marqué « Hors service »."
-            );
-            return $this->redirectTo("/equipements/equipement-{$id}");
-        }
-        
         // [SÉCURITÉ] Refuser si l'équipement est en cours de contrôle
         if (!empty($equipement['controle_en_cours'])) {
             $this->session->getFlashBag()->add(
                 'error',
                 "Impossible de supprimer cet équipement : un contrôle est en cours."
+            );
+            return $this->redirectTo("/equipements/equipement-{$id}");
+        }
+        
+        // [MÉTIER 2026-10-21] Seul un équipement déclaré « Hors service »
+        // par son dernier contrôle clôturé peut être supprimé.
+        if (!self::suppressionAutorisee($equipement, $equipementManager->getHistoriqueControles($id))) {
+            $this->session->getFlashBag()->add(
+                'error',
+                "Impossible de supprimer cet équipement : il doit avoir été déclaré « Hors service » lors de son dernier contrôle clôturé."
             );
             return $this->redirectTo("/equipements/equipement-{$id}");
         }
@@ -1459,6 +1491,8 @@ HTML;
                         $statut = is_string($brut) && ctype_digit($brut) ? EquipementStatut::tryFrom((int) $brut) : null;
                         if ($statut === null) {
                             $form_errors['statut'] = 'Statut invalide.';
+                        } elseif ($statut === EquipementStatut::HORS_SERVICE) {
+                            $form_errors['statut'] = self::MESSAGE_HS_ATTRIBUE;
                         } else {
                             $valeurs['statut'] = $statut->value;
                         }
@@ -1530,7 +1564,7 @@ HTML;
         return $this->render('equipement_modification_groupee.twig', [
             'equipements' => $equipements,
             'emplacements' => $emplacements,
-            'equipement_statuts' => EquipementStatut::forSelect(),
+            'equipement_statuts' => EquipementStatut::forSelectManuel(),
             'super_admin' => $superAdmin,
             'retour_query' => $retourQuery,
             'retour_url' => $retour,
@@ -1550,6 +1584,7 @@ HTML;
         $equipementManager = $this->equipementManager();
         $datesFacture = [];
         $ignores = [];
+        $horsService = [];
         $anciennesPhotos = [];
         $modifies = 0;
 
@@ -1560,6 +1595,15 @@ HTML;
                 if (array_key_exists($champ, $valeurs)) {
                     $data[$champ] = $valeurs[$champ];
                 }
+            }
+
+            // [MÉTIER 2026-10-21] Un équipement hors service ne quitte cet
+            // état que par un contrôle : son statut n'est pas modifié.
+            if (array_key_exists('statut', $data)
+                && (int) ($equipement['statut'] ?? 0) === EquipementStatut::HORS_SERVICE->value
+            ) {
+                unset($data['statut']);
+                $horsService[] = $equipement['reference'] ?? '#' . $equipement['id'];
             }
 
             if (array_key_exists('remarques', $valeurs)) {
@@ -1613,6 +1657,11 @@ HTML;
         if ($ignores !== []) {
             $this->session->getFlashBag()->add('warning',
                 'Date de mise en service non modifiée pour : ' . implode(', ', $ignores) . '.');
+        }
+        if ($horsService !== []) {
+            $this->session->getFlashBag()->add('warning',
+                'Statut non modifié pour : ' . implode(', ', $horsService)
+                . ' (hors service : seul un contrôle peut lever ce statut).');
         }
 
         return $this->redirectTo($retour);

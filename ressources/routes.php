@@ -426,6 +426,47 @@ $routes->add('admin_update_cleanup', new Route(
 
 
 // =====================================================================
+// SAUVEGARDE / RESTAURATION (base + fichiers)
+// =====================================================================
+// ⚠️ Réservées à ROLE_SUPER_ADMIN (vérification dans SauvegardeController)
+
+$routes->add('sauvegarde', new Route(
+    '/admin/sauvegarde',
+    ['_controller' => 'Epiclub\\Controller\\SauvegardeController', 'action' => 'index']
+));
+$routes->add('sauvegarde_exporter', new Route(
+    '/admin/sauvegarde/exporter',
+    ['_controller' => 'Epiclub\\Controller\\SauvegardeController', 'action' => 'exporter'],
+    [], [], '', [], ['POST']
+));
+$routes->add('sauvegarde_televerser', new Route(
+    '/admin/sauvegarde/televerser',
+    ['_controller' => 'Epiclub\\Controller\\SauvegardeController', 'action' => 'televerser'],
+    [], [], '', [], ['POST']
+));
+$routes->add('sauvegarde_verifier', new Route(
+    '/admin/sauvegarde/verifier/{nom}',
+    ['_controller' => 'Epiclub\\Controller\\SauvegardeController', 'action' => 'verifier'],
+    ['nom' => '[A-Za-z0-9._-]+']
+));
+$routes->add('sauvegarde_restaurer', new Route(
+    '/admin/sauvegarde/restaurer/{nom}',
+    ['_controller' => 'Epiclub\\Controller\\SauvegardeController', 'action' => 'restaurer'],
+    ['nom' => '[A-Za-z0-9._-]+'], [], '', [], ['POST']
+));
+$routes->add('sauvegarde_telecharger', new Route(
+    '/admin/sauvegarde/telecharger/{nom}',
+    ['_controller' => 'Epiclub\\Controller\\SauvegardeController', 'action' => 'telecharger'],
+    ['nom' => '[A-Za-z0-9._-]+']
+));
+$routes->add('sauvegarde_supprimer', new Route(
+    '/admin/sauvegarde/supprimer/{nom}',
+    ['_controller' => 'Epiclub\\Controller\\SauvegardeController', 'action' => 'supprimer'],
+    ['nom' => '[A-Za-z0-9._-]+'], [], '', [], ['POST']
+));
+
+
+// =====================================================================
 // QR Code API (JSON)
 // =====================================================================
 // Utilisé par le JavaScript de la fiche équipement

@@ -2,6 +2,11 @@
 # Nécessaire car le .htaccess racine pose « Require all denied ».
 Require all granted
 
+# Réglages PHP du dossier (téléversement 64 Mo) : jamais servis.
+<Files ".user.ini">
+    Require all denied
+</Files>
+
 RewriteEngine On
 
 RewriteCond %{REQUEST_FILENAME} !-f
