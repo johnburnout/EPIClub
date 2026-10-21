@@ -141,6 +141,54 @@ final class AppUpdateControllerTest extends TestCase
         );
     }
 
+    /**
+     * [v1.2.0-beta.2] Incident v1.2.0-beta.1 : une archive de sources
+     * (sans vendor/) ne doit jamais être installée — le classmap
+     * « authoritative » en place ignorerait les nouvelles classes.
+     */
+    public function testPerformRefuseUneArchiveSansVendorSansRienModifier(): void
+    {
+        $zipPath = tempnam(sys_get_temp_dir(), 'zip_test_');
+        $zip = new \ZipArchive();
+        self::assertTrue($zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE));
+        $zip->addFromString('EPIClub-9.9.9/version.txt', '9.9.9');
+        $zip->addFromString('EPIClub-9.9.9/app/Nouvelle.php', '<?php');
+        $zip->close();
+        $contenu = file_get_contents($zipPath);
+        unlink($zipPath);
+
+        $provider = $this->makeProviderMock();
+        $provider->method('getLatestRelease')->willReturn([
+            'tag' => 'v9.9.9', 'zip_url' => 'https://api.github.com/repos/o/r/zipball/v9.9.9',
+            'body' => '', 'bundle' => false, 'sha256_url' => null,
+        ]);
+        $provider->method('downloadUrl')->willReturn($contenu);
+        $versionAvant = file_get_contents(__DIR__ . '/../../../version.txt');
+
+        $response = $this->makeControllerWith($provider)->perform(
+            Request::create('/admin/update/perform', 'POST', ['csrf_token' => 'token_test'])
+        );
+
+        self::assertStringContainsString('pas encore disponible', (string) $response->getContent());
+        self::assertFileDoesNotExist(__DIR__ . '/../../../app/Nouvelle.php');
+        self::assertSame($versionAvant, file_get_contents(__DIR__ . '/../../../version.txt'));
+        self::assertDirectoryDoesNotExist(__DIR__ . '/../../../var/tmp/update/extracted');
+    }
+
+    public function testIndexNeProposePasUneVersionSansArchiveComplete(): void
+    {
+        $provider = $this->makeProviderMock();
+        $provider->method('getLatestRelease')->willReturn([
+            'tag' => 'v99.0.0', 'zip_url' => 'https://api.github.com/repos/o/r/zipball/v99.0.0',
+            'body' => '', 'bundle' => false, 'sha256_url' => null,
+        ]);
+
+        $html = (string) $this->makeControllerWith($provider)->index(new Request())->getContent();
+
+        self::assertStringContainsString('en cours de préparation', $html);
+        self::assertStringNotContainsString('/admin/update/perform', $html);
+    }
+
     public function testPerformRejectsZipWithAbsolutePath(): void
     {
         $zipPath = tempnam(sys_get_temp_dir(), 'zip_test_');

@@ -114,7 +114,12 @@ class AppUpdateController extends AbstractController
             $updateAvailable = version_compare($latestTag, $current, '>');
         }
 
+        // [v1.2.0-beta.2] Archive complète (vendor/ inclus) pas encore
+        // attachée par la CI : on n'offre pas l'installation.
+        $archiveEnPreparation = $updateAvailable && empty($latestRelease['bundle']);
+
         $canUpdate = $updateAvailable
+            && !$archiveEnPreparation
             && is_writable(dirname(self::VERSION_FILE))
             && is_writable(__DIR__ . '/../..');
 
@@ -135,6 +140,7 @@ class AppUpdateController extends AbstractController
             'csrf_token' => $csrfToken,
             'cleanup_needed' => $cleanupNeeded,
             'update_channel' => $canal,
+            'archive_en_preparation' => $archiveEnPreparation,
         ]);
     }
 
@@ -261,6 +267,25 @@ class AppUpdateController extends AbstractController
             // Copier les fichiers (sauf exclus)
             $targetDir = __DIR__ . '/../..';
             $vendorLivre = is_file($sourceDir . '/vendor/autoload.php');
+
+            // [v1.2.0-beta.2] Sans vendor/ livré, on n'installe RIEN : le
+            // vendor/ en place a un classmap « authoritative » qui ignore
+            // toute nouvelle classe (incident v1.2.0-beta.1 : mise à jour
+            // lancée avant que la CI ait attaché l'archive complète, les
+            // sources ont été copiées sans dépendances → « Class not found »).
+            // composer n'est généralement pas disponible sur l'hébergement.
+            if (!$vendorLivre) {
+                error_log('[AppUpdateController] Archive sans vendor/ refusée pour ' . $version);
+                $this->deleteDirectory($extractPath);
+                $this->cleanupTempDir();
+                return $this->render('update_result.twig', [
+                    'success' => false,
+                    'message' => "L'archive complète de la version " . $version . ' n\'est pas encore disponible '
+                        . '(GitHub la prépare quelques minutes après la publication). Rien n\'a été modifié : '
+                        . 'réessayez dans quelques minutes.',
+                ]);
+            }
+
             $this->copyFiles($sourceDir, $targetDir);
 
             // ------------------------------------------------------------
@@ -315,22 +340,18 @@ class AppUpdateController extends AbstractController
 
             // [audit 2026-10-19 F1] Dépendances : l'archive complète publiée
             // par la CI embarque vendor/ (remplacé d'un bloc) ; composer
-            // n'est plus nécessaire. Repli historique pour un zipball de
-            // sources : composer install, s'il est disponible.
-            if ($vendorLivre) {
-                try {
-                    $this->remplacerVendor($sourceDir . '/vendor', $targetDir . '/vendor');
-                } catch (\Throwable $e) {
-                    error_log('[AppUpdateController] vendor/ non remplacé : ' . $e->getMessage());
-                    $reponse = $this->render('update_result.twig', [
-                        'success' => false,
-                        'message' => 'Les fichiers et la base sont à jour, mais les dépendances (vendor/) '
-                            . "n'ont pas pu être remplacées. L'ancienne version a été conservée : "
-                            . 'consultez les logs serveur.',
-                    ]);
-                }
-            } else {
-                $this->runComposer();
+            // n'est pas nécessaire (et une archive sans vendor/ est refusée
+            // plus haut).
+            try {
+                $this->remplacerVendor($sourceDir . '/vendor', $targetDir . '/vendor');
+            } catch (\Throwable $e) {
+                error_log('[AppUpdateController] vendor/ non remplacé : ' . $e->getMessage());
+                $reponse = $this->render('update_result.twig', [
+                    'success' => false,
+                    'message' => 'Les fichiers et la base sont à jour, mais les dépendances (vendor/) '
+                        . "n'ont pas pu être remplacées. L'ancienne version a été conservée : "
+                        . 'consultez les logs serveur.',
+                ]);
             }
 
             // Nettoyage final (dossier extrait compris)
@@ -594,22 +615,6 @@ class AppUpdateController extends AbstractController
         }
         if (!is_dir(self::TEMP_DIR)) {
             mkdir(self::TEMP_DIR, 0755, true);
-        }
-    }
-
-    private function runComposer(): void
-    {
-        // [SÉCURITÉ — audit C1] --no-scripts : les handlers Composer
-        // (post-install-cmd, etc.) du composer.json potentiellement
-        // compromis ne doivent JAMAIS être exécutés par le processus web.
-        $commands = [
-            'composer install --no-dev --no-scripts --optimize-autoloader 2>&1',
-            'php composer.phar install --no-dev --no-scripts --optimize-autoloader 2>&1'
-        ];
-
-        foreach ($commands as $cmd) {
-            $output = shell_exec($cmd);
-            error_log('Composer output: ' . ($output ?: 'aucune sortie'));
         }
     }
 

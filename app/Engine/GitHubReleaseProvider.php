@@ -64,7 +64,12 @@ final class GitHubReleaseProvider implements GitHubReleaseProviderInterface
             return null;
         }
 
-        $this->writeCache($result);
+        // [v1.2.0-beta.2] Une release dont l'archive complète n'est pas
+        // encore attachée (CI en cours) n'est pas mise en cache : le
+        // prochain affichage de la page interroge à nouveau GitHub.
+        if ($result['bundle']) {
+            $this->writeCache($result);
+        }
 
         return $result;
     }
