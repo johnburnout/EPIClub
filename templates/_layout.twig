@@ -61,6 +61,19 @@
 								</div>
 							</li>
 							{% endif %}
+							{% if isGranted('ROLE_CONTROLLEUR') and pret_actif() %}
+							<li class="nav-item dropdown">
+								<a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Prêts</a>
+								<div class="dropdown-menu">
+									<a class="dropdown-item" href="/prets/nouveau">➕ Nouvelle fiche de prêt</a>
+									<div class="dropdown-divider"></div>
+									<a class="dropdown-item" href="/prets?statut=saisie">✏️ En saisie</a>
+									<a class="dropdown-item" href="/prets?statut=en_cours">🤝 En cours</a>
+									<a class="dropdown-item" href="/prets?retard=1">⏰ En retard</a>
+									<a class="dropdown-item" href="/prets">📋 Toutes les fiches</a>
+								</div>
+							</li>
+							{% endif %}
 							{% if isGranted('ROLE_ADMIN') %}
 								<li class="nav-item dropdown">
 									<a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Administration</a>

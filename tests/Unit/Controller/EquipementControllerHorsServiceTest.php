@@ -94,6 +94,51 @@ final class EquipementControllerHorsServiceTest extends TestCase
         self::assertStringContainsString(htmlspecialchars(EquipementController::MESSAGE_HS_LEVE, ENT_QUOTES), (string) $reponse->getContent());
     }
 
+    /** @return array<string, array{string, string}> */
+    public static function statutsReservesAttribues(): array
+    {
+        return ['prêté' => ['3', 'Le statut « Prêté »'], 'égaré' => ['4', 'Le statut « Égaré »']];
+    }
+
+    /** [Prêt de matériel] « Prêté » / « Égaré » : statuts réservés, comme « Hors service ». */
+    #[\PHPUnit\Framework\Attributes\DataProvider('statutsReservesAttribues')]
+    public function testAttribuerPreteOuEgareALaMainEstRefuse(string $valeur, string $message): void
+    {
+        $this->equipement(['statut' => 0]);
+        $reponse = $this->controleur()->edit($this->post(['statut' => $valeur]));
+
+        self::assertSame(200, $reponse->getStatusCode());
+        self::assertSame([], $this->enregistres);
+        self::assertStringContainsString(htmlspecialchars($message, ENT_QUOTES), (string) $reponse->getContent());
+    }
+
+    /** @return array<string, array{int, string}> */
+    public static function statutsReservesLeves(): array
+    {
+        return ['prêté' => [3, 'est prêté'], 'égaré' => [4, 'est égaré']];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('statutsReservesLeves')]
+    public function testLeverPreteOuEgareALaMainEstRefuse(int $statut, string $message): void
+    {
+        $this->equipement(['statut' => $statut]);
+        $reponse = $this->controleur()->edit($this->post(['statut' => '0']));
+
+        self::assertSame(200, $reponse->getStatusCode());
+        self::assertSame([], $this->enregistres);
+        self::assertStringContainsString($message, (string) $reponse->getContent());
+    }
+
+    public function testFormulaireDUnEquipementPreteVerrouilleLeStatut(): void
+    {
+        $this->equipement(['statut' => 3]);
+
+        $html = (string) $this->controleur()->edit($this->get())->getContent();
+
+        self::assertStringContainsString('<input type="hidden" name="statut" value="3">', $html);
+        self::assertStringContainsString('value="Prêté" disabled', $html);
+    }
+
     public function testUnEquipementHorsServiceResteModifiablePourLeReste(): void
     {
         $this->equipement(['statut' => 2]);

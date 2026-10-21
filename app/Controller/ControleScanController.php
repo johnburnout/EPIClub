@@ -115,6 +115,14 @@ class ControleScanController extends AbstractController
             ]);
         }
 
+        // [Prêt de matériel] Un matériel prêté n'est pas contrôlable.
+        if ((int) ($equipement['statut'] ?? 0) === \Epiclub\Enum\EquipementStatut::PRETE->value) {
+            return new JsonResponse([
+                'statut' => 'erreur',
+                'message' => sprintf('%s est prêté : il ne peut être contrôlé qu\'après son retour.', $equipement['reference']),
+            ]);
+        }
+
         $base = [
             'reference' => $equipement['reference'],
             'libelle' => $equipement['libelle'],

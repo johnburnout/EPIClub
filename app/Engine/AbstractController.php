@@ -5,6 +5,7 @@ namespace Epiclub\Engine;
 use Twig\TwigFunction;
 use Epiclub\Engine\Session;
 use Epiclub\Domain\UtilisateurManager;
+use Epiclub\Domain\ClubManager;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,6 +17,9 @@ use Epiclub\Engine\ConfigProvider;
 abstract class AbstractController
 {
     private TwigRenderer $renderer;
+
+    /** [Prêt de matériel] Cache par requête de club.pret_actif. */
+    private ?bool $pretActifCache = null;
 
     public function __construct(protected Session $session)
     {
@@ -33,6 +37,20 @@ abstract class AbstractController
 
         $this->renderer->addFunction(new TwigFunction('app_user', function () {
             return $this->session->get('user');
+        }));
+
+        // [Prêt de matériel — migration 016] Module activé dans les
+        // réglages du club (menu, boutons « Ajouter au prêt »).
+        $this->renderer->addFunction(new TwigFunction('pret_actif', function () {
+            return $this->pretActif();
+        }));
+
+        // Libellé / couleur / badge d'un statut d'équipement (0 à 4).
+        $this->renderer->addFunction(new TwigFunction('statut_equipement', function ($statut) {
+            $enum = is_numeric($statut) ? \Epiclub\Enum\EquipementStatut::tryFrom((int) $statut) : null;
+            return $enum === null
+                ? ['libelle' => 'Inconnu', 'couleur' => '#6c757d', 'badge' => 'secondary', 'reserve' => false]
+                : ['libelle' => $enum->label(), 'couleur' => $enum->couleur(), 'badge' => $enum->badge(), 'reserve' => $enum->estReserve()];
         }));
 
         $this->updateLastActivity();
@@ -55,6 +73,31 @@ abstract class AbstractController
             ->subject($subject)
             ->html($html);
         return $email;
+    }
+
+    /**
+     * [Prêt de matériel — migration 016] Le gestionnaire de prêt est-il
+     * activé (club.pret_actif) ? Lu une fois par requête ; false si la
+     * base est inaccessible ou la colonne absente (migration non
+     * appliquée).
+     */
+    public function pretActif(): bool
+    {
+        if ($this->pretActifCache === null) {
+            try {
+                $club = $this->clubManagerModules()->findParameters();
+                $this->pretActifCache = !empty($club['pret_actif']);
+            } catch (\Throwable) {
+                $this->pretActifCache = false;
+            }
+        }
+        return $this->pretActifCache;
+    }
+
+    /** Factory — surchargeable en test Unit. */
+    protected function clubManagerModules(): ClubManager
+    {
+        return new ClubManager();
     }
 
     public function isAuthenticated(): bool

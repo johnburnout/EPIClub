@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 
 final class ControleLigneStatutTest extends TestCase
 {
-    public function testAllFourValuesExist(): void
+    public function testAllValuesExist(): void
     {
         $values = array_map(
             static fn(ControleLigneStatut $c) => $c->value,
@@ -17,7 +17,7 @@ final class ControleLigneStatutTest extends TestCase
         );
 
         self::assertSame(
-            ['a_controler', 'controle_ok', 'controle_ko', 'hors_service'],
+            ['a_controler', 'controle_ok', 'controle_ko', 'hors_service', 'egare'],
             $values
         );
     }

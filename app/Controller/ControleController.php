@@ -785,8 +785,10 @@ class ControleController extends AbstractController
         $emplacement_id = $filtres['emplacement_id'];
         $dernier_controle = $filtres['dernier_controle'];
 
+        // [Prêt de matériel] Un matériel prêté n'est pas contrôlable.
         $equipementsDisponibles = array_filter($equipementsDisponibles, function($e) use ($idsDejaAjoutes) {
-            return !in_array($e['id'], $idsDejaAjoutes);
+            return !in_array($e['id'], $idsDejaAjoutes)
+                && (int) ($e['statut'] ?? 0) !== EquipementStatut::PRETE->value;
         });
 
         if ($categorie_id) {
@@ -892,6 +894,16 @@ class ControleController extends AbstractController
         if (!$this->canEdit($controle, $user)) {
             $this->session->getFlashBag()->add('error', 'Vous n\'avez pas les droits pour modifier ce contrôle.');
             return $this->redirectTo('/admin/controles');
+        }
+
+        // [Prêt de matériel] Un matériel prêté n'est pas contrôlable.
+        $equipement = $this->equipementManager()->findId($equipement_id);
+        if ($equipement && (int) ($equipement['statut'] ?? 0) === EquipementStatut::PRETE->value) {
+            $this->session->getFlashBag()->add('error', sprintf(
+                '%s est prêté : il ne peut être contrôlé qu\'après son retour.',
+                $equipement['reference'] ?? 'Cet équipement'
+            ));
+            return $this->redirectTo("/admin/controles/edit/$controle_id");
         }
 
         $ligneManager = $this->controleLigneManager();
@@ -1185,9 +1197,11 @@ class ControleController extends AbstractController
             }
 
             match ($statutLigne) {
-            ControleLigneStatut::HORS_SERVICE => $equipement['statut'] = 2,
-            ControleLigneStatut::CONTROLE_KO  => $equipement['statut'] = 1,
-            ControleLigneStatut::CONTROLE_OK  => $equipement['statut'] = 0,
+            ControleLigneStatut::HORS_SERVICE => $equipement['statut'] = EquipementStatut::HORS_SERVICE->value,
+            ControleLigneStatut::CONTROLE_KO  => $equipement['statut'] = EquipementStatut::EN_MAINTENANCE->value,
+            ControleLigneStatut::CONTROLE_OK  => $equipement['statut'] = EquipementStatut::DISPONIBLE->value,
+            // [Prêt de matériel — migration 016] Matériel introuvable lors du contrôle.
+            ControleLigneStatut::EGARE        => $equipement['statut'] = EquipementStatut::EGARE->value,
             ControleLigneStatut::A_CONTROLER  => error_log(sprintf(
                     '[ControleController] A_CONTROLER leaked through '
                     . 'cloturer() for ligne id=%s',

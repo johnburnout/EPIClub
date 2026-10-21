@@ -1,0 +1,110 @@
+{# templates/pret_pdf.twig — fiche de prêt (Dompdf) #}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+	<meta charset="UTF-8">
+	<title>Fiche de prêt n° {{ pret.id }}</title>
+	<style>
+		@page { margin: 18mm 15mm; }
+		body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 11px; color: #222; }
+		h1 { font-size: 18px; margin: 0; color: #2c3e50; }
+		.entete { width: 100%; border-bottom: 2px solid #2c3e50; padding-bottom: 8px; margin-bottom: 14px; }
+		.entete td { vertical-align: top; }
+		.muted { color: #6c757d; }
+		.bloc { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+		.bloc td { padding: 4px 6px; border: 1px solid #dee2e6; }
+		.bloc td.l { width: 28%; background: #f3f5f7; font-weight: bold; }
+		table.materiel { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+		table.materiel th { background: #2c3e50; color: #fff; padding: 5px; text-align: left; font-size: 10px; }
+		table.materiel td { border-bottom: 1px solid #dee2e6; padding: 4px 5px; }
+		.engagement { border: 1px solid #dee2e6; background: #f8f9fa; padding: 8px; margin-bottom: 14px; }
+		table.signatures { width: 100%; border-collapse: collapse; }
+		table.signatures td { width: 50%; vertical-align: top; padding: 0 6px; }
+		.cadre { border: 1px solid #999; height: 30mm; margin-top: 4px; text-align: center; }
+		.cadre img { max-height: 28mm; max-width: 80mm; }
+		.pied { margin-top: 18px; font-size: 9px; color: #6c757d; text-align: center; }
+	</style>
+</head>
+<body>
+	<table class="entete">
+		<tr>
+			<td>
+				<h1>Fiche de prêt de matériel n° {{ pret.id }}</h1>
+				<div class="muted">{{ statut.label }}{% if pret.date_validation %} — validé le {{ pret.date_validation|date('d/m/Y') }}{% endif %}</div>
+			</td>
+			<td style="text-align: right;">
+				<strong>{{ club.nom|default('') }}</strong><br>
+				{% if club.activite|default('') %}{{ club.activite }}<br>{% endif %}
+				{% if club.email|default('') %}{{ club.email }}<br>{% endif %}
+				{% if club.phone|default('') %}{{ club.phone }}{% endif %}
+			</td>
+		</tr>
+	</table>
+
+	<table class="bloc">
+		<tr><td class="l">Emprunteur</td><td>{{ pret.emprunteur_prenom }} {{ pret.emprunteur_nom|upper }}</td></tr>
+		<tr><td class="l">Numéro de licence</td><td>{{ pret.emprunteur_licence|default('—') }}</td></tr>
+		<tr><td class="l">Téléphone</td><td>{{ pret.emprunteur_telephone|default('—') }}</td></tr>
+		<tr><td class="l">Date du prêt</td><td>{{ pret.date_pret|date('d/m/Y') }}</td></tr>
+		<tr><td class="l">Date de retour prévue</td><td>{{ pret.date_retour_prevue|date('d/m/Y') }}</td></tr>
+		{% if pret.date_retour %}
+			<tr><td class="l">Date de retour</td><td>{{ pret.date_retour|date('d/m/Y') }}</td></tr>
+		{% endif %}
+		{% if pret.remarques %}
+			<tr><td class="l">Remarques</td><td>{{ pret.remarques|nl2br }}</td></tr>
+		{% endif %}
+	</table>
+
+	<table class="materiel">
+		<thead>
+			<tr>
+				<th style="width: 18%;">Référence</th>
+				<th>Désignation</th>
+				<th style="width: 20%;">Catégorie</th>
+				<th style="width: 18%;">{{ statut.value == 'termine' ? 'État au retour' : 'Rendu (cocher)' }}</th>
+			</tr>
+		</thead>
+		<tbody>
+			{% for l in lignes %}
+				<tr>
+					<td><strong>{{ l.reference }}</strong></td>
+					<td>{{ l.libelle }}</td>
+					<td>{{ l.categorie_libelle|default('—') }}</td>
+					<td>
+						{% if l.etat_retour == 'disponible' %}Rendu
+						{% elseif l.etat_retour == 'maintenance' %}Rendu — maintenance
+						{% elseif l.etat_retour == 'egare' %}Égaré
+						{% elseif statut.value == 'termine' %}À vérifier
+						{% else %}☐{% endif %}
+					</td>
+				</tr>
+			{% endfor %}
+		</tbody>
+	</table>
+	<p class="muted">{{ lignes|length }} matériel(s).</p>
+
+	<div class="engagement">
+		Je soussigné(e) {{ pret.emprunteur_prenom }} {{ pret.emprunteur_nom|upper }} reconnais avoir reçu le matériel
+		ci-dessus en bon état et m'engage à l'utiliser conformément aux consignes du club et à le restituer au plus
+		tard le {{ pret.date_retour_prevue|date('d/m/Y') }}. Toute perte ou détérioration doit être signalée au club.
+	</div>
+
+	<table class="signatures">
+		<tr>
+			<td>
+				<strong>Signature de l'emprunteur</strong>
+				{% if pret.date_signature %}<span class="muted"> (signé le {{ pret.date_signature|date('d/m/Y H:i') }})</span>{% else %}<span class="muted"> — date :</span>{% endif %}
+				<div class="cadre">
+					{% if pret.signature %}<img src="{{ pret.signature }}" alt="Signature">{% endif %}
+				</div>
+			</td>
+			<td>
+				<strong>Pour le club</strong>{% if pret.valide_par_nom %} — {{ pret.valide_par_prenom }} {{ pret.valide_par_nom }}{% endif %}
+				<div class="cadre"></div>
+			</td>
+		</tr>
+	</table>
+
+	<div class="pied">Fiche générée le {{ date_generation }} — EPIClub {{ app_version }}</div>
+</body>
+</html>

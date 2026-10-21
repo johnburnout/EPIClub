@@ -77,14 +77,9 @@
 						<p><strong>Statut :</strong> 
 							{% if equipement.controle_en_cours %}
 							<span class="badge bg-info">En contrôle</span>
-							{% elseif equipement.statut == 0 %}
-							<span class="badge bg-success">Disponible</span>
-							{% elseif equipement.statut == 1 %}
-							<span class="badge bg-warning">En maintenance</span>
-							{% elseif equipement.statut == 2 %}
-							<span class="badge bg-danger">Hors service</span>
 							{% else %}
-							<span class="badge bg-secondary">Inconnu</span>
+							{% set s = statut_equipement(equipement.statut) %}
+							<span class="badge bg-{{ s.badge }}">{{ s.libelle }}</span>
 							{% endif %}
 						</p>
 						<p><strong>Date dernier contrôle :</strong> 
@@ -205,6 +200,67 @@
 			</div>
 		</div>
 
+		{# --- [Prêt de matériel] Prêts --- #}
+		{% if isGranted('ROLE_CONTROLLEUR') and pret_actif() %}
+			<div class="card mt-4">
+				<div class="card-header bg-primary text-white">
+					<h5 class="mb-0">🤝 Prêts</h5>
+				</div>
+				<div class="card-body">
+					{% if pret_ouvert %}
+						<p class="mb-2">
+							Inscrit sur le <a href="/prets/pret-{{ pret_ouvert.id }}">prêt n° {{ pret_ouvert.id }}</a>
+							({{ pret_ouvert.emprunteur_prenom }} {{ pret_ouvert.emprunteur_nom }}{% if pret_ouvert.statut == 'en_cours' %}, retour prévu le {{ pret_ouvert.date_retour_prevue|date('d/m/Y') }}{% elseif pret_ouvert.statut == 'termine' %}, retour à vérifier{% else %}, en saisie{% endif %}).
+						</p>
+					{% elseif pret_motif %}
+						<p class="text-muted mb-2">Non prêtable actuellement — {{ pret_motif }}</p>
+					{% elseif prets_en_saisie is not empty %}
+						<form method="post" action="/prets/ajouter" class="d-flex flex-wrap gap-2 align-items-center mb-2">
+							<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+							<input type="hidden" name="equipement_id" value="{{ equipement.id }}">
+							<input type="hidden" name="retour" value="/equipements/equipement-{{ equipement.id }}">
+							<select name="pret_id" class="form-select" style="max-width: 22rem;" aria-label="Prêt en saisie">
+								{% for p in prets_en_saisie %}
+									<option value="{{ p.id }}">Prêt n° {{ p.id }} — {{ p.emprunteur_prenom }} {{ p.emprunteur_nom }}</option>
+								{% endfor %}
+							</select>
+							<button type="submit" class="btn btn-primary">➕ Ajouter au prêt</button>
+						</form>
+					{% else %}
+						<p class="mb-2">Aucun prêt en saisie. <a href="/prets/nouveau">Créer une fiche de prêt</a></p>
+					{% endif %}
+
+					{% if historique_prets is not empty %}
+						<div class="table-responsive">
+							<table class="table table-sm table-striped mb-0">
+								<thead>
+									<tr><th>Prêt</th><th>Emprunteur</th><th>Du</th><th>Au</th><th>Retour</th></tr>
+								</thead>
+								<tbody>
+									{% for h in historique_prets %}
+										<tr>
+											<td><a href="/prets/pret-{{ h.id }}">n° {{ h.id }}</a></td>
+											<td>{{ h.emprunteur_prenom }} {{ h.emprunteur_nom }}</td>
+											<td>{{ h.date_pret|date('d/m/Y') }}</td>
+											<td>{{ h.date_retour ? h.date_retour|date('d/m/Y') : '(prévu ' ~ h.date_retour_prevue|date('d/m/Y') ~ ')' }}</td>
+											<td>
+												{% if h.etat_retour == 'disponible' %}<span class="badge bg-success">Rendu</span>
+												{% elseif h.etat_retour == 'maintenance' %}<span class="badge bg-warning">Rendu — maintenance</span>
+												{% elseif h.etat_retour == 'egare' %}<span class="badge bg-dark">Égaré</span>
+												{% elseif h.statut == 'saisie' %}<span class="badge bg-secondary">En saisie</span>
+												{% else %}<span class="badge bg-primary">{{ h.statut == 'termine' ? 'À vérifier' : 'En cours' }}</span>
+												{% endif %}
+											</td>
+										</tr>
+									{% endfor %}
+								</tbody>
+							</table>
+						</div>
+					{% endif %}
+				</div>
+			</div>
+		{% endif %}
+
 		{# --- Historique des contrôles --- #}
 		{% if historiqueControles %}
 			<div class="card mt-4">
@@ -243,13 +299,15 @@
 												'a_controler': 'warning',
 												'controle_ok': 'success',
 												'controle_ko': 'danger',
-												'hors_service': 'secondary'
+												'hors_service': 'secondary',
+												'egare': 'dark'
 											} %}
 											{% set statutLabels = {
 												'a_controler': 'À contrôler',
 												'controle_ok': 'OK',
 												'controle_ko': 'KO',
-												'hors_service': 'Hors service'
+												'hors_service': 'Hors service',
+												'egare': 'Égaré'
 											} %}
 											<span class="badge bg-{{ statutClasses[ligne.statut]|default('secondary') }}">
 												{{ statutLabels[ligne.statut]|default(ligne.statut) }}

@@ -42,6 +42,17 @@
 			<textarea id="description" name="description" class="form-control" rows="5">{{ club.description }}</textarea>
 		</div>
 
+		<h5 class="mt-4">Modules</h5>
+		<div class="mb-3 form-check">
+			<input type="checkbox" class="form-check-input" id="pret_actif" name="pret_actif" value="1"
+				{% if club.pret_actif|default(false) %}checked{% endif %}>
+			<label class="form-check-label" for="pret_actif"><strong>Gestionnaire de prêt de matériel</strong></label>
+			<small class="form-text text-muted d-block">
+				Fiches de prêt (emprunteur, dates, matériel, signature, export PDF), statuts « Prêté » et « Égaré ».
+				Accessible aux contrôleurs et administrateurs (menu « Prêts »).
+			</small>
+		</div>
+
 		<div class="form-actions">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 			<button type="submit" class="btn btn-primary">Enregistrer</button>

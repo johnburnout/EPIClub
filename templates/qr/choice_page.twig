@@ -36,15 +36,8 @@
                                 {% endif %}
                             </p>
                             <p><strong>Statut :</strong> 
-                                {% if equipement.statut == 0 %}
-                                    <span class="badge bg-success">Disponible</span>
-                                {% elseif equipement.statut == 1 %}
-                                    <span class="badge bg-warning">En maintenance</span>
-                                {% elseif equipement.statut == 2 %}
-                                    <span class="badge bg-danger">Hors service</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">Inconnu</span>
-                                {% endif %}
+                                {% set s = statut_equipement(equipement.statut) %}
+                                <span class="badge bg-{{ s.badge }}">{{ s.libelle }}</span>
                             </p>
                             
                             <hr>

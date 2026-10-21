@@ -41,7 +41,7 @@
 								<option value="{{ valeur }}" {% if saisie.statut is defined and saisie.statut == valeur %}selected{% endif %}>{{ libelle }}</option>
 							{% endfor %}
 						</select>
-						<small class="text-muted">« Hors service » s'attribue à l'issue d'un contrôle ; le statut des équipements déjà hors service n'est pas modifié.</small>
+						<small class="text-muted">« Hors service », « Prêté » et « Égaré » s'attribuent par un contrôle ou un prêt ; le statut des équipements déjà dans l'un de ces états n'est pas modifié.</small>
 					</div>
 				</div>
 
