@@ -153,7 +153,7 @@ Ils sont générés automatiquement à partir des **factures d'acquisition** val
 
 1. Depuis la **liste des équipements**, cliquer sur **« Modifier »** pour un équipement.
 2. Vous pouvez alors :
-- Ajouter ou modifier la **photo** (redimensionnée automatiquement)
+- Ajouter ou modifier la **photo** : JPEG, PNG, WebP, GIF ou AVIF (si le serveur le permet), redimensionnée automatiquement et remise à l'endroit si elle a été prise téléphone vertical
 - Changer l’**emplacement**
 - Modifier les **remarques**
 - Mettre à jour les **dates** (mise en service, fin d’utilisation)

@@ -502,13 +502,17 @@ class EquipementController extends AbstractController
             if ($uploadedPhoto !== null && $uploadedPhoto->isValid()) {
                 try {
                     $photoPath = $this->savePhoto($uploadedPhoto);
+                } catch (\InvalidArgumentException $e) {
+                    // Refus explicite d'ImageUploader (type, AVIF non pris
+                    // en charge, taille) : message destiné à l'utilisateur.
+                    $form_errors['photo'] = $e->getMessage();
                 } catch (\Exception $e) {
                     // [ROBUSTESSE] Clé nommée pour cibler le champ photo dans le template.
                     // On ne remonte pas $e->getMessage() tel quel : il peut contenir
                     // des chemins serveur. On garde le message court.
                     error_log('[EquipementController] Photo processing failed: ' . $e->getMessage());
                     $form_errors['photo'] = 'Erreur lors du traitement de l\'image. '
-                    . 'Vérifiez que le fichier est bien une image (JPEG, PNG, WebP, GIF).';
+                    . 'Vérifiez que le fichier est bien une image (JPEG, PNG, WebP, GIF, AVIF).';
                 }
             }
             
@@ -1550,10 +1554,12 @@ HTML;
             if ($form_errors === [] && isset($valeurs['photo'])) {
                 try {
                     $valeurs['photo'] = $this->savePhoto($valeurs['photo']);
+                } catch (\InvalidArgumentException $e) {
+                    $form_errors['photo'] = $e->getMessage();
                 } catch (\Throwable $e) {
                     error_log('[EquipementController] Modification groupée (photo) : ' . $e->getMessage());
                     $form_errors['photo'] = 'Erreur lors du traitement de l\'image. '
-                        . 'Vérifiez que le fichier est bien une image (JPEG, PNG, WebP, GIF).';
+                        . 'Vérifiez que le fichier est bien une image (JPEG, PNG, WebP, GIF, AVIF).';
                 }
             }
 

@@ -19,7 +19,7 @@
 				<div class="mb-2">
 					<img src="{{ logo_url }}" alt="Logo actuel" class="img-thumbnail" style="max-height: 120px;">
 				</div>
-				<input type="file" id="logo" name="logo" accept="image/jpeg,image/png,image/webp,image/gif"
+				<input type="file" id="logo" name="logo" accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
 				       class="form-control {% if form_errors.logo is defined %}is-invalid{% endif %}">
 				<div class="form-text">JPEG, PNG, WebP ou GIF. Redimensionné à 400 px maximum.</div>
 				{% if logo_personnalise %}
@@ -36,7 +36,7 @@
 				<div class="mb-2">
 					<img src="{{ fond_url }}" alt="Photo de fond actuelle" class="img-thumbnail" style="max-height: 120px;">
 				</div>
-				<input type="file" id="image_fond" name="image_fond" accept="image/jpeg,image/png,image/webp,image/gif"
+				<input type="file" id="image_fond" name="image_fond" accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
 				       class="form-control {% if form_errors.image_fond is defined %}is-invalid{% endif %}">
 				<div class="form-text">JPEG, PNG, WebP ou GIF. Format paysage conseillé, redimensionné à 1920 px maximum.</div>
 				{% if fond_personnalise %}

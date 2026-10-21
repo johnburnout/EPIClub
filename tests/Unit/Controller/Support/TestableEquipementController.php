@@ -9,6 +9,7 @@ use Epiclub\Domain\AcquisitionManager;
 use Epiclub\Domain\CategorieManager;
 use Epiclub\Domain\EmplacementManager;
 use Epiclub\Domain\EquipementManager;
+use Epiclub\Engine\ImageUploader;
 use Epiclub\Engine\Session;
 
 final class TestableEquipementController extends EquipementController
@@ -32,6 +33,14 @@ final class TestableEquipementController extends EquipementController
         }
         $subpath = ltrim($subpath, '/');
         return $subpath === '' ? $this->publicPathOverride : $this->publicPathOverride . '/' . $subpath;
+    }
+
+    /** Doublure optionnelle de l'enregistrement des photos. */
+    public ?ImageUploader $photoUploaderOverride = null;
+
+    protected function photoUploader(): ImageUploader
+    {
+        return $this->photoUploaderOverride ?? parent::photoUploader();
     }
 
     protected function equipementManager(): EquipementManager

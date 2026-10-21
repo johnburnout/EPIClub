@@ -12,6 +12,13 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ### Added
 
+- **Images AVIF** (photos d'équipement, images de catégorie et du club) :
+  acceptées et converties en WebP quand le GD du serveur sait les lire
+  (PHP compilé avec libavif, `gd_info()` « AVIF Support ») ; sinon,
+  refus avec un message explicite (« Les images AVIF ne sont pas prises
+  en charge par ce serveur : envoyez un JPEG ou un PNG »). Les erreurs
+  de photo de la fiche équipement et de la modification groupée
+  affichent désormais le motif précis du refus.
 - **CI : workflow « Tests »** — PHPUnit complet sur GitHub (suites Unit
   et Integration) avec un service MySQL 8 : schéma créé par les
   migrations, compte `admin` de test (`tests/Fixtures/ci-seed.php`),
