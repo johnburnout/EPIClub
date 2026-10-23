@@ -10,6 +10,18 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.7.2] — 2026-10-23
+
+PDF de liste avec le filtre « Emplacement : Non défini ».
+
+### Fixed
+
+- **PDF de la liste des équipements** : l'export échouait (erreur 500)
+  lorsque le filtre emplacement était sur « Non défini », ou lorsque le
+  paramètre `categorie` / `emplacement` de l'URL n'était pas numérique.
+  Le résumé des filtres affiche désormais « Emplacement : Non défini », ou
+  la valeur saisie telle quelle.
+
 ## [v1.7.1] — 2026-10-23
 
 Échappement HTML dans les PDF d'équipements.
