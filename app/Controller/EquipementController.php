@@ -971,11 +971,11 @@ class EquipementController extends AbstractController
     */
     private function renderPdfHtml(array $equipement, string $qrBase64, ?string $photoBase64): string
     {
-        // --- Extraction sécurisée des valeurs ---
-        $reference = $equipement['reference'] ?? '';
-        $categorieLibelle = $equipement['categorie']['libelle'] ?? 'Non définie';
+        // --- Extraction sécurisée des valeurs (échappées pour le HTML) ---
+        $reference = self::html($equipement['reference'] ?? '');
+        $categorieLibelle = self::html($equipement['categorie']['libelle'] ?? 'Non définie');
         $estEpi = (!empty($equipement['categorie']['est_epi'])) ? 'Oui' : 'Non';
-        $emplacementLibelle = $equipement['emplacement']['libelle'] ?? 'Non défini';
+        $emplacementLibelle = self::html($equipement['emplacement']['libelle'] ?? 'Non défini');
         
         $dateMise = $equipement['date_mise_en_service'] ?? 'Non renseignée';
         if ($dateMise !== 'Non renseignée') {
@@ -991,8 +991,8 @@ class EquipementController extends AbstractController
         $controleEnCours = $equipement['controle_en_cours'] ?? false;
         $statutHtml = $this->renderStatutBadge($statut, $controleEnCours);
         
-        $etatUsure = $equipement['etat_usure_id'] ?? 'Non défini';
-        $remarques = $equipement['remarques'] ?? 'Aucune';
+        $etatUsure = self::html($equipement['etat_usure_id'] ?? 'Non défini');
+        $remarques = self::html($equipement['remarques'] ?? 'Aucune');
         
         // --- Photo (4 cm max, proportions conservées) ---
         $photoHtml = $photoBase64
@@ -1099,7 +1099,7 @@ HTML;
             return '<span class="badge badge-secondary">Inconnu</span>';
         }
         // Classes du PDF (badge-success…) ; « primary » / « dark » pour Prêté / Égaré.
-        return sprintf('<span class="badge badge-%s">%s</span>', $enum->badge(), htmlspecialchars($enum->label()));
+        return sprintf('<span class="badge badge-%s">%s</span>', $enum->badge(), self::html($enum->label()));
     }
 
     // --------------------------------------------------------------
@@ -1162,7 +1162,7 @@ HTML;
         if (!empty($filtres['acquisition'])) { // AJOUT
             $filtresLabels[] = 'Acquisition #' . $filtres['acquisition'];
         }
-        $filtresStr = empty($filtresLabels) ? 'Aucun filtre' : implode(' | ', $filtresLabels);
+        $filtresStr = self::html(empty($filtresLabels) ? 'Aucun filtre' : implode(' | ', $filtresLabels));
         
         // --- Générateur de QR code ---
         $qrGenerator = new QrCodeGenerator();
@@ -1184,10 +1184,12 @@ HTML;
                 $qrHtml = '<span style="color:#999; font-size:9px;">QR indisponible</span>';
             }
             
+            $reference = self::html($e['reference'] ?? '');
+            $libelle = self::html($e['libelle'] ?? '');
             $rows .= <<<ROW
         <tr>
-            <td>{$e['reference']}</td>
-            <td>{$e['libelle']}</td>
+            <td>{$reference}</td>
+            <td>{$libelle}</td>
             <td style="text-align:center;">{$photoHtml}</td>
             <td style="text-align:center;">{$qrHtml}</td>
         </tr>
@@ -1500,6 +1502,8 @@ HTML;
         $etiquettesHtml = '';
         foreach ($equipements as $e) {
             $qrBase64 = $this->qrDataUri($qrGenerator, (int) $e['id'], 240);
+            $reference = self::html($e['reference'] ?? '');
+            $libelle = self::html($e['libelle'] ?? '');
 
             $etiquettesHtml .= <<<LABEL
         <div class="etiquette">
@@ -1508,8 +1512,8 @@ HTML;
                     <img src="{$qrBase64}" alt="QR Code">
                 </div>
                 <div class="infos">
-                    <div class="reference">{$e['reference']}</div>
-                    <div class="libelle">{$e['libelle']}</div>
+                    <div class="reference">{$reference}</div>
+                    <div class="libelle">{$libelle}</div>
                 </div>
             </div>
         </div>
@@ -1852,6 +1856,12 @@ HTML;
 
     private const MESSAGE_PHOTO_ILLISIBLE = 'Erreur lors du traitement de l\'image. '
         . 'Vérifiez que le fichier est bien une image (JPEG, PNG, WebP, GIF, AVIF).';
+
+    /** Échappe une valeur insérée dans le HTML des PDF (Dompdf). */
+    private static function html(mixed $valeur): string
+    {
+        return htmlspecialchars((string) $valeur, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    }
 
     /** Message d'erreur du libellé, ou null s'il est recevable. */
     private static function erreurLibelle(string $libelle): ?string
