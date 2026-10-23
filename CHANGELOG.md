@@ -10,6 +10,28 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.7.3] — 2026-10-23
+
+Emplacement et référence modifiables dans le formulaire de modification
+(et non plus sur la fiche détail, comme en v1.7.0).
+
+### Changed
+
+- **Emplacement** : un contrôleur ouvre désormais le **formulaire de
+  modification** de l'équipement (bouton « Modifier » de la liste et de la
+  fiche) ; seul le champ emplacement y est actif, les autres sont grisés et
+  ignorés côté serveur. Le formulaire « Déplacer » de la fiche détail est
+  retiré.
+- **Référence** : un super-administrateur la modifie dans le formulaire de
+  modification, avec les mêmes garde-fous (unicité vérifiée à la volée et
+  côté serveur, saisie du mot `REFERENCE`). La fenêtre « Changer la
+  référence » de la fiche détail est retirée.
+- Le bouton « Modifier » n'est plus affiché aux simples utilisateurs.
+
+### Removed
+
+- Routes `equipement_emplacement` et `equipement_reference` (v1.7.0).
+
 ## [v1.7.2] — 2026-10-23
 
 PDF de liste avec le filtre « Emplacement : Non défini ».
