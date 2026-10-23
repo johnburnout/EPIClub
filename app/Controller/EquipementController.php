@@ -1140,9 +1140,12 @@ HTML;
         
         // --- Construction des libellés des filtres ---
         $filtresLabels = [];
+        // findId() attend un entier : un paramètre d'URL non numérique est
+        // affiché tel quel (échappé) au lieu de faire échouer le PDF.
         if (!empty($filtres['categorie'])) {
-            $categorieManager = $this->categorieManager();
-            $cat = $categorieManager->findId($filtres['categorie']);
+            $cat = ctype_digit((string) $filtres['categorie'])
+                ? $this->categorieManager()->findId((int) $filtres['categorie'])
+                : null;
             $filtresLabels[] = 'Catégorie : ' . ($cat['libelle'] ?? $filtres['categorie']);
         }
         if ($filtres['epi'] !== null && $filtres['epi'] !== '') {
@@ -1151,9 +1154,13 @@ HTML;
         if ($filtres['en_service'] !== null && $filtres['en_service'] !== '') {
             $filtresLabels[] = 'Statut : ' . ($filtres['en_service'] === 'oui' ? 'En service' : 'Hors service');
         }
-        if (!empty($filtres['emplacement'])) {
-            $emplacementManager = $this->emplacementManager();
-            $emp = $emplacementManager->findId($filtres['emplacement']);
+        if ($filtres['emplacement'] === 'null') {
+            // Option « Non défini » du filtre de la liste
+            $filtresLabels[] = 'Emplacement : Non défini';
+        } elseif (!empty($filtres['emplacement'])) {
+            $emp = ctype_digit((string) $filtres['emplacement'])
+                ? $this->emplacementManager()->findId((int) $filtres['emplacement'])
+                : null;
             $filtresLabels[] = 'Emplacement : ' . ($emp['libelle'] ?? $filtres['emplacement']);
         }
         if ($filtres['dernier_controle'] !== null && $filtres['dernier_controle'] !== '') {
