@@ -10,6 +10,25 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.7.1] — 2026-10-23
+
+Échappement HTML dans les PDF d'équipements.
+
+### Security
+
+- **PDF d'équipements (fiche, liste, étiquettes)** : les valeurs insérées
+  (référence, libellé, catégorie, emplacement, état d'usure, remarques,
+  résumé des filtres) sont désormais échappées. Le résumé des filtres du
+  PDF de liste reprenait le paramètre d'URL `acquisition` tel quel, ce qui
+  permettait d'injecter du HTML dans le document ; un libellé contenant
+  `<` ou `&` en altérait aussi la mise en page.
+
+### Changed
+
+- `EquipementController` factorisé (génération PDF / Excel, QR codes et
+  photos des exports, chargement des relations, validations communes à la
+  fiche et à la modification groupée), sans changement de comportement.
+
 ## [v1.7.0] — 2026-10-23
 
 Emplacement et référence modifiables depuis la fiche équipement.
