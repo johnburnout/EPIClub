@@ -97,21 +97,13 @@ class EquipementController extends AbstractController
         
         // --- Gestion du menu déroulant d'export ---
         if ($request->query->get('action') === 'export') {
-            $type = $request->query->get('export_type', 'pdf');
-            switch ($type) {
-                case 'pdf':
-                    return $this->listPdf($request);
-                case 'excel':
-                    return $this->listExcel($request);
-                case 'etiquettes':
-                    return $this->etiquettesPdf($request);
-                case 'donnees_excel':
-                    return $this->listDataExcel($request);
-                case 'donnees_csv':
-                    return $this->listDataCsv($request);
-                default:
-                    return $this->listPdf($request);
-            }
+            return match ($request->query->get('export_type', 'pdf')) {
+                'excel' => $this->listExcel($request),
+                'etiquettes' => $this->etiquettesPdf($request),
+                'donnees_excel' => $this->listDataExcel($request),
+                'donnees_csv' => $this->listDataCsv($request),
+                default => $this->listPdf($request),
+            };
         }
 
         // Rétrocompatibilité avec les anciens boutons directs (optionnel)
@@ -137,8 +129,8 @@ class EquipementController extends AbstractController
         $equipements = array_slice($equipements, $offset, $limit);
         $totalPages = $limit > 0 ? ceil($total / $limit) : 1;
 
-        // Construction des paramètres pour les URLs de pagination
-        $baseParams = [
+        // Paramètres de filtre / tri, communs aux URLs de pagination et au formulaire
+        $params = [
             'categorie' => $request->query->get('categorie'),
             'epi' => $request->query->get('epi'),
             'en_service' => $request->query->get('en_service'),
@@ -147,12 +139,12 @@ class EquipementController extends AbstractController
             'order_by' => $request->query->get('order_by', 'categorie'),
             'order_dir' => $request->query->get('order_dir', 'asc'),
             'limit' => $limit,
-            'acquisition' => $request->query->get('acquisition'), // AJOUT
+            'acquisition' => $request->query->get('acquisition'),
             'fin_avant' => self::dateFinAvant($request),
             'q' => self::recherche($request),
         ];
         // Nettoyer les valeurs vides pour l'URL
-        $baseParams = array_filter($baseParams, function($v) {
+        $baseParams = array_filter($params, function($v) {
             return $v !== null && $v !== '';
         });
 
@@ -163,27 +155,13 @@ class EquipementController extends AbstractController
             'last' => '?' . http_build_query(array_merge($baseParams, ['page' => $totalPages])),
         ];
 
-        // Chargement des catégories et emplacements pour le formulaire de filtre
-        $categorieManager = $this->categorieManager();
-        $emplacementManager = $this->emplacementManager();
-        $categories = $categorieManager->findAll();
-        $emplacements = $emplacementManager->findAll();
-
-        // Récupération des filtres pour l'affichage
+        // Filtres pour l'affichage (le formulaire attend categorie_id / emplacement_id)
         $filtres = [
-            'categorie_id' => $request->query->get('categorie'),
-            'epi' => $request->query->get('epi'),
-            'en_service' => $request->query->get('en_service'),
-            'emplacement_id' => $request->query->get('emplacement'),
-            'dernier_controle' => $request->query->get('dernier_controle'),
-            'order_by' => $request->query->get('order_by', 'categorie'),
-            'order_dir' => $request->query->get('order_dir', 'asc'),
+            'categorie_id' => $params['categorie'],
+            'emplacement_id' => $params['emplacement'],
             'page' => $page,
-            'limit' => $limit,
-            'acquisition' => $request->query->get('acquisition'), // AJOUT
-            'fin_avant' => self::dateFinAvant($request),
-            'q' => self::recherche($request),
-        ];
+        ] + $params;
+        unset($filtres['categorie'], $filtres['emplacement']);
 
         return $this->render('equipement_list.twig', [
             // [Photo groupée] retour sur la même vue après l'affectation
@@ -193,8 +171,8 @@ class EquipementController extends AbstractController
             // [migration 017] bouton « Supprimer » des équipements égarés
             'date_limite_egare' => $this->isGranted('ROLE_ADMIN') ? $this->dateLimiteEgare() : null,
             'equipements' => $equipements,
-            'categories' => $categories,
-            'emplacements' => $emplacements,
+            'categories' => $this->categorieManager()->findAll(),
+            'emplacements' => $this->emplacementManager()->findAll(),
             'filtres' => $filtres,
             'pagination' => [
                 'total' => $total,
@@ -205,7 +183,7 @@ class EquipementController extends AbstractController
                 'hasNext' => $page < $totalPages,
             ],
             'paginationUrls' => $paginationUrls,
-            'acquisition_id' => $request->query->get('acquisition'), // AJOUT pour affichage
+            'acquisition_id' => $params['acquisition'],
         ]);
     }
     
@@ -344,7 +322,7 @@ class EquipementController extends AbstractController
             });
         }
 
-                // [Tableau de bord] Équipements à renouveler : date de fin
+        // [Tableau de bord] Équipements à renouveler : date de fin
         // d'utilisation <= fin_avant (y compris déjà échus), hors
         // équipements supprimés / « Hors service » — même périmètre que
         // EquipementManager::statsARenouveler().
@@ -356,7 +334,7 @@ class EquipementController extends AbstractController
                     && (int) ($e['statut'] ?? 0) !== EquipementStatut::HORS_SERVICE->value;
             });
         }
-                if ($dernier_controle !== null) {
+        if ($dernier_controle !== null) {
             $oneYearAgo = date('Y-m-d', strtotime('-1 year'));
             if ($dernier_controle === 'plus_1_an') {
                 $equipements = array_filter($equipements, function($e) use ($oneYearAgo) {
@@ -466,16 +444,8 @@ class EquipementController extends AbstractController
             return $this->redirectTo('/equipements');
         }
         
-        $categorieManager = $this->categorieManager();
-        $emplacementManager = $this->emplacementManager();
-        
-        if (!empty($equipement['categorie_id'])) {
-            $equipement['categorie'] = $categorieManager->findId($equipement['categorie_id']);
-        }
-        if (!empty($equipement['emplacement_id'])) {
-            $equipement['emplacement'] = $emplacementManager->findId($equipement['emplacement_id']);
-        }
-        
+        $equipement = $this->avecCategorieEtEmplacement($equipement);
+
         $historiqueControles = $equipementManager->getHistoriqueControles($id);
         
         $acquisition = null;
@@ -509,7 +479,7 @@ class EquipementController extends AbstractController
             'historiqueControles' => $historiqueControles,
             'acquisition' => $acquisition,
             // [2026-10-23] Déplacement depuis la fiche (contrôleurs et plus)
-            'emplacements' => $this->isGranted('ROLE_CONTROLLEUR') ? $emplacementManager->findAll() : [],
+            'emplacements' => $this->isGranted('ROLE_CONTROLLEUR') ? $this->emplacementManager()->findAll() : [],
             'mot_confirmation_reference' => self::MOT_CONFIRMATION_REFERENCE,
             'reference_max' => self::REFERENCE_MAX,
         ]);
@@ -726,10 +696,7 @@ class EquipementController extends AbstractController
         // affichée et borne basse de la date de mise en service.
         $dateFacture = null;
         if (!empty($equipement['acquisition_id'])) {
-            $acquisition = $this->acquisitionManager()->findId((int) $equipement['acquisition_id']);
-            if (!empty($acquisition['facture_date'])) {
-                $dateFacture = date('Y-m-d', strtotime($acquisition['facture_date']));
-            }
+            $dateFacture = self::dateFacture($this->acquisitionManager()->findId((int) $equipement['acquisition_id']));
         }
         if (is_array($equipement)) {
             $equipement['date_achat'] = $dateFacture;
@@ -787,8 +754,7 @@ class EquipementController extends AbstractController
                     // On ne remonte pas $e->getMessage() tel quel : il peut contenir
                     // des chemins serveur. On garde le message court.
                     error_log('[EquipementController] Photo processing failed: ' . $e->getMessage());
-                    $form_errors['photo'] = 'Erreur lors du traitement de l\'image. '
-                    . 'Vérifiez que le fichier est bien une image (JPEG, PNG, WebP, GIF, AVIF).';
+                    $form_errors['photo'] = self::MESSAGE_PHOTO_ILLISIBLE;
                 }
             }
             
@@ -818,22 +784,14 @@ class EquipementController extends AbstractController
                 // (int)'hacked' === 0 et (int)'' === 0, ce qui laisserait
                 // passer des valeurs invalides comme DISPONIBLE.
                 $statutRaw = $request->request->get('statut');
-                if (!is_string($statutRaw) || !ctype_digit($statutRaw)) {
-                    error_log(sprintf(
-                        '[EquipementController] Invalid statut submitted for equipement id=%s: %s',
-                        $id ?? 'new',
-                        is_scalar($statutRaw) ? substr((string) $statutRaw, 0, 50) : gettype($statutRaw)
-                    ));
-                    $this->session->getFlashBag()->add('error', 'Statut invalide.');
-                    return $this->redirectTo('/equipements');
-                }
-                
-                $statutEnum = EquipementStatut::tryFrom((int) $statutRaw);
+                $statutEnum = is_string($statutRaw) && ctype_digit($statutRaw)
+                    ? EquipementStatut::tryFrom((int) $statutRaw)
+                    : null;
                 if ($statutEnum === null) {
                     error_log(sprintf(
                         '[EquipementController] Invalid statut submitted for equipement id=%s: %s',
                         $id ?? 'new',
-                        $statutRaw
+                        is_scalar($statutRaw) ? substr((string) $statutRaw, 0, 50) : gettype($statutRaw)
                     ));
                     $this->session->getFlashBag()->add('error', 'Statut invalide.');
                     return $this->redirectTo('/equipements');
@@ -855,10 +813,8 @@ class EquipementController extends AbstractController
                 // modifiable uniquement par un super-administrateur.
                 if ($this->isGranted('ROLE_SUPER_ADMIN') && $request->request->has('libelle')) {
                     $libelle = trim((string) $request->request->get('libelle'));
-                    if ($libelle === '') {
-                        $form_errors['libelle'] = 'Le libellé est obligatoire.';
-                    } elseif (mb_strlen($libelle) > 255) {
-                        $form_errors['libelle'] = 'Le libellé ne doit pas dépasser 255 caractères.';
+                    if (($erreur = self::erreurLibelle($libelle)) !== null) {
+                        $form_errors['libelle'] = $erreur;
                     }
                 }
             }
@@ -994,54 +950,20 @@ class EquipementController extends AbstractController
             return $this->redirectTo('/equipements');
         }
         
-        $equipementManager = $this->equipementManager();
-        $equipement = $equipementManager->findId($id);
+        $equipement = $this->equipementManager()->findId($id);
         if (!$equipement) {
             $this->session->getFlashBag()->add('danger', 'Équipement non trouvé.');
             return $this->redirectTo('/equipements');
         }
-        
-        $categorieManager = $this->categorieManager();
-        $emplacementManager = $this->emplacementManager();
-        if (!empty($equipement['categorie_id'])) {
-            $equipement['categorie'] = $categorieManager->findId($equipement['categorie_id']);
-        }
-        if (!empty($equipement['emplacement_id'])) {
-            $equipement['emplacement'] = $emplacementManager->findId($equipement['emplacement_id']);
-        }
-        
-        $qrGenerator = new QrCodeGenerator();
-        $baseUrl = $this->getBaseUrl();
-        $qrUrl = $baseUrl . '/qr/' . $id;
-        $qrPngBinary = $qrGenerator->generateFromData($qrUrl, 300, false);
-        $qrBase64 = 'data:image/png;base64,' . base64_encode($qrPngBinary);
-        
-        $photoBase64 = null;
-        if (!empty($equipement['photo'])) {
-            $photoPath = $this->getPublicPath($equipement['photo']);
-            if (file_exists($photoPath)) {
-                $imageData = file_get_contents($photoPath);
-                $mime = mime_content_type($photoPath);
-                $photoBase64 = 'data:' . $mime . ';base64,' . base64_encode($imageData);
-            }
-        }
-        
-        $html = $this->renderPdfHtml($equipement, $qrBase64, $photoBase64);
-        
-        $options = new Options();
-        $options->set('isRemoteEnabled', false);
-        $options->set('isHtml5ParserEnabled', true);
-        $options->set('defaultFont', 'DejaVu Sans');
-        $dompdf = new Dompdf($options);
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
-        
-        $output = $dompdf->output();
-        return new Response($output, 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="equipement_' . $equipement['reference'] . '.pdf"'
-        ]);
+        $equipement = $this->avecCategorieEtEmplacement($equipement);
+
+        $html = $this->renderPdfHtml(
+            $equipement,
+            $this->qrDataUri(new QrCodeGenerator(), $id, 300),
+            $this->photoDataUri($equipement['photo'] ?? null)
+        );
+
+        return $this->pdfResponse($html, 'equipement_' . $equipement['reference'] . '.pdf');
     }
 
     /**
@@ -1206,21 +1128,7 @@ HTML;
         // Génération du HTML pour le PDF
         $html = $this->renderPdfListHtml($equipements, $filtres);
 
-        // Configuration Dompdf
-        $options = new Options();
-        $options->set('isRemoteEnabled', false);
-        $options->set('isHtml5ParserEnabled', true);
-        $options->set('defaultFont', 'DejaVu Sans');
-        $dompdf = new Dompdf($options);
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
-
-        $output = $dompdf->output();
-        return new Response($output, 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="liste_equipements.pdf"'
-        ]);
+        return $this->pdfResponse($html, 'liste_equipements.pdf');
     }
 
     /**
@@ -1258,31 +1166,19 @@ HTML;
         
         // --- Générateur de QR code ---
         $qrGenerator = new QrCodeGenerator();
-        $baseUrl = $this->getBaseUrl();
-        
-        // --- Construction des lignes du tableau ---
+
+// --- Construction des lignes du tableau ---
         $rows = '';
         foreach ($equipements as $e) {
             // 1. Photo en base64 – 3cm x 3cm
-            $photoHtml = '';
-            if (!empty($e['photo'])) {
-                $photoPath = $this->getPublicPath($e['photo']);
-                if (file_exists($photoPath)) {
-                    $imageData = file_get_contents($photoPath);
-                    $mime = mime_content_type($photoPath);
-                    $photoBase64 = 'data:' . $mime . ';base64,' . base64_encode($imageData);
-                    $photoHtml = '<img src="' . $photoBase64 . '" style="width:3cm; height:3cm; object-fit:cover; border:1px solid #ddd;">';
-                }
-            }
-            if (empty($photoHtml)) {
-                $photoHtml = '<span style="color:#ccc; font-size:10px;">—</span>';
-            }
-            
+            $photoBase64 = $this->photoDataUri($e['photo'] ?? null);
+            $photoHtml = $photoBase64 !== null
+                ? '<img src="' . $photoBase64 . '" style="width:3cm; height:3cm; object-fit:cover; border:1px solid #ddd;">'
+                : '<span style="color:#ccc; font-size:10px;">—</span>';
+
             // 2. QR code en base64 – 3cm x 3cm
-            $qrUrl = $baseUrl . '/qr/' . $e['id'];
             try {
-                $qrPngBinary = $qrGenerator->generateFromData($qrUrl, 300, false);
-                $qrBase64 = 'data:image/png;base64,' . base64_encode($qrPngBinary);
+                $qrBase64 = $this->qrDataUri($qrGenerator, (int) $e['id'], 300);
                 $qrHtml = '<img src="' . $qrBase64 . '" style="width:3cm; height:3cm;">';
             } catch (\Exception $ex) {
                 $qrHtml = '<span style="color:#999; font-size:9px;">QR indisponible</span>';
@@ -1430,23 +1326,14 @@ HTML;
             $row++;
         }
         
-        // Génération du fichier Excel
-        $writer = new Xlsx($spreadsheet);
-        $tempExcel = tempnam(sys_get_temp_dir(), 'excel_');
-        $writer->save($tempExcel);
-        
-        // Nettoyer les QR temporaires
+        $response = $this->xlsxResponse($spreadsheet, 'inline; filename="liste_equipements.xlsx"');
+
+        // Nettoyer les QR temporaires (lus à l'écriture du classeur)
         foreach ($tempFiles as $file) {
             if (file_exists($file)) {
                 unlink($file);
             }
         }
-        
-        $response = new Response(file_get_contents($tempExcel));
-        $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        $response->headers->set('Content-Disposition', 'inline; filename="liste_equipements.xlsx"');
-        $response->headers->set('Content-Length', filesize($tempExcel));
-        unlink($tempExcel);
 
         return $response;
     }
@@ -1552,17 +1439,7 @@ HTML;
             $rowNum++;
         }
 
-        $writer = new Xlsx($spreadsheet);
-        $tempExcel = tempnam(sys_get_temp_dir(), 'export_');
-        $writer->save($tempExcel);
-
-        $response = new Response(file_get_contents($tempExcel));
-        $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        $response->headers->set('Content-Disposition', 'attachment; filename="export_equipements_' . date('Ymd_His') . '.xlsx"');
-        $response->headers->set('Content-Length', filesize($tempExcel));
-        unlink($tempExcel);
-
-        return $response;
+        return $this->xlsxResponse($spreadsheet, 'attachment; filename="export_equipements_' . date('Ymd_His') . '.xlsx"');
     }
 
     /**
@@ -1610,21 +1487,7 @@ HTML;
         // Génération du HTML
         $html = $this->renderEtiquettesHtml($equipements);
         
-        // Configuration Dompdf
-        $options = new Options();
-        $options->set('isRemoteEnabled', false);
-        $options->set('isHtml5ParserEnabled', true);
-        $options->set('defaultFont', 'DejaVu Sans');
-        $dompdf = new Dompdf($options);
-        $dompdf->loadHtml($html);
-        $dompdf->setPaper('A4', 'portrait');
-        $dompdf->render();
-        
-        $output = $dompdf->output();
-        return new Response($output, 200, [
-            'Content-Type' => 'application/pdf',
-            'Content-Disposition' => 'inline; filename="etiquettes_avery5160.pdf"'
-        ]);
+        return $this->pdfResponse($html, 'etiquettes_avery5160.pdf');
     }
 
     /**
@@ -1633,13 +1496,10 @@ HTML;
     private function renderEtiquettesHtml(array $equipements): string
     {
         $qrGenerator = new QrCodeGenerator();
-        $baseUrl = $this->getBaseUrl();
 
         $etiquettesHtml = '';
         foreach ($equipements as $e) {
-            $qrUrl = $baseUrl . '/qr/' . $e['id'];
-            $qrPng = $qrGenerator->generateFromData($qrUrl, 240, false);
-            $qrBase64 = 'data:image/png;base64,' . base64_encode($qrPng);
+            $qrBase64 = $this->qrDataUri($qrGenerator, (int) $e['id'], 240);
 
             $etiquettesHtml .= <<<LABEL
         <div class="etiquette">
@@ -1686,13 +1546,6 @@ LABEL;
 HTML;
     }
 
-    // --------------------------------------------------------------
-    // UTILITAIRES
-    // --------------------------------------------------------------
-
-    /**
-     * Redimensionne et sauvegarde une image
-     */
     // --------------------------------------------------------------
     // MODIFICATION GROUPÉE
     // --------------------------------------------------------------
@@ -1820,10 +1673,8 @@ HTML;
                         break;
                     case 'libelle':
                         $libelle = trim((string) $brut);
-                        if ($libelle === '') {
-                            $form_errors['libelle'] = 'Le libellé est obligatoire.';
-                        } elseif (mb_strlen($libelle) > 255) {
-                            $form_errors['libelle'] = 'Le libellé ne doit pas dépasser 255 caractères.';
+                        if (($erreur = self::erreurLibelle($libelle)) !== null) {
+                            $form_errors['libelle'] = $erreur;
                         } else {
                             $valeurs['libelle'] = $libelle;
                         }
@@ -1846,8 +1697,7 @@ HTML;
                     $form_errors['photo'] = $e->getMessage();
                 } catch (\Throwable $e) {
                     error_log('[EquipementController] Modification groupée (photo) : ' . $e->getMessage());
-                    $form_errors['photo'] = 'Erreur lors du traitement de l\'image. '
-                        . 'Vérifiez que le fichier est bien une image (JPEG, PNG, WebP, GIF, AVIF).';
+                    $form_errors['photo'] = self::MESSAGE_PHOTO_ILLISIBLE;
                 }
             }
 
@@ -1913,10 +1763,7 @@ HTML;
             if (array_key_exists('date_mise_en_service', $valeurs)) {
                 $aid = (int) ($equipement['acquisition_id'] ?? 0);
                 if (!array_key_exists($aid, $datesFacture)) {
-                    $acquisition = $aid > 0 ? $this->acquisitionManager()->findId($aid) : null;
-                    $datesFacture[$aid] = !empty($acquisition['facture_date'])
-                        ? date('Y-m-d', strtotime($acquisition['facture_date']))
-                        : null;
+                    $datesFacture[$aid] = self::dateFacture($aid > 0 ? $this->acquisitionManager()->findId($aid) : null);
                 }
                 $dateFacture = $datesFacture[$aid];
                 $dms = $valeurs['date_mise_en_service'];
@@ -1997,6 +1844,97 @@ HTML;
         unset($params['action'], $params['export_type']);
         $params = array_filter($params, 'is_string');
         return $params === [] ? '/equipements' : '/equipements?' . http_build_query($params);
+    }
+
+    // --------------------------------------------------------------
+    // UTILITAIRES
+    // --------------------------------------------------------------
+
+    private const MESSAGE_PHOTO_ILLISIBLE = 'Erreur lors du traitement de l\'image. '
+        . 'Vérifiez que le fichier est bien une image (JPEG, PNG, WebP, GIF, AVIF).';
+
+    /** Message d'erreur du libellé, ou null s'il est recevable. */
+    private static function erreurLibelle(string $libelle): ?string
+    {
+        if ($libelle === '') {
+            return 'Le libellé est obligatoire.';
+        }
+        if (mb_strlen($libelle) > 255) {
+            return 'Le libellé ne doit pas dépasser 255 caractères.';
+        }
+        return null;
+    }
+
+    /** [MÉTIER] Date de facture (Y-m-d) d'une acquisition ; null si inconnue. */
+    private static function dateFacture(array|false|null $acquisition): ?string
+    {
+        return !empty($acquisition['facture_date'])
+            ? date('Y-m-d', strtotime($acquisition['facture_date']))
+            : null;
+    }
+
+    /** Ajoute les lignes catégorie et emplacement liées à l'équipement. */
+    private function avecCategorieEtEmplacement(array $equipement): array
+    {
+        if (!empty($equipement['categorie_id'])) {
+            $equipement['categorie'] = $this->categorieManager()->findId($equipement['categorie_id']);
+        }
+        if (!empty($equipement['emplacement_id'])) {
+            $equipement['emplacement'] = $this->emplacementManager()->findId($equipement['emplacement_id']);
+        }
+        return $equipement;
+    }
+
+    /** QR code (PNG en data URI) pointant vers /qr/{id}. */
+    private function qrDataUri(QrCodeGenerator $qrGenerator, int $id, int $taille): string
+    {
+        $png = $qrGenerator->generateFromData($this->getBaseUrl() . '/qr/' . $id, $taille, false);
+        return 'data:image/png;base64,' . base64_encode($png);
+    }
+
+    /** Photo de l'équipement en data URI ; null si absente du disque. */
+    private function photoDataUri(?string $photo): ?string
+    {
+        if (empty($photo)) {
+            return null;
+        }
+        $chemin = $this->getPublicPath($photo);
+        if (!file_exists($chemin)) {
+            return null;
+        }
+        return 'data:' . mime_content_type($chemin) . ';base64,' . base64_encode(file_get_contents($chemin));
+    }
+
+    /** Rend le HTML en PDF A4 portrait (Dompdf, ressources distantes interdites). */
+    private function pdfResponse(string $html, string $filename): Response
+    {
+        $options = new Options();
+        $options->set('isRemoteEnabled', false);
+        $options->set('isHtml5ParserEnabled', true);
+        $options->set('defaultFont', 'DejaVu Sans');
+        $dompdf = new Dompdf($options);
+        $dompdf->loadHtml($html);
+        $dompdf->setPaper('A4', 'portrait');
+        $dompdf->render();
+
+        return new Response($dompdf->output(), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => 'inline; filename="' . $filename . '"',
+        ]);
+    }
+
+    private function xlsxResponse(Spreadsheet $spreadsheet, string $disposition): Response
+    {
+        $tempExcel = tempnam(sys_get_temp_dir(), 'excel_');
+        (new Xlsx($spreadsheet))->save($tempExcel);
+
+        $response = new Response(file_get_contents($tempExcel));
+        $response->headers->set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        $response->headers->set('Content-Disposition', $disposition);
+        $response->headers->set('Content-Length', filesize($tempExcel));
+        unlink($tempExcel);
+
+        return $response;
     }
 
     /** Efface le fichier photo s'il n'est plus utilisé par aucun équipement. */
