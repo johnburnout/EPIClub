@@ -27,7 +27,7 @@ class ReferenceGenerator
     public const DEFAULT_MODELE = 'YYCATNNN';
 
     /** Longueur max de la colonne club_equipement.reference (varchar). */
-    private const REFERENCE_MAX = 32;
+    public const REFERENCE_MAX = 32;
 
     // ==================================================================
     // Factories — mockables en test Unit (pattern Vague 11)
@@ -188,7 +188,7 @@ class ReferenceGenerator
             $erreurs[] = 'Le modèle ne doit contenir qu\'un seul bloc de N (le compteur).';
         }
         if (strlen($modele) > self::REFERENCE_MAX) {
-            $erreurs[] = 'Le modèle est trop long (références limitées à 32 caractères).';
+            $erreurs[] = sprintf('Le modèle est trop long (références limitées à %d caractères).', self::REFERENCE_MAX);
         }
         if (preg_match('/Y(?!Y)/', str_replace(['YYYY', 'YY'], '', $modele))) {
             $erreurs[] = 'Variable d\'année invalide : utilisez YY ou YYYY.';

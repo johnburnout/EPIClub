@@ -192,13 +192,14 @@ class EquipementManager extends AbstractManager
      */
     public function referenceExists(string $reference, ?int $saufId = null): bool
     {
-        if ($saufId === null) {
-            $stmt = $this->db->prepare("SELECT COUNT(*) FROM club_equipement WHERE reference = :reference");
-            $stmt->execute(['reference' => $reference]);
-        } else {
-            $stmt = $this->db->prepare("SELECT COUNT(*) FROM club_equipement WHERE reference = :reference AND id <> :id");
-            $stmt->execute(['reference' => $reference, 'id' => $saufId]);
+        $sql = "SELECT COUNT(*) FROM club_equipement WHERE reference = :reference";
+        $params = ['reference' => $reference];
+        if ($saufId !== null) {
+            $sql .= " AND id <> :id";
+            $params['id'] = $saufId;
         }
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
         return (int) $stmt->fetchColumn() > 0;
     }
 

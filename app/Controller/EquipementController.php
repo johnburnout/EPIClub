@@ -6,6 +6,7 @@ use Epiclub\Domain\CategorieManager;
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\EmplacementManager;
 use Epiclub\Domain\AcquisitionManager;
+use Epiclub\Domain\ReferenceGenerator;
 use Epiclub\Enum\EquipementStatut;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\ImageUploader;
@@ -514,6 +515,31 @@ class EquipementController extends AbstractController
         ]);
     }
 
+    /**
+     * [2026-10-23] Préambule des actions POST de la fiche : id valide,
+     * CSRF, équipement existant. Null → l'appelant redirige vers la liste.
+     */
+    private function equipementDeLaFiche(Request $request): ?array
+    {
+        $id = $this->getValidId($request);
+        if ($id === null) {
+            return null;
+        }
+        $this->validateCsrf($request);
+
+        $equipement = $this->equipementManager()->findId($id);
+        if (!$equipement) {
+            $this->session->getFlashBag()->add('danger', 'Équipement non trouvé.');
+            return null;
+        }
+        return $equipement;
+    }
+
+    private static function urlFiche(int $id): string
+    {
+        return '/equipements/equipement-' . $id;
+    }
+
     // --------------------------------------------------------------
     // [2026-10-23] EMPLACEMENT DEPUIS LA FICHE (ROLE_CONTROLLEUR)
     // --------------------------------------------------------------
@@ -521,18 +547,12 @@ class EquipementController extends AbstractController
     {
         $this->deniAccessUnlessGranted('ROLE_CONTROLLEUR');
 
-        $id = $this->getValidId($request);
-        if ($id === null) {
+        if (!$equipement = $this->equipementDeLaFiche($request)) {
             return $this->redirectTo('/equipements');
         }
-        $this->validateCsrf($request);
-
-        $equipement = $this->equipementManager()->findId($id);
-        if (!$equipement) {
-            $this->session->getFlashBag()->add('danger', 'Équipement non trouvé.');
-            return $this->redirectTo('/equipements');
-        }
-        $fiche = '/equipements/equipement-' . $id;
+        $id = (int) $equipement['id'];
+        $fiche = self::urlFiche($id);
+        $flash = $this->session->getFlashBag();
 
         // Whitelist : vide (aucun emplacement) ou id d'un emplacement existant.
         $raw = $request->request->get('emplacement_id', '');
@@ -541,7 +561,7 @@ class EquipementController extends AbstractController
         if ($raw !== '' && $raw !== null) {
             if (!is_string($raw) || !ctype_digit($raw)
                 || !($emplacement = $this->emplacementManager()->findId((int) $raw))) {
-                $this->session->getFlashBag()->add('error', 'Emplacement invalide.');
+                $flash->add('error', 'Emplacement invalide.');
                 return $this->redirectTo($fiche);
             }
             $emplacementId = (int) $raw;
@@ -549,12 +569,12 @@ class EquipementController extends AbstractController
 
         $actuel = !empty($equipement['emplacement_id']) ? (int) $equipement['emplacement_id'] : null;
         if ($actuel === $emplacementId) {
-            $this->session->getFlashBag()->add('info', 'Emplacement inchangé.');
+            $flash->add('info', 'Emplacement inchangé.');
             return $this->redirectTo($fiche);
         }
 
         $this->equipementManager()->save(['id' => $id, 'emplacement_id' => $emplacementId]);
-        $this->session->getFlashBag()->add('success', $emplacement
+        $flash->add('success', $emplacement
             ? sprintf('Équipement déplacé vers « %s ».', $emplacement['libelle'])
             : 'Emplacement retiré.');
 
@@ -569,7 +589,9 @@ class EquipementController extends AbstractController
     public const MOT_CONFIRMATION_REFERENCE = 'REFERENCE';
 
     /** Longueur de club_equipement.reference (VARCHAR(32)). */
-    public const REFERENCE_MAX = 32;
+    public const REFERENCE_MAX = ReferenceGenerator::REFERENCE_MAX;
+
+    private const MESSAGE_REFERENCE_PRISE = 'La référence « %s » est déjà attribuée à un autre équipement.';
 
     /** Message d'erreur de format, ou null si la référence est recevable. */
     public static function erreurFormatReference(string $reference): ?string
@@ -623,18 +645,11 @@ class EquipementController extends AbstractController
     {
         $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
 
-        $id = $this->getValidId($request);
-        if ($id === null) {
+        if (!$equipement = $this->equipementDeLaFiche($request)) {
             return $this->redirectTo('/equipements');
         }
-        $this->validateCsrf($request);
-
-        $equipement = $this->equipementManager()->findId($id);
-        if (!$equipement) {
-            $this->session->getFlashBag()->add('danger', 'Équipement non trouvé.');
-            return $this->redirectTo('/equipements');
-        }
-        $fiche = '/equipements/equipement-' . $id;
+        $id = (int) $equipement['id'];
+        $fiche = self::urlFiche($id);
         $flash = $this->session->getFlashBag();
 
         $ancienne = (string) $equipement['reference'];
@@ -657,7 +672,7 @@ class EquipementController extends AbstractController
             return $this->redirectTo($fiche);
         }
         if ($this->equipementManager()->referenceExists($nouvelle, $id)) {
-            $flash->add('error', sprintf('La référence « %s » est déjà attribuée à un autre équipement.', $nouvelle));
+            $flash->add('error', sprintf(self::MESSAGE_REFERENCE_PRISE, $nouvelle));
             return $this->redirectTo($fiche);
         }
 
@@ -669,7 +684,7 @@ class EquipementController extends AbstractController
             if ((string) $e->getCode() !== '23000') {
                 throw $e;
             }
-            $flash->add('error', sprintf('La référence « %s » est déjà attribuée à un autre équipement.', $nouvelle));
+            $flash->add('error', sprintf(self::MESSAGE_REFERENCE_PRISE, $nouvelle));
             return $this->redirectTo($fiche);
         }
 
