@@ -14,13 +14,7 @@
 			<div class="card-body">
 				<div class="row">
 					<div class="col-md-6">
-						<p><strong>Référence :</strong> {{ equipement.reference }}
-							{% if isGranted('ROLE_SUPER_ADMIN') %}
-								<button type="button" class="btn btn-sm btn-outline-danger ms-2" data-bs-toggle="modal" data-bs-target="#modal-reference">
-									<i class="fas fa-pen"></i> Changer
-								</button>
-							{% endif %}
-						</p>
+						<p><strong>Référence :</strong> {{ equipement.reference }}</p>
 						{% if equipement.nombre_initial is defined and equipement.nombre_initial > 1 %}
 							<p><strong>Lot :</strong> {{ equipement.nombre }} élément(s) restant(s) sur {{ equipement.nombre_initial }} initiaux</p>
 						{% endif %}
@@ -40,24 +34,6 @@
 								<span class="text-muted">Non défini</span>
 							{% endif %}
 						</p>
-						{% if isGranted('ROLE_CONTROLLEUR') %}
-						{# [2026-10-23] Déplacement depuis la fiche (contrôleurs et plus) #}
-						<form method="post" action="/equipements/equipement_emplacement-{{ equipement.id }}" class="mb-3">
-							<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-							<label for="emplacement_id" class="form-label mb-1"><strong>Emplacement :</strong></label>
-							<div class="d-flex flex-wrap gap-2 align-items-center">
-								<select id="emplacement_id" name="emplacement_id" class="form-select form-select-sm" style="max-width: 18rem;">
-									<option value="">-- Aucun emplacement --</option>
-									{% for e in emplacements %}
-										<option value="{{ e.id }}" {% if equipement.emplacement_id == e.id %}selected{% endif %}>{{ e.libelle }}</option>
-									{% endfor %}
-								</select>
-								<button type="submit" class="btn btn-sm btn-outline-primary">
-									<i class="fas fa-map-marker-alt"></i> Déplacer
-								</button>
-							</div>
-						</form>
-						{% else %}
 						<p><strong>Emplacement :</strong> 
 							{% if equipement.emplacement %}
 								{{ equipement.emplacement.libelle }}
@@ -65,7 +41,6 @@
 								<span class="text-muted">Non défini</span>
 							{% endif %}
 						</p>
-						{% endif %}
 						<p><strong>Date de mise en service :</strong> 
 							{% if equipement.date_mise_en_service %}
 								{{ equipement.date_mise_en_service|date("d/m/Y") }}
@@ -381,9 +356,11 @@
 				<a href="/equipements" class="btn btn-secondary">
 					<i class="fas fa-arrow-left"></i> Retour à la liste
 				</a>
+				{% if isGranted('ROLE_CONTROLLEUR') %}
 				<a href="/equipements/equipement_modification-{{ equipement.id }}" class="btn btn-warning">
-					<i class="fas fa-edit"></i> Modifier
+					<i class="fas fa-edit"></i> Modifier{% if not isGranted('ROLE_ADMIN') %} l'emplacement{% endif %}
 				</a>
+				{% endif %}
 				<a href="/equipements/equipement-pdf-{{ equipement.id }}" class="btn btn-danger" target="_blank">
 					<i class="fas fa-file-pdf"></i> PDF
 				</a>
@@ -416,47 +393,6 @@
 				{% endif %}
 				{% endif %}
 			</div>
-		{% if isGranted('ROLE_SUPER_ADMIN') %}
-		{# [2026-10-23] Changement de référence : unicité vérifiée à la volée
-		   + saisie du mot de confirmation (re-vérifiés côté serveur). #}
-		<div class="modal fade" id="modal-reference" tabindex="-1" aria-labelledby="modal-reference-titre" aria-hidden="true">
-			<div class="modal-dialog">
-				<form method="post" action="/equipements/equipement_reference-{{ equipement.id }}" class="modal-content" id="form-reference" autocomplete="off">
-					<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-					<div class="modal-header">
-						<h5 class="modal-title" id="modal-reference-titre">Changer la référence</h5>
-						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
-					</div>
-					<div class="modal-body">
-						<div class="alert alert-warning small">
-							<i class="fas fa-exclamation-triangle"></i>
-							La référence est l'identifiant métier de l'équipement. Les étiquettes et fiches déjà
-							imprimées porteront l'ancienne référence <strong>{{ equipement.reference }}</strong> ;
-							le QR code reste valable.
-						</div>
-						<div class="mb-3">
-							<label for="nouvelle-reference" class="form-label">Nouvelle référence</label>
-							<input type="text" class="form-control" id="nouvelle-reference" name="reference"
-							       maxlength="{{ reference_max }}" required
-							       data-equipement-id="{{ equipement.id }}" data-reference-actuelle="{{ equipement.reference }}">
-							<div class="form-text" id="reference-statut" aria-live="polite">&nbsp;</div>
-						</div>
-						<div class="mb-1">
-							<label for="confirmation-reference" class="form-label">
-								Pour confirmer, saisissez <code>{{ mot_confirmation_reference }}</code>
-							</label>
-							<input type="text" class="form-control" id="confirmation-reference" name="confirmation"
-							       required spellcheck="false" data-mot="{{ mot_confirmation_reference }}">
-						</div>
-					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
-						<button type="submit" class="btn btn-danger" id="btn-valider-reference" disabled>Changer la référence</button>
-					</div>
-				</form>
-			</div>
-		</div>
-		{% endif %}
 	{% else %}
 		<div class="alert alert-warning">
 			<i class="fas fa-exclamation-triangle"></i> Équipement non trouvé.
@@ -612,67 +548,6 @@
 				this.remove();
 			});
 		}
-
-		/**
-		 * [2026-10-23] Changement de référence (super-admin) : unicité
-		 * vérifiée à la volée, bouton actif seulement si la référence est
-		 * disponible ET le mot de confirmation saisi.
-		 */
-		(function () {
-			const champ = document.getElementById('nouvelle-reference');
-			if (!champ) return;
-			const confirmation = document.getElementById('confirmation-reference');
-			const statut = document.getElementById('reference-statut');
-			const bouton = document.getElementById('btn-valider-reference');
-			const motAttendu = confirmation.dataset.mot;
-			let disponible = false;
-			let minuterie = null;
-			let requete = 0;
-
-			function afficher(classe, texte) {
-				statut.className = 'form-text ' + classe;
-				statut.textContent = texte;
-			}
-			function majBouton() {
-				bouton.disabled = !(disponible && confirmation.value.trim() === motAttendu);
-			}
-			function verifier() {
-				const valeur = champ.value.trim();
-				disponible = false;
-				majBouton();
-				if (valeur === '') { afficher('', '\u00a0'); return; }
-				afficher('text-muted', 'Vérification…');
-				const numero = ++requete;
-				const url = '/equipements/reference-disponible?id=' + encodeURIComponent(champ.dataset.equipementId)
-					+ '&reference=' + encodeURIComponent(valeur);
-				fetch(url, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
-					.then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-					.then(data => {
-						if (numero !== requete) return; // réponse obsolète
-						disponible = !!data.disponible;
-						afficher(disponible ? 'text-success' : 'text-danger', (disponible ? '✔ ' : '✖ ') + data.message);
-						majBouton();
-					})
-					.catch(() => {
-						if (numero !== requete) return;
-						afficher('text-danger', 'Vérification impossible, réessayez.');
-					});
-			}
-
-			champ.addEventListener('input', function () {
-				clearTimeout(minuterie);
-				disponible = false;
-				majBouton();
-				minuterie = setTimeout(verifier, 300);
-			});
-			confirmation.addEventListener('input', majBouton);
-			document.getElementById('form-reference').addEventListener('submit', function (e) {
-				if (bouton.disabled) e.preventDefault();
-			});
-			document.getElementById('modal-reference').addEventListener('shown.bs.modal', function () {
-				champ.focus();
-			});
-		})();
 
 		// Initialisation : vérifier si le QR est déjà sauvegardé
 		document.addEventListener('DOMContentLoaded', function() {

@@ -119,7 +119,7 @@ $routes->add('equipement_modification_groupee', new Route(
     [], [], '', [], ['GET', 'POST']
 ));
 
-// ROLE_ADMIN : modification et suppression
+// Modification : ROLE_ADMIN (ROLE_CONTROLLEUR : emplacement seul) ; suppression : ROLE_ADMIN
 $routes->add('equipement_edit', new Route(
     '/equipements/equipement_modification-{id}',
     ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'edit']
@@ -130,24 +130,12 @@ $routes->add('equipement_delete', new Route(
     [], [], '', [], ['POST']
 ));
 
-// ROLE_CONTROLLEUR : changement d'emplacement depuis la fiche
-$routes->add('equipement_emplacement', new Route(
-    '/equipements/equipement_emplacement-{id}',
-    ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'changerEmplacement'],
-    [], [], '', [], ['POST']
-));
-
-// ROLE_SUPER_ADMIN : changement de référence depuis la fiche
-// (vérification d'unicité à la volée en AJAX + mot de confirmation)
+// ROLE_SUPER_ADMIN : vérification d'unicité à la volée (AJAX) de la
+// référence saisie dans le formulaire de modification
 $routes->add('equipement_reference_disponible', new Route(
     '/equipements/reference-disponible',
     ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'referenceDisponible'],
     [], [], '', [], ['GET']
-));
-$routes->add('equipement_reference', new Route(
-    '/equipements/equipement_reference-{id}',
-    ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'changerReference'],
-    [], [], '', [], ['POST']
 ));
 
 

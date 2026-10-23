@@ -10,6 +10,13 @@
 	<form method="post" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 		
+		{% set emplacement_seul = emplacement_seul|default(false) %}
+		{% if emplacement_seul %}
+			<div class="alert alert-info">
+				<i class="fas fa-info-circle"></i> En tant que contrôleur, vous pouvez modifier uniquement l'<strong>emplacement</strong> de cet équipement.
+			</div>
+		{% endif %}
+
 		{# Erreurs générales #}
 		{% if form_errors is defined and form_errors %}
 			{% for key, message in form_errors %}
@@ -19,6 +26,10 @@
 			{% endfor %}
 		{% endif %}
 		
+		{# [2026-10-23] Contrôleur : tous les champs sauf l'emplacement sont
+		   désactivés (fieldset disabled ⇒ non envoyés ; ignorés côté serveur) #}
+		<fieldset {% if emplacement_seul %}disabled{% endif %}>
+
 		<!-- Catégorie (lecture seule) -->
 		<div class="mb-3">
 			<label for="categorie">Catégorie</label>
@@ -36,12 +47,40 @@
 			<small class="text-muted">Le statut EPI est défini par la catégorie de l'équipement.</small>
 		</div>
 
-		<!-- Référence (lecture seule) -->
+		<!-- Référence : définie à l'acquisition, modifiable par un super-administrateur
+		     (unicité vérifiée à la volée + mot de confirmation, revérifiés côté serveur) -->
 		<div class="mb-3">
 			<label for="reference">Référence</label>
-			<input type="text" class="form-control" id="reference" value="{{ equipement.reference }}" readonly disabled>
-			<small class="text-muted">La référence est définie lors de l'acquisition.</small>
-			<input type="hidden" name="reference" value="{{ equipement.reference }}">
+			{% if isGranted('ROLE_SUPER_ADMIN') and equipement.id is defined and equipement.id %}
+				<input type="text" class="form-control {% if form_errors.reference is defined %}is-invalid{% endif %}"
+				       name="reference" id="reference" value="{{ reference_saisie ?? equipement.reference }}"
+				       maxlength="{{ reference_max }}" required autocomplete="off"
+				       data-equipement-id="{{ equipement.id }}" data-reference-actuelle="{{ equipement.reference }}">
+				{% if form_errors.reference is defined %}
+					<div class="invalid-feedback">{{ form_errors.reference }}</div>
+				{% endif %}
+				<div class="form-text" id="reference-statut" aria-live="polite"></div>
+				<small class="text-muted">Définie lors de l'acquisition ; modifiable par un super-administrateur.</small>
+				<div id="bloc-confirmation-reference" class="mt-2 p-2 border border-warning rounded {% if reference_saisie is null and form_errors.confirmation_reference is not defined %}d-none{% endif %}">
+					<div class="small mb-2">
+						<i class="fas fa-exclamation-triangle text-warning"></i>
+						Les étiquettes et fiches déjà imprimées portent l'ancienne référence
+						<strong>{{ equipement.reference }}</strong> ; le QR code reste valable.
+					</div>
+					<label for="confirmation_reference" class="form-label">
+						Pour confirmer le changement, saisissez <code>{{ mot_confirmation_reference }}</code>
+					</label>
+					<input type="text" class="form-control {% if form_errors.confirmation_reference is defined %}is-invalid{% endif %}"
+					       name="confirmation_reference" id="confirmation_reference"
+					       autocomplete="off" spellcheck="false" data-mot="{{ mot_confirmation_reference }}">
+					{% if form_errors.confirmation_reference is defined %}
+						<div class="invalid-feedback">{{ form_errors.confirmation_reference }}</div>
+					{% endif %}
+				</div>
+			{% else %}
+				<input type="text" class="form-control" id="reference" value="{{ equipement.reference }}" readonly disabled>
+				<small class="text-muted">La référence est définie lors de l'acquisition.</small>
+			{% endif %}
 		</div>
 
 		<!-- Libellé : défini à l'acquisition, modifiable par un super-administrateur -->
@@ -149,7 +188,9 @@
 			{% endif %}
 		</div>
 
-		<!-- Emplacement (modifiable) -->
+		</fieldset>
+
+		<!-- Emplacement (modifiable, y compris par un contrôleur) -->
 		<div class="mb-3">
 			<label for="emplacement_id">Emplacement</label>
 			<select id="emplacement_id" name="emplacement_id" class="form-control">
@@ -161,6 +202,8 @@
 				{% endfor %}
 			</select>
 		</div>
+
+		<fieldset {% if emplacement_seul %}disabled{% endif %}>
 
 		<!-- Statut : les statuts réservés (Hors service, Prêté, Égaré) ne sont attribués / levés que par un contrôle ou un prêt -->
 		<div class="mb-3">
@@ -215,8 +258,10 @@
 		</div>
 		{# ⬆️ FIN DU CHAMP PHOTO #}
 
+		</fieldset>
+
 		<button type="submit" class="btn btn-primary">Enregistrer</button>
-		<a href="/equipements" class="btn btn-secondary">Annuler</a>
+		<a href="{% if equipement.id is defined and equipement.id %}/equipements/equipement-{{ equipement.id }}{% else %}/equipements{% endif %}" class="btn btn-secondary">Annuler</a>
 	</form>
 
 	<!-- Modal -->
@@ -260,6 +305,85 @@
 					e.preventDefault();
 				}
 			});
+		})();
+	</script>
+	<script>
+		/**
+		 * [2026-10-23] Changement de référence (super-administrateur) :
+		 * unicité vérifiée à la volée ; si la référence change, le mot de
+		 * confirmation est exigé avant l'envoi (revérifié côté serveur).
+		 */
+		(function () {
+			const champ = document.getElementById('reference');
+			if (!champ || champ.disabled || !champ.dataset.referenceActuelle) return;
+			const actuelle = champ.dataset.referenceActuelle;
+			const statut = document.getElementById('reference-statut');
+			const bloc = document.getElementById('bloc-confirmation-reference');
+			const confirmation = document.getElementById('confirmation_reference');
+			const motAttendu = confirmation.dataset.mot;
+			let disponible = null; // null = pas de changement / vérification en cours
+			let minuterie = null;
+			let requete = 0;
+
+			function afficher(classe, texte) {
+				statut.className = 'form-text ' + classe;
+				statut.textContent = texte;
+			}
+			function changee() {
+				return champ.value.trim() !== actuelle;
+			}
+			function verifier() {
+				const valeur = champ.value.trim();
+				const numero = ++requete;
+				afficher('text-muted', 'Vérification…');
+				fetch('/equipements/reference-disponible?id=' + encodeURIComponent(champ.dataset.equipementId)
+					+ '&reference=' + encodeURIComponent(valeur),
+					{ headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+					.then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+					.then(data => {
+						if (numero !== requete) return; // réponse obsolète
+						disponible = !!data.disponible;
+						afficher(disponible ? 'text-success' : 'text-danger', (disponible ? '✔ ' : '✖ ') + data.message);
+					})
+					.catch(() => {
+						if (numero !== requete) return;
+						disponible = null;
+						afficher('text-danger', 'Vérification impossible, réessayez.');
+					});
+			}
+			function surSaisie() {
+				clearTimeout(minuterie);
+				disponible = null;
+				if (!changee()) {
+					requete++;
+					bloc.classList.add('d-none');
+					afficher('', '');
+					return;
+				}
+				bloc.classList.remove('d-none');
+				minuterie = setTimeout(verifier, 300);
+			}
+
+			champ.addEventListener('input', surSaisie);
+			champ.form.addEventListener('submit', function (e) {
+				if (!changee()) return;
+				if (disponible !== true) {
+					e.preventDefault();
+					afficher('text-danger', disponible === false
+						? '✖ Choisissez une référence disponible.'
+						: 'Vérification de la référence en cours, réessayez dans un instant.');
+					champ.focus();
+				} else if (confirmation.value.trim() !== motAttendu) {
+					e.preventDefault();
+					confirmation.classList.add('is-invalid');
+					confirmation.focus();
+				}
+			});
+			confirmation.addEventListener('input', function () {
+				confirmation.classList.toggle('is-invalid', false);
+			});
+			// Retour du serveur avec une référence saisie : relancer la vérification
+			if (changee()) { surSaisie(); }
 		})();
 	</script>
 	<script>

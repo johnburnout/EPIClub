@@ -149,9 +149,10 @@ Ils sont générés automatiquement à partir des **factures d'acquisition** val
 
 ### 2.4 Modifier un équipement (après validation)
 
-**Rôle requis :** `ROLE_ADMIN`
+**Rôle requis :** `ROLE_ADMIN` (`ROLE_CONTROLLEUR` : emplacement uniquement)
 
-1. Depuis la **liste des équipements**, cliquer sur **« Modifier »** pour un équipement.
+1. Depuis la **liste des équipements** ou la **fiche** d'un équipement, cliquer sur **« Modifier »**.
+   Un **contrôleur** accède au même formulaire, mais n'y peut changer que l'**emplacement** (les autres champs sont grisés).
 2. Vous pouvez alors :
 - Ajouter ou modifier la **photo** : JPEG, PNG, WebP, GIF ou AVIF (si le serveur le permet), redimensionnée automatiquement et remise à l'endroit si elle a été prise téléphone vertical
 - Changer l’**emplacement**
@@ -163,13 +164,9 @@ Ils sont générés automatiquement à partir des **factures d'acquisition** val
 
 - La **date de mise en service** vaut la date de facture : elle ne peut être modifiée qu'**une seule fois**, jamais avant la date de facture (un super-administrateur peut la modifier à tout moment, toujours pas avant la facture).
 - Le **libellé** n'est modifiable que par un **super-administrateur**.
+- La **référence** n'est modifiable que par un **super-administrateur** : sa disponibilité est vérifiée pendant la saisie (une référence déjà utilisée, y compris par un équipement supprimé, est refusée) et, pour enregistrer le changement, il faut saisir le mot **`REFERENCE`** en majuscules dans le champ de confirmation qui apparaît. Le QR code reste valable, mais les étiquettes déjà imprimées portent l'ancienne référence : pensez à les réimprimer.
 
-> **Important :** la catégorie n'est **pas modifiable** car elle est héritée de l’acquisition. Le nombre initial d'un lot ne l'est pas non plus. La référence ne se change que depuis la fiche, par un super-administrateur (voir ci-dessous).
-
-**Depuis la fiche d'un équipement :**
-
-- **Changer l'emplacement** (`ROLE_CONTROLLEUR` et plus) : choisir le nouvel emplacement (ou « Aucun emplacement ») dans la liste, puis cliquer sur **« Déplacer »**.
-- **Changer la référence** (`ROLE_SUPER_ADMIN`) : cliquer sur **« Changer »** à côté de la référence. La disponibilité de la nouvelle référence est vérifiée pendant la saisie (une référence déjà utilisée, y compris par un équipement supprimé, est refusée) ; pour valider, saisir le mot **`REFERENCE`** en majuscules. Le QR code reste valable, mais les étiquettes déjà imprimées portent l'ancienne référence : pensez à les réimprimer.
+> **Important :** la catégorie n'est **pas modifiable** car elle est héritée de l’acquisition. Le nombre initial d'un lot ne l'est pas non plus.
 
 **Modification groupée** (`ROLE_ADMIN`) : dans la liste des équipements, cocher plusieurs équipements (la case d'en-tête coche toute la page), puis cliquer sur **« Modifier la sélection »**. Sur la page suivante, activer **« Modifier »** pour chaque champ à changer (statut, emplacement, dates, durée maximum, remarques — ajoutées à la suite ou remplacées —, photo, et libellé pour un super-administrateur) ; les champs non activés restent inchangés. La photo est la même pour tous les équipements sélectionnés. Pour la date de mise en service, les équipements qui ne peuvent pas la recevoir (date déjà modifiée, facture postérieure) sont ignorés et signalés. De même, le statut des équipements hors service n'est pas modifié (signalés).
 

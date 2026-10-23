@@ -478,83 +478,13 @@ class EquipementController extends AbstractController
             'egare_supprimable_le' => \Epiclub\Domain\SuppressionEgare::dateSuppressionPossible($equipement, $this->delaiSuppressionEgare()),
             'historiqueControles' => $historiqueControles,
             'acquisition' => $acquisition,
-            // [2026-10-23] Déplacement depuis la fiche (contrôleurs et plus)
-            'emplacements' => $this->isGranted('ROLE_CONTROLLEUR') ? $this->emplacementManager()->findAll() : [],
-            'mot_confirmation_reference' => self::MOT_CONFIRMATION_REFERENCE,
-            'reference_max' => self::REFERENCE_MAX,
         ]);
     }
 
-    /**
-     * [2026-10-23] Préambule des actions POST de la fiche : id valide,
-     * CSRF, équipement existant. Null → l'appelant redirige vers la liste.
-     */
-    private function equipementDeLaFiche(Request $request): ?array
-    {
-        $id = $this->getValidId($request);
-        if ($id === null) {
-            return null;
-        }
-        $this->validateCsrf($request);
-
-        $equipement = $this->equipementManager()->findId($id);
-        if (!$equipement) {
-            $this->session->getFlashBag()->add('danger', 'Équipement non trouvé.');
-            return null;
-        }
-        return $equipement;
-    }
-
-    private static function urlFiche(int $id): string
-    {
-        return '/equipements/equipement-' . $id;
-    }
-
     // --------------------------------------------------------------
-    // [2026-10-23] EMPLACEMENT DEPUIS LA FICHE (ROLE_CONTROLLEUR)
-    // --------------------------------------------------------------
-    public function changerEmplacement(Request $request): Response
-    {
-        $this->deniAccessUnlessGranted('ROLE_CONTROLLEUR');
-
-        if (!$equipement = $this->equipementDeLaFiche($request)) {
-            return $this->redirectTo('/equipements');
-        }
-        $id = (int) $equipement['id'];
-        $fiche = self::urlFiche($id);
-        $flash = $this->session->getFlashBag();
-
-        // Whitelist : vide (aucun emplacement) ou id d'un emplacement existant.
-        $raw = $request->request->get('emplacement_id', '');
-        $emplacementId = null;
-        $emplacement = null;
-        if ($raw !== '' && $raw !== null) {
-            if (!is_string($raw) || !ctype_digit($raw)
-                || !($emplacement = $this->emplacementManager()->findId((int) $raw))) {
-                $flash->add('error', 'Emplacement invalide.');
-                return $this->redirectTo($fiche);
-            }
-            $emplacementId = (int) $raw;
-        }
-
-        $actuel = !empty($equipement['emplacement_id']) ? (int) $equipement['emplacement_id'] : null;
-        if ($actuel === $emplacementId) {
-            $flash->add('info', 'Emplacement inchangé.');
-            return $this->redirectTo($fiche);
-        }
-
-        $this->equipementManager()->save(['id' => $id, 'emplacement_id' => $emplacementId]);
-        $flash->add('success', $emplacement
-            ? sprintf('Équipement déplacé vers « %s ».', $emplacement['libelle'])
-            : 'Emplacement retiré.');
-
-        return $this->redirectTo($fiche);
-    }
-
-    // --------------------------------------------------------------
-    // [2026-10-23] CHANGEMENT DE RÉFÉRENCE (ROLE_SUPER_ADMIN)
-    // Garde-fous : unicité vérifiée à la volée (AJAX) puis côté serveur,
-    // saisie du mot de confirmation REFERENCE.
+    // [2026-10-23] CHANGEMENT DE RÉFÉRENCE (ROLE_SUPER_ADMIN), dans le
+    // formulaire de modification. Garde-fous : unicité vérifiée à la volée
+    // (AJAX) puis côté serveur, saisie du mot de confirmation REFERENCE.
     // --------------------------------------------------------------
     public const MOT_CONFIRMATION_REFERENCE = 'REFERENCE';
 
@@ -580,7 +510,7 @@ class EquipementController extends AbstractController
 
     /**
      * GET JSON /equipements/reference-disponible?id=&reference=
-     * Vérification d'unicité à la volée pour la fiche équipement.
+     * Vérification d'unicité à la volée pour le formulaire de modification.
      */
     public function referenceDisponible(Request $request): Response
     {
@@ -611,72 +541,15 @@ class EquipementController extends AbstractController
         ]);
     }
 
-    public function changerReference(Request $request): Response
-    {
-        $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
-
-        if (!$equipement = $this->equipementDeLaFiche($request)) {
-            return $this->redirectTo('/equipements');
-        }
-        $id = (int) $equipement['id'];
-        $fiche = self::urlFiche($id);
-        $flash = $this->session->getFlashBag();
-
-        $ancienne = (string) $equipement['reference'];
-        $nouvelle = trim((string) $request->request->get('reference', ''));
-        $confirmation = trim((string) $request->request->get('confirmation', ''));
-
-        if ($confirmation !== self::MOT_CONFIRMATION_REFERENCE) {
-            $flash->add('error', sprintf(
-                'Changement de référence non validé : saisissez le mot %s (en majuscules) pour confirmer.',
-                self::MOT_CONFIRMATION_REFERENCE
-            ));
-            return $this->redirectTo($fiche);
-        }
-        if (($erreur = self::erreurFormatReference($nouvelle)) !== null) {
-            $flash->add('error', $erreur);
-            return $this->redirectTo($fiche);
-        }
-        if ($nouvelle === $ancienne) {
-            $flash->add('info', 'Référence inchangée.');
-            return $this->redirectTo($fiche);
-        }
-        if ($this->equipementManager()->referenceExists($nouvelle, $id)) {
-            $flash->add('error', sprintf(self::MESSAGE_REFERENCE_PRISE, $nouvelle));
-            return $this->redirectTo($fiche);
-        }
-
-        try {
-            $this->equipementManager()->save(['id' => $id, 'reference' => $nouvelle]);
-        } catch (\PDOException $e) {
-            // Course : référence prise entre la vérification et l'écriture
-            // (contrainte UNIQUE, migration 009).
-            if ((string) $e->getCode() !== '23000') {
-                throw $e;
-            }
-            $flash->add('error', sprintf(self::MESSAGE_REFERENCE_PRISE, $nouvelle));
-            return $this->redirectTo($fiche);
-        }
-
-        $user = $this->session->get('user');
-        error_log(sprintf(
-            '[EquipementController] Référence de l\'équipement id=%d modifiée : « %s » → « %s » (utilisateur id=%s)',
-            $id, $ancienne, $nouvelle, $user['id'] ?? '?'
-        ));
-        $flash->add('success', sprintf(
-            'Référence modifiée : « %s » → « %s ». Pensez à réimprimer l\'étiquette.',
-            $ancienne, $nouvelle
-        ));
-
-        return $this->redirectTo($fiche);
-    }
-    
     // --------------------------------------------------------------
     // ÉDITION
     // --------------------------------------------------------------
     public function edit(Request $request)
     {
-        $this->deniAccessUnlessGranted('ROLE_ADMIN');
+        // [2026-10-23] Un contrôleur accède au formulaire mais n'y modifie
+        // que l'emplacement (cf. enregistrerEmplacementSeul()).
+        $this->deniAccessUnlessGranted('ROLE_CONTROLLEUR');
+        $emplacementSeul = !$this->isGranted('ROLE_ADMIN');
         
         $categorieManager = $this->categorieManager();
         $emplacementManager = $this->emplacementManager();
@@ -690,6 +563,9 @@ class EquipementController extends AbstractController
             if ($equipement && isset($equipement['categorie_id'])) {
                 $equipement['categorie'] = $categorieManager->findId($equipement['categorie_id']);
             }
+        }
+        if ($emplacementSeul && empty($equipement)) {
+            return $this->redirectTo('/equipements');
         }
 
         // [MÉTIER] Date de facture de l'acquisition : date d'achat
@@ -710,6 +586,14 @@ class EquipementController extends AbstractController
         if ($request->getMethod() === 'POST') {
             // [SÉCURITÉ] Vérification CSRF AVANT tout traitement (y compris upload)
             $this->validateCsrf($request);
+
+            if ($emplacementSeul) {
+                return $this->enregistrerEmplacementSeul($equipement, $request);
+            }
+
+            // [2026-10-23] Changement de référence (super-administrateur)
+            $nouvelleReference = null;
+            $ancienneReference = (string) ($equipement['reference'] ?? '');
             
             $emplacement_id = $request->request->get('emplacement_id');
             if ($emplacement_id === '') $emplacement_id = null;
@@ -817,6 +701,29 @@ class EquipementController extends AbstractController
                         $form_errors['libelle'] = $erreur;
                     }
                 }
+
+                // [2026-10-23] Référence : modifiable par un super-administrateur,
+                // avec le mot de confirmation et un contrôle d'unicité
+                // (déjà fait à la volée dans le navigateur, refait ici).
+                if ($this->isGranted('ROLE_SUPER_ADMIN') && $request->request->has('reference')) {
+                    $referencePostee = trim((string) $request->request->get('reference'));
+                    if ($referencePostee !== $ancienneReference) {
+                        $referenceSaisie = $referencePostee;
+                        $confirmation = trim((string) $request->request->get('confirmation_reference', ''));
+                        if (($erreur = self::erreurFormatReference($referencePostee)) !== null) {
+                            $form_errors['reference'] = $erreur;
+                        } elseif ($confirmation !== self::MOT_CONFIRMATION_REFERENCE) {
+                            $form_errors['confirmation_reference'] = sprintf(
+                                'Pour changer la référence, saisissez le mot %s (en majuscules).',
+                                self::MOT_CONFIRMATION_REFERENCE
+                            );
+                        } elseif ($equipementManager->referenceExists($referencePostee, $id)) {
+                            $form_errors['reference'] = sprintf(self::MESSAGE_REFERENCE_PRISE, $referencePostee);
+                        } else {
+                            $nouvelleReference = $referencePostee;
+                        }
+                    }
+                }
             }
 
             if (empty($form_errors)) {
@@ -841,6 +748,9 @@ class EquipementController extends AbstractController
                 if (isset($libelle)) {
                     $equipementData['libelle'] = $libelle;
                 }
+                if ($nouvelleReference !== null) {
+                    $equipementData['reference'] = $nouvelleReference;
+                }
                 
                 $anciennePhoto = null;
                 if ($photoPath !== null) {
@@ -849,13 +759,36 @@ class EquipementController extends AbstractController
                 }
                 
                 $equipement = array_merge($equipement, $equipementData);
-                $equipementManager->save($equipement);
+                try {
+                    $equipementManager->save($equipement);
+                } catch (\PDOException $e) {
+                    // Course sur la référence : prise entre la vérification
+                    // et l'écriture (contrainte UNIQUE, migration 009).
+                    if ($nouvelleReference === null || (string) $e->getCode() !== '23000') {
+                        throw $e;
+                    }
+                    $form_errors['reference'] = sprintf(self::MESSAGE_REFERENCE_PRISE, $nouvelleReference);
+                    $equipement['reference'] = $ancienneReference;
+                }
+            }
 
+            if (empty($form_errors)) {
                 // [Photo groupée] La photo remplacée peut être partagée
                 // avec d'autres équipements : on n'efface le fichier que
                 // s'il n'est plus référencé (vérifié après l'enregistrement).
                 if (!empty($anciennePhoto)) {
                     $this->supprimerPhotoSiOrpheline($anciennePhoto);
+                }
+                if ($nouvelleReference !== null) {
+                    $user = $this->session->get('user');
+                    error_log(sprintf(
+                        '[EquipementController] Référence de l\'équipement id=%d modifiée : « %s » → « %s » (utilisateur id=%s)',
+                        $id, $ancienneReference, $nouvelleReference, $user['id'] ?? '?'
+                    ));
+                    $this->session->getFlashBag()->add('success', sprintf(
+                        'Référence modifiée : « %s » → « %s ». Pensez à réimprimer l\'étiquette.',
+                        $ancienneReference, $nouvelleReference
+                    ));
                 }
                 return $this->redirectTo("/equipements");
             }
@@ -868,8 +801,45 @@ class EquipementController extends AbstractController
             'emplacements' => $emplacementManager->findAll(),
             'equipement_statuts' => EquipementStatut::forSelectManuel(),
             'equipement' => $equipement,
-            'form_errors' => $form_errors
+            'form_errors' => $form_errors,
+            // [2026-10-23] Contrôleur : seul l'emplacement est modifiable
+            'emplacement_seul' => $emplacementSeul,
+            // [2026-10-23] Changement de référence (super-administrateur)
+            'reference_saisie' => $referenceSaisie ?? null,
+            'mot_confirmation_reference' => self::MOT_CONFIRMATION_REFERENCE,
+            'reference_max' => self::REFERENCE_MAX,
         ]);
+    }
+
+    /**
+     * [2026-10-23] Formulaire soumis par un contrôleur : seul
+     * l'emplacement est enregistré, les autres champs postés sont ignorés.
+     */
+    private function enregistrerEmplacementSeul(array $equipement, Request $request): Response
+    {
+        $id = (int) $equipement['id'];
+        $raw = $request->request->get('emplacement_id', '');
+        $emplacementId = null;
+        $emplacement = null;
+        if ($raw !== '' && $raw !== null) {
+            // Whitelist : id d'un emplacement existant.
+            if (!is_string($raw) || !ctype_digit($raw)
+                || !($emplacement = $this->emplacementManager()->findId((int) $raw))) {
+                $this->session->getFlashBag()->add('error', 'Emplacement invalide.');
+                return $this->redirectTo('/equipements/equipement_modification-' . $id);
+            }
+            $emplacementId = (int) $raw;
+        }
+
+        $actuel = !empty($equipement['emplacement_id']) ? (int) $equipement['emplacement_id'] : null;
+        if ($actuel !== $emplacementId) {
+            $this->equipementManager()->save(['id' => $id, 'emplacement_id' => $emplacementId]);
+            $this->session->getFlashBag()->add('success', $emplacement
+                ? sprintf('Équipement « %s » déplacé vers « %s ».', $equipement['reference'] ?? '', $emplacement['libelle'])
+                : sprintf('Emplacement retiré pour « %s ».', $equipement['reference'] ?? ''));
+        }
+
+        return $this->redirectTo('/equipements/equipement-' . $id);
     }
     
     // --------------------------------------------------------------
