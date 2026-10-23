@@ -1436,9 +1436,12 @@ HTML;
         $fp = fopen('php://temp', 'r+');
         // BOM UTF-8 pour Excel
         fwrite($fp, "\xEF\xBB\xBF");
-        fputcsv($fp, self::EXPORT_DATA_HEADERS, ';');
+        // escape: '' : guillemets doublés seulement (RFC 4180), sans
+        // caractère d'échappement « \ » propre à PHP — et sans la
+        // dépréciation PHP 8.4+ quand $escape est omis.
+        fputcsv($fp, self::EXPORT_DATA_HEADERS, ';', escape: '');
         foreach ($rows as $row) {
-            fputcsv($fp, $row, ';');
+            fputcsv($fp, $row, ';', escape: '');
         }
         rewind($fp);
         $csv = stream_get_contents($fp);
