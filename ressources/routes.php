@@ -130,6 +130,26 @@ $routes->add('equipement_delete', new Route(
     [], [], '', [], ['POST']
 ));
 
+// ROLE_CONTROLLEUR : changement d'emplacement depuis la fiche
+$routes->add('equipement_emplacement', new Route(
+    '/equipements/equipement_emplacement-{id}',
+    ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'changerEmplacement'],
+    [], [], '', [], ['POST']
+));
+
+// ROLE_SUPER_ADMIN : changement de référence depuis la fiche
+// (vérification d'unicité à la volée en AJAX + mot de confirmation)
+$routes->add('equipement_reference_disponible', new Route(
+    '/equipements/reference-disponible',
+    ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'referenceDisponible'],
+    [], [], '', [], ['GET']
+));
+$routes->add('equipement_reference', new Route(
+    '/equipements/equipement_reference-{id}',
+    ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'changerReference'],
+    [], [], '', [], ['POST']
+));
+
 
 // =====================================================================
 // JOURNAUX

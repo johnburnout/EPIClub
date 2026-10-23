@@ -10,6 +10,19 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Added
+
+- **Changement d'emplacement depuis la fiche équipement** : les contrôleurs
+  (et rôles supérieurs) déplacent un équipement directement depuis sa fiche
+  (liste des emplacements + bouton « Déplacer »), sans passer par le
+  formulaire de modification réservé aux administrateurs.
+- **Changement de référence par un super-administrateur** depuis la fiche
+  équipement (bouton « Changer » à côté de la référence). Garde-fous :
+  unicité vérifiée à la volée (`/equipements/reference-disponible`, y compris
+  les équipements supprimés), saisie du mot `REFERENCE` pour valider, puis
+  nouvelle vérification côté serveur (format, unicité, contrainte UNIQUE).
+  Le QR code reste valable ; le changement est tracé dans le journal PHP.
+
 ## [v1.6.3] — 2026-10-21
 
 En-têtes de sécurité HTTP.

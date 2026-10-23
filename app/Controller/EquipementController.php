@@ -9,6 +9,7 @@ use Epiclub\Domain\AcquisitionManager;
 use Epiclub\Enum\EquipementStatut;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\ImageUploader;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -506,7 +507,183 @@ class EquipementController extends AbstractController
             'egare_supprimable_le' => \Epiclub\Domain\SuppressionEgare::dateSuppressionPossible($equipement, $this->delaiSuppressionEgare()),
             'historiqueControles' => $historiqueControles,
             'acquisition' => $acquisition,
+            // [2026-10-23] Déplacement depuis la fiche (contrôleurs et plus)
+            'emplacements' => $this->isGranted('ROLE_CONTROLLEUR') ? $emplacementManager->findAll() : [],
+            'mot_confirmation_reference' => self::MOT_CONFIRMATION_REFERENCE,
+            'reference_max' => self::REFERENCE_MAX,
         ]);
+    }
+
+    // --------------------------------------------------------------
+    // [2026-10-23] EMPLACEMENT DEPUIS LA FICHE (ROLE_CONTROLLEUR)
+    // --------------------------------------------------------------
+    public function changerEmplacement(Request $request): Response
+    {
+        $this->deniAccessUnlessGranted('ROLE_CONTROLLEUR');
+
+        $id = $this->getValidId($request);
+        if ($id === null) {
+            return $this->redirectTo('/equipements');
+        }
+        $this->validateCsrf($request);
+
+        $equipement = $this->equipementManager()->findId($id);
+        if (!$equipement) {
+            $this->session->getFlashBag()->add('danger', 'Équipement non trouvé.');
+            return $this->redirectTo('/equipements');
+        }
+        $fiche = '/equipements/equipement-' . $id;
+
+        // Whitelist : vide (aucun emplacement) ou id d'un emplacement existant.
+        $raw = $request->request->get('emplacement_id', '');
+        $emplacementId = null;
+        $emplacement = null;
+        if ($raw !== '' && $raw !== null) {
+            if (!is_string($raw) || !ctype_digit($raw)
+                || !($emplacement = $this->emplacementManager()->findId((int) $raw))) {
+                $this->session->getFlashBag()->add('error', 'Emplacement invalide.');
+                return $this->redirectTo($fiche);
+            }
+            $emplacementId = (int) $raw;
+        }
+
+        $actuel = !empty($equipement['emplacement_id']) ? (int) $equipement['emplacement_id'] : null;
+        if ($actuel === $emplacementId) {
+            $this->session->getFlashBag()->add('info', 'Emplacement inchangé.');
+            return $this->redirectTo($fiche);
+        }
+
+        $this->equipementManager()->save(['id' => $id, 'emplacement_id' => $emplacementId]);
+        $this->session->getFlashBag()->add('success', $emplacement
+            ? sprintf('Équipement déplacé vers « %s ».', $emplacement['libelle'])
+            : 'Emplacement retiré.');
+
+        return $this->redirectTo($fiche);
+    }
+
+    // --------------------------------------------------------------
+    // [2026-10-23] CHANGEMENT DE RÉFÉRENCE (ROLE_SUPER_ADMIN)
+    // Garde-fous : unicité vérifiée à la volée (AJAX) puis côté serveur,
+    // saisie du mot de confirmation REFERENCE.
+    // --------------------------------------------------------------
+    public const MOT_CONFIRMATION_REFERENCE = 'REFERENCE';
+
+    /** Longueur de club_equipement.reference (VARCHAR(32)). */
+    public const REFERENCE_MAX = 32;
+
+    /** Message d'erreur de format, ou null si la référence est recevable. */
+    public static function erreurFormatReference(string $reference): ?string
+    {
+        if ($reference === '') {
+            return 'La référence est obligatoire.';
+        }
+        if (!mb_check_encoding($reference, 'UTF-8') || preg_match('/[\x00-\x1F\x7F]/', $reference)) {
+            return 'La référence contient des caractères non autorisés.';
+        }
+        if (mb_strlen($reference) > self::REFERENCE_MAX) {
+            return sprintf('La référence ne doit pas dépasser %d caractères.', self::REFERENCE_MAX);
+        }
+        return null;
+    }
+
+    /**
+     * GET JSON /equipements/reference-disponible?id=&reference=
+     * Vérification d'unicité à la volée pour la fiche équipement.
+     */
+    public function referenceDisponible(Request $request): Response
+    {
+        $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
+
+        $reference = trim((string) $request->query->get('reference', ''));
+        $idRaw = (string) $request->query->get('id', '');
+        $id = ctype_digit($idRaw) && (int) $idRaw > 0 ? (int) $idRaw : null;
+
+        $erreur = self::erreurFormatReference($reference);
+        if ($erreur !== null) {
+            return new JsonResponse(['disponible' => false, 'message' => $erreur]);
+        }
+
+        if ($id !== null) {
+            $equipement = $this->equipementManager()->findId($id);
+            if ($equipement && (string) $equipement['reference'] === $reference) {
+                return new JsonResponse(['disponible' => false, 'message' => 'C\'est la référence actuelle.']);
+            }
+        }
+
+        $prise = $this->equipementManager()->referenceExists($reference, $id);
+        return new JsonResponse([
+            'disponible' => !$prise,
+            'message' => $prise
+                ? 'Cette référence est déjà attribuée à un autre équipement (éventuellement supprimé).'
+                : 'Référence disponible.',
+        ]);
+    }
+
+    public function changerReference(Request $request): Response
+    {
+        $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
+
+        $id = $this->getValidId($request);
+        if ($id === null) {
+            return $this->redirectTo('/equipements');
+        }
+        $this->validateCsrf($request);
+
+        $equipement = $this->equipementManager()->findId($id);
+        if (!$equipement) {
+            $this->session->getFlashBag()->add('danger', 'Équipement non trouvé.');
+            return $this->redirectTo('/equipements');
+        }
+        $fiche = '/equipements/equipement-' . $id;
+        $flash = $this->session->getFlashBag();
+
+        $ancienne = (string) $equipement['reference'];
+        $nouvelle = trim((string) $request->request->get('reference', ''));
+        $confirmation = trim((string) $request->request->get('confirmation', ''));
+
+        if ($confirmation !== self::MOT_CONFIRMATION_REFERENCE) {
+            $flash->add('error', sprintf(
+                'Changement de référence non validé : saisissez le mot %s (en majuscules) pour confirmer.',
+                self::MOT_CONFIRMATION_REFERENCE
+            ));
+            return $this->redirectTo($fiche);
+        }
+        if (($erreur = self::erreurFormatReference($nouvelle)) !== null) {
+            $flash->add('error', $erreur);
+            return $this->redirectTo($fiche);
+        }
+        if ($nouvelle === $ancienne) {
+            $flash->add('info', 'Référence inchangée.');
+            return $this->redirectTo($fiche);
+        }
+        if ($this->equipementManager()->referenceExists($nouvelle, $id)) {
+            $flash->add('error', sprintf('La référence « %s » est déjà attribuée à un autre équipement.', $nouvelle));
+            return $this->redirectTo($fiche);
+        }
+
+        try {
+            $this->equipementManager()->save(['id' => $id, 'reference' => $nouvelle]);
+        } catch (\PDOException $e) {
+            // Course : référence prise entre la vérification et l'écriture
+            // (contrainte UNIQUE, migration 009).
+            if ((string) $e->getCode() !== '23000') {
+                throw $e;
+            }
+            $flash->add('error', sprintf('La référence « %s » est déjà attribuée à un autre équipement.', $nouvelle));
+            return $this->redirectTo($fiche);
+        }
+
+        $user = $this->session->get('user');
+        error_log(sprintf(
+            '[EquipementController] Référence de l\'équipement id=%d modifiée : « %s » → « %s » (utilisateur id=%s)',
+            $id, $ancienne, $nouvelle, $user['id'] ?? '?'
+        ));
+        $flash->add('success', sprintf(
+            'Référence modifiée : « %s » → « %s ». Pensez à réimprimer l\'étiquette.',
+            $ancienne, $nouvelle
+        ));
+
+        return $this->redirectTo($fiche);
     }
     
     // --------------------------------------------------------------

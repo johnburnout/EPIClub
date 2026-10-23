@@ -183,11 +183,22 @@ class EquipementManager extends AbstractManager
      *
      * @return string[]
      */
-    /** [Référencement] Une fiche équipement porte-t-elle déjà cette référence ? */
-    public function referenceExists(string $reference): bool
+    /**
+     * [Référencement] Une fiche équipement porte-t-elle déjà cette
+     * référence ? Soft-deleted inclus (contrainte UNIQUE, migration 009).
+     *
+     * @param int|null $saufId Équipement à ignorer (changement de
+     *                         référence : sa référence actuelle ne compte pas)
+     */
+    public function referenceExists(string $reference, ?int $saufId = null): bool
     {
-        $stmt = $this->db->prepare("SELECT COUNT(*) FROM club_equipement WHERE reference = :reference");
-        $stmt->execute(['reference' => $reference]);
+        if ($saufId === null) {
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM club_equipement WHERE reference = :reference");
+            $stmt->execute(['reference' => $reference]);
+        } else {
+            $stmt = $this->db->prepare("SELECT COUNT(*) FROM club_equipement WHERE reference = :reference AND id <> :id");
+            $stmt->execute(['reference' => $reference, 'id' => $saufId]);
+        }
         return (int) $stmt->fetchColumn() > 0;
     }
 
