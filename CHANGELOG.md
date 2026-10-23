@@ -10,6 +10,17 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.7.4] — 2026-10-24
+
+Export CSV des équipements conforme à la RFC 4180.
+
+### Fixed
+
+- **Export CSV** : plus d'avertissement de dépréciation `fputcsv()` sous
+  PHP 8.4+. Les guillemets d'une valeur sont doublés, sans échappement
+  par antislash : un libellé contenant `\"` est désormais relu
+  correctement par Excel et les tableurs.
+
 ## [v1.7.3] — 2026-10-23
 
 Emplacement et référence modifiables dans le formulaire de modification
