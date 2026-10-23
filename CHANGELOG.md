@@ -10,6 +10,10 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.7.0] — 2026-10-23
+
+Emplacement et référence modifiables depuis la fiche équipement.
+
 ### Added
 
 - **Changement d'emplacement depuis la fiche équipement** : les contrôleurs
