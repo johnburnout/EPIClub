@@ -1,0 +1,133 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Call to function is_array\(\) with array\<mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Controller/AcquisitionController.php
+
+		-
+			message: '#^Variable \$ligneData on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: app/Controller/AcquisitionController.php
+
+		-
+			message: '#^Offset ''message'' on array\{success\: bool, message\: string, details\?\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Controller/AppUpdateController.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: app/Controller/AppUserRegisterController.php
+
+		-
+			message: '#^Comparison operation "\>" between int\<1, max\> and 0 is always true\.$#'
+			identifier: greater.alwaysTrue
+			count: 1
+			path: app/Controller/ControleController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between mixed and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Controller/ControleController.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: app/Controller/EquipementController.php
+
+		-
+			message: '#^Comparison operation "\>" between int\<1, max\> and 0 is always true\.$#'
+			identifier: greater.alwaysTrue
+			count: 1
+			path: app/Controller/EquipementController.php
+
+		-
+			message: '#^Method Epiclub\\Controller\\EquipementController\:\:buildExportRows\(\) should return array\<int, array\<string, int\|string\>\> but returns list\<array\<int, mixed\>\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Controller/EquipementController.php
+
+		-
+			message: '#^Parameter \#2 \$values of method Symfony\\Component\\HttpFoundation\\ResponseHeaderBag\:\:set\(\) expects array\<string\>\|string\|null, int\<0, max\>\|false given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Controller/EquipementController.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between mixed and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Controller/EquipementController.php
+
+		-
+			message: '#^Variable \$statutEnum might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: app/Controller/EquipementController.php
+
+		-
+			message: '#^Variable \$conditions in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: app/Domain/JournalManager.php
+
+		-
+			message: '#^Offset ''equipements_generes'' on array\{reference\: string, nombre\: int, regrouper_en_lot\: int, equipements_generes\: int\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Domain/ReferenceGenerator.php
+
+		-
+			message: '#^Offset ''nombre'' on array\{reference\: string, nombre\: int, regrouper_en_lot\: int, equipements_generes\: int\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Domain/ReferenceGenerator.php
+
+		-
+			message: '#^Offset ''regrouper_en_lot'' on array\{reference\: string, nombre\: int, regrouper_en_lot\: int, equipements_generes\: int\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Domain/ReferenceGenerator.php
+
+		-
+			message: '#^Ternary operator condition is always true\.$#'
+			identifier: ternary.alwaysTrue
+			count: 1
+			path: app/Engine/FactureUploader.php
+
+		-
+			message: '#^Variable \$http_response_header on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: app/Engine/GitHubReleaseProvider.php
+
+		-
+			message: '#^Call to an undefined method Endroid\\QrCode\\Builder\\Builder\:\:logoPath\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Engine/QrCodeGenerator.php
+
+		-
+			message: '#^Call to an undefined method Endroid\\QrCode\\Builder\\Builder\:\:logoPunchoutBackground\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Engine/QrCodeGenerator.php
+
+		-
+			message: '#^Call to an undefined method Endroid\\QrCode\\Builder\\Builder\:\:logoResizeToWidth\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: app/Engine/QrCodeGenerator.php
+
+		-
+			message: '#^Parameter \#1 \$string of function str_pad expects string, int\<1, max\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Process/AcquisitionProcess.php

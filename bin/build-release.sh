@@ -40,7 +40,7 @@ git archive --format=tar --prefix="${NOM}/" HEAD | tar -x -C "$TRAVAIL"
 
 # 4. Rien qui ne serve en production
 ( cd "$TRAVAIL/$NOM" && rm -rf tests phpunit.xml .phpunit.cache .github releases \
-    arborescence.txt build-release.sh composer.phar )
+    arborescence.txt build-release.sh composer.phar phpstan.neon phpstan-baseline.neon )
 
 # 5. Garde-fous : l'archive doit être installable telle quelle
 for f in vendor/autoload.php public/index.php public/.htaccess .htaccess version.txt; do

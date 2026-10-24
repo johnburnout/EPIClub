@@ -1,0 +1,12 @@
+# Analyse statique (PHPStan), lancée par la CI (.github/workflows/tests.yml).
+# En local : vendor/bin/phpstan
+# Les erreurs déjà présentes sont gelées dans phpstan-baseline.neon ;
+# tout nouveau code doit passer sans erreur. Après correction d'une erreur
+# de la baseline : vendor/bin/phpstan --generate-baseline
+includes:
+    - phpstan-baseline.neon
+
+parameters:
+    level: 5
+    paths:
+        - app

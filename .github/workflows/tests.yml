@@ -3,6 +3,7 @@
 #  - suite Integration (HTTP via php -S démarré par les tests, contrôle
 #    d'accès des routes, export / import SQL de la sauvegarde).
 # Le schéma vient des migrations (bin/migrate.php), comme en production.
+# Le job « phpstan » fait l'analyse statique (phpstan.neon), sans base.
 name: Tests
 
 on:
@@ -12,6 +13,34 @@ on:
     branches: [ main ]
 
 jobs:
+  phpstan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: gd, mbstring, pdo_mysql, zip, fileinfo
+          tools: composer
+          coverage: none
+
+      - name: Cache Composer
+        uses: actions/cache@v5
+        with:
+          path: vendor/
+          key: composer-dev-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-dev-
+
+      - name: Dépendances (avec outils de test)
+        run: composer install --no-progress --prefer-dist
+
+      - name: PHPStan
+        run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+
   phpunit:
     runs-on: ubuntu-latest
 
