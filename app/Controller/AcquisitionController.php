@@ -186,15 +186,136 @@ class AcquisitionController extends AbstractController
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
 
-        $acquisitions = $this->acquisitionManager()->findAll();
-
         // Toutes les acquisitions (brouillons + validées).
         // Les brouillons ne sont pas cachés : ils sont accessibles pour
         // reprendre la saisie ou valider.
+        $acquisitions = $this->acquisitionManager()->findAll();
+
+        // Paramètres de filtre / tri, communs aux URLs de pagination et au formulaire
+        $orderBy = (string) $request->query->get('order_by', 'id');
+        if (!in_array($orderBy, self::LIST_ORDER_BY, true)) {
+            $orderBy = 'id';
+        }
+        $orderDir = $request->query->get('order_dir') === 'desc' ? 'desc' : 'asc';
+        $statut = $request->query->get('statut');
+        $fournisseur = $request->query->get('fournisseur');
+        $params = [
+            'fournisseur' => is_string($fournisseur) && ctype_digit($fournisseur) ? $fournisseur : null,
+            'statut' => in_array($statut, ['validee', 'en_attente'], true) ? $statut : null,
+            'date_du' => self::dateFiltre($request, 'date_du'),
+            'date_au' => self::dateFiltre($request, 'date_au'),
+            'q' => self::recherche($request),
+            'order_by' => $orderBy,
+            'order_dir' => $orderDir,
+        ];
+
+        $acquisitions = self::filtrerEtTrier($acquisitions, $params);
+
+        // Pagination
+        $page = max(1, (int) $request->query->get('page', 1));
+        $limit = (int) $request->query->get('limit', 10);
+        if ($limit < 1) $limit = 10;
+        $params['limit'] = $limit;
+
+        $total = count($acquisitions);
+        $totalPages = max(1, (int) ceil($total / $limit));
+        $page = min($page, $totalPages);
+        $acquisitions = array_slice($acquisitions, ($page - 1) * $limit, $limit);
+
+        $baseParams = array_filter($params, fn($v) => $v !== null && $v !== '');
+        $paginationUrls = [
+            'first' => '?' . http_build_query(array_merge($baseParams, ['page' => 1])),
+            'previous' => '?' . http_build_query(array_merge($baseParams, ['page' => max(1, $page - 1)])),
+            'next' => '?' . http_build_query(array_merge($baseParams, ['page' => min($totalPages, $page + 1)])),
+            'last' => '?' . http_build_query(array_merge($baseParams, ['page' => $totalPages])),
+        ];
 
         return $this->render('acquisition_list.twig', [
             'acquisitions' => $acquisitions,
+            'fournisseurs' => $this->fournisseurManager()->findAll(),
+            'filtres' => $params + ['page' => $page],
+            'filtre_actif' => array_filter(array_intersect_key($params, array_flip(['fournisseur', 'statut', 'date_du', 'date_au', 'q']))) !== [],
+            'pagination' => [
+                'total' => $total,
+                'page' => $page,
+                'limit' => $limit,
+                'totalPages' => $totalPages,
+                'hasPrevious' => $page > 1,
+                'hasNext' => $page < $totalPages,
+            ],
+            'paginationUrls' => $paginationUrls,
         ]);
+    }
+
+    /** Clés de tri proposées dans la liste des acquisitions. */
+    public const LIST_ORDER_BY = ['id', 'facture_reference', 'facture_date', 'fournisseur'];
+
+    /**
+     * Filtre et trie les acquisitions de la liste (fournisseur, statut,
+     * période de facture, recherche sur la référence facture).
+     *
+     * @param list<array<string, mixed>> $acquisitions
+     * @param array<string, mixed>       $params Paramètres déjà validés par list()
+     * @return list<array<string, mixed>>
+     */
+    public static function filtrerEtTrier(array $acquisitions, array $params): array
+    {
+        if (!empty($params['fournisseur'])) {
+            $acquisitions = array_filter($acquisitions, fn($a) =>
+                isset($a['fournisseur_id']) && (string) $a['fournisseur_id'] === (string) $params['fournisseur']);
+        }
+        if (($params['statut'] ?? null) !== null) {
+            $validee = $params['statut'] === 'validee';
+            $acquisitions = array_filter($acquisitions, fn($a) => (bool) ($a['est_validee'] ?? false) === $validee);
+        }
+        if (!empty($params['date_du'])) {
+            $acquisitions = array_filter($acquisitions, fn($a) =>
+                !empty($a['facture_date']) && substr((string) $a['facture_date'], 0, 10) >= $params['date_du']);
+        }
+        if (!empty($params['date_au'])) {
+            $acquisitions = array_filter($acquisitions, fn($a) =>
+                !empty($a['facture_date']) && substr((string) $a['facture_date'], 0, 10) <= $params['date_au']);
+        }
+        if (!empty($params['q'])) {
+            $aiguille = mb_strtolower((string) $params['q']);
+            $acquisitions = array_filter($acquisitions, fn($a) =>
+                str_contains(mb_strtolower((string) ($a['facture_reference'] ?? '')), $aiguille));
+        }
+
+        // --- Tri --- (à valeur égale, l'ID départage pour un ordre stable)
+        $cle = match ($params['order_by'] ?? 'id') {
+            'facture_reference' => fn($a) => mb_strtolower((string) ($a['facture_reference'] ?? '')),
+            'facture_date' => fn($a) => (string) ($a['facture_date'] ?? ''),
+            'fournisseur' => fn($a) => mb_strtolower((string) ($a['fournisseur']['nom'] ?? '')),
+            default => fn($a) => (int) ($a['id'] ?? 0),
+        };
+        $sens = ($params['order_dir'] ?? 'asc') === 'desc' ? -1 : 1;
+        usort($acquisitions, fn($a, $b) =>
+            $sens * (($cle($a) <=> $cle($b)) ?: ((int) ($a['id'] ?? 0) <=> (int) ($b['id'] ?? 0))));
+
+        return $acquisitions;
+    }
+
+    /** Texte recherché (« q »), nettoyé ; null si vide. */
+    private static function recherche(Request $request): ?string
+    {
+        $valeur = $request->query->get('q');
+        if (!is_string($valeur)) {
+            return null;
+        }
+        $valeur = trim(mb_substr($valeur, 0, 100));
+        return $valeur === '' ? null : $valeur;
+    }
+
+    /** Date de filtre (Y-m-d) valide, sinon null. */
+    private static function dateFiltre(Request $request, string $nom): ?string
+    {
+        $valeur = $request->query->get($nom);
+        if (!is_string($valeur)) {
+            return null;
+        }
+        $date = \DateTimeImmutable::createFromFormat('!Y-m-d', $valeur);
+        return $date !== false && $date->format('Y-m-d') === $valeur ? $valeur : null;
     }
 
     public function create(Request $request): Response

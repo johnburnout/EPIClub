@@ -9,6 +9,89 @@
 		<a href="/admin/acquisitions/import" class="btn btn-outline-primary mb-3">📥 Importer (Excel / CSV)</a>
 		<hr>
 	{% endif %}
+
+	<!-- Filtres + Tri + Limite -->
+	<form method="get" class="mb-3">
+		<!-- LIGNE 1 : Filtres -->
+		<div class="row g-3">
+			<div class="col-md-3">
+				<label for="fournisseur" class="form-label">Fournisseur</label>
+				<select name="fournisseur" id="fournisseur" class="form-select">
+					<option value="">Tous</option>
+					{% for fournisseur in fournisseurs %}
+					<option value="{{ fournisseur.id }}" {% if filtres.fournisseur == fournisseur.id %}selected{% endif %}>
+						{{ fournisseur.nom }}
+					</option>
+					{% endfor %}
+				</select>
+			</div>
+
+			<div class="col-md-2">
+				<label for="statut" class="form-label">Statut</label>
+				<select name="statut" id="statut" class="form-select">
+					<option value="">Tous</option>
+					<option value="validee" {% if filtres.statut == 'validee' %}selected{% endif %}>Validée</option>
+					<option value="en_attente" {% if filtres.statut == 'en_attente' %}selected{% endif %}>En attente</option>
+				</select>
+			</div>
+
+			<div class="col-md-2">
+				<label for="date_du" class="form-label">Date du</label>
+				<input type="date" name="date_du" id="date_du" value="{{ filtres.date_du }}" class="form-control">
+			</div>
+
+			<div class="col-md-2">
+				<label for="date_au" class="form-label">au</label>
+				<input type="date" name="date_au" id="date_au" value="{{ filtres.date_au }}" class="form-control">
+			</div>
+
+			<!-- Recherche (référence facture) -->
+			<div class="col-md-3">
+				<label for="q" class="form-label">Recherche</label>
+				<input type="search" name="q" id="q" value="{{ filtres.q }}" maxlength="100"
+				       class="form-control" placeholder="Référence facture">
+			</div>
+		</div>
+
+		<!-- LIGNE 2 : Tri, limite et boutons -->
+		<div class="row g-3 mt-2">
+			<div class="col-md-2">
+				<label for="order_by" class="form-label">Trier par</label>
+				<select name="order_by" id="order_by" class="form-select">
+					<option value="id" {% if filtres.order_by == 'id' %}selected{% endif %}>ID</option>
+					<option value="facture_reference" {% if filtres.order_by == 'facture_reference' %}selected{% endif %}>Référence facture</option>
+					<option value="facture_date" {% if filtres.order_by == 'facture_date' %}selected{% endif %}>Date</option>
+					<option value="fournisseur" {% if filtres.order_by == 'fournisseur' %}selected{% endif %}>Fournisseur</option>
+				</select>
+			</div>
+
+			<div class="col-md-2">
+				<label for="order_dir" class="form-label">Ordre</label>
+				<select name="order_dir" id="order_dir" class="form-select">
+					<option value="asc" {% if filtres.order_dir == 'asc' %}selected{% endif %}>Croissant</option>
+					<option value="desc" {% if filtres.order_dir == 'desc' %}selected{% endif %}>Décroissant</option>
+				</select>
+			</div>
+
+			{% if pagination.total > 5 %}
+			<div class="col-md-2">
+				<label for="limit" class="form-label">Lignes par page</label>
+				<select name="limit" id="limit" class="form-select" onchange="this.form.submit()">
+					{% for n in [5, 10, 25, 50, 100] %}
+					<option value="{{ n }}" {% if filtres.limit == n %}selected{% endif %}>{{ n }}</option>
+					{% endfor %}
+				</select>
+			</div>
+			{% endif %}
+
+			<div class="col-md-4 d-flex align-items-end gap-2">
+				<button type="submit" class="btn btn-secondary">Appliquer</button>
+				<a href="/admin/acquisitions" class="btn btn-outline-secondary">Réinitialiser</a>
+			</div>
+		</div>
+	</form>
+
+	<hr>
 	
 	<table class="table table-striped">
 		<thead>
@@ -70,10 +153,40 @@
 			{% else %}
 				<tr>
 					<td colspan="7" class="text-center text-muted py-4">
-						<i>Aucune acquisition pour le moment.</i>
+						<i>{{ filtre_actif ? 'Aucune acquisition ne correspond aux filtres.' : 'Aucune acquisition pour le moment.' }}</i>
 					</td>
 				</tr>
 			{% endfor %}
 		</tbody>
 	</table>
+
+	<!-- Pagination sous la liste (uniquement si plusieurs pages) -->
+	{% if pagination.totalPages > 1 %}
+	<div class="row mt-3">
+		<div class="col-md-12">
+			<nav aria-label="Pagination">
+				<ul class="pagination">
+					{% if pagination.hasPrevious %}
+					<li class="page-item"><a class="page-link" href="{{ paginationUrls.first }}">Premier</a></li>
+					<li class="page-item"><a class="page-link" href="{{ paginationUrls.previous }}">Précédent</a></li>
+					{% else %}
+					<li class="page-item disabled"><span class="page-link">Premier</span></li>
+					<li class="page-item disabled"><span class="page-link">Précédent</span></li>
+					{% endif %}
+
+					<li class="page-item disabled"><span class="page-link">Page {{ pagination.page }} sur {{ pagination.totalPages }}</span></li>
+
+					{% if pagination.hasNext %}
+					<li class="page-item"><a class="page-link" href="{{ paginationUrls.next }}">Suivant</a></li>
+					<li class="page-item"><a class="page-link" href="{{ paginationUrls.last }}">Dernier</a></li>
+					{% else %}
+					<li class="page-item disabled"><span class="page-link">Suivant</span></li>
+					<li class="page-item disabled"><span class="page-link">Dernier</span></li>
+					{% endif %}
+				</ul>
+			</nav>
+			<p class="text-muted">Affichage de {{ acquisitions|length }} acquisitions sur {{ pagination.total }} (page {{ pagination.page }}/{{ pagination.totalPages }})</p>
+		</div>
+	</div>
+	{% endif %}
 {% endblock %}
