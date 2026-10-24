@@ -10,6 +10,20 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.8.2] — 2026-10-24
+
+Lot et nombre initial modifiables par un super-administrateur.
+
+### Added
+
+- **Lot** : derrière la roue dentée « Modifier la référence, la catégorie
+  et le lot » du formulaire de modification, un super-administrateur
+  coche ou décoche **Lot** et modifie le **nombre initial**, sans mot de
+  confirmation. Décocher **Lot** ramène le nombre initial et le nombre
+  actuel à 1 ; un équipement unique passé en lot devient un lot complet
+  (nombre actuel ajustable). Le nombre actuel reste plafonné au nombre
+  initial.
+
 ## [v1.8.1] — 2026-10-24
 
 Référence et catégorie verrouillées par défaut dans le formulaire de
