@@ -27,8 +27,8 @@ final class WebServer
     /** @var resource|null Processus démarré par ce processus PHPUnit */
     private static $process = null;
 
-    /** @var array<int,resource> */
-    private static array $pipes = [];
+    /** Journal (stdout + stderr) du serveur démarré par les tests. */
+    private static ?string $journal = null;
 
     /**
      * Garantit qu'un serveur HTTP répond sur $baseUrl.
@@ -88,15 +88,21 @@ final class WebServer
             $router,
         ];
 
-        // stdout/stderr vers des pipes : relus uniquement en cas d'échec
-        // de démarrage pour alimenter le message d'erreur.
+        // [2026-10-24] stdout/stderr vers un fichier, pas vers des pipes :
+        // php -S journalise chaque requête (et les error_log() de
+        // l'application) ; des pipes jamais lus se remplissent (~64 Ko
+        // sous Linux) et bloquent alors le serveur après l'envoi d'une
+        // réponse, sans fermer la connexion (délai dépassé côté cURL).
+        // Le fichier est relu en cas d'échec de démarrage.
+        self::$journal = sys_get_temp_dir() . '/epiclub-test-server-' . $port . '.log';
+        @unlink(self::$journal);
         $pipes = [];
         $process = proc_open(
             $cmd,
             [
                 0 => ['pipe', 'r'],
-                1 => ['pipe', 'w'],
-                2 => ['pipe', 'w'],
+                1 => ['file', self::$journal, 'a'],
+                2 => ['file', self::$journal, 'a'],
             ],
             $pipes,
             $root,
@@ -113,7 +119,6 @@ final class WebServer
         fclose($pipes[0]);
 
         self::$process = $process;
-        self::$pipes = [$pipes[1], $pipes[2]];
         self::registerShutdown();
     }
 
@@ -125,7 +130,7 @@ final class WebServer
             if (!self::processAlive()) {
                 throw new \RuntimeException(
                     "Le serveur de test (php -S $host:$port) s'est arrêté au démarrage.\n"
-                    . "Sortie : " . self::readPipes()
+                    . "Sortie : " . self::lireJournal()
                 );
             }
 
@@ -138,7 +143,7 @@ final class WebServer
 
         throw new \RuntimeException(
             "Le serveur de test (php -S $host:$port) ne répond pas après 10 s.\n"
-            . "Sortie : " . self::readPipes()
+            . "Sortie : " . self::lireJournal()
         );
     }
 
@@ -158,12 +163,6 @@ final class WebServer
                 proc_close(self::$process);
                 self::$process = null;
             }
-            foreach (self::$pipes as $pipe) {
-                if (is_resource($pipe)) {
-                    fclose($pipe);
-                }
-            }
-            self::$pipes = [];
         });
     }
 
@@ -195,16 +194,11 @@ final class WebServer
         return $status['running'] ?? false;
     }
 
-    private static function readPipes(): string
+    private static function lireJournal(): string
     {
-        $output = '';
-        foreach (self::$pipes as $pipe) {
-            if (is_resource($pipe)) {
-                stream_set_blocking($pipe, false);
-                $output .= (string) stream_get_contents($pipe);
-            }
-        }
-        $output = trim($output);
+        $output = self::$journal !== null && is_file(self::$journal)
+            ? trim((string) file_get_contents(self::$journal))
+            : '';
         return $output !== '' ? $output : '(aucune sortie)';
     }
 }
