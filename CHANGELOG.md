@@ -10,6 +10,36 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v2.0.0] — 2026-10-24
+
+Demandes de modification (tickets) ; libellé modifiable par un
+administrateur.
+
+### Added
+
+- **Demander une modification** (contrôleurs et administrateurs) : sur la
+  fiche d'un équipement, cocher les modifications que son rôle ne permet
+  pas (statut, dates, nombre d'éléments, remarques ou photo, dissociation,
+  regroupement, libellé ; référence, catégorie, lot, référence ou date de
+  l'acquisition), avec une remarque obligatoire pour chacune. La demande
+  ouvre un ticket par niveau requis (administrateur, super-administrateur).
+- **Notification** des personnes capables de traiter : mail (sans relance
+  tant qu'elles ne se sont pas reconnectées depuis le précédent) et
+  tableau de bord, avec un lien vers le formulaire de modification de
+  l'équipement.
+- **Traitement** : « Modification faite » ou refus (motif obligatoire). Le
+  ticket est clos et disparaît des tableaux de bord ; le demandeur est
+  notifié sur le sien jusqu'à ce qu'il consulte la réponse. Liste des
+  demandes : menu Contrôles → Demandes de modification.
+- Migration 018 : tables `ticket` et `ticket_modification`, colonne
+  `utilisateur.ticket_mail_envoye_le`.
+
+### Changed
+
+- **Libellé** d'un équipement : modifiable par un administrateur (et plus
+  seulement par un super-administrateur), dans le formulaire de
+  modification et en modification groupée.
+
 ## [v1.10.1] — 2026-10-24
 
 Dissocier et regrouper accessibles depuis la roue dentée.
