@@ -7,6 +7,7 @@ namespace Epiclub\Tests\Unit\Controller\Support;
 use Epiclub\Controller\TableauDeBordController;
 use Epiclub\Domain\ClubManager;
 use Epiclub\Domain\EquipementManager;
+use Epiclub\Domain\TicketManager;
 use Epiclub\Engine\Session;
 
 /**
@@ -33,6 +34,14 @@ final class TestableTableauDeBordController extends TableauDeBordController
     protected function equipementManager(): EquipementManager
     {
         return $this->equipementManagerMock;
+    }
+
+    /** [2026-10-24] Doublure des tickets ; sans elle, aucun ticket (pas de PDO). */
+    public ?TicketManager $ticketManagerOverride = null;
+
+    protected function ticketManager(): TicketManager
+    {
+        return $this->ticketManagerOverride ?? throw new \RuntimeException('Pas de tickets en test.');
     }
 
     protected function imagesDir(): string

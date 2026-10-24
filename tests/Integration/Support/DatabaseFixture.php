@@ -191,6 +191,16 @@ final class DatabaseFixture
              WHERE ce.acquisition_id = ?"
         )->execute([$id]);
 
+        // 0 bis. [2026-10-24] Tickets des équipements (migration 018) :
+        //    fk_ticket_equipement n'a pas de ON DELETE CASCADE.
+        if ($this->tableExiste('ticket')) {
+            $this->pdo->prepare(
+                "DELETE t FROM ticket t
+                 JOIN club_equipement ce ON ce.id = t.equipement_id
+                 WHERE ce.acquisition_id = ?"
+            )->execute([$id]);
+        }
+
         // 1. Équipements générés
         $this->pdo->prepare("DELETE FROM club_equipement WHERE acquisition_id = ?")->execute([$id]);
 
@@ -199,6 +209,14 @@ final class DatabaseFixture
 
         // 3. Acquisition
         $this->pdo->prepare("DELETE FROM acquisition WHERE id = ?")->execute([$id]);
+    }
+
+    /** La table existe-t-elle (migration éventuellement non appliquée) ? */
+    private function tableExiste(string $table): bool
+    {
+        $stmt = $this->pdo->prepare('SHOW TABLES LIKE ?');
+        $stmt->execute([$table]);
+        return $stmt->fetchColumn() !== false;
     }
 
     /**
@@ -252,6 +270,9 @@ final class DatabaseFixture
         $equipementIds = $stmt->fetchAll(PDO::FETCH_COLUMN);
         foreach ($equipementIds as $id) {
             $this->pdo->prepare("DELETE FROM controle_ligne WHERE equipement_id = ?")->execute([$id]);
+            if ($this->tableExiste('ticket')) {
+                $this->pdo->prepare("DELETE FROM ticket WHERE equipement_id = ?")->execute([$id]);
+            }
             $this->pdo->prepare("DELETE FROM club_equipement WHERE id = ?")->execute([$id]);
         }
         

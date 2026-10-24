@@ -158,6 +158,30 @@ $routes->add('equipement_regrouper', new Route(
     [], [], '', [], ['POST']
 ));
 
+// [2026-10-24] Demandes de modification d'un équipement (tickets) :
+// demande depuis la fiche (contrôleur, admin), liste, consultation,
+// traitement (admin et plus, selon le rôle requis du ticket)
+$routes->add('equipement_demande_modification', new Route(
+    '/equipements/demande_modification-{id}',
+    ['_controller' => 'Epiclub\\Controller\\TicketController', 'action' => 'demander'],
+    [], [], '', [], ['GET', 'POST']
+));
+$routes->add('ticket_list', new Route(
+    '/tickets',
+    ['_controller' => 'Epiclub\\Controller\\TicketController', 'action' => 'liste'],
+    [], [], '', [], ['GET']
+));
+$routes->add('ticket_show', new Route(
+    '/tickets/ticket-{id}',
+    ['_controller' => 'Epiclub\\Controller\\TicketController', 'action' => 'voir'],
+    [], [], '', [], ['GET']
+));
+$routes->add('ticket_traiter', new Route(
+    '/tickets/ticket_traiter-{id}',
+    ['_controller' => 'Epiclub\\Controller\\TicketController', 'action' => 'traiter'],
+    [], [], '', [], ['POST']
+));
+
 // ROLE_SUPER_ADMIN : référence proposée (AJAX) pour la catégorie saisie
 // dans le formulaire de modification (année d'achat de l'équipement)
 $routes->add('equipement_reference_suggestion', new Route(

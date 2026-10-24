@@ -20,6 +20,12 @@ class Session extends BaseSession
         'ROLE_SUPER_ADMIN' => 4,
     ];
 
+    /** [2026-10-24] Niveau d'un rôle (0 si inconnu) — cf. ROLE_LEVELS. */
+    public static function niveau(?string $role): int
+    {
+        return self::ROLE_LEVELS[$role ?? ''] ?? 0;
+    }
+
     public function isAuthenticated(): bool
     {
         return $this->get('user') ? true : false;

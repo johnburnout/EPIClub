@@ -1,0 +1,20 @@
+{% extends "email/email_layout.twig" %}
+
+{% block body %}
+<h1>Demande de modification</h1>
+<p>Bonjour {{ personne.prenom }},</p>
+<p>
+    {{ demandeur.prenom|default('') }} {{ demandeur.nom|default('') }} demande une modification de l'équipement
+    <strong>{{ equipement.reference }}</strong> ({{ equipement.libelle }}).
+</p>
+<p>
+    {% for lien in liens %}
+        <a href="{{ lien }}">Voir la demande{% if liens|length > 1 %} n° {{ loop.index }}{% endif %}</a><br>
+    {% endfor %}
+</p>
+<p>
+    Les demandes en attente sont aussi listées sur votre <a href="{{ lien_tableau_de_bord }}">tableau de bord</a>.
+    Vous ne recevrez pas d'autre mail de demande avant votre prochaine connexion.
+</p>
+<p>L'équipe {{ club.nom }}</p>
+{% endblock %}

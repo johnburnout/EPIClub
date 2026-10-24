@@ -6,6 +6,7 @@ namespace Epiclub\Controller;
 
 use Epiclub\Domain\ClubManager;
 use Epiclub\Domain\EquipementManager;
+use Epiclub\Domain\TicketManager;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\ImageUploader;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
@@ -23,6 +24,9 @@ use Symfony\Component\HttpFoundation\Response;
  *     des équipements arrivent en fin d'utilisation dans les N prochains
  *     mois, ou sont déjà échus (N = club.alerte_renouvellement_mois,
  *     réglable par les administrateurs) ;
+ *   - [2026-10-24] les demandes de modification (tickets) à traiter
+ *     (administrateurs) et les demandes traitées pas encore consultées
+ *     par leur demandeur ;
  *   - un lien direct vers le scan de QR codes.
  *
  * Le logo et la photo de fond sont réglables par les administrateurs
@@ -65,6 +69,12 @@ class TableauDeBordController extends AbstractController
     protected function pretManager(): \Epiclub\Domain\PretManager
     {
         return new \Epiclub\Domain\PretManager();
+    }
+
+    /** [2026-10-24] Tickets — factory surchargeable en test. */
+    protected function ticketManager(): TicketManager
+    {
+        return new TicketManager();
     }
 
     /** Dossier (servi par le serveur web) des images du club. */
@@ -140,7 +150,30 @@ class TableauDeBordController extends AbstractController
             }
         }
 
+        // [2026-10-24] Demandes de modification : à traiter (administrateurs,
+        // selon le rôle requis) et traitées non consultées (demandeur). Elles
+        // disparaissent une fois closes / consultées.
+        $ticketsATraiter = [];
+        $ticketsTraites = [];
+        if ($this->isGranted('ROLE_CONTROLLEUR')) {
+            try {
+                $tickets = $this->ticketManager();
+                $roles = array_values(array_filter(
+                    ['ROLE_ADMIN', 'ROLE_SUPER_ADMIN'],
+                    fn (string $r) => $this->isGranted($r)
+                ));
+                $ticketsATraiter = $tickets->findOuvertsPourRoles($roles);
+                $ticketsTraites = $tickets->findClosNonVus((int) ($this->session->get('user')['id'] ?? 0));
+            } catch (\Throwable $e) {
+                // Tableau de bord affichable même sans la migration 018.
+                error_log('[TableauDeBordController] tickets: ' . $e->getMessage());
+            }
+        }
+
         return $this->render('tableau_de_bord.twig', [
+            'tickets_a_traiter' => $ticketsATraiter,
+            'tickets_traites' => $ticketsTraites,
+            'libelles_modifications' => TicketController::libelles(),
             'prets_en_retard' => $pretsEnRetard,
             'club' => $club,
             'logo_url' => self::imageUrl($club['logo'] ?? null, self::LOGO_DEFAUT),

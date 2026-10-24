@@ -51,6 +51,39 @@
 						</div>
 					{% endif %}
 
+					{# [2026-10-24] Demandes de modification à traiter (administrateurs) #}
+					{% if tickets_a_traiter|default([]) is not empty %}
+						<div id="alerte-tickets" class="alert alert-info mb-0" role="alert">
+							📨 <strong>{{ tickets_a_traiter|length }} demande{{ tickets_a_traiter|length > 1 ? 's' : '' }} de modification à traiter</strong>
+							<ul class="list-unstyled small mb-1 mt-1">
+								{% for t in tickets_a_traiter|slice(0, 5) %}
+									<li class="mb-1">
+										{% if t.equipement_reference and not t.equipement_supprime %}
+											<a href="/equipements/equipement_modification-{{ t.equipement_id }}" class="alert-link"
+											   title="Formulaire de modification de l'équipement">{{ t.equipement_reference }}</a>
+										{% else %}
+											{{ t.equipement_reference|default('?') }}
+										{% endif %}
+										: {{ t.modifications|map(m => libelles_modifications[m.type]|default(m.type))|join(', ') }}
+										— <a href="/tickets/ticket-{{ t.id }}" class="alert-link">traiter</a>
+									</li>
+								{% endfor %}
+							</ul>
+							<a href="/tickets" class="alert-link small">Toutes les demandes →</a>
+						</div>
+					{% endif %}
+
+					{# [2026-10-24] Demandes de l'utilisateur traitées, pas encore consultées #}
+					{% for t in tickets_traites|default([]) %}
+						<div class="alert {{ t.statut == 'fait' ? 'alert-success' : 'alert-danger' }} mb-0 ticket-traite" role="alert">
+							<a href="/tickets/ticket-{{ t.id }}" class="alert-link text-decoration-none d-block">
+								{{ t.statut == 'fait' ? '✅' : '✖' }} Votre demande sur <strong>{{ t.equipement_reference|default('?') }}</strong>
+								{{ t.statut == 'fait' ? 'a été traitée' : 'a été refusée' }}
+								<span class="d-block small mt-1">Voir la réponse →</span>
+							</a>
+						</div>
+					{% endfor %}
+
 					<a href="/controles/scanner" class="btn btn-primary w-100 py-2">
 						📷 Scanner un QR code
 					</a>

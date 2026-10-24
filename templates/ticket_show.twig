@@ -1,0 +1,100 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+	{% set statuts = {'ouvert': ['En attente', 'bg-warning text-dark'], 'fait': ['Modification faite', 'bg-success'], 'refuse': ['Refusée', 'bg-danger']} %}
+	<h3>Demande de modification n° {{ ticket.id }}
+		<span class="badge {{ statuts[ticket.statut][1] }} fs-6 align-middle">{{ statuts[ticket.statut][0] }}</span>
+	</h3>
+	<hr>
+
+	<div class="card mb-3">
+		<div class="card-body">
+			<p class="mb-1">
+				<strong>Équipement :</strong>
+				{% if ticket.equipement_reference and not ticket.equipement_supprime %}
+					<a href="/equipements/equipement-{{ ticket.equipement_id }}">{{ ticket.equipement_reference }}</a> — {{ ticket.equipement_libelle }}
+				{% else %}
+					{{ ticket.equipement_reference|default('?') }} <span class="text-muted">(archivé)</span>
+				{% endif %}
+			</p>
+			<p class="mb-1"><strong>Demandé par :</strong> {{ ticket.demandeur_prenom }} {{ ticket.demandeur_nom }},
+				le {{ ticket.date_creation|date('d/m/Y à H:i') }}</p>
+			<p class="mb-0"><strong>À traiter par :</strong>
+				{{ ticket.role_requis == 'ROLE_SUPER_ADMIN' ? 'un super-administrateur' : 'un administrateur ou un super-administrateur' }}</p>
+		</div>
+	</div>
+
+	<h5>Modifications demandées</h5>
+	<ul class="list-group mb-3">
+		{% for m in ticket.modifications %}
+			<li class="list-group-item">
+				<strong>{{ libelles[m.type]|default(m.type) }}</strong>
+				<div class="small" style="white-space: pre-line;">{{ m.remarque }}</div>
+			</li>
+		{% endfor %}
+	</ul>
+
+	{% if ticket.statut != 'ouvert' %}
+		<div class="alert {{ ticket.statut == 'fait' ? 'alert-success' : 'alert-danger' }}">
+			<strong>{{ statuts[ticket.statut][0] }}</strong>
+			par {{ ticket.traite_par_prenom|default('?') }} {{ ticket.traite_par_nom|default('') }},
+			le {{ ticket.date_traitement|date('d/m/Y à H:i') }}.
+			{% if ticket.reponse %}
+				<div class="mt-1" style="white-space: pre-line;">{{ ticket.reponse }}</div>
+			{% endif %}
+		</div>
+	{% endif %}
+
+	{% if peut_traiter %}
+		<div class="card border-warning mb-3">
+			<div class="card-body">
+				<h5 class="card-title">Traiter la demande</h5>
+				<div class="mb-3 d-flex flex-wrap gap-2">
+					{% if ticket.equipement_reference and not ticket.equipement_supprime %}
+						<a href="/equipements/equipement_modification-{{ ticket.equipement_id }}" class="btn btn-outline-primary" target="_blank">
+							<i class="fas fa-edit"></i> Formulaire de modification de l'équipement
+						</a>
+					{% endif %}
+					{% if ticket.modifications|filter(m => m.type == 'acquisition') is not empty and ticket.equipement_acquisition_id %}
+						<a href="/admin/acquisitions/acquisition-{{ ticket.equipement_acquisition_id }}" class="btn btn-outline-primary" target="_blank">
+							📦 Fiche de l'acquisition
+						</a>
+					{% endif %}
+				</div>
+				<p class="small text-muted">Faites la modification (lien ci-dessus, nouvel onglet), puis clôturez la demande.
+					Un refus doit être motivé.</p>
+				<form method="post" action="/tickets/ticket_traiter-{{ ticket.id }}" id="form-traiter">
+					<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+					<div class="mb-2">
+						<label for="reponse" class="form-label">Réponse au demandeur <span class="text-muted small">(obligatoire en cas de refus)</span></label>
+						<textarea class="form-control" name="reponse" id="reponse" rows="2" maxlength="{{ reponse_max }}"></textarea>
+					</div>
+					<button type="submit" name="decision" value="fait" class="btn btn-success">✅ Modification faite</button>
+					<button type="submit" name="decision" value="refuse" class="btn btn-danger" id="bouton-refuser">✖ Refuser</button>
+				</form>
+			</div>
+		</div>
+	{% endif %}
+
+	<a href="/tickets" class="btn btn-secondary">Toutes les demandes</a>
+{% endblock %}
+
+{% block javascripts %}
+	<script>
+		// [2026-10-24] Refus : motif obligatoire (revérifié côté serveur).
+		(function () {
+			const form = document.getElementById('form-traiter');
+			if (!form) return;
+			const reponse = document.getElementById('reponse');
+			form.addEventListener('submit', function (e) {
+				if (e.submitter && e.submitter.value === 'refuse' && reponse.value.trim() === '') {
+					e.preventDefault();
+					reponse.classList.add('is-invalid');
+					reponse.placeholder = 'Indiquez le motif du refus.';
+					reponse.focus();
+				}
+			});
+			reponse.addEventListener('input', () => reponse.classList.remove('is-invalid'));
+		})();
+	</script>
+{% endblock %}

@@ -182,6 +182,18 @@ Ils sont générés automatiquement à partir des **factures d'acquisition** val
 
 ---
 
+### 2.4 bis Demander une modification (contrôleurs et administrateurs)
+
+Une modification que votre rôle ne permet pas se **demande** depuis la fiche de l'équipement, bouton **« Demander une modification »** :
+- cochez les modifications voulues — seules celles que vous ne pouvez pas faire vous-même sont proposées (un contrôleur : statut, dates, nombre d'éléments, remarques ou photo, dissociation, regroupement, libellé, et tout ce qui est réservé au super-administrateur ; un administrateur : référence, catégorie, lot / nombre initial, référence ou date de l'acquisition) ;
+- pour chacune, une **remarque est obligatoire** (ce qu'il faut changer, et pourquoi).
+
+La demande ouvre un **ticket** par niveau requis (administrateur, super-administrateur). Les personnes capables de la traiter (ce rôle ou plus) :
+- reçoivent un **mail** — pas de nouveau mail tant qu'elles ne se sont pas reconnectées depuis le précédent ;
+- voient la demande sur leur **tableau de bord**, avec un lien vers le formulaire de modification de l'équipement.
+
+L'une d'elles fait la modification puis clôt le ticket (**« Modification faite »**), ou le **refuse** (motif obligatoire). Le ticket disparaît alors des tableaux de bord, et le demandeur est notifié sur le sien jusqu'à ce qu'il consulte la réponse. Toutes les demandes sont listées dans **Contrôles → Demandes de modification**.
+
 ### 2.5 Consulter / Exporter
 
 - **Fiche individuelle** : depuis la liste, cliquer sur **« Voir »** pour consulter toutes les informations (y compris l’historique des contrôles et la facture associée).

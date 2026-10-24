@@ -361,6 +361,12 @@
 					<i class="fas fa-edit"></i> Modifier{% if not isGranted('ROLE_ADMIN') %} l'emplacement{% endif %}
 				</a>
 				{% endif %}
+				{# [2026-10-24] Contrôleur / admin : demander ce que son rôle ne permet pas #}
+				{% if isGranted('ROLE_CONTROLLEUR') and not isGranted('ROLE_SUPER_ADMIN') %}
+				<a href="/equipements/demande_modification-{{ equipement.id }}" class="btn btn-outline-warning">
+					<i class="fas fa-paper-plane"></i> Demander une modification
+				</a>
+				{% endif %}
 				<a href="/equipements/equipement-pdf-{{ equipement.id }}" class="btn btn-danger" target="_blank">
 					<i class="fas fa-file-pdf"></i> PDF
 				</a>

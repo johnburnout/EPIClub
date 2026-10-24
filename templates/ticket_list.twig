@@ -1,0 +1,56 @@
+{% extends "_layout.twig" %}
+
+{% macro ligne(t, libelles, statuts, avec_demandeur) %}
+	<tr>
+		<td><a href="/tickets/ticket-{{ t.id }}">n° {{ t.id }}</a></td>
+		<td>{{ t.date_creation|date('d/m/Y') }}</td>
+		<td>
+			{% if t.equipement_reference and not t.equipement_supprime %}
+				<a href="/equipements/equipement-{{ t.equipement_id }}">{{ t.equipement_reference }}</a>
+			{% else %}
+				{{ t.equipement_reference|default('?') }}
+			{% endif %}
+		</td>
+		<td>{{ t.modifications|map(m => libelles[m.type]|default(m.type))|join(', ') }}</td>
+		{% if avec_demandeur %}<td>{{ t.demandeur_prenom }} {{ t.demandeur_nom }}</td>{% endif %}
+		<td><span class="badge {{ statuts[t.statut][1] }}">{{ statuts[t.statut][0] }}</span></td>
+	</tr>
+{% endmacro %}
+
+{% block body %}
+	{% import _self as tickets %}
+	{% set statuts = {'ouvert': ['En attente', 'bg-warning text-dark'], 'fait': ['Faite', 'bg-success'], 'refuse': ['Refusée', 'bg-danger']} %}
+	<h3>Demandes de modification</h3>
+	<hr>
+
+	{% if isGranted('ROLE_ADMIN') %}
+		<h5>À traiter <span class="badge bg-warning text-dark">{{ a_traiter|length }}</span></h5>
+		{% if a_traiter %}
+			<div class="table-responsive mb-4">
+				<table class="table table-sm table-striped align-middle">
+					<thead><tr><th>Ticket</th><th>Date</th><th>Équipement</th><th>Modifications</th><th>Demandeur</th><th>Statut</th></tr></thead>
+					<tbody>
+						{% for t in a_traiter %}{{ tickets.ligne(t, libelles, statuts, true) }}{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		{% else %}
+			<p class="text-muted mb-4">Aucune demande en attente.</p>
+		{% endif %}
+	{% endif %}
+
+	<h5>Mes demandes</h5>
+	{% if mes_demandes %}
+		<div class="table-responsive">
+			<table class="table table-sm table-striped align-middle">
+				<thead><tr><th>Ticket</th><th>Date</th><th>Équipement</th><th>Modifications</th><th>Statut</th></tr></thead>
+				<tbody>
+					{% for t in mes_demandes %}{{ tickets.ligne(t, libelles, statuts, false) }}{% endfor %}
+				</tbody>
+			</table>
+		</div>
+	{% else %}
+		<p class="text-muted">Vous n'avez fait aucune demande. Elles se font depuis la fiche d'un équipement
+			(« Demander une modification »).</p>
+	{% endif %}
+{% endblock %}

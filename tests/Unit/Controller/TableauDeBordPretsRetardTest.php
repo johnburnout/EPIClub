@@ -38,6 +38,7 @@ final class TableauDeBordPretsRetardTest extends TestCase
             protected function clubManagerModules(): ClubManager { return $this->c; }
             protected function equipementManager(): EquipementManager { return $this->e; }
             protected function pretManager(): PretManager { return $this->p; }
+            protected function ticketManager(): \Epiclub\Domain\TicketManager { throw new \RuntimeException('Pas de tickets en test.'); }
             protected function aujourdhui(): \DateTimeImmutable { return new \DateTimeImmutable('2026-10-21'); }
             protected function updateLastActivity(): void {}
         };

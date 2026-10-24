@@ -1,0 +1,80 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+	<h3>Demander une modification</h3>
+	<hr>
+	<p>
+		Équipement <a href="/equipements/equipement-{{ equipement.id }}"><strong>{{ equipement.reference }}</strong></a>
+		— {{ equipement.libelle }}
+	</p>
+
+	{% if demandables is empty %}
+		<div class="alert alert-info">Votre rôle vous permet déjà de faire toutes ces modifications vous-même.</div>
+		<a href="/equipements/equipement-{{ equipement.id }}" class="btn btn-secondary">Retour à la fiche</a>
+	{% else %}
+		<p class="text-muted small">
+			Cochez les modifications que vous ne pouvez pas faire vous-même et précisez chacune dans sa remarque
+			(obligatoire). Les personnes habilitées sont prévenues par mail et sur leur tableau de bord ; vous serez
+			notifié sur le vôtre quand la demande sera traitée.
+		</p>
+
+		{% if erreur %}
+			<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> {{ erreur }}</div>
+		{% endif %}
+
+		<form method="post" id="form-demande">
+			<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+			{% for type, libelle in demandables %}
+				{% set cochee = type in cochees %}
+				<div class="card mb-2">
+					<div class="card-body py-2">
+						<div class="form-check">
+							<input type="checkbox" class="form-check-input demande-type" name="types[]" value="{{ type }}"
+							       id="type_{{ type }}" {% if cochee %}checked{% endif %}>
+							<label class="form-check-label" for="type_{{ type }}">
+								{{ libelle }}
+								<span class="badge bg-secondary ms-1">{{ roles_requis[type] == 'ROLE_SUPER_ADMIN' ? 'super-administrateur' : 'administrateur' }}</span>
+							</label>
+						</div>
+						<div class="mt-2 {% if not cochee %}d-none{% endif %}" id="bloc_{{ type }}">
+							<label for="remarque_{{ type }}" class="form-label small">Remarque (obligatoire)</label>
+							<textarea class="form-control" name="remarques[{{ type }}]" id="remarque_{{ type }}" rows="2"
+							          maxlength="{{ remarque_max }}" {% if not cochee %}disabled{% else %}required{% endif %}>{{ remarques[type]|default('') }}</textarea>
+						</div>
+					</div>
+				</div>
+			{% endfor %}
+
+			<div class="mt-3">
+				<button type="submit" class="btn btn-primary">Envoyer la demande</button>
+				<a href="/equipements/equipement-{{ equipement.id }}" class="btn btn-secondary">Annuler</a>
+			</div>
+		</form>
+	{% endif %}
+{% endblock %}
+
+{% block javascripts %}
+	<script>
+		// [2026-10-24] Une remarque obligatoire par modification cochée.
+		(function () {
+			const form = document.getElementById('form-demande');
+			if (!form) return;
+			form.querySelectorAll('.demande-type').forEach(function (caseType) {
+				const bloc = document.getElementById('bloc_' + caseType.value);
+				const remarque = document.getElementById('remarque_' + caseType.value);
+				caseType.addEventListener('change', function () {
+					bloc.classList.toggle('d-none', !caseType.checked);
+					remarque.disabled = !caseType.checked;
+					remarque.required = caseType.checked;
+					if (caseType.checked) remarque.focus();
+				});
+			});
+			form.addEventListener('submit', function (e) {
+				if (!form.querySelector('.demande-type:checked')) {
+					e.preventDefault();
+					alert('Cochez au moins une modification à demander.');
+				}
+			});
+		})();
+	</script>
+{% endblock %}

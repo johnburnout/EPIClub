@@ -134,6 +134,30 @@ class UtilisateurManager extends AbstractManager
     *
     * Iso-forme avec findId() : même clé 'id', fetch unique, null si absent.
     */
+    /**
+     * [2026-10-24] Personnes pouvant recevoir un mail de ticket : rôle,
+     * email, dernière activité et date du dernier mail de ticket (aucune
+     * colonne sensible).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function findDestinatairesTicket(): array
+    {
+        $stmt = $this->db->query(
+            "SELECT id, prenom, nom, email, role, last_activity, ticket_mail_envoye_le
+               FROM utilisateur
+              WHERE role IN ('ROLE_ADMIN', 'ROLE_SUPER_ADMIN')"
+        );
+        return $stmt->fetchAll();
+    }
+
+    /** [2026-10-24] Date du dernier mail de ticket envoyé à la personne. */
+    public function marquerMailTicket(int $id, string $maintenant): void
+    {
+        $stmt = $this->db->prepare('UPDATE utilisateur SET ticket_mail_envoye_le = :date WHERE id = :id');
+        $stmt->execute(['date' => $maintenant, 'id' => $id]);
+    }
+
     public function findPublicId(int $id): ?array
     {
         $columns = implode(', ', self::PUBLIC_FIELDS);
