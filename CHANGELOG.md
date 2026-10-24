@@ -10,6 +10,30 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.10.0] — 2026-10-24
+
+Correction de la référence et de la date d'une acquisition ; regroupement
+d'équipements identiques en lot.
+
+### Added
+
+- **Acquisition — référence et date** (super-administrateur) : sur la
+  fiche de l'acquisition, la roue dentée « Modifier la référence et la
+  date » permet de corriger la référence de facture (disponibilité
+  vérifiée pendant la saisie, mot `REFERENCE`) et la date d'achat (mot
+  `DATE`). Les dates des équipements suivent : mise en service égale à
+  l'ancienne date de facture et fin d'utilisation calculée (achat + 10 ans)
+  recalculées ; les dates saisies à la main sont présentées pour être
+  confirmées ou corrigées (jamais de mise en service avant la facture).
+  Les références des équipements ne changent pas.
+- **Regrouper en lot** (administrateur et plus) : depuis le formulaire de
+  modification, des équipements identiques (même libellé, même catégorie,
+  même acquisition) sont associés à l'équipement ouvert, qui garde sa
+  référence et son historique ; leurs éléments s'ajoutent au lot et ils
+  sont archivés. Validation par le mot `REGROUPER`. Impossible en contrôle
+  en cours, sur un prêt ouvert, pour un statut hors service, prêté ou
+  égaré, ou d'un statut différent.
+
 ## [v1.9.1] — 2026-10-24
 
 Dissociation d'un lot ouverte aux administrateurs.
