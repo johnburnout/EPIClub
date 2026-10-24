@@ -10,6 +10,23 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.9.0] — 2026-10-24
+
+Dissociation d'un lot en plusieurs lots ou en équipements individuels.
+
+### Added
+
+- **Dissocier un lot** (super-administrateur) : depuis la roue dentée du
+  formulaire de modification, carte « Dissocier le lot ». On indique la
+  répartition des éléments restants (ex. `4, 3, 3`, ou « En équipements
+  individuels ») : la première partie reste à l'équipement actuel (même
+  référence, historique conservé), chacune des autres devient un nouvel
+  équipement (lot ou individuel) avec les mêmes caractéristiques. Une
+  référence est proposée pour chaque nouvel équipement (numéros suivants
+  du modèle, catégorie et année d'achat), modifiable et vérifiée à la
+  volée. Validation par le mot `DISSOCIER`. Impossible pendant un
+  contrôle en cours ou pour un équipement hors service, prêté ou égaré.
+
 ## [v1.8.2] — 2026-10-24
 
 Lot et nombre initial modifiables par un super-administrateur.
