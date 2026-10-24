@@ -373,6 +373,18 @@ $routes->add('acquisition_valider', new Route(
     ['_controller' => 'Epiclub\\Controller\\AcquisitionController', 'action' => 'valider'],
     [], [], '', [], ['POST']
 ));
+// ROLE_SUPER_ADMIN : correction de la référence et de la date de facture
+// depuis la fiche (unicité vérifiée à la volée, puis POST)
+$routes->add('acquisition_reference_facture_disponible', new Route(
+    '/admin/acquisitions/reference-facture-disponible',
+    ['_controller' => 'Epiclub\\Controller\\AcquisitionController', 'action' => 'referenceFactureDisponible'],
+    [], [], '', [], ['GET']
+));
+$routes->add('acquisition_corriger', new Route(
+    '/admin/acquisitions/acquisition_corriger-{id}',
+    ['_controller' => 'Epiclub\\Controller\\AcquisitionController', 'action' => 'corriger'],
+    [], [], '', [], ['POST']
+));
 // ROLE_ADMIN : proposition de référence (AJAX) à la saisie d'une ligne
 $routes->add('acquisition_reference_suggestion', new Route(
     '/admin/acquisitions/reference-suggestion',

@@ -167,6 +167,20 @@ class EquipementManager extends AbstractManager
         return $this->db->lastInsertId('club_equipement');
     }
 
+    /**
+     * [2026-10-24] Équipements (non supprimés) issus d'une acquisition,
+     * triés par référence.
+     */
+    public function findByAcquisition(int $acquisitionId): array
+    {
+        $sql = "SELECT * FROM club_equipement
+                WHERE acquisition_id = :id AND deleted_at IS NULL
+                ORDER BY reference";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['id' => $acquisitionId]);
+        return $stmt->fetchAll();
+    }
+
     /** [2026-10-24] Transactions : la dissociation d'un lot écrit plusieurs lignes. */
     public function beginTransaction(): void
     {

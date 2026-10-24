@@ -7,6 +7,7 @@ namespace Epiclub\Controller;
 use Epiclub\Domain\AcquisitionLigneManager;
 use Epiclub\Domain\AcquisitionManager;
 use Epiclub\Domain\AcquisitionValidator;
+use Epiclub\Domain\CorrectionAcquisition;
 use Epiclub\Domain\FournisseurManager;
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\CategorieManager;
@@ -68,6 +69,11 @@ class AcquisitionController extends AbstractController
     protected function referenceGenerator(): ReferenceGenerator
     {
         return new ReferenceGenerator();
+    }
+
+    protected function correctionAcquisition(): CorrectionAcquisition
+    {
+        return new CorrectionAcquisition($this->acquisitionManager(), $this->equipementManager());
     }
 
     /**
@@ -933,10 +939,156 @@ class AcquisitionController extends AbstractController
 
         $acquisition['lignes'] = $acquisitionLigneManager->findByAcquisition($acquisition['id']);
 
+        // [2026-10-24] Correction de la référence et de la date (super-admin) :
+        // équipements dont les dates seront réalignées ou réinterrogées.
+        $correction = $this->isGranted('ROLE_SUPER_ADMIN');
+
         return $this->render('acquisition_show.twig', [
             'acquisition' => $acquisition,
             'fournisseurs' => $fournisseurManager->findAll(),
+            'correction_possible' => $correction,
+            'equipements_dates' => $correction
+                ? CorrectionAcquisition::classer(
+                    $this->equipementManager()->findByAcquisition((int) $acquisition['id']),
+                    (string) $acquisition['facture_date']
+                )
+                : [],
+            'mot_confirmation_reference' => CorrectionAcquisition::MOT_CONFIRMATION_REFERENCE,
+            'mot_confirmation_date' => CorrectionAcquisition::MOT_CONFIRMATION_DATE,
+            'reference_facture_max' => CorrectionAcquisition::REFERENCE_MAX,
         ]);
+    }
+
+    // --------------------------------------------------------------
+    // [2026-10-24] CORRECTION DE LA RÉFÉRENCE ET DE LA DATE (ROLE_SUPER_ADMIN),
+    // depuis la fiche de l'acquisition (roue dentée). Garde-fous : unicité
+    // de la référence vérifiée à la volée puis côté serveur, mots de
+    // confirmation REFERENCE et DATE, dates manuelles des équipements
+    // réinterrogées (cf. CorrectionAcquisition).
+    // --------------------------------------------------------------
+
+    /**
+     * GET JSON /admin/acquisitions/reference-facture-disponible?id=&reference=
+     */
+    public function referenceFactureDisponible(Request $request): Response
+    {
+        $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
+
+        $reference = trim((string) $request->query->get('reference', ''));
+        $id = (int) $request->query->get('id', 0);
+
+        $erreur = CorrectionAcquisition::erreurReference($reference);
+        if ($erreur !== null) {
+            return new JsonResponse(['disponible' => false, 'message' => $erreur]);
+        }
+        $existante = $this->acquisitionManager()->findOneByCriteria(['facture_reference' => $reference]);
+        if ($existante && (int) $existante['id'] === $id) {
+            return new JsonResponse(['disponible' => false, 'message' => 'C\'est la référence actuelle.']);
+        }
+        return new JsonResponse([
+            'disponible' => !$existante,
+            'message' => $existante
+                ? 'Cette référence de facture est déjà utilisée par une autre acquisition.'
+                : 'Référence disponible.',
+        ]);
+    }
+
+    /**
+     * POST /admin/acquisitions/acquisition_corriger-{id}
+     * Les contrôles faits dans le navigateur sont refaits ici ; en cas de
+     * refus, retour à la fiche avec le motif.
+     */
+    public function corriger(Request $request): Response
+    {
+        $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
+        $this->validateCsrf($request);
+
+        $id = (int) $request->get('id');
+        $acquisition = $id > 0 ? $this->acquisitionManager()->findId($id) : null;
+        if (!$acquisition) {
+            $this->session->getFlashBag()->add('error', 'Acquisition non trouvée.');
+            return $this->redirectTo('/admin/acquisitions');
+        }
+        $flash = $this->session->getFlashBag();
+        $fiche = "/admin/acquisitions/acquisition-{$id}";
+
+        $ancienneReference = (string) $acquisition['facture_reference'];
+        $ancienneDate = substr((string) $acquisition['facture_date'], 0, 10);
+        $reference = trim((string) $request->request->get('facture_reference', $ancienneReference));
+        $date = trim((string) $request->request->get('facture_date', $ancienneDate));
+        $referenceChangee = $reference !== $ancienneReference;
+        $dateChangee = $date !== $ancienneDate;
+
+        $erreur = null;
+        $modifs = [];
+        if (!$referenceChangee && !$dateChangee) {
+            $flash->add('note', 'Aucune modification : la référence et la date sont inchangées.');
+            return $this->redirectTo($fiche);
+        }
+        if ($referenceChangee) {
+            $erreur = CorrectionAcquisition::erreurReference($reference);
+            if ($erreur === null
+                && trim((string) $request->request->get('confirmation_reference', '')) !== CorrectionAcquisition::MOT_CONFIRMATION_REFERENCE) {
+                $erreur = sprintf('Pour changer la référence, saisissez le mot %s (en majuscules).', CorrectionAcquisition::MOT_CONFIRMATION_REFERENCE);
+            }
+            if ($erreur === null) {
+                $existante = $this->acquisitionManager()->findOneByCriteria(['facture_reference' => $reference]);
+                if ($existante && (int) $existante['id'] !== $id) {
+                    $erreur = sprintf('La référence de facture « %s » est déjà utilisée par une autre acquisition.', $reference);
+                }
+            }
+        }
+        if ($erreur === null && $dateChangee) {
+            if (!CorrectionAcquisition::dateValide($date)) {
+                $erreur = 'Date de facture invalide.';
+            } elseif (trim((string) $request->request->get('confirmation_date', '')) !== CorrectionAcquisition::MOT_CONFIRMATION_DATE) {
+                $erreur = sprintf('Pour changer la date, saisissez le mot %s (en majuscules).', CorrectionAcquisition::MOT_CONFIRMATION_DATE);
+            } else {
+                $lignes = CorrectionAcquisition::classer($this->equipementManager()->findByAcquisition($id), $ancienneDate);
+                $resultat = CorrectionAcquisition::nouvellesDates(
+                    $lignes,
+                    $date,
+                    $request->request->all('date_mise_en_service'),
+                    $request->request->all('date_fin_utilisation')
+                );
+                if (is_string($resultat)) {
+                    $erreur = $resultat;
+                } else {
+                    $modifs = $resultat;
+                }
+            }
+        }
+        if ($erreur !== null) {
+            $flash->add('error', $erreur);
+            return $this->redirectTo($fiche);
+        }
+
+        try {
+            $this->correctionAcquisition()->appliquer($id, $reference, $date, $modifs);
+        } catch (\PDOException $e) {
+            // Course sur la référence (contrainte UNIQUE) : rien n'a été écrit.
+            if ((string) $e->getCode() !== '23000') {
+                throw $e;
+            }
+            $flash->add('error', sprintf('La référence de facture « %s » vient d\'être utilisée par une autre acquisition : rien n\'a été modifié.', $reference));
+            return $this->redirectTo($fiche);
+        }
+
+        $user = $this->session->get('user');
+        error_log(sprintf(
+            '[AcquisitionController] Acquisition id=%d corrigée : référence « %s » → « %s », date %s → %s, %d équipement(s) réalignés (utilisateur id=%s)',
+            $id, $ancienneReference, $reference, $ancienneDate, $date, count($modifs), $user['id'] ?? '?'
+        ));
+        $details = [];
+        if ($referenceChangee) {
+            $details[] = sprintf('référence « %s » → « %s »', $ancienneReference, $reference);
+        }
+        if ($dateChangee) {
+            $details[] = sprintf('date %s → %s', date('d/m/Y', (int) strtotime($ancienneDate)), date('d/m/Y', (int) strtotime($date)));
+        }
+        $flash->add('success', 'Acquisition modifiée : ' . implode(', ', $details)
+            . ($modifs ? sprintf(' ; dates de %d équipement(s) mises à jour.', count($modifs)) : '.'));
+        return $this->redirectTo($fiche);
     }
 
     public function valider(Request $request): Response

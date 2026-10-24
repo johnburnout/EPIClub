@@ -78,6 +78,102 @@
 		</div>
 	</div>
 
+	{# [2026-10-24] Correction de la référence et de la date de facture
+	   (super-administrateur) : roue dentée, unicité vérifiée à la volée,
+	   mots REFERENCE et DATE, dates manuelles des équipements réinterrogées. #}
+	{% if correction_possible %}
+		{% set date_actuelle = acquisition.facture_date|date('Y-m-d') %}
+		{% set dates_manuelles = equipements_dates|filter(e => e.mes_manuelle or e.fin_manuelle) %}
+		<div class="mt-2 text-end">
+			<button type="button" class="btn btn-outline-secondary btn-sm" id="afficher-correction"
+			        aria-pressed="false" aria-controls="carte-correction" title="Modification de la référence et de la date">
+				<i class="fas fa-cog"></i> <span>Modifier la référence et la date</span>
+			</button>
+		</div>
+		<div class="card mt-2 border-warning d-none" id="carte-correction">
+			<div class="card-body">
+				<form method="post" action="/admin/acquisitions/acquisition_corriger-{{ acquisition.id }}" id="form-correction"
+				      data-acquisition-id="{{ acquisition.id }}">
+					<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+					<div class="mb-3">
+						<label for="facture_reference" class="form-label">Référence facture</label>
+						<input type="text" class="form-control" name="facture_reference" id="facture_reference"
+						       value="{{ acquisition.facture_reference }}" data-actuelle="{{ acquisition.facture_reference }}"
+						       maxlength="{{ reference_facture_max }}" required autocomplete="off">
+						<div class="form-text" id="facture-reference-statut" aria-live="polite"></div>
+						<div class="mt-2 p-2 border border-warning rounded d-none" id="bloc-confirmation-reference">
+							<label for="confirmation_reference" class="form-label">
+								Pour confirmer le changement de référence, saisissez <code>{{ mot_confirmation_reference }}</code>
+							</label>
+							<input type="text" class="form-control" name="confirmation_reference" id="confirmation_reference"
+							       autocomplete="off" spellcheck="false" data-mot="{{ mot_confirmation_reference }}">
+						</div>
+					</div>
+
+					<div class="mb-3">
+						<label for="facture_date" class="form-label">Date d'achat (date de facture)</label>
+						<input type="date" class="form-control" name="facture_date" id="facture_date"
+						       value="{{ date_actuelle }}" data-actuelle="{{ date_actuelle }}" required>
+						<div class="mt-2 p-2 border border-warning rounded d-none" id="bloc-confirmation-date">
+							{% if equipements_dates %}
+								<p class="small mb-2">
+									<i class="fas fa-exclamation-triangle text-warning"></i>
+									{{ equipements_dates|length }} équipement(s) issu(s) de cette acquisition : la date de mise en service
+									égale à la date de facture et la date de fin d'utilisation calculée (achat + 10 ans) suivront la
+									nouvelle date. Les références des équipements ne changent pas.
+								</p>
+							{% endif %}
+							{% if dates_manuelles %}
+								<p class="small mb-1"><strong>Dates saisies à la main : à confirmer ou corriger</strong>
+									(la mise en service ne peut pas précéder la nouvelle date de facture).</p>
+								<div class="table-responsive">
+									<table class="table table-sm align-middle" id="dates-manuelles">
+										<thead>
+											<tr><th>Équipement</th><th>Mise en service</th><th>Fin d'utilisation</th></tr>
+										</thead>
+										<tbody>
+											{% for e in dates_manuelles %}
+												<tr>
+													<td><a href="/equipements/equipement-{{ e.id }}">{{ e.reference }}</a> <span class="text-muted small">{{ e.libelle }}</span></td>
+													<td>
+														{% if e.mes_manuelle %}
+															<input type="date" class="form-control form-control-sm date-mes" required
+															       name="date_mise_en_service[{{ e.id }}]" value="{{ e.date_mise_en_service }}">
+														{% else %}
+															<span class="text-muted small">suit la date de facture</span>
+														{% endif %}
+													</td>
+													<td>
+														{% if e.fin_manuelle %}
+															<input type="date" class="form-control form-control-sm" required
+															       name="date_fin_utilisation[{{ e.id }}]" value="{{ e.date_fin_utilisation }}">
+														{% elseif e.date_fin_utilisation %}
+															<span class="text-muted small">recalculée</span>
+														{% else %}
+															<span class="text-muted small">—</span>
+														{% endif %}
+													</td>
+												</tr>
+											{% endfor %}
+										</tbody>
+									</table>
+								</div>
+							{% endif %}
+							<label for="confirmation_date" class="form-label">
+								Pour confirmer le changement de date, saisissez <code>{{ mot_confirmation_date }}</code>
+							</label>
+							<input type="text" class="form-control" name="confirmation_date" id="confirmation_date"
+							       autocomplete="off" spellcheck="false" data-mot="{{ mot_confirmation_date }}">
+						</div>
+					</div>
+
+					<button type="submit" class="btn btn-warning">Enregistrer la correction</button>
+				</form>
+			</div>
+		</div>
+	{% endif %}
+
 	<br>
 
 	<!-- LIGNES D'ACQUISITION -->
@@ -202,4 +298,129 @@
 		{% endif %}
 	</div>
 
+{% endblock %}
+
+{% block javascripts %}
+	{% if correction_possible %}
+	<script>
+		/**
+		 * [2026-10-24] Correction de la référence et de la date (super-
+		 * administrateur). La roue dentée affiche le formulaire (un nouveau
+		 * clic le masque et rétablit les valeurs) ; unicité de la référence
+		 * vérifiée à la volée ; mots REFERENCE / DATE exigés si la valeur
+		 * change ; dates manuelles des équipements réinterrogées, jamais
+		 * avant la nouvelle date de facture (tout est revérifié côté serveur).
+		 */
+		(function () {
+			const bouton = document.getElementById('afficher-correction');
+			const carte = document.getElementById('carte-correction');
+			const form = document.getElementById('form-correction');
+			const reference = document.getElementById('facture_reference');
+			const statut = document.getElementById('facture-reference-statut');
+			const blocReference = document.getElementById('bloc-confirmation-reference');
+			const confReference = document.getElementById('confirmation_reference');
+			const date = document.getElementById('facture_date');
+			const blocDate = document.getElementById('bloc-confirmation-date');
+			const confDate = document.getElementById('confirmation_date');
+			const datesMes = Array.from(form.querySelectorAll('.date-mes'));
+			const saisiesDates = Array.from(form.querySelectorAll('#dates-manuelles input'));
+			saisiesDates.forEach(i => { i.dataset.initiale = i.value; });
+			let disponible = null;
+			let minuterie = null;
+			let requete = 0;
+
+			function afficher(classe, texte) {
+				statut.className = 'form-text ' + classe;
+				statut.textContent = texte;
+			}
+			const referenceChangee = () => reference.value.trim() !== reference.dataset.actuelle;
+			const dateChangee = () => date.value !== date.dataset.actuelle;
+
+			function verifier() {
+				const numero = ++requete;
+				afficher('text-muted', 'Vérification…');
+				fetch('/admin/acquisitions/reference-facture-disponible?' + new URLSearchParams({
+					id: form.dataset.acquisitionId, reference: reference.value.trim()
+				}), { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+					.then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+					.then(data => {
+						if (numero !== requete) return;
+						disponible = !!data.disponible;
+						afficher(disponible ? 'text-success' : 'text-danger', (disponible ? '✔ ' : '✖ ') + data.message);
+					})
+					.catch(() => {
+						if (numero !== requete) return;
+						disponible = null;
+						afficher('text-danger', 'Vérification impossible, réessayez.');
+					});
+			}
+			function surReference() {
+				clearTimeout(minuterie);
+				reference.classList.remove('is-invalid');
+				disponible = null;
+				blocReference.classList.toggle('d-none', !referenceChangee());
+				if (!referenceChangee()) { requete++; afficher('', ''); return; }
+				minuterie = setTimeout(verifier, 300);
+			}
+			function surDate() {
+				const change = dateChangee();
+				blocDate.classList.toggle('d-none', !change);
+				// Dates réinterrogées : actives (envoyées) seulement si la date change.
+				saisiesDates.forEach(i => { i.disabled = !change; });
+				datesMes.forEach(i => { i.min = change ? date.value : ''; });
+			}
+			function reinitialiser() {
+				clearTimeout(minuterie);
+				requete++;
+				reference.value = reference.dataset.actuelle;
+				date.value = date.dataset.actuelle;
+				confReference.value = '';
+				confDate.value = '';
+				saisiesDates.forEach(i => { i.value = i.dataset.initiale; i.classList.remove('is-invalid'); });
+				[confReference, confDate].forEach(c => c.classList.remove('is-invalid'));
+				afficher('', '');
+				surReference();
+				surDate();
+			}
+
+			bouton.addEventListener('click', function () {
+				const ouvrir = carte.classList.contains('d-none');
+				if (!ouvrir) reinitialiser();
+				carte.classList.toggle('d-none', !ouvrir);
+				bouton.setAttribute('aria-pressed', ouvrir ? 'true' : 'false');
+				bouton.querySelector('span').textContent = ouvrir
+					? 'Annuler la modification de la référence et de la date'
+					: 'Modifier la référence et la date';
+				if (ouvrir) reference.focus();
+			});
+			reference.addEventListener('input', surReference);
+			date.addEventListener('input', surDate);
+			date.addEventListener('change', surDate);
+			[confReference, confDate, ...saisiesDates].forEach(c => c.addEventListener('input', () => c.classList.remove('is-invalid')));
+			surDate();
+
+			form.addEventListener('submit', function (e) {
+				function bloquer(champ, message) {
+					e.preventDefault();
+					if (message) afficher('text-danger', message);
+					champ.classList.add('is-invalid');
+					champ.focus();
+				}
+				if (referenceChangee()) {
+					if (disponible !== true) {
+						return bloquer(reference, disponible === false
+							? '✖ Choisissez une référence disponible.'
+							: 'Vérification de la référence en cours, réessayez dans un instant.');
+					}
+					if (confReference.value.trim() !== confReference.dataset.mot) return bloquer(confReference);
+				}
+				if (dateChangee()) {
+					const tropTot = datesMes.find(i => i.value !== '' && i.value < date.value);
+					if (tropTot) return bloquer(tropTot);
+					if (confDate.value.trim() !== confDate.dataset.mot) return bloquer(confDate);
+				}
+			});
+		})();
+	</script>
+	{% endif %}
 {% endblock %}

@@ -111,6 +111,10 @@ Ils sont générés automatiquement à partir des **factures d'acquisition** val
 
 3. L’acquisition passe en statut **« Validée »** et n’est plus modifiable — **sauf le document de facture**, qui peut être téléversé ou remplacé depuis la fiche de l’acquisition.
 
+**Corriger la référence ou la date d'une acquisition (super-administrateur)** : sur la fiche de l'acquisition, la roue dentée **« Modifier la référence et la date »** affiche le formulaire de correction (un nouveau clic l'annule sans rien modifier).
+- **Référence de facture** : sa disponibilité est vérifiée pendant la saisie ; pour enregistrer le changement, saisir le mot **`REFERENCE`** en majuscules.
+- **Date d'achat** : pour enregistrer le changement, saisir le mot **`DATE`** en majuscules. Les équipements de l'acquisition suivent : la **date de mise en service** égale à l'ancienne date de facture et la **date de fin d'utilisation** calculée (achat + 10 ans) sont recalculées. Les dates **saisies à la main** sont listées pour être **confirmées ou corrigées** — une mise en service ne peut pas précéder la nouvelle date de facture. Les **références des équipements ne changent pas**.
+
 ---
 
 ### 2.3 Importer des acquisitions (Excel / CSV)
