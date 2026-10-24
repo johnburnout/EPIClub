@@ -10,6 +10,18 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.7.5] — 2026-10-24
+
+Tri, filtres et navigation dans la liste des acquisitions.
+
+### Added
+
+- **Liste des acquisitions** : tri au choix par ID, référence facture,
+  date ou fournisseur (croissant / décroissant), filtres par fournisseur,
+  statut (validée / en attente), période de facture et recherche sur la
+  référence facture, et pagination (lignes par page, premier / précédent /
+  suivant / dernier), comme la liste des équipements.
+
 ## [v1.7.4] — 2026-10-24
 
 Export CSV des équipements conforme à la RFC 4180.
