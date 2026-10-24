@@ -42,11 +42,17 @@
 		   l'affiche par son propre bouton, le super-admin par la roue dentée. #}
 		{% set ni_actuel = equipement.nombre_initial|default(1) %}
 		{% set dissociation_visible = isGranted('ROLE_ADMIN') and equipement.id is defined and equipement.id and ni_actuel > 1 %}
-		{% if dissociation_visible and not ref_cat_modifiable %}
+		{# [2026-10-24] Regroupement en lot : admin et plus, s'il existe des
+		   équipements identiques (même libellé, catégorie, acquisition). #}
+		{% set regroupement = regroupement|default({candidats: [], erreur: null}) %}
+		{% set regroupement_visible = isGranted('ROLE_ADMIN') and equipement.id is defined and equipement.id and regroupement.candidats is not empty %}
+		{% if (dissociation_visible or regroupement_visible) and not ref_cat_modifiable %}
+			{% set libelle_lot = dissociation_visible and regroupement_visible ? 'Dissocier ou regrouper'
+				: (dissociation_visible ? 'Dissocier le lot' : 'Regrouper en lot') %}
 			<div class="mb-2 text-end">
-				<button type="button" class="btn btn-outline-secondary btn-sm" id="afficher-dissociation"
-				        aria-pressed="false" aria-controls="carte-dissociation" title="Dissocier le lot">
-					<i class="fas fa-cog"></i> <span>Dissocier le lot</span>
+				<button type="button" class="btn btn-outline-secondary btn-sm" id="afficher-lot"
+				        aria-pressed="false" title="{{ libelle_lot }}" data-libelle="{{ libelle_lot }}">
+					<i class="fas fa-cog"></i> <span>{{ libelle_lot }}</span>
 				</button>
 			</div>
 		{% endif %}
@@ -358,7 +364,7 @@
 	{# [2026-10-24] Dissociation du lot : formulaire distinct, affiché par la
 	   roue dentée (super-administrateur) ou le bouton « Dissocier le lot » (admin). #}
 	{% if dissociation_visible %}
-		<div class="card mt-4 border-warning {% if not ref_cat_ouvert %}d-none{% endif %}" id="carte-dissociation">
+		<div class="card mt-4 border-warning carte-lot {% if not ref_cat_ouvert %}d-none{% endif %}" id="carte-dissociation">
 			<div class="card-body">
 				<h5 class="card-title"><i class="fas fa-object-ungroup"></i> Dissocier le lot</h5>
 				{% if dissociation_erreur %}
@@ -398,6 +404,68 @@
 							       autocomplete="off" spellcheck="false" data-mot="{{ mot_confirmation_dissociation }}">
 						</div>
 						<button type="submit" class="btn btn-warning">Dissocier le lot</button>
+					</form>
+				{% endif %}
+			</div>
+		</div>
+	{% endif %}
+
+	{# [2026-10-24] Regroupement en lot (admin et plus) : formulaire distinct,
+	   affiché avec la carte de dissociation. #}
+	{% if regroupement_visible %}
+		<div class="card mt-4 border-warning carte-lot {% if not ref_cat_ouvert %}d-none{% endif %}" id="carte-regroupement">
+			<div class="card-body">
+				<h5 class="card-title"><i class="fas fa-object-group"></i> Regrouper en lot</h5>
+				{% if regroupement.erreur %}
+					<p class="text-muted mb-0">Cet équipement ne peut pas être regroupé ({{ regroupement.erreur }}).</p>
+				{% else %}
+					<form method="post" action="/equipements/equipement_regrouper-{{ equipement.id }}" id="form-regroupement"
+					      data-nombre="{{ equipement.nombre|default(1) }}" data-nombre-initial="{{ ni_actuel }}">
+						<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+						<p class="small">
+							Équipements identiques (même libellé, même catégorie, même acquisition). Ceux que vous cochez sont
+							<strong>associés à {{ equipement.reference }}</strong>, qui garde sa référence, ses dates, son emplacement
+							et son historique ; leurs éléments s'ajoutent au lot et ils sont <strong>archivés</strong>
+							(leur historique est conservé). Pensez à retirer leurs étiquettes.
+						</p>
+						<div class="table-responsive">
+							<table class="table table-sm align-middle">
+								<thead>
+									<tr><th></th><th>Référence</th><th>Éléments</th><th>Emplacement</th><th>Mise en service</th><th>Fin d'utilisation</th></tr>
+								</thead>
+								<tbody>
+									{% for c in regroupement.candidats %}
+										{% set emplacement_c = emplacements|filter(em => em.id == c.emplacement_id)|first %}
+										<tr class="{{ c.erreur_regroupement ? 'text-muted' : '' }}">
+											<td>
+												<input type="checkbox" class="form-check-input regroupement-choix" name="ids[]" value="{{ c.id }}"
+												       id="regrouper_{{ c.id }}" data-nombre="{{ c.nombre|default(1) }}"
+												       data-nombre-initial="{{ c.nombre_initial|default(1) }}"
+												       {% if c.erreur_regroupement %}disabled{% endif %}>
+											</td>
+											<td>
+												<label for="regrouper_{{ c.id }}">{{ c.reference }}</label>
+												{% if c.erreur_regroupement %}<div class="small">Impossible : {{ c.erreur_regroupement }}</div>{% endif %}
+											</td>
+											<td>{{ c.nombre|default(1) }}{% if c.nombre_initial|default(1) > 1 %} / {{ c.nombre_initial }}{% endif %}</td>
+											<td class="{{ c.emplacement_id != equipement.emplacement_id ? 'text-warning' : '' }}">{{ emplacement_c ? emplacement_c.libelle : '—' }}</td>
+											<td class="{{ c.date_mise_en_service != equipement.date_mise_en_service ? 'text-warning' : '' }}">{{ c.date_mise_en_service ? c.date_mise_en_service|date('d/m/Y') : '—' }}</td>
+											<td class="{{ c.date_fin_utilisation != equipement.date_fin_utilisation ? 'text-warning' : '' }}">{{ c.date_fin_utilisation ? c.date_fin_utilisation|date('d/m/Y') : '—' }}</td>
+										</tr>
+									{% endfor %}
+								</tbody>
+							</table>
+						</div>
+						<p class="small text-muted">En orange : valeur différente de {{ equipement.reference }} (celle de {{ equipement.reference }} est conservée).</p>
+						<div class="form-text mb-2" id="regroupement-statut" aria-live="polite"></div>
+						<div class="mb-3 p-2 border border-warning rounded">
+							<label for="confirmation_regroupement" class="form-label">
+								Pour confirmer le regroupement, saisissez <code>{{ mot_confirmation_regroupement }}</code>
+							</label>
+							<input type="text" class="form-control" name="confirmation_regroupement" id="confirmation_regroupement"
+							       autocomplete="off" spellcheck="false" data-mot="{{ mot_confirmation_regroupement }}">
+						</div>
+						<button type="submit" class="btn btn-warning">Regrouper en lot</button>
 					</form>
 				{% endif %}
 			</div>
@@ -677,12 +745,11 @@
 				libelle.textContent = ouvrir
 					? 'Annuler la modification de la référence, de la catégorie et du lot'
 					: 'Modifier la référence, la catégorie et le lot';
-				// Carte « Dissocier le lot » : affichée avec la roue dentée.
-				const carte = document.getElementById('carte-dissociation');
-				if (carte) {
+				// Cartes « Dissocier le lot » / « Regrouper en lot » : affichées avec la roue dentée.
+				document.querySelectorAll('.carte-lot').forEach(function (carte) {
 					carte.classList.toggle('d-none', !ouvrir);
 					if (!ouvrir) carte.dispatchEvent(new Event('reinitialiser'));
-				}
+				});
 				if (ouvrir) categorie.focus();
 			});
 		})();
@@ -742,23 +809,6 @@
 		 */
 		(function () {
 			const carte = document.getElementById('carte-dissociation');
-			// [2026-10-24] Admin : bouton « Dissocier le lot » (le super-admin
-			// passe par la roue dentée). Un nouveau clic masque et réinitialise.
-			const bouton = document.getElementById('afficher-dissociation');
-			if (carte && bouton) {
-				bouton.addEventListener('click', function () {
-					const afficher = carte.classList.contains('d-none');
-					carte.classList.toggle('d-none', !afficher);
-					bouton.setAttribute('aria-pressed', afficher ? 'true' : 'false');
-					bouton.querySelector('span').textContent = afficher ? 'Annuler la dissociation' : 'Dissocier le lot';
-					if (afficher) {
-						const premier = carte.querySelector('#repartition');
-						if (premier) premier.focus();
-					} else {
-						carte.dispatchEvent(new Event('reinitialiser'));
-					}
-				});
-			}
 			const form = document.getElementById('form-dissociation');
 			if (!form) return;
 			const saisie = document.getElementById('repartition');
@@ -930,6 +980,79 @@
 					return;
 				}
 				if (confirmation.value.trim() !== motAttendu) {
+					e.preventDefault();
+					confirmation.classList.add('is-invalid');
+					confirmation.focus();
+				}
+			});
+		})();
+	</script>
+	<script>
+		/**
+		 * [2026-10-24] Admin : bouton « Dissocier le lot » / « Regrouper en
+		 * lot » (le super-administrateur passe par la roue dentée). Il affiche
+		 * les cartes du lot ; un nouveau clic les masque et les réinitialise.
+		 */
+		(function () {
+			const bouton = document.getElementById('afficher-lot');
+			if (!bouton) return;
+			const cartes = document.querySelectorAll('.carte-lot');
+			bouton.addEventListener('click', function () {
+				const afficher = bouton.getAttribute('aria-pressed') !== 'true';
+				cartes.forEach(function (carte) {
+					carte.classList.toggle('d-none', !afficher);
+					if (!afficher) carte.dispatchEvent(new Event('reinitialiser'));
+				});
+				bouton.setAttribute('aria-pressed', afficher ? 'true' : 'false');
+				bouton.querySelector('span').textContent = afficher ? 'Annuler' : bouton.dataset.libelle;
+			});
+		})();
+	</script>
+	<script>
+		/**
+		 * [2026-10-24] Regroupement en lot : récapitulatif du lot obtenu ;
+		 * au moins un équipement coché et mot de confirmation exigés avant
+		 * l'envoi (tout est revérifié côté serveur).
+		 */
+		(function () {
+			const form = document.getElementById('form-regroupement');
+			if (!form) return;
+			const carte = document.getElementById('carte-regroupement');
+			const choix = Array.from(form.querySelectorAll('.regroupement-choix'));
+			const statut = document.getElementById('regroupement-statut');
+			const confirmation = document.getElementById('confirmation_regroupement');
+
+			function coches() {
+				return choix.filter(c => c.checked);
+			}
+			function resumer() {
+				const liste = coches();
+				if (liste.length === 0) {
+					statut.className = 'form-text mb-2';
+					statut.textContent = '';
+					return;
+				}
+				const somme = (cle) => liste.reduce((t, c) => t + parseInt(c.dataset[cle], 10), parseInt(form.dataset[cle], 10));
+				statut.className = 'form-text mb-2 text-success';
+				statut.textContent = '✔ Lot obtenu : ' + somme('nombre') + ' élément(s) (nombre initial ' + somme('nombreInitial')
+					+ ') ; ' + liste.length + ' équipement(s) archivé(s).';
+			}
+			choix.forEach(c => c.addEventListener('change', resumer));
+			confirmation.addEventListener('input', () => confirmation.classList.remove('is-invalid'));
+			carte.addEventListener('reinitialiser', function () {
+				choix.forEach(c => { c.checked = false; });
+				confirmation.value = '';
+				confirmation.classList.remove('is-invalid');
+				resumer();
+			});
+			form.addEventListener('submit', function (e) {
+				if (coches().length === 0) {
+					e.preventDefault();
+					statut.className = 'form-text mb-2 text-danger';
+					statut.textContent = 'Cochez au moins un équipement à regrouper.';
+					return;
+				}
+				if (confirmation.value.trim() !== confirmation.dataset.mot) {
 					e.preventDefault();
 					confirmation.classList.add('is-invalid');
 					confirmation.focus();

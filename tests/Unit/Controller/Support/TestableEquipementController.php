@@ -9,6 +9,7 @@ use Epiclub\Domain\AcquisitionManager;
 use Epiclub\Domain\CategorieManager;
 use Epiclub\Domain\EmplacementManager;
 use Epiclub\Domain\EquipementManager;
+use Epiclub\Domain\PretLigneManager;
 use Epiclub\Domain\ReferenceGenerator;
 use Epiclub\Engine\ImageUploader;
 use Epiclub\Engine\Session;
@@ -42,6 +43,14 @@ final class TestableEquipementController extends EquipementController
     protected function photoUploader(): ImageUploader
     {
         return $this->photoUploaderOverride ?? parent::photoUploader();
+    }
+
+    /** [2026-10-24] Doublure optionnelle des lignes de prêt (regroupement en lot). */
+    public ?PretLigneManager $pretLigneManagerOverride = null;
+
+    protected function pretLigneManager(): PretLigneManager
+    {
+        return $this->pretLigneManagerOverride ?? parent::pretLigneManager();
     }
 
     /** [2026-10-24] Doublure optionnelle du générateur de références. */

@@ -151,6 +151,13 @@ $routes->add('equipement_dissocier', new Route(
     [], [], '', [], ['POST']
 ));
 
+// ROLE_ADMIN : regroupement d'équipements identiques en lot
+$routes->add('equipement_regrouper', new Route(
+    '/equipements/equipement_regrouper-{id}',
+    ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'regrouper'],
+    [], [], '', [], ['POST']
+));
+
 // ROLE_SUPER_ADMIN : référence proposée (AJAX) pour la catégorie saisie
 // dans le formulaire de modification (année d'achat de l'équipement)
 $routes->add('equipement_reference_suggestion', new Route(

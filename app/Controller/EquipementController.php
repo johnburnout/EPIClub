@@ -7,6 +7,7 @@ use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\EmplacementManager;
 use Epiclub\Domain\AcquisitionManager;
 use Epiclub\Domain\DissociationLot;
+use Epiclub\Domain\RegroupementLot;
 use Epiclub\Domain\ReferenceGenerator;
 use Epiclub\Enum\EquipementStatut;
 use Epiclub\Engine\AbstractController;
@@ -97,6 +98,11 @@ class EquipementController extends AbstractController
     protected function dissociationLot(): DissociationLot
     {
         return new DissociationLot($this->equipementManager());
+    }
+
+    protected function regroupementLot(): RegroupementLot
+    {
+        return new RegroupementLot($this->equipementManager());
     }
     
     // --------------------------------------------------------------
@@ -789,6 +795,122 @@ class EquipementController extends AbstractController
     }
 
     // --------------------------------------------------------------
+    // [2026-10-24] REGROUPEMENT EN LOT (ROLE_ADMIN), depuis le formulaire
+    // de modification : des équipements identiques (même libellé, même
+    // catégorie, même acquisition) sont associés à l'équipement ouvert ;
+    // mot de confirmation REGROUPER (cf. RegroupementLot).
+    // --------------------------------------------------------------
+
+    /** Ids des équipements inscrits sur un prêt non clos ([] si indisponible). */
+    private function equipementsEnPret(): array
+    {
+        try {
+            return $this->pretLigneManager()->equipementsDansUnPretOuvert();
+        } catch (\Throwable $e) {
+            error_log('[EquipementController] Prêts ouverts indisponibles : ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Pour le formulaire : équipements identiques à l'équipement donné,
+     * chacun avec la raison pour laquelle il ne peut pas être regroupé
+     * (null s'il le peut), et celle de l'équipement de départ lui-même.
+     *
+     * @return array{candidats: list<array<string, mixed>>, erreur: ?string}
+     */
+    private function regroupementPourVue(array $equipement): array
+    {
+        $identiques = array_values(array_filter(
+            !empty($equipement['acquisition_id'])
+                ? $this->equipementManager()->findByAcquisition((int) $equipement['acquisition_id'])
+                : [],
+            static fn (array $e) => RegroupementLot::identiques($equipement, $e)
+        ));
+        if ($identiques === []) {
+            return ['candidats' => [], 'erreur' => null];
+        }
+        $enPret = $this->equipementsEnPret();
+        foreach ($identiques as &$e) {
+            $e['erreur_regroupement'] = RegroupementLot::erreurEquipement($e, in_array((int) $e['id'], $enPret, true), $equipement);
+        }
+        unset($e);
+        return [
+            'candidats' => $identiques,
+            'erreur' => RegroupementLot::erreurEquipement($equipement, in_array((int) $equipement['id'], $enPret, true)),
+        ];
+    }
+
+    /**
+     * POST /equipements/equipement_regrouper-{id}
+     * Les contrôles du navigateur sont refaits ici ; en cas de refus,
+     * retour au formulaire de modification avec le motif.
+     */
+    public function regrouper(Request $request): Response
+    {
+        $this->deniAccessUnlessGranted('ROLE_ADMIN');
+        $this->validateCsrf($request);
+
+        $id = $this->getValidId($request);
+        $depart = $id !== null ? $this->equipementManager()->findId($id) : null;
+        if (!$depart) {
+            $this->session->getFlashBag()->add('error', 'Équipement non trouvé.');
+            return $this->redirectTo('/equipements');
+        }
+        $flash = $this->session->getFlashBag();
+        $retour = '/equipements/equipement_modification-' . $id;
+
+        $enPret = $this->equipementsEnPret();
+        $erreur = RegroupementLot::erreurEquipement($depart, in_array($id, $enPret, true));
+        if ($erreur !== null) {
+            $erreur = sprintf('L\'équipement « %s » ne peut pas être regroupé (%s).', $depart['reference'], $erreur);
+        }
+
+        $autres = [];
+        if ($erreur === null) {
+            $ids = array_unique(array_map('strval', $request->request->all('ids')));
+            foreach ($ids as $idRaw) {
+                $autre = ctype_digit($idRaw) ? $this->equipementManager()->findId((int) $idRaw) : null;
+                if (!$autre || !RegroupementLot::identiques($depart, $autre)) {
+                    $erreur = 'Seuls des équipements identiques (même libellé, même catégorie, même acquisition) peuvent être regroupés.';
+                    break;
+                }
+                $raison = RegroupementLot::erreurEquipement($autre, in_array((int) $autre['id'], $enPret, true), $depart);
+                if ($raison !== null) {
+                    $erreur = sprintf('L\'équipement « %s » ne peut pas être regroupé (%s).', $autre['reference'], $raison);
+                    break;
+                }
+                $autres[] = $autre;
+            }
+            if ($erreur === null && $autres === []) {
+                $erreur = 'Cochez au moins un équipement à regrouper.';
+            }
+        }
+        if ($erreur === null
+            && trim((string) $request->request->get('confirmation_regroupement', '')) !== RegroupementLot::MOT_CONFIRMATION) {
+            $erreur = sprintf('Pour regrouper, saisissez le mot %s (en majuscules).', RegroupementLot::MOT_CONFIRMATION);
+        }
+        if ($erreur !== null) {
+            $flash->add('error', $erreur);
+            return $this->redirectTo($retour);
+        }
+
+        $this->regroupementLot()->regrouper($depart, $autres);
+
+        $references = array_map(static fn (array $e) => (string) $e['reference'], $autres);
+        $user = $this->session->get('user');
+        error_log(sprintf(
+            '[EquipementController] Regroupement en lot sur id=%d « %s » : équipements %s archivés (utilisateur id=%s)',
+            $id, $depart['reference'], implode(',', $references), $user['id'] ?? '?'
+        ));
+        $flash->add('success', sprintf(
+            '%d équipement(s) regroupé(s) dans le lot « %s » : %s. Retirez leurs étiquettes.',
+            count($autres), $depart['reference'], implode(', ', $references)
+        ));
+        return $this->redirectTo('/equipements/equipement-' . $id);
+    }
+
+    // --------------------------------------------------------------
     // ÉDITION
     // --------------------------------------------------------------
     public function edit(Request $request)
@@ -1165,6 +1287,10 @@ class EquipementController extends AbstractController
                 ? DissociationLot::erreurEquipement($equipement) : null,
             'mot_confirmation_dissociation' => DissociationLot::MOT_CONFIRMATION,
             'references_dissociation_modifiables' => $this->isGranted('ROLE_SUPER_ADMIN'),
+            // [2026-10-24] Regroupement en lot (admin)
+            'regroupement' => $this->isGranted('ROLE_ADMIN') && is_array($equipement) && !empty($equipement['id'])
+                ? $this->regroupementPourVue($equipement) : ['candidats' => [], 'erreur' => null],
+            'mot_confirmation_regroupement' => RegroupementLot::MOT_CONFIRMATION,
         ]);
     }
 
