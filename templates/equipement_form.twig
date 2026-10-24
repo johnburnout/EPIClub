@@ -38,7 +38,7 @@
 			or form_errors.reference is defined or form_errors.confirmation_reference is defined
 			or form_errors.categorie_libelle is defined or form_errors.confirmation_categorie is defined
 			or lot_saisie is not null or form_errors.nombre_initial is defined) %}
-		{# [2026-10-25] Dissociation du lot : admin et plus ; un admin
+		{# [2026-10-24] Dissociation du lot : admin et plus ; un admin
 		   l'affiche par son propre bouton, le super-admin par la roue dentée. #}
 		{% set ni_actuel = equipement.nombre_initial|default(1) %}
 		{% set dissociation_visible = isGranted('ROLE_ADMIN') and equipement.id is defined and equipement.id and ni_actuel > 1 %}
@@ -742,7 +742,7 @@
 		 */
 		(function () {
 			const carte = document.getElementById('carte-dissociation');
-			// [2026-10-25] Admin : bouton « Dissocier le lot » (le super-admin
+			// [2026-10-24] Admin : bouton « Dissocier le lot » (le super-admin
 			// passe par la roue dentée). Un nouveau clic masque et réinitialise.
 			const bouton = document.getElementById('afficher-dissociation');
 			if (carte && bouton) {
@@ -768,7 +768,7 @@
 			const confirmation = document.getElementById('confirmation_dissociation');
 			const motAttendu = confirmation.dataset.mot;
 			const id = form.dataset.equipementId;
-			// [2026-10-25] Admin : références imposées (lecture seule, recalculées
+			// [2026-10-24] Admin : références imposées (lecture seule, recalculées
 			// par le serveur) ; seul le super-administrateur les modifie.
 			const modifiables = form.dataset.referencesModifiables === '1';
 			let parties = null;

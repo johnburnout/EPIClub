@@ -630,7 +630,7 @@ class EquipementController extends AbstractController
     }
 
     // --------------------------------------------------------------
-    // [2026-10-24] DISSOCIATION D'UN LOT (ROLE_ADMIN depuis le 2026-10-25),
+    // [2026-10-24] DISSOCIATION D'UN LOT (ROLE_ADMIN depuis le 2026-10-24),
     // depuis le formulaire de modification (roue dentée du super-admin,
     // bouton « Dissocier le lot » de l'admin). Références des nouveaux
     // équipements proposées selon le modèle — modifiables par le seul
@@ -726,7 +726,7 @@ class EquipementController extends AbstractController
 
         $references = [];
         if ($erreur === null) {
-            // [2026-10-25] Un admin ne choisit pas les références : celles
+            // [2026-10-24] Un admin ne choisit pas les références : celles
             // proposées selon le modèle sont recalculées et imposées.
             if ($this->isGranted('ROLE_SUPER_ADMIN')) {
                 $postees = $request->request->all('references');

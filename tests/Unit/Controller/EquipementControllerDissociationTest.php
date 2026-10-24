@@ -20,7 +20,7 @@ use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 /**
  * [2026-10-24] Dissociation d'un lot depuis le formulaire de
  * modification (super-administrateur par la roue dentée ; admin par le
- * bouton « Dissocier le lot » depuis le 2026-10-25) : références
+ * bouton « Dissocier le lot » depuis le 2026-10-24) : références
  * proposées selon le modèle (modifiables par le seul super-administrateur,
  * imposées à un admin), mot de confirmation DISSOCIER.
  */

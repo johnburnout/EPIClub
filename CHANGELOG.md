@@ -10,7 +10,7 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
-## [v1.9.1] — 2026-10-25
+## [v1.9.1] — 2026-10-24
 
 Dissociation d'un lot ouverte aux administrateurs.
 
