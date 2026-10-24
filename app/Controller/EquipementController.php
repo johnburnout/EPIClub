@@ -1101,8 +1101,9 @@ class EquipementController extends AbstractController
                 }
 
                 // [MÉTIER 2026-10-20] Libellé défini à l'acquisition :
-                // modifiable uniquement par un super-administrateur.
-                if ($this->isGranted('ROLE_SUPER_ADMIN') && $request->request->has('libelle')) {
+                // modifiable par un administrateur (depuis le 2026-10-24 ;
+                // super-administrateur seulement auparavant).
+                if ($this->isGranted('ROLE_ADMIN') && $request->request->has('libelle')) {
                     $libelle = trim((string) $request->request->get('libelle'));
                     if (($erreur = self::erreurLibelle($libelle)) !== null) {
                         $form_errors['libelle'] = $erreur;
@@ -2020,7 +2021,7 @@ HTML;
     /** Nombre maximal d'équipements traités en une fois. */
     private const GROUPE_MAX = 500;
 
-    /** Champs modifiables en groupe (le libellé : super-admin seulement). */
+    /** Champs modifiables en groupe (page réservée aux administrateurs). */
     private const CHAMPS_GROUPE = [
         'statut', 'emplacement_id', 'date_mise_en_service', 'date_fin_utilisation',
         'duree_max_utilisation', 'remarques', 'photo', 'libelle',
@@ -2088,7 +2089,7 @@ HTML;
             $appliquer = is_array($appliquer) ? $appliquer : [];
             $actifs = array_values(array_filter(
                 self::CHAMPS_GROUPE,
-                fn(string $c) => !empty($appliquer[$c]) && ($c !== 'libelle' || $superAdmin)
+                fn(string $c) => !empty($appliquer[$c])
             ));
             $saisie = ['appliquer' => array_fill_keys($actifs, true)] + $request->request->all();
 

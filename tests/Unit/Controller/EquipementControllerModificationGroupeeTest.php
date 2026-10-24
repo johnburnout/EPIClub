@@ -61,7 +61,7 @@ final class EquipementControllerModificationGroupeeTest extends TestCase
     // Formulaire
     // ==================================================================
 
-    public function testFormulaireAdminSansLibelle(): void
+    public function testFormulaireAdminAvecLibelle(): void
     {
         $this->equipementManager->method('findByIds')->with([3, 5])->willReturn($this->equipements());
 
@@ -72,7 +72,7 @@ final class EquipementControllerModificationGroupeeTest extends TestCase
         self::assertStringContainsString('2 équipements sélectionnés', $html);
         self::assertStringContainsString('name="appliquer[statut]"', $html);
         self::assertStringContainsString('name="appliquer[photo]"', $html);
-        self::assertStringNotContainsString('name="appliquer[libelle]"', $html);
+        self::assertStringContainsString('name="appliquer[libelle]"', $html);
         self::assertStringContainsString('href="/equipements?q=casque"', $html);
     }
 
@@ -152,14 +152,15 @@ final class EquipementControllerModificationGroupeeTest extends TestCase
         ];
     }
 
-    public function testLibelleIgnorePourUnAdmin(): void
+    public function testLibelleModifieParUnAdmin(): void
     {
         $this->equipementManager->method('findByIds')->willReturn($this->equipements());
 
-        $this->post(['appliquer' => ['libelle' => '1', 'statut' => '1'], 'libelle' => 'Forgé', 'statut' => '0']);
+        $this->post(['appliquer' => ['libelle' => '1', 'statut' => '1'], 'libelle' => 'Casque', 'statut' => '0']);
 
+        self::assertNotEmpty($this->enregistres);
         foreach ($this->enregistres as $e) {
-            self::assertArrayNotHasKey('libelle', $e);
+            self::assertSame('Casque', $e['libelle']);
         }
     }
 

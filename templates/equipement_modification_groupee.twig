@@ -58,16 +58,13 @@
 					</div>
 				</div>
 
-				{# --- Libellé (super-admin) --- #}
-				{% if super_admin %}
+				{# --- Libellé (administrateur et plus, depuis le 2026-10-24) --- #}
 				<div class="card card-body mb-3">
 					{{ m.champ('libelle', 'Libellé', saisie, form_errors) }}
 					<div id="bloc_libelle">
 						<input type="text" name="libelle" class="form-control" maxlength="255" value="{{ saisie.libelle ?? '' }}">
-						<small class="text-muted">Réservé au super-administrateur.</small>
 					</div>
 				</div>
-				{% endif %}
 
 				{# --- Date de mise en service --- #}
 				<div class="card card-body mb-3">

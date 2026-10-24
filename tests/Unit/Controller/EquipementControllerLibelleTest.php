@@ -17,7 +17,8 @@ use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 
 /**
  * [2026-10-20] Libellé d'un équipement : défini à l'acquisition,
- * modifiable uniquement par un super-administrateur.
+ * modifiable par un administrateur (super-administrateur seulement
+ * jusqu'au 2026-10-24).
  */
 final class EquipementControllerLibelleTest extends TestCase
 {
@@ -70,16 +71,24 @@ final class EquipementControllerLibelleTest extends TestCase
         self::assertStringContainsString('Le libellé est obligatoire.', (string) $response->getContent());
     }
 
-    public function testAdminNePeutPasModifierLeLibelle(): void
+    public function testAdminModifieLeLibelle(): void
     {
-        $this->editer('ROLE_ADMIN', ['libelle' => 'Forgé']);
+        $this->editer('ROLE_ADMIN', ['libelle' => ' Casque de vélo ']);
 
-        self::assertSame('Casque', $this->enregistre['libelle']);
+        self::assertSame('Casque de vélo', $this->enregistre['libelle']);
     }
 
-    public function testChampEditableSeulementPourLeSuperAdmin(): void
+    public function testControleurNeModifiePasLeLibelle(): void
+    {
+        $this->editer('ROLE_CONTROLLEUR', ['libelle' => 'Forgé', 'emplacement_id' => '']);
+
+        self::assertArrayNotHasKey('libelle', (array) $this->enregistre);
+    }
+
+    public function testChampEditableAPartirDeLAdmin(): void
     {
         self::assertStringContainsString('name="libelle" id="libelle" value="Casque"', (string) $this->editer('ROLE_SUPER_ADMIN')->getContent());
-        self::assertStringNotContainsString('name="libelle" id="libelle" value="Casque"', (string) $this->editer('ROLE_ADMIN')->getContent());
+        self::assertStringContainsString('name="libelle" id="libelle" value="Casque"', (string) $this->editer('ROLE_ADMIN')->getContent());
+        self::assertStringNotContainsString('name="libelle" id="libelle" value="Casque"', (string) $this->editer('ROLE_CONTROLLEUR')->getContent());
     }
 }

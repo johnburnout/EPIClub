@@ -268,16 +268,16 @@
 			{% endif %}
 		</div>
 
-		<!-- Libellé : défini à l'acquisition, modifiable par un super-administrateur -->
+		<!-- Libellé : défini à l'acquisition, modifiable par un administrateur -->
 		<div class="mb-3">
 			<label for="libelle">Libellé</label>
-			{% if isGranted('ROLE_SUPER_ADMIN') %}
+			{% if isGranted('ROLE_ADMIN') %}
 				<input type="text" class="form-control {% if form_errors.libelle is defined %}is-invalid{% endif %}"
 				       name="libelle" id="libelle" value="{{ equipement.libelle }}" maxlength="255" required>
 				{% if form_errors.libelle is defined %}
 					<div class="invalid-feedback">{{ form_errors.libelle }}</div>
 				{% endif %}
-				<small class="text-muted">Défini lors de l'acquisition ; modifiable par un super-administrateur.</small>
+				<small class="text-muted">Défini lors de l'acquisition ; modifiable par un administrateur.</small>
 			{% else %}
 				<input type="text" class="form-control" id="libelle" value="{{ equipement.libelle }}" readonly disabled>
 				<small class="text-muted">Le libellé est défini lors de l'acquisition.</small>
