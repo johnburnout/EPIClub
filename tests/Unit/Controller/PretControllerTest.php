@@ -289,10 +289,10 @@ final class PretControllerTest extends TestCase
     {
         $this->prets->method('findId')->willReturn($this->pret('en_cours'));
         $this->prets->expects(self::once())->method('save')->with(self::callback(
-            fn(array $d) => $d['statut'] === 'termine' && $d['date_retour'] === '2026-10-24' && $d['termine_par'] === 5
+            fn(array $d) => $d['statut'] === 'termine' && $d['date_retour'] === '2026-10-25' && $d['termine_par'] === 5
         ));
 
-        $this->controleur()->terminer($this->post('/prets/pret-12/terminer', ['date_retour' => '2026-10-24'], ['id' => '12']));
+        $this->controleur()->terminer($this->post('/prets/pret-12/terminer', ['date_retour' => '2026-10-25'], ['id' => '12']));
     }
 
     public function testPretEnCoursSeulLeTelephoneEstModifiable(): void
