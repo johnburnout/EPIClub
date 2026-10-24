@@ -10,6 +10,18 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.8.1] — 2026-10-24
+
+Référence et catégorie verrouillées par défaut dans le formulaire de
+modification.
+
+### Changed
+
+- **Référence et catégorie** (super-administrateur) : les deux champs
+  sont verrouillés à l'ouverture du formulaire de modification ; la roue
+  dentée « Modifier la référence et la catégorie » les active. Un nouveau
+  clic les reverrouille et rétablit les valeurs d'origine.
+
 ## [v1.8.0] — 2026-10-24
 
 Catégorie d'un équipement modifiable par un super-administrateur.
