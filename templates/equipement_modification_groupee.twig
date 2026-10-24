@@ -51,7 +51,7 @@
 					<div id="bloc_emplacement_id">
 						<select name="emplacement_id" class="form-select">
 							<option value="">Non défini</option>
-							{% for emplacement in emplacements %}
+							{% for emplacement in emplacements|tri_alpha('libelle') %}
 								<option value="{{ emplacement.id }}" {% if saisie.emplacement_id is defined and saisie.emplacement_id == emplacement.id %}selected{% endif %}>{{ emplacement.libelle }}</option>
 							{% endfor %}
 						</select>

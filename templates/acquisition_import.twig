@@ -131,14 +131,14 @@
 											{% set autres = analyse.categories|filter(c => not c.existante and c.valeur != categorie.valeur) %}
 											{% if autres %}
 												<optgroup label="Regrouper avec une autre catégorie à créer">
-													{% for autre in autres %}
+													{% for autre in autres|tri_alpha('libelle_propose') %}
 														<option value="v:{{ autre.valeur }}" class="js-opt-nouvelle" data-valeur="{{ autre.valeur }}">Même catégorie que « {{ autre.libelle_propose }} »</option>
 													{% endfor %}
 												</optgroup>
 											{% endif %}
 											{% if analyse.categories_existantes %}
 												<optgroup label="Rattacher à une catégorie existante">
-													{% for existante in analyse.categories_existantes %}
+													{% for existante in analyse.categories_existantes|tri_alpha('libelle') %}
 														<option value="{{ existante.id }}">Rattacher à : {{ existante.libelle }}{% if existante.code %} ({{ existante.code }}){% endif %}</option>
 													{% endfor %}
 												</optgroup>
@@ -261,7 +261,7 @@
 											<option value="">Selon le fichier{% if ligne.categorie %} (« {{ ligne.categorie }} »){% endif %}</option>
 											{% if analyse.categories|length > 1 or (analyse.categories|length == 1 and analyse.categories[0].valeur != ligne.categorie) %}
 												<optgroup label="Catégories du fichier">
-													{% for categorie in analyse.categories %}
+													{% for categorie in analyse.categories|tri_alpha('valeur') %}
 														{% if categorie.valeur != ligne.categorie %}
 															{% if categorie.existante %}
 																<option value="v:{{ categorie.valeur }}">{{ categorie.existante.libelle }}</option>
@@ -274,7 +274,7 @@
 											{% endif %}
 											{% if analyse.categories_existantes %}
 												<optgroup label="Catégories existantes">
-													{% for existante in analyse.categories_existantes %}
+													{% for existante in analyse.categories_existantes|tri_alpha('libelle') %}
 														<option value="{{ existante.id }}">{{ existante.libelle }}{% if existante.code %} ({{ existante.code }}){% endif %}</option>
 													{% endfor %}
 												</optgroup>

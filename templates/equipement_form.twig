@@ -192,7 +192,7 @@
 				       maxlength="{{ categorie_libelle_max }}" required autocomplete="off" {% if not ref_cat_ouvert %}disabled{% endif %}
 				       data-equipement-id="{{ equipement.id }}" data-categorie-actuelle="{{ equipement.categorie.libelle }}">
 				<datalist id="categories">
-					{% for categorie in categories %}
+					{% for categorie in categories|tri_alpha('libelle') %}
 						<option value="{{ categorie.libelle }}">{{ categorie.libelle }}</option>
 					{% endfor %}
 				</datalist>
@@ -406,7 +406,7 @@
 			<label for="emplacement_id">Emplacement</label>
 			<select id="emplacement_id" name="emplacement_id" class="form-control">
 				<option value="">-- Aucun emplacement --</option>
-				{% for emplacement in emplacements %}
+				{% for emplacement in emplacements|tri_alpha('libelle') %}
 					<option value="{{ emplacement.id }}" {% if equipement.emplacement_id == emplacement.id %}selected{% endif %}>
 						{{ emplacement.libelle }}
 					</option>

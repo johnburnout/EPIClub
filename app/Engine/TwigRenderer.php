@@ -4,6 +4,7 @@ namespace Epiclub\Engine;
 
 use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
+use Twig\TwigFilter;
 use Twig\TwigFunction;
 
 class TwigRenderer extends Environment
@@ -40,6 +41,10 @@ class TwigRenderer extends Environment
             return $this->session->get('csrf_token');
         }));
         
+        // [2026-10-24] Listes déroulantes par ordre alphabétique :
+        // {% for c in categories|tri_alpha('libelle') %} (cf. TriAlphabetique).
+        $this->addFilter(new TwigFilter('tri_alpha', [TriAlphabetique::class, 'trier']));
+
         // Variables globales
         if ($this->session->has('user')) {
             $this->addGlobal('_user', $this->session->get('user'));

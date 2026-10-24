@@ -18,7 +18,7 @@
 				<label for="fournisseur" class="form-label">Fournisseur</label>
 				<select name="fournisseur" id="fournisseur" class="form-select">
 					<option value="">Tous</option>
-					{% for fournisseur in fournisseurs %}
+					{% for fournisseur in fournisseurs|tri_alpha('nom') %}
 					<option value="{{ fournisseur.id }}" {% if filtres.fournisseur == fournisseur.id %}selected{% endif %}>
 						{{ fournisseur.nom }}
 					</option>

@@ -34,7 +34,7 @@
 			<label for="fournisseur_nom">Fournisseur</label>
 			<input type="text" class="form-control" list="fournisseurs" name="fournisseur_nom" id="fournisseur_nom" value="{{ acquisition.fournisseur.nom }}" required {{ is_readonly }}/>
 			<datalist id="fournisseurs">
-				{% for fournisseur in fournisseurs %}
+				{% for fournisseur in fournisseurs|tri_alpha('nom') %}
 					<option value="{{ fournisseur.nom }}">{{ fournisseur.nom }}</option>
 				{% endfor %}
 			</datalist>
@@ -110,7 +110,7 @@
 					       list="equipement_references" name="ligne[reference]" id="ligne_reference" 
 					       value="{{ ligne_data.reference ?? '' }}" {{ is_readonly }}/>
 					<datalist id="equipement_references">
-						{% for equipement in equipements %}
+						{% for equipement in equipements|tri_alpha('reference') %}
 							<option value="{{ equipement.reference }}">{{ equipement.reference }}</option>
 						{% endfor %}
 					</datalist>
@@ -125,7 +125,7 @@
 					       list="equipement_libelles" name="ligne[designation]" id="ligne_libelle" 
 					       value="{{ ligne_data.designation ?? '' }}" {{ is_readonly }}/>
 					<datalist id="equipement_libelles">
-						{% for equipement in equipements %}
+						{% for equipement in equipements|tri_alpha('libelle') %}
 							<option value="{{ equipement.libelle }}">{{ equipement.libelle }}</option>
 						{% endfor %}
 					</datalist>
@@ -140,7 +140,7 @@
 					       list="categories" name="ligne[categorie_libelle]" id="ligne_categorie" 
 					       value="{{ ligne_data.categorie_libelle ?? '' }}" {{ is_readonly }}/>
 					<datalist id="categories">
-						{% for categorie in categories %}
+						{% for categorie in categories|tri_alpha('libelle') %}
 							<option value="{{ categorie.libelle }}">{{ categorie.libelle }}</option>
 						{% endfor %}
 					</datalist>

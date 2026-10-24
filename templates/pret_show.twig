@@ -173,7 +173,7 @@
 						<label for="categorie" class="form-label">Catégorie</label>
 						<select id="categorie" name="categorie" class="form-select">
 							<option value="">Toutes</option>
-							{% for c in categories %}
+							{% for c in categories|tri_alpha('libelle') %}
 								<option value="{{ c.id }}" {% if categorie_id == c.id %}selected{% endif %}>{{ c.libelle }}</option>
 							{% endfor %}
 						</select>

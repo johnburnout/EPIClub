@@ -16,7 +16,7 @@
 			<label for="activite">Activité :</label>
 			<select id="activite" name="activite" class="form-control {% if form_errors.activite %}is-invalid{% endif %}">
 				<option value="">-- Sélectionnez une activité --</option>
-				{% for activite in activites %}
+				{% for activite in activites|tri_alpha %}
 					<option value="{{ activite }}" {% if club.activite == activite %}selected{% endif %}>
 						{{ activite }}
 					</option>

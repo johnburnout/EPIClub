@@ -35,7 +35,7 @@
                 <label for="controleur_id" class="form-label">Contrôleur</label>
                 <select name="controleur_id" id="controleur_id" class="form-select">
                     <option value="">Tous</option>
-                    {% for controleur in controleurs %}
+                    {% for controleur in controleurs|tri_alpha(['prenom', 'nom']) %}
                     <option value="{{ controleur.id }}" {% if filtres.controleur_id == controleur.id %}selected{% endif %}>
                         {{ controleur.prenom }} {{ controleur.nom }}
                     </option>
