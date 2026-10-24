@@ -87,6 +87,11 @@ class EquipementController extends AbstractController
     {
         return new AcquisitionManager();
     }
+
+    protected function referenceGenerator(): ReferenceGenerator
+    {
+        return new ReferenceGenerator();
+    }
     
     // --------------------------------------------------------------
     // LISTE (avec pagination et filtres)
@@ -542,6 +547,80 @@ class EquipementController extends AbstractController
     }
 
     // --------------------------------------------------------------
+    // [2026-10-24] CHANGEMENT DE CATÉGORIE (ROLE_SUPER_ADMIN), dans le
+    // formulaire de modification. Saisie comme pour une ligne
+    // d'acquisition (liste des catégories, une catégorie inconnue est
+    // créée) ; une référence libre est proposée pour la nouvelle
+    // catégorie sur l'année d'achat ; mot de confirmation CATEGORIE.
+    // --------------------------------------------------------------
+    public const MOT_CONFIRMATION_CATEGORIE = 'CATEGORIE';
+
+    /** Longueur maximale d'un libellé de catégorie saisi. */
+    public const CATEGORIE_LIBELLE_MAX = 64;
+
+    /** Message d'erreur du libellé de catégorie saisi, ou null s'il est recevable. */
+    public static function erreurLibelleCategorie(string $libelle): ?string
+    {
+        if ($libelle === '') {
+            return 'La catégorie est obligatoire.';
+        }
+        if (!mb_check_encoding($libelle, 'UTF-8') || preg_match('/[\x00-\x1F\x7F]/', $libelle)) {
+            return 'La catégorie contient des caractères non autorisés.';
+        }
+        if (mb_strlen($libelle) > self::CATEGORIE_LIBELLE_MAX) {
+            return sprintf('La catégorie ne doit pas dépasser %d caractères.', self::CATEGORIE_LIBELLE_MAX);
+        }
+        return null;
+    }
+
+    /**
+     * Année d'achat de l'équipement (date de facture de son acquisition),
+     * année courante à défaut : année des références proposées.
+     */
+    private function anneeAchat(array $equipement): int
+    {
+        $dateFacture = !empty($equipement['acquisition_id'])
+            ? self::dateFacture($this->acquisitionManager()->findId((int) $equipement['acquisition_id']))
+            : null;
+        return $dateFacture !== null ? (int) substr($dateFacture, 0, 4) : (int) date('Y');
+    }
+
+    /**
+     * GET JSON /equipements/reference-suggestion?id=&categorie=
+     * Référence proposée pour l'équipement dans la catégorie saisie
+     * (n° de suivi suivant, année d'achat), et si la catégorie existe.
+     */
+    public function referenceSuggestion(Request $request): Response
+    {
+        $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
+
+        $libelle = trim((string) $request->query->get('categorie', ''));
+        $idRaw = (string) $request->query->get('id', '');
+        $equipement = ctype_digit($idRaw) && (int) $idRaw > 0
+            ? $this->equipementManager()->findId((int) $idRaw)
+            : null;
+        if (!$equipement || self::erreurLibelleCategorie($libelle) !== null) {
+            return new JsonResponse(['reference' => null]);
+        }
+
+        $categorie = $this->categorieManager()->findOneByCriteria(['libelle' => $libelle]);
+        $annee = $this->anneeAchat($equipement);
+        try {
+            $reference = $this->referenceGenerator()->suggest($libelle, $annee);
+        } catch (\Throwable $e) {
+            error_log('[EquipementController] referenceSuggestion: ' . $e->getMessage());
+            $reference = null;
+        }
+
+        return new JsonResponse([
+            'reference' => $reference,
+            'annee' => $annee,
+            'nouvelle' => !$categorie,
+            'est_epi' => $categorie ? !empty($categorie['est_epi']) : true,
+        ]);
+    }
+
+    // --------------------------------------------------------------
     // ÉDITION
     // --------------------------------------------------------------
     public function edit(Request $request)
@@ -594,6 +673,10 @@ class EquipementController extends AbstractController
             // [2026-10-23] Changement de référence (super-administrateur)
             $nouvelleReference = null;
             $ancienneReference = (string) ($equipement['reference'] ?? '');
+            // [2026-10-24] Changement de catégorie (super-administrateur)
+            $nouvelleCategorie = null;
+            $ancienneCategorie = (string) ($equipement['categorie']['libelle'] ?? '');
+            $ancienneCategorieId = $equipement['categorie_id'] ?? null;
             
             $emplacement_id = $request->request->get('emplacement_id');
             if ($emplacement_id === '') $emplacement_id = null;
@@ -724,6 +807,46 @@ class EquipementController extends AbstractController
                         }
                     }
                 }
+
+                // [2026-10-24] Catégorie : modifiable par un super-administrateur,
+                // avec le mot de confirmation CATEGORIE. Une catégorie inconnue
+                // est créée à l'enregistrement, comme pour une ligne d'acquisition.
+                if ($this->isGranted('ROLE_SUPER_ADMIN') && $request->request->has('categorie_libelle')) {
+                    $categoriePostee = trim((string) $request->request->get('categorie_libelle'));
+                    if ($categoriePostee !== $ancienneCategorie) {
+                        $existante = self::erreurLibelleCategorie($categoriePostee) === null
+                            ? $categorieManager->findOneByCriteria(['libelle' => $categoriePostee])
+                            : null;
+                        $confirmation = trim((string) $request->request->get('confirmation_categorie', ''));
+                        if ($existante && (int) $existante['id'] === (int) ($equipement['categorie_id'] ?? 0)) {
+                            // Même catégorie (casse ou espaces différents) : rien à changer.
+                        } elseif (($erreur = self::erreurLibelleCategorie($categoriePostee)) !== null) {
+                            $categorieSaisie = $categoriePostee;
+                            $form_errors['categorie_libelle'] = $erreur;
+                        } elseif ($confirmation !== self::MOT_CONFIRMATION_CATEGORIE) {
+                            $categorieSaisie = $categoriePostee;
+                            $form_errors['confirmation_categorie'] = sprintf(
+                                'Pour changer la catégorie, saisissez le mot %s (en majuscules).',
+                                self::MOT_CONFIRMATION_CATEGORIE
+                            );
+                        } else {
+                            $categorieSaisie = $categoriePostee;
+                            $nouvelleCategorie = $existante ?: null;
+                            $categorieACreer = $existante ? null : $categoriePostee;
+                        }
+                    }
+                }
+            }
+
+            if (empty($form_errors) && isset($categorieACreer)) {
+                // Mêmes valeurs par défaut que AcquisitionProcess::categorie_process().
+                $nouvelleCategorie = [
+                    'libelle' => ucfirst($categorieACreer),
+                    'description' => '',
+                    'image' => '',
+                    'est_epi' => 1,
+                ];
+                $nouvelleCategorie['id'] = (int) $categorieManager->save($nouvelleCategorie);
             }
 
             if (empty($form_errors)) {
@@ -751,6 +874,9 @@ class EquipementController extends AbstractController
                 if ($nouvelleReference !== null) {
                     $equipementData['reference'] = $nouvelleReference;
                 }
+                if ($nouvelleCategorie !== null) {
+                    $equipementData['categorie_id'] = (int) $nouvelleCategorie['id'];
+                }
                 
                 $anciennePhoto = null;
                 if ($photoPath !== null) {
@@ -769,6 +895,7 @@ class EquipementController extends AbstractController
                     }
                     $form_errors['reference'] = sprintf(self::MESSAGE_REFERENCE_PRISE, $nouvelleReference);
                     $equipement['reference'] = $ancienneReference;
+                    $equipement['categorie_id'] = $ancienneCategorieId;
                 }
             }
 
@@ -790,6 +917,19 @@ class EquipementController extends AbstractController
                         $ancienneReference, $nouvelleReference
                     ));
                 }
+                if ($nouvelleCategorie !== null) {
+                    $user ??= $this->session->get('user');
+                    error_log(sprintf(
+                        '[EquipementController] Catégorie de l\'équipement id=%d modifiée : « %s » → « %s »%s (utilisateur id=%s)',
+                        $id, $ancienneCategorie, $nouvelleCategorie['libelle'],
+                        isset($categorieACreer) ? ' (créée)' : '', $user['id'] ?? '?'
+                    ));
+                    $this->session->getFlashBag()->add('success', sprintf(
+                        'Catégorie modifiée : « %s » → « %s »%s.',
+                        $ancienneCategorie, $nouvelleCategorie['libelle'],
+                        isset($categorieACreer) ? ' (nouvelle catégorie créée)' : ''
+                    ));
+                }
                 return $this->redirectTo("/equipements");
             }
         }
@@ -808,6 +948,10 @@ class EquipementController extends AbstractController
             'reference_saisie' => $referenceSaisie ?? null,
             'mot_confirmation_reference' => self::MOT_CONFIRMATION_REFERENCE,
             'reference_max' => self::REFERENCE_MAX,
+            // [2026-10-24] Changement de catégorie (super-administrateur)
+            'categorie_saisie' => $categorieSaisie ?? null,
+            'mot_confirmation_categorie' => self::MOT_CONFIRMATION_CATEGORIE,
+            'categorie_libelle_max' => self::CATEGORIE_LIBELLE_MAX,
         ]);
     }
 

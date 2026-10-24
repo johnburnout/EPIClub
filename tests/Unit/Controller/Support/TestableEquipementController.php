@@ -9,6 +9,7 @@ use Epiclub\Domain\AcquisitionManager;
 use Epiclub\Domain\CategorieManager;
 use Epiclub\Domain\EmplacementManager;
 use Epiclub\Domain\EquipementManager;
+use Epiclub\Domain\ReferenceGenerator;
 use Epiclub\Engine\ImageUploader;
 use Epiclub\Engine\Session;
 
@@ -41,6 +42,14 @@ final class TestableEquipementController extends EquipementController
     protected function photoUploader(): ImageUploader
     {
         return $this->photoUploaderOverride ?? parent::photoUploader();
+    }
+
+    /** [2026-10-24] Doublure optionnelle du générateur de références. */
+    public ?ReferenceGenerator $referenceGeneratorOverride = null;
+
+    protected function referenceGenerator(): ReferenceGenerator
+    {
+        return $this->referenceGeneratorOverride ?? parent::referenceGenerator();
     }
 
     protected function equipementManager(): EquipementManager

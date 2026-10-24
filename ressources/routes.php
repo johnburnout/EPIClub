@@ -138,6 +138,14 @@ $routes->add('equipement_reference_disponible', new Route(
     [], [], '', [], ['GET']
 ));
 
+// ROLE_SUPER_ADMIN : référence proposée (AJAX) pour la catégorie saisie
+// dans le formulaire de modification (année d'achat de l'équipement)
+$routes->add('equipement_reference_suggestion', new Route(
+    '/equipements/reference-suggestion',
+    ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'referenceSuggestion'],
+    [], [], '', [], ['GET']
+));
+
 
 // =====================================================================
 // JOURNAUX

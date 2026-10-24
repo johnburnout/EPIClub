@@ -30,12 +30,46 @@
 		   désactivés (fieldset disabled ⇒ non envoyés ; ignorés côté serveur) #}
 		<fieldset {% if emplacement_seul %}disabled{% endif %}>
 
-		<!-- Catégorie (lecture seule) -->
+		<!-- Catégorie : définie à l'acquisition, modifiable par un super-administrateur
+		     (saisie comme une ligne d'acquisition, référence proposée + mot de confirmation) -->
 		<div class="mb-3">
 			<label for="categorie">Catégorie</label>
-			<input type="text" class="form-control" id="categorie" value="{{ equipement.categorie.libelle }}" readonly disabled>
-			<small class="text-muted">La catégorie est définie lors de l'acquisition.</small>
-			<input type="hidden" name="categorie_id" value="{{ equipement.categorie_id }}">
+			{% if isGranted('ROLE_SUPER_ADMIN') and equipement.id is defined and equipement.id %}
+				<input type="text" class="form-control {% if form_errors.categorie_libelle is defined %}is-invalid{% endif %}"
+				       name="categorie_libelle" id="categorie" list="categories"
+				       value="{{ categorie_saisie ?? equipement.categorie.libelle }}"
+				       maxlength="{{ categorie_libelle_max }}" required autocomplete="off"
+				       data-equipement-id="{{ equipement.id }}" data-categorie-actuelle="{{ equipement.categorie.libelle }}">
+				<datalist id="categories">
+					{% for categorie in categories %}
+						<option value="{{ categorie.libelle }}">{{ categorie.libelle }}</option>
+					{% endfor %}
+				</datalist>
+				{% if form_errors.categorie_libelle is defined %}
+					<div class="invalid-feedback">{{ form_errors.categorie_libelle }}</div>
+				{% endif %}
+				<div class="form-text" id="categorie-statut" aria-live="polite"></div>
+				<small class="text-muted">Définie lors de l'acquisition ; modifiable par un super-administrateur. Une catégorie inconnue est créée.</small>
+				<div id="bloc-confirmation-categorie" class="mt-2 p-2 border border-warning rounded {% if categorie_saisie is null and form_errors.confirmation_categorie is not defined %}d-none{% endif %}">
+					<div class="small mb-2">
+						<i class="fas fa-exclamation-triangle text-warning"></i>
+						L'équipement quitte la catégorie <strong>{{ equipement.categorie.libelle }}</strong> ;
+						une référence libre dans la nouvelle catégorie est proposée ci-dessous.
+					</div>
+					<label for="confirmation_categorie" class="form-label">
+						Pour confirmer le changement, saisissez <code>{{ mot_confirmation_categorie }}</code>
+					</label>
+					<input type="text" class="form-control {% if form_errors.confirmation_categorie is defined %}is-invalid{% endif %}"
+					       name="confirmation_categorie" id="confirmation_categorie"
+					       autocomplete="off" spellcheck="false" data-mot="{{ mot_confirmation_categorie }}">
+					{% if form_errors.confirmation_categorie is defined %}
+						<div class="invalid-feedback">{{ form_errors.confirmation_categorie }}</div>
+					{% endif %}
+				</div>
+			{% else %}
+				<input type="text" class="form-control" id="categorie" value="{{ equipement.categorie.libelle }}" readonly disabled>
+				<small class="text-muted">La catégorie est définie lors de l'acquisition.</small>
+			{% endif %}
 		</div>
 
 		<!-- EPI (lecture seule) -->
@@ -383,6 +417,106 @@
 				confirmation.classList.toggle('is-invalid', false);
 			});
 			// Retour du serveur avec une référence saisie : relancer la vérification
+			if (changee()) { surSaisie(); }
+		})();
+	</script>
+	<script>
+		/**
+		 * [2026-10-24] Changement de catégorie (super-administrateur) :
+		 * une référence libre est proposée pour la catégorie saisie (année
+		 * d'achat), sans écraser une référence saisie à la main ; sa
+		 * disponibilité est vérifiée par le script de la référence. Le mot
+		 * de confirmation est exigé avant l'envoi (revérifié côté serveur).
+		 */
+		(function () {
+			const champ = document.getElementById('categorie');
+			if (!champ || champ.disabled || !champ.dataset.categorieActuelle) return;
+			const actuelle = champ.dataset.categorieActuelle;
+			const statut = document.getElementById('categorie-statut');
+			const bloc = document.getElementById('bloc-confirmation-categorie');
+			const confirmation = document.getElementById('confirmation_categorie');
+			const motAttendu = confirmation.dataset.mot;
+			const reference = document.getElementById('reference');
+			const referenceActuelle = reference ? (reference.dataset.referenceActuelle || '') : '';
+			const epi = document.getElementById('est_epi');
+			const epiInitial = epi ? epi.value : '';
+			let derniereProposition = null;
+			let minuterie = null;
+			let requete = 0;
+
+			function afficher(classe, texte) {
+				statut.className = 'form-text ' + classe;
+				statut.textContent = texte;
+			}
+			function changee() {
+				return champ.value.trim() !== actuelle;
+			}
+			// Remplace la référence seulement si elle n'a pas été saisie à la main.
+			function proposerReference(valeur) {
+				if (!reference) return;
+				const courante = reference.value.trim();
+				if (courante !== referenceActuelle && courante !== derniereProposition) return;
+				derniereProposition = valeur === referenceActuelle ? null : valeur;
+				if (courante !== valeur) {
+					reference.value = valeur;
+					reference.dispatchEvent(new Event('input'));
+				}
+			}
+			function suggerer() {
+				const libelle = champ.value.trim();
+				const numero = ++requete;
+				afficher('text-muted', 'Recherche d\'une référence libre…');
+				fetch('/equipements/reference-suggestion?' + new URLSearchParams({ id: champ.dataset.equipementId, categorie: libelle }),
+					{ headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+					.then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+					.then(data => {
+						if (numero !== requete) return; // réponse obsolète
+						if (epi) epi.value = data.est_epi === false ? 'Non' : 'Oui';
+						if (!data.reference) {
+							afficher('text-danger', 'Aucune référence proposée pour cette catégorie.');
+							return;
+						}
+						afficher(data.nouvelle ? 'text-warning' : 'text-muted',
+							(data.nouvelle ? 'Nouvelle catégorie : elle sera créée à l\'enregistrement. ' : '')
+							+ 'Référence proposée (' + data.annee + ') : ' + data.reference);
+						proposerReference(data.reference);
+					})
+					.catch(() => {
+						if (numero !== requete) return;
+						afficher('text-danger', 'Proposition de référence impossible, réessayez.');
+					});
+			}
+			function surSaisie() {
+				clearTimeout(minuterie);
+				if (!changee()) {
+					requete++;
+					bloc.classList.add('d-none');
+					afficher('', '');
+					if (epi) epi.value = epiInitial;
+					proposerReference(referenceActuelle);
+					return;
+				}
+				bloc.classList.remove('d-none');
+				if (champ.value.trim() === '') {
+					requete++;
+					afficher('text-danger', 'La catégorie est obligatoire.');
+					return;
+				}
+				minuterie = setTimeout(suggerer, 400);
+			}
+
+			champ.addEventListener('input', surSaisie);
+			champ.form.addEventListener('submit', function (e) {
+				if (changee() && confirmation.value.trim() !== motAttendu) {
+					e.preventDefault();
+					confirmation.classList.add('is-invalid');
+					confirmation.focus();
+				}
+			});
+			confirmation.addEventListener('input', function () {
+				confirmation.classList.toggle('is-invalid', false);
+			});
+			// Retour du serveur avec une catégorie saisie : relancer la proposition
 			if (changee()) { surSaisie(); }
 		})();
 	</script>
