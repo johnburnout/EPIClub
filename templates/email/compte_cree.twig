@@ -1,0 +1,18 @@
+{% extends "email/email_layout.twig" %}
+
+{% block body %}
+<h1>Votre compte a été créé</h1>
+<p>Bonjour {{ utilisateur.prenom }},</p>
+<p>Un compte vient d'être créé pour vous sur l'application de gestion des équipements de {{ club.nom }}.</p>
+<ul>
+    <li>Identifiant : <strong>{{ utilisateur.username }}</strong></li>
+    <li>Rôle : {{ role }}</li>
+</ul>
+<p>
+    Votre mot de passe vous est communiqué par l'administrateur qui a créé le compte.
+    Vous pouvez aussi en choisir un vous-même avec
+    <a href="{{ lien_mot_de_passe }}">« Mot de passe oublié »</a>.
+</p>
+<p><a href="{{ lien_connexion }}">Se connecter</a></p>
+<p>L'équipe {{ club.nom }}</p>
+{% endblock %}

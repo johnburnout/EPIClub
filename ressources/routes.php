@@ -493,6 +493,12 @@ $routes->add('utilisateur_delete', new Route(
     ['_controller' => 'Epiclub\\Controller\\UtilisateurController', 'action' => 'delete'],
     [], [], '', [], ['POST']
 ));
+// [2026-10-24] ROLE_ADMIN : renvoi du mail de bienvenue (fiche utilisateur)
+$routes->add('utilisateur_bienvenue', new Route(
+    '/admin/utilisateurs/utilisateur_bienvenue-{id}',
+    ['_controller' => 'Epiclub\\Controller\\UtilisateurController', 'action' => 'renvoyerBienvenue'],
+    [], [], '', [], ['POST']
+));
 $routes->add('utilisateur_show', new Route(
     '/admin/utilisateurs/utilisateur-{id}',
     ['_controller' => 'Epiclub\\Controller\\UtilisateurController', 'action' => 'show']

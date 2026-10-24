@@ -108,6 +108,7 @@ class RouteProvider
             'equipement_delete',
             'equipement_dissocier',
             'equipement_regrouper',
+            'utilisateur_bienvenue',
             'ticket_traiter',
             'acquisition_corriger',
             'acquisition_delete',

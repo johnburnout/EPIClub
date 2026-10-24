@@ -82,6 +82,12 @@
 			<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 			<button type="submit" class="btn btn-primary">Enregistrer</button>
 			<a href="/admin/utilisateurs" class="btn btn-secondary">Retour à la liste</a>
+			{# [2026-10-24] Formulaire séparé (attribut `form`), comme la suppression. #}
+			<button type="submit" form="bienvenue-utilisateur-form" class="btn btn-outline-secondary"
+			        title="Identifiant, rôle et lien de connexion — jamais le mot de passe"
+			        onclick="return confirm('Renvoyer le mail de bienvenue à {{ utilisateur.email|e('js') }} ?')">
+				✉️ Renvoyer le mail de bienvenue
+			</button>
 
 			{# Le bouton de suppression utilise l'attribut HTML5 `form` pour cibler
 			   un formulaire séparé (les formulaires ne peuvent pas être imbriqués). #}
@@ -104,6 +110,11 @@
 				</span>
 			{% endif %}
 		</div>
+	</form>
+
+	<form id="bienvenue-utilisateur-form" method="post"
+	      action="/admin/utilisateurs/utilisateur_bienvenue-{{ utilisateur.id }}" style="display:none;">
+		<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 	</form>
 
 	{# Formulaire de suppression séparé, ciblé par l'attribut `form` du bouton ci-dessus. #}

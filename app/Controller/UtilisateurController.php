@@ -2,8 +2,11 @@
 
 namespace Epiclub\Controller;
 
+use Epiclub\Domain\ClubManager;
 use Epiclub\Domain\UtilisateurManager;
 use Epiclub\Engine\AbstractController;
+use Epiclub\Engine\MailerService;
+use Epiclub\Engine\MailerServiceInterface;
 use Epiclub\Enum\UserRole;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,6 +20,55 @@ class UtilisateurController extends AbstractController
     protected function utilisateurManager(): UtilisateurManager
     {
         return new UtilisateurManager();
+    }
+
+    protected function clubManager(): ClubManager
+    {
+        return new ClubManager();
+    }
+
+    protected function mailerService(): MailerServiceInterface
+    {
+        return new MailerService($this->configProvider());
+    }
+
+    /**
+     * [2026-10-24] Mail de bienvenue : informe la personne de son compte
+     * (identifiant, rôle, lien de connexion), à la création ou à la
+     * demande (fiche utilisateur). Le mot de passe n'est jamais envoyé
+     * (communiqué par l'administrateur, ou choisi via « Mot de passe
+     * oublié »). Au mieux : false si le mail n'est pas parti.
+     */
+    private function informerCreation(array $utilisateur): bool
+    {
+        // Seuls les champs affichés atteignent le gabarit (jamais le hash).
+        $utilisateur = array_intersect_key($utilisateur, array_flip(['prenom', 'nom', 'username', 'email', 'role']));
+        try {
+            $club = $this->clubManager()->findParameters() ?: [];
+            if (empty($club['email'])) {
+                error_log('[UtilisateurController] Email du club non configuré : mail de bienvenue non envoyé.');
+                return false;
+            }
+            $base = $this->getBaseUrl();
+            $email = $this->createEmail(
+                $club['email'],
+                $utilisateur['email'],
+                sprintf('Votre compte %s', $club['nom'] ?? 'EPIClub'),
+                'email/compte_cree.twig',
+                [
+                    'club' => $club,
+                    'utilisateur' => $utilisateur,
+                    'role' => UserRole::fromRole($utilisateur['role']),
+                    'lien_connexion' => $base . '/se_connecter',
+                    'lien_mot_de_passe' => $base . '/mot_de_passe_oublie',
+                ]
+            );
+            $this->mailerService()->sendEmail($email);
+            return true;
+        } catch (\Throwable $e) {
+            error_log('[UtilisateurController] Mail de bienvenue non envoyé : ' . $e->getMessage());
+            return false;
+        }
     }
     
     public function list(Request $request)
@@ -109,7 +161,17 @@ class UtilisateurController extends AbstractController
                 $utilisateur['derniere_connexion'] = null;
 
                 $utilisateurManager->save($utilisateur);
-                $this->session->getFlashBag()->add('success', "L'utilisateur a été créé.");
+                // [2026-10-24] Mail d'information (sans le mot de passe).
+                if ($this->informerCreation($utilisateur)) {
+                    $this->session->getFlashBag()->add('success', sprintf(
+                        "L'utilisateur a été créé. Un mail l'en informe (%s) ; communiquez-lui son mot de passe.",
+                        $utilisateur['email']
+                    ));
+                } else {
+                    $this->session->getFlashBag()->add('success', "L'utilisateur a été créé.");
+                    $this->session->getFlashBag()->add('note',
+                        "Le mail d'information n'a pas pu être envoyé (email du club ou serveur SMTP à vérifier) : prévenez la personne vous-même.");
+                }
                 return new RedirectResponse("/admin/utilisateurs");
             }
         }
@@ -119,6 +181,34 @@ class UtilisateurController extends AbstractController
             'roles' => $assignableRoles,
             'form_errors' => $form_errors
         ]);
+    }
+
+    /**
+     * [2026-10-24] POST /admin/utilisateurs/utilisateur_bienvenue-{id} :
+     * renvoie le mail de bienvenue (mêmes droits que la fiche).
+     */
+    public function renvoyerBienvenue(Request $request): RedirectResponse
+    {
+        $this->deniAccessUnlessGranted('ROLE_ADMIN');
+        $this->validateCsrf($request);
+
+        $id = $this->getValidId($request);
+        $utilisateur = $id !== null ? $this->utilisateurManager()->findId($id) : null;
+        if (!$utilisateur) {
+            return new RedirectResponse('/admin/utilisateurs');
+        }
+        if (!$this->canManageUser($this->session->get('user') ?: [], $utilisateur)) {
+            $this->session->getFlashBag()->add('error', "Vous n'avez pas les droits pour modifier cet utilisateur.");
+            return new RedirectResponse('/admin/utilisateurs');
+        }
+
+        if ($this->informerCreation($utilisateur)) {
+            $this->session->getFlashBag()->add('success', sprintf('Mail de bienvenue renvoyé à %s.', $utilisateur['email']));
+        } else {
+            $this->session->getFlashBag()->add('error',
+                "Le mail de bienvenue n'a pas pu être envoyé (email du club ou serveur SMTP à vérifier).");
+        }
+        return new RedirectResponse('/admin/utilisateurs/utilisateur-' . $id);
     }
 
     public function show(Request $request)

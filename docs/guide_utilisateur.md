@@ -251,6 +251,8 @@ Les prêts **en retard** (date de retour prévue dépassée) sont signalés en r
 ## 4. Gestion des utilisateurs
 - Les administrateurs peuvent créer, modifier et supprimer des utilisateurs.
 - Les rôles disponibles : `ROLE_USER`, `ROLE_CONTROLLEUR`, `ROLE_ADMIN`, `ROLE_SUPER_ADMIN`.
+- À la **création** d'un compte, la personne reçoit un **mail** l'en informant : son identifiant, son rôle et le lien de connexion. Le mail ne contient **jamais le mot de passe** : communiquez-le-lui, ou elle en choisit un avec « Mot de passe oublié ». Il faut que l'email du club et le serveur SMTP soient configurés ; sinon, un message vous invite à la prévenir vous-même.
+- Le bouton **« Renvoyer le mail de bienvenue »** de la fiche utilisateur renvoie ce même mail (par exemple après une panne de messagerie, ou s'il n'a pas été reçu). Il suit les mêmes droits que la modification du compte.
 - Le **compte super-administrateur créé à l'installation** est **protégé** (🔒 dans la liste) : il ne peut être ni supprimé ni rétrogradé, et seul son titulaire peut modifier son adresse mail et son mot de passe.
 - Il reste toujours au moins un super-administrateur : le dernier ne peut être ni supprimé ni rétrogradé.
 
