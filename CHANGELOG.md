@@ -10,6 +10,20 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.9.1] — 2026-10-25
+
+Dissociation d'un lot ouverte aux administrateurs.
+
+### Changed
+
+- **Dissocier un lot** : un administrateur y accède par le bouton
+  « Dissocier le lot » du formulaire de modification (le
+  super-administrateur garde la roue dentée). Les références des nouveaux
+  équipements lui sont attribuées automatiquement selon le modèle de
+  référence, sans pouvoir les modifier ; seul un super-administrateur les
+  choisit. Un administrateur ne modifie toujours ni la référence ni la
+  catégorie d'un équipement.
+
 ## [v1.9.0] — 2026-10-24
 
 Dissociation d'un lot en plusieurs lots ou en équipements individuels.
