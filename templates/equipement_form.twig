@@ -6,6 +6,157 @@
 	<a href="/tableau_de_bord" class="btn btn-primary">Tableau de bord</a>
 	<hr>
 
+	{# [2026-10-24] Barre au-dessus du formulaire : roue dentée (super-admin) /
+	   bouton du lot (admin), puis les cartes « Dissocier » / « Regrouper », pour
+	   qu'elles apparaissent sous le bouton (formulaires distincts, hors du formulaire principal). #}
+	{# [2026-10-24] Super-administrateur : référence et catégorie verrouillées
+	   (champs désactivés ⇒ non envoyés) jusqu'au clic sur la roue dentée ;
+	   ouvertes d'emblée au retour du serveur avec une saisie ou une erreur. #}
+	{% set ref_cat_modifiable = isGranted('ROLE_SUPER_ADMIN') and equipement.id is defined and equipement.id %}
+	{% set ref_cat_ouvert = ref_cat_modifiable and (reference_saisie is not null or categorie_saisie is not null
+		or form_errors.reference is defined or form_errors.confirmation_reference is defined
+		or form_errors.categorie_libelle is defined or form_errors.confirmation_categorie is defined
+		or lot_saisie is not null or form_errors.nombre_initial is defined) %}
+	{# [2026-10-24] Dissociation du lot : admin et plus ; un admin
+	   l'affiche par son propre bouton, le super-admin par la roue dentée. #}
+	{% set ni_actuel = equipement.nombre_initial|default(1) %}
+	{% set dissociation_visible = isGranted('ROLE_ADMIN') and equipement.id is defined and equipement.id and ni_actuel > 1 %}
+	{# [2026-10-24] Regroupement en lot : admin et plus, s'il existe des
+	   équipements identiques (même libellé, catégorie, acquisition). #}
+	{% set regroupement = regroupement|default({candidats: [], erreur: null}) %}
+	{% set regroupement_visible = isGranted('ROLE_ADMIN') and equipement.id is defined and equipement.id and regroupement.candidats is not empty %}
+	{% if (dissociation_visible or regroupement_visible) and not ref_cat_modifiable %}
+		{% set libelle_lot = dissociation_visible and regroupement_visible ? 'Dissocier ou regrouper'
+			: (dissociation_visible ? 'Dissocier le lot' : 'Regrouper en lot') %}
+		<div class="mb-2 text-end">
+			<button type="button" class="btn btn-outline-secondary btn-sm" id="afficher-lot"
+			        aria-pressed="false" title="{{ libelle_lot }}" data-libelle="{{ libelle_lot }}">
+				<i class="fas fa-cog"></i> <span>{{ libelle_lot }}</span>
+			</button>
+		</div>
+	{% endif %}
+	{% if ref_cat_modifiable %}
+		<div class="mb-2 text-end">
+			<button type="button" class="btn btn-outline-secondary btn-sm" id="deverrouiller-ref-cat"
+			        aria-pressed="{{ ref_cat_ouvert ? 'true' : 'false' }}" aria-controls="categorie reference"
+			        title="Modification de la référence, de la catégorie et du lot">
+				<i class="fas fa-cog"></i>
+				<span>{{ ref_cat_ouvert ? 'Annuler la modification de la référence, de la catégorie et du lot' : 'Modifier la référence, la catégorie et le lot (dissocier, regrouper)' }}</span>
+			</button>
+		</div>
+	{% endif %}
+
+	{# [2026-10-24] Dissociation du lot : formulaire distinct, affiché par la
+	   roue dentée (super-administrateur) ou le bouton « Dissocier le lot » (admin). #}
+	{% if dissociation_visible %}
+		<div class="card mt-2 mb-3 border-warning carte-lot {% if not ref_cat_ouvert %}d-none{% endif %}" id="carte-dissociation">
+			<div class="card-body">
+				<h5 class="card-title"><i class="fas fa-object-ungroup"></i> Dissocier le lot</h5>
+				{% if dissociation_erreur %}
+					<p class="text-muted mb-0">{{ dissociation_erreur }}</p>
+				{% else %}
+					<form method="post" action="/equipements/equipement_dissocier-{{ equipement.id }}" id="form-dissociation"
+					      data-equipement-id="{{ equipement.id }}"
+					      data-references-modifiables="{{ references_dissociation_modifiables ? '1' : '0' }}">
+						<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+						<p class="small">
+							Le lot compte <strong>{{ equipement.nombre }}</strong> élément(s) restant(s). Indiquez la taille de chaque
+							partie, séparées par des virgules : la <strong>première</strong> reste à l'équipement
+							<strong>{{ equipement.reference }}</strong> (avec son historique), chacune des autres devient un
+							<strong>nouvel équipement</strong> (lot ou équipement individuel), avec les mêmes caractéristiques.
+							{% if not references_dissociation_modifiables %}
+								Leurs références sont attribuées automatiquement selon le modèle de référence.
+							{% endif %}
+						</p>
+						<div class="mb-2">
+							<label for="repartition" class="form-label">Répartition</label>
+							<div class="input-group">
+								<input type="text" class="form-control" name="repartition" id="repartition"
+								       placeholder="ex. {{ equipement.nombre > 2 ? (equipement.nombre - 2) ~ ', 1, 1' : '1, 1' }}"
+								       autocomplete="off" data-nombre="{{ equipement.nombre }}">
+								<button type="button" class="btn btn-outline-secondary" id="repartition-individuels">
+									En équipements individuels
+								</button>
+							</div>
+							<div class="form-text" id="repartition-statut" aria-live="polite"></div>
+						</div>
+						<div id="dissociation-references" class="mb-2"></div>
+						<div class="mb-3 p-2 border border-warning rounded">
+							<label for="confirmation_dissociation" class="form-label">
+								Pour confirmer la dissociation, saisissez <code>{{ mot_confirmation_dissociation }}</code>
+							</label>
+							<input type="text" class="form-control" name="confirmation_dissociation" id="confirmation_dissociation"
+							       autocomplete="off" spellcheck="false" data-mot="{{ mot_confirmation_dissociation }}">
+						</div>
+						<button type="submit" class="btn btn-warning">Dissocier le lot</button>
+					</form>
+				{% endif %}
+			</div>
+		</div>
+	{% endif %}
+
+	{# [2026-10-24] Regroupement en lot (admin et plus) : formulaire distinct,
+	   affiché avec la carte de dissociation. #}
+	{% if regroupement_visible %}
+		<div class="card mt-2 mb-3 border-warning carte-lot {% if not ref_cat_ouvert %}d-none{% endif %}" id="carte-regroupement">
+			<div class="card-body">
+				<h5 class="card-title"><i class="fas fa-object-group"></i> Regrouper en lot</h5>
+				{% if regroupement.erreur %}
+					<p class="text-muted mb-0">Cet équipement ne peut pas être regroupé ({{ regroupement.erreur }}).</p>
+				{% else %}
+					<form method="post" action="/equipements/equipement_regrouper-{{ equipement.id }}" id="form-regroupement"
+					      data-nombre="{{ equipement.nombre|default(1) }}" data-nombre-initial="{{ ni_actuel }}">
+						<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+						<p class="small">
+							Équipements identiques (même libellé, même catégorie, même acquisition). Ceux que vous cochez sont
+							<strong>associés à {{ equipement.reference }}</strong>, qui garde sa référence, ses dates, son emplacement
+							et son historique ; leurs éléments s'ajoutent au lot et ils sont <strong>archivés</strong>
+							(leur historique est conservé). Pensez à retirer leurs étiquettes.
+						</p>
+						<div class="table-responsive">
+							<table class="table table-sm align-middle">
+								<thead>
+									<tr><th></th><th>Référence</th><th>Éléments</th><th>Emplacement</th><th>Mise en service</th><th>Fin d'utilisation</th></tr>
+								</thead>
+								<tbody>
+									{% for c in regroupement.candidats %}
+										{% set emplacement_c = emplacements|filter(em => em.id == c.emplacement_id)|first %}
+										<tr class="{{ c.erreur_regroupement ? 'text-muted' : '' }}">
+											<td>
+												<input type="checkbox" class="form-check-input regroupement-choix" name="ids[]" value="{{ c.id }}"
+												       id="regrouper_{{ c.id }}" data-nombre="{{ c.nombre|default(1) }}"
+												       data-nombre-initial="{{ c.nombre_initial|default(1) }}"
+												       {% if c.erreur_regroupement %}disabled{% endif %}>
+											</td>
+											<td>
+												<label for="regrouper_{{ c.id }}">{{ c.reference }}</label>
+												{% if c.erreur_regroupement %}<div class="small">Impossible : {{ c.erreur_regroupement }}</div>{% endif %}
+											</td>
+											<td>{{ c.nombre|default(1) }}{% if c.nombre_initial|default(1) > 1 %} / {{ c.nombre_initial }}{% endif %}</td>
+											<td class="{{ c.emplacement_id != equipement.emplacement_id ? 'text-warning' : '' }}">{{ emplacement_c ? emplacement_c.libelle : '—' }}</td>
+											<td class="{{ c.date_mise_en_service != equipement.date_mise_en_service ? 'text-warning' : '' }}">{{ c.date_mise_en_service ? c.date_mise_en_service|date('d/m/Y') : '—' }}</td>
+											<td class="{{ c.date_fin_utilisation != equipement.date_fin_utilisation ? 'text-warning' : '' }}">{{ c.date_fin_utilisation ? c.date_fin_utilisation|date('d/m/Y') : '—' }}</td>
+										</tr>
+									{% endfor %}
+								</tbody>
+							</table>
+						</div>
+						<p class="small text-muted">En orange : valeur différente de {{ equipement.reference }} (celle de {{ equipement.reference }} est conservée).</p>
+						<div class="form-text mb-2" id="regroupement-statut" aria-live="polite"></div>
+						<div class="mb-3 p-2 border border-warning rounded">
+							<label for="confirmation_regroupement" class="form-label">
+								Pour confirmer le regroupement, saisissez <code>{{ mot_confirmation_regroupement }}</code>
+							</label>
+							<input type="text" class="form-control" name="confirmation_regroupement" id="confirmation_regroupement"
+							       autocomplete="off" spellcheck="false" data-mot="{{ mot_confirmation_regroupement }}">
+						</div>
+						<button type="submit" class="btn btn-warning">Regrouper en lot</button>
+					</form>
+				{% endif %}
+			</div>
+		</div>
+	{% endif %}
+
 	{# ⬇️ MODIFICATION : ajout de enctype #}
 	<form method="post" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -29,43 +180,6 @@
 		{# [2026-10-23] Contrôleur : tous les champs sauf l'emplacement sont
 		   désactivés (fieldset disabled ⇒ non envoyés ; ignorés côté serveur) #}
 		<fieldset {% if emplacement_seul %}disabled{% endif %}>
-
-		{# [2026-10-24] Super-administrateur : référence et catégorie verrouillées
-		   (champs désactivés ⇒ non envoyés) jusqu'au clic sur la roue dentée ;
-		   ouvertes d'emblée au retour du serveur avec une saisie ou une erreur. #}
-		{% set ref_cat_modifiable = isGranted('ROLE_SUPER_ADMIN') and equipement.id is defined and equipement.id %}
-		{% set ref_cat_ouvert = ref_cat_modifiable and (reference_saisie is not null or categorie_saisie is not null
-			or form_errors.reference is defined or form_errors.confirmation_reference is defined
-			or form_errors.categorie_libelle is defined or form_errors.confirmation_categorie is defined
-			or lot_saisie is not null or form_errors.nombre_initial is defined) %}
-		{# [2026-10-24] Dissociation du lot : admin et plus ; un admin
-		   l'affiche par son propre bouton, le super-admin par la roue dentée. #}
-		{% set ni_actuel = equipement.nombre_initial|default(1) %}
-		{% set dissociation_visible = isGranted('ROLE_ADMIN') and equipement.id is defined and equipement.id and ni_actuel > 1 %}
-		{# [2026-10-24] Regroupement en lot : admin et plus, s'il existe des
-		   équipements identiques (même libellé, catégorie, acquisition). #}
-		{% set regroupement = regroupement|default({candidats: [], erreur: null}) %}
-		{% set regroupement_visible = isGranted('ROLE_ADMIN') and equipement.id is defined and equipement.id and regroupement.candidats is not empty %}
-		{% if (dissociation_visible or regroupement_visible) and not ref_cat_modifiable %}
-			{% set libelle_lot = dissociation_visible and regroupement_visible ? 'Dissocier ou regrouper'
-				: (dissociation_visible ? 'Dissocier le lot' : 'Regrouper en lot') %}
-			<div class="mb-2 text-end">
-				<button type="button" class="btn btn-outline-secondary btn-sm" id="afficher-lot"
-				        aria-pressed="false" title="{{ libelle_lot }}" data-libelle="{{ libelle_lot }}">
-					<i class="fas fa-cog"></i> <span>{{ libelle_lot }}</span>
-				</button>
-			</div>
-		{% endif %}
-		{% if ref_cat_modifiable %}
-			<div class="mb-2 text-end">
-				<button type="button" class="btn btn-outline-secondary btn-sm" id="deverrouiller-ref-cat"
-				        aria-pressed="{{ ref_cat_ouvert ? 'true' : 'false' }}" aria-controls="categorie reference"
-				        title="Modification de la référence, de la catégorie et du lot">
-					<i class="fas fa-cog"></i>
-					<span>{{ ref_cat_ouvert ? 'Annuler la modification de la référence, de la catégorie et du lot' : 'Modifier la référence, la catégorie et le lot' }}</span>
-				</button>
-			</div>
-		{% endif %}
 
 		<!-- Catégorie : définie à l'acquisition, modifiable par un super-administrateur
 		     (saisie comme une ligne d'acquisition, référence proposée + mot de confirmation) -->
@@ -361,117 +475,6 @@
 		<a href="{% if equipement.id is defined and equipement.id %}/equipements/equipement-{{ equipement.id }}{% else %}/equipements{% endif %}" class="btn btn-secondary">Annuler</a>
 	</form>
 
-	{# [2026-10-24] Dissociation du lot : formulaire distinct, affiché par la
-	   roue dentée (super-administrateur) ou le bouton « Dissocier le lot » (admin). #}
-	{% if dissociation_visible %}
-		<div class="card mt-4 border-warning carte-lot {% if not ref_cat_ouvert %}d-none{% endif %}" id="carte-dissociation">
-			<div class="card-body">
-				<h5 class="card-title"><i class="fas fa-object-ungroup"></i> Dissocier le lot</h5>
-				{% if dissociation_erreur %}
-					<p class="text-muted mb-0">{{ dissociation_erreur }}</p>
-				{% else %}
-					<form method="post" action="/equipements/equipement_dissocier-{{ equipement.id }}" id="form-dissociation"
-					      data-equipement-id="{{ equipement.id }}"
-					      data-references-modifiables="{{ references_dissociation_modifiables ? '1' : '0' }}">
-						<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-						<p class="small">
-							Le lot compte <strong>{{ equipement.nombre }}</strong> élément(s) restant(s). Indiquez la taille de chaque
-							partie, séparées par des virgules : la <strong>première</strong> reste à l'équipement
-							<strong>{{ equipement.reference }}</strong> (avec son historique), chacune des autres devient un
-							<strong>nouvel équipement</strong> (lot ou équipement individuel), avec les mêmes caractéristiques.
-							{% if not references_dissociation_modifiables %}
-								Leurs références sont attribuées automatiquement selon le modèle de référence.
-							{% endif %}
-						</p>
-						<div class="mb-2">
-							<label for="repartition" class="form-label">Répartition</label>
-							<div class="input-group">
-								<input type="text" class="form-control" name="repartition" id="repartition"
-								       placeholder="ex. {{ equipement.nombre > 2 ? (equipement.nombre - 2) ~ ', 1, 1' : '1, 1' }}"
-								       autocomplete="off" data-nombre="{{ equipement.nombre }}">
-								<button type="button" class="btn btn-outline-secondary" id="repartition-individuels">
-									En équipements individuels
-								</button>
-							</div>
-							<div class="form-text" id="repartition-statut" aria-live="polite"></div>
-						</div>
-						<div id="dissociation-references" class="mb-2"></div>
-						<div class="mb-3 p-2 border border-warning rounded">
-							<label for="confirmation_dissociation" class="form-label">
-								Pour confirmer la dissociation, saisissez <code>{{ mot_confirmation_dissociation }}</code>
-							</label>
-							<input type="text" class="form-control" name="confirmation_dissociation" id="confirmation_dissociation"
-							       autocomplete="off" spellcheck="false" data-mot="{{ mot_confirmation_dissociation }}">
-						</div>
-						<button type="submit" class="btn btn-warning">Dissocier le lot</button>
-					</form>
-				{% endif %}
-			</div>
-		</div>
-	{% endif %}
-
-	{# [2026-10-24] Regroupement en lot (admin et plus) : formulaire distinct,
-	   affiché avec la carte de dissociation. #}
-	{% if regroupement_visible %}
-		<div class="card mt-4 border-warning carte-lot {% if not ref_cat_ouvert %}d-none{% endif %}" id="carte-regroupement">
-			<div class="card-body">
-				<h5 class="card-title"><i class="fas fa-object-group"></i> Regrouper en lot</h5>
-				{% if regroupement.erreur %}
-					<p class="text-muted mb-0">Cet équipement ne peut pas être regroupé ({{ regroupement.erreur }}).</p>
-				{% else %}
-					<form method="post" action="/equipements/equipement_regrouper-{{ equipement.id }}" id="form-regroupement"
-					      data-nombre="{{ equipement.nombre|default(1) }}" data-nombre-initial="{{ ni_actuel }}">
-						<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-						<p class="small">
-							Équipements identiques (même libellé, même catégorie, même acquisition). Ceux que vous cochez sont
-							<strong>associés à {{ equipement.reference }}</strong>, qui garde sa référence, ses dates, son emplacement
-							et son historique ; leurs éléments s'ajoutent au lot et ils sont <strong>archivés</strong>
-							(leur historique est conservé). Pensez à retirer leurs étiquettes.
-						</p>
-						<div class="table-responsive">
-							<table class="table table-sm align-middle">
-								<thead>
-									<tr><th></th><th>Référence</th><th>Éléments</th><th>Emplacement</th><th>Mise en service</th><th>Fin d'utilisation</th></tr>
-								</thead>
-								<tbody>
-									{% for c in regroupement.candidats %}
-										{% set emplacement_c = emplacements|filter(em => em.id == c.emplacement_id)|first %}
-										<tr class="{{ c.erreur_regroupement ? 'text-muted' : '' }}">
-											<td>
-												<input type="checkbox" class="form-check-input regroupement-choix" name="ids[]" value="{{ c.id }}"
-												       id="regrouper_{{ c.id }}" data-nombre="{{ c.nombre|default(1) }}"
-												       data-nombre-initial="{{ c.nombre_initial|default(1) }}"
-												       {% if c.erreur_regroupement %}disabled{% endif %}>
-											</td>
-											<td>
-												<label for="regrouper_{{ c.id }}">{{ c.reference }}</label>
-												{% if c.erreur_regroupement %}<div class="small">Impossible : {{ c.erreur_regroupement }}</div>{% endif %}
-											</td>
-											<td>{{ c.nombre|default(1) }}{% if c.nombre_initial|default(1) > 1 %} / {{ c.nombre_initial }}{% endif %}</td>
-											<td class="{{ c.emplacement_id != equipement.emplacement_id ? 'text-warning' : '' }}">{{ emplacement_c ? emplacement_c.libelle : '—' }}</td>
-											<td class="{{ c.date_mise_en_service != equipement.date_mise_en_service ? 'text-warning' : '' }}">{{ c.date_mise_en_service ? c.date_mise_en_service|date('d/m/Y') : '—' }}</td>
-											<td class="{{ c.date_fin_utilisation != equipement.date_fin_utilisation ? 'text-warning' : '' }}">{{ c.date_fin_utilisation ? c.date_fin_utilisation|date('d/m/Y') : '—' }}</td>
-										</tr>
-									{% endfor %}
-								</tbody>
-							</table>
-						</div>
-						<p class="small text-muted">En orange : valeur différente de {{ equipement.reference }} (celle de {{ equipement.reference }} est conservée).</p>
-						<div class="form-text mb-2" id="regroupement-statut" aria-live="polite"></div>
-						<div class="mb-3 p-2 border border-warning rounded">
-							<label for="confirmation_regroupement" class="form-label">
-								Pour confirmer le regroupement, saisissez <code>{{ mot_confirmation_regroupement }}</code>
-							</label>
-							<input type="text" class="form-control" name="confirmation_regroupement" id="confirmation_regroupement"
-							       autocomplete="off" spellcheck="false" data-mot="{{ mot_confirmation_regroupement }}">
-						</div>
-						<button type="submit" class="btn btn-warning">Regrouper en lot</button>
-					</form>
-				{% endif %}
-			</div>
-		</div>
-	{% endif %}
-
 	<!-- Modal -->
 	<div class="modal fade" id="categorieModalForm" tabindex="-1" aria-labelledby="categorieModalFormLabel" aria-hidden="true">
 		<div class="modal-dialog">
@@ -744,13 +747,14 @@
 				bouton.setAttribute('aria-pressed', ouvrir ? 'true' : 'false');
 				libelle.textContent = ouvrir
 					? 'Annuler la modification de la référence, de la catégorie et du lot'
-					: 'Modifier la référence, la catégorie et le lot';
+					: 'Modifier la référence, la catégorie et le lot (dissocier, regrouper)';
 				// Cartes « Dissocier le lot » / « Regrouper en lot » : affichées avec la roue dentée.
 				document.querySelectorAll('.carte-lot').forEach(function (carte) {
 					carte.classList.toggle('d-none', !ouvrir);
 					if (!ouvrir) carte.dispatchEvent(new Event('reinitialiser'));
 				});
-				if (ouvrir) categorie.focus();
+				// Sans défilement : les cartes du lot, juste sous la roue, restent visibles.
+				if (ouvrir) categorie.focus({ preventScroll: true });
 			});
 		})();
 	</script>

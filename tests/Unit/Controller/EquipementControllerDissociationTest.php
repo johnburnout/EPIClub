@@ -100,7 +100,7 @@ final class EquipementControllerDissociationTest extends TestCase
     {
         $html = $this->formulaire('ROLE_SUPER_ADMIN');
 
-        self::assertMatchesRegularExpression('/class="card mt-4 border-warning carte-lot d-none" id="carte-dissociation"/', $html);
+        self::assertMatchesRegularExpression('/class="card mt-2 mb-3 border-warning carte-lot d-none" id="carte-dissociation"/', $html);
         self::assertStringContainsString('action="/equipements/equipement_dissocier-4"', $html);
         self::assertStringContainsString('<code>DISSOCIER</code>', $html);
     }
@@ -111,7 +111,7 @@ final class EquipementControllerDissociationTest extends TestCase
 
         self::assertStringContainsString('id="afficher-lot"', $html);
         self::assertStringNotContainsString('id="deverrouiller-ref-cat"', $html);
-        self::assertMatchesRegularExpression('/class="card mt-4 border-warning carte-lot d-none" id="carte-dissociation"/', $html);
+        self::assertMatchesRegularExpression('/class="card mt-2 mb-3 border-warning carte-lot d-none" id="carte-dissociation"/', $html);
         self::assertStringContainsString('id="form-dissociation"', $html);
         self::assertStringContainsString('data-references-modifiables="0"', $html);
         self::assertStringContainsString('attribuées automatiquement', $html);

@@ -113,6 +113,24 @@ final class EquipementControllerRegroupementTest extends TestCase
         self::assertStringNotContainsString('regrouper_8', $html);
     }
 
+    public function testSuperAdminDissocieEtRegroupeParLaRoueDentee(): void
+    {
+        // Lot de 2 avec des équipements identiques : les deux cartes.
+        $this->equipements[4]['nombre'] = $this->equipements[4]['nombre_initial'] = 2;
+        $html = $this->formulaire('ROLE_SUPER_ADMIN');
+
+        self::assertStringContainsString('Modifier la référence, la catégorie et le lot (dissocier, regrouper)', $html);
+        self::assertStringNotContainsString('id="afficher-lot"', $html);
+        // Cartes juste sous la roue dentée, avant le formulaire principal.
+        $roue = strpos($html, 'id="deverrouiller-ref-cat"');
+        $dissociation = strpos($html, 'id="carte-dissociation"');
+        $regroupement = strpos($html, 'id="carte-regroupement"');
+        $formulaire = strpos($html, '<form method="post" enctype="multipart/form-data">');
+        self::assertNotFalse($dissociation);
+        self::assertNotFalse($regroupement);
+        self::assertTrue($roue < $dissociation && $dissociation < $regroupement && $regroupement < $formulaire);
+    }
+
     public function testPasDeCartePourUnControleurNiSansEquipementIdentique(): void
     {
         self::assertStringNotContainsString('id="carte-regroupement"', $this->formulaire('ROLE_CONTROLLEUR'));
