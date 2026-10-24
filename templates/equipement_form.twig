@@ -30,6 +30,24 @@
 		   désactivés (fieldset disabled ⇒ non envoyés ; ignorés côté serveur) #}
 		<fieldset {% if emplacement_seul %}disabled{% endif %}>
 
+		{# [2026-10-24] Super-administrateur : référence et catégorie verrouillées
+		   (champs désactivés ⇒ non envoyés) jusqu'au clic sur la roue dentée ;
+		   ouvertes d'emblée au retour du serveur avec une saisie ou une erreur. #}
+		{% set ref_cat_modifiable = isGranted('ROLE_SUPER_ADMIN') and equipement.id is defined and equipement.id %}
+		{% set ref_cat_ouvert = ref_cat_modifiable and (reference_saisie is not null or categorie_saisie is not null
+			or form_errors.reference is defined or form_errors.confirmation_reference is defined
+			or form_errors.categorie_libelle is defined or form_errors.confirmation_categorie is defined) %}
+		{% if ref_cat_modifiable %}
+			<div class="mb-2 text-end">
+				<button type="button" class="btn btn-outline-secondary btn-sm" id="deverrouiller-ref-cat"
+				        aria-pressed="{{ ref_cat_ouvert ? 'true' : 'false' }}" aria-controls="categorie reference"
+				        title="Modification de la référence et de la catégorie">
+					<i class="fas fa-cog"></i>
+					<span>{{ ref_cat_ouvert ? 'Annuler la modification de la référence et de la catégorie' : 'Modifier la référence et la catégorie' }}</span>
+				</button>
+			</div>
+		{% endif %}
+
 		<!-- Catégorie : définie à l'acquisition, modifiable par un super-administrateur
 		     (saisie comme une ligne d'acquisition, référence proposée + mot de confirmation) -->
 		<div class="mb-3">
@@ -38,7 +56,7 @@
 				<input type="text" class="form-control {% if form_errors.categorie_libelle is defined %}is-invalid{% endif %}"
 				       name="categorie_libelle" id="categorie" list="categories"
 				       value="{{ categorie_saisie ?? equipement.categorie.libelle }}"
-				       maxlength="{{ categorie_libelle_max }}" required autocomplete="off"
+				       maxlength="{{ categorie_libelle_max }}" required autocomplete="off" {% if not ref_cat_ouvert %}disabled{% endif %}
 				       data-equipement-id="{{ equipement.id }}" data-categorie-actuelle="{{ equipement.categorie.libelle }}">
 				<datalist id="categories">
 					{% for categorie in categories %}
@@ -88,7 +106,7 @@
 			{% if isGranted('ROLE_SUPER_ADMIN') and equipement.id is defined and equipement.id %}
 				<input type="text" class="form-control {% if form_errors.reference is defined %}is-invalid{% endif %}"
 				       name="reference" id="reference" value="{{ reference_saisie ?? equipement.reference }}"
-				       maxlength="{{ reference_max }}" required autocomplete="off"
+				       maxlength="{{ reference_max }}" required autocomplete="off" {% if not ref_cat_ouvert %}disabled{% endif %}
 				       data-equipement-id="{{ equipement.id }}" data-reference-actuelle="{{ equipement.reference }}">
 				{% if form_errors.reference is defined %}
 					<div class="invalid-feedback">{{ form_errors.reference }}</div>
@@ -349,7 +367,7 @@
 		 */
 		(function () {
 			const champ = document.getElementById('reference');
-			if (!champ || champ.disabled || !champ.dataset.referenceActuelle) return;
+			if (!champ || !champ.dataset.referenceActuelle) return;
 			const actuelle = champ.dataset.referenceActuelle;
 			const statut = document.getElementById('reference-statut');
 			const bloc = document.getElementById('bloc-confirmation-reference');
@@ -400,7 +418,7 @@
 
 			champ.addEventListener('input', surSaisie);
 			champ.form.addEventListener('submit', function (e) {
-				if (!changee()) return;
+				if (champ.disabled || !changee()) return;
 				if (disponible !== true) {
 					e.preventDefault();
 					afficher('text-danger', disponible === false
@@ -430,7 +448,7 @@
 		 */
 		(function () {
 			const champ = document.getElementById('categorie');
-			if (!champ || champ.disabled || !champ.dataset.categorieActuelle) return;
+			if (!champ || !champ.dataset.categorieActuelle) return;
 			const actuelle = champ.dataset.categorieActuelle;
 			const statut = document.getElementById('categorie-statut');
 			const bloc = document.getElementById('bloc-confirmation-categorie');
@@ -507,7 +525,7 @@
 
 			champ.addEventListener('input', surSaisie);
 			champ.form.addEventListener('submit', function (e) {
-				if (changee() && confirmation.value.trim() !== motAttendu) {
+				if (!champ.disabled && changee() && confirmation.value.trim() !== motAttendu) {
 					e.preventDefault();
 					confirmation.classList.add('is-invalid');
 					confirmation.focus();
@@ -518,6 +536,48 @@
 			});
 			// Retour du serveur avec une catégorie saisie : relancer la proposition
 			if (changee()) { surSaisie(); }
+		})();
+	</script>
+	<script>
+		/**
+		 * [2026-10-24] Roue dentée (super-administrateur) : active ou
+		 * verrouille ensemble la référence et la catégorie. Au verrouillage,
+		 * les valeurs d'origine sont rétablies (champs désactivés ⇒ non
+		 * envoyés : rien ne change côté serveur).
+		 */
+		(function () {
+			const bouton = document.getElementById('deverrouiller-ref-cat');
+			const categorie = document.getElementById('categorie');
+			const reference = document.getElementById('reference');
+			if (!bouton || !categorie || !reference) return;
+			const libelle = bouton.querySelector('span');
+
+			function retablir(champ, valeur, idConfirmation) {
+				champ.classList.remove('is-invalid');
+				if (champ.value !== valeur) {
+					champ.value = valeur;
+					champ.dispatchEvent(new Event('input'));
+				}
+				const confirmation = document.getElementById(idConfirmation);
+				confirmation.value = '';
+				confirmation.classList.remove('is-invalid');
+			}
+
+			bouton.addEventListener('click', function () {
+				const ouvrir = categorie.disabled;
+				if (!ouvrir) {
+					// La catégorie d'abord : elle peut remettre la référence proposée.
+					retablir(categorie, categorie.dataset.categorieActuelle, 'confirmation_categorie');
+					retablir(reference, reference.dataset.referenceActuelle, 'confirmation_reference');
+				}
+				categorie.disabled = !ouvrir;
+				reference.disabled = !ouvrir;
+				bouton.setAttribute('aria-pressed', ouvrir ? 'true' : 'false');
+				libelle.textContent = ouvrir
+					? 'Annuler la modification de la référence et de la catégorie'
+					: 'Modifier la référence et la catégorie';
+				if (ouvrir) categorie.focus();
+			});
 		})();
 	</script>
 	<script>

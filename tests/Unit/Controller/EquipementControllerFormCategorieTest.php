@@ -112,6 +112,49 @@ final class EquipementControllerFormCategorieTest extends TestCase
         self::assertStringNotContainsString('name="categorie_libelle"', (string) $this->editer('ROLE_ADMIN')->getContent());
     }
 
+    /** Balise <input> d'id donné dans le HTML. */
+    private static function champ(string $html, string $id): string
+    {
+        self::assertSame(1, preg_match('/<input[^>]*\bid="' . $id . '"[^>]*>/', $html, $m), $id);
+        return $m[0];
+    }
+
+    public function testReferenceEtCategorieVerrouilleesJusquALaRoueDentee(): void
+    {
+        $html = (string) $this->editer('ROLE_SUPER_ADMIN')->getContent();
+
+        self::assertStringContainsString('id="deverrouiller-ref-cat"', $html);
+        self::assertStringContainsString('fa-cog', $html);
+        self::assertMatchesRegularExpression('/\sdisabled\b/', self::champ($html, 'categorie'));
+        self::assertMatchesRegularExpression('/\sdisabled\b/', self::champ($html, 'reference'));
+    }
+
+    public function testChampsOuvertsAuRetourDuServeurAvecUneErreur(): void
+    {
+        $html = (string) $this->editer('ROLE_SUPER_ADMIN', [
+            'categorie_libelle' => 'Cordes', 'confirmation_categorie' => '',
+        ])->getContent();
+
+        self::assertStringContainsString('aria-pressed="true"', $html);
+        self::assertDoesNotMatchRegularExpression('/\sdisabled\b/', self::champ($html, 'categorie'));
+        self::assertDoesNotMatchRegularExpression('/\sdisabled\b/', self::champ($html, 'reference'));
+    }
+
+    public function testPasDeRoueDenteePourUnAdmin(): void
+    {
+        self::assertStringNotContainsString('id="deverrouiller-ref-cat"', (string) $this->editer('ROLE_ADMIN')->getContent());
+    }
+
+    public function testChampsVerrouillesNonEnvoyesRienNeChange(): void
+    {
+        // Champs désactivés : ni catégorie ni référence dans le POST.
+        $this->editer('ROLE_SUPER_ADMIN', ['remarques' => 'ok']);
+
+        self::assertSame(1, $this->enregistre['categorie_id']);
+        self::assertSame('24CAS003', $this->enregistre['reference']);
+        self::assertSame([], $this->creees);
+    }
+
     // ---------------- Enregistrement ----------------
 
     public function testSuperAdminChangeLaCategorie(): void
