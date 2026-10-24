@@ -10,6 +10,18 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.10.1] — 2026-10-24
+
+Dissocier et regrouper accessibles depuis la roue dentée.
+
+### Fixed
+
+- **Formulaire de modification** : les cartes « Dissocier le lot » et
+  « Regrouper en lot » s'ouvrent désormais juste sous la roue dentée du
+  super-administrateur (« Modifier la référence, la catégorie et le lot
+  (dissocier, regrouper) ») et sous le bouton de l'administrateur, au
+  lieu du bas de la page où elles passaient inaperçues.
+
 ## [v1.10.0] — 2026-10-24
 
 Correction de la référence et de la date d'une acquisition ; regroupement
