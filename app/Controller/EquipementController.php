@@ -555,6 +555,9 @@ class EquipementController extends AbstractController
     // --------------------------------------------------------------
     public const MOT_CONFIRMATION_CATEGORIE = 'CATEGORIE';
 
+    /** [2026-10-24] Nombre initial maximal d'un lot saisi par un super-administrateur. */
+    public const LOT_MAX = 9999;
+
     /** Longueur maximale d'un libellé de catégorie saisi. */
     public const CATEGORIE_LIBELLE_MAX = 64;
 
@@ -726,12 +729,46 @@ class EquipementController extends AbstractController
             }
             
             if (empty($form_errors)) {
+                // [2026-10-24] Lot et nombre initial : modifiables par un
+                // super-administrateur (roue dentée, sans mot de confirmation).
+                // Lot décoché ⇒ nombre initial et nombre actuel ramenés à 1.
+                $nombreInitial = (int) ($equipement['nombre_initial'] ?? 1);
+                $nouveauNombreInitial = null;
+                if ($this->isGranted('ROLE_SUPER_ADMIN') && $request->request->has('lot')) {
+                    $lotPoste = (string) $request->request->get('lot') === '1';
+                    $niRaw = $request->request->get('nombre_initial');
+                    $niPoste = $lotPoste ? null : 1;
+                    if ($lotPoste) {
+                        if (!is_string($niRaw) || !ctype_digit($niRaw)
+                            || (int) $niRaw < 2 || (int) $niRaw > self::LOT_MAX) {
+                            $form_errors['nombre_initial'] = sprintf(
+                                'Le nombre initial d\'un lot doit être compris entre 2 et %d.',
+                                self::LOT_MAX
+                            );
+                        } else {
+                            $niPoste = (int) $niRaw;
+                        }
+                    }
+                    if ($niPoste !== null && $niPoste !== $nombreInitial) {
+                        $nouveauNombreInitial = $niPoste;
+                        $nombreInitial = $niPoste;
+                    }
+                    if ($niPoste === null || $nouveauNombreInitial !== null) {
+                        $lotSaisie = ['lot' => $lotPoste, 'nombre_initial' => is_scalar($niRaw) ? (string) $niRaw : ''];
+                    }
+                }
+
                 // [MÉTIER] Lot : le nombre d'éléments est modifiable
                 // mais plafonné au nombre initial (décision 2026-10-19).
-                $nombreInitial = (int) ($equipement['nombre_initial'] ?? 1);
                 $nombreLot = null;
-                if ($nombreInitial > 1) {
+                if ($nouveauNombreInitial === 1) {
+                    $nombreLot = 1;
+                } elseif ($nombreInitial > 1 && !isset($form_errors['nombre_initial'])) {
                     $nombreRaw = $request->request->get('nombre');
+                    if ($nouveauNombreInitial !== null && ($nombreRaw === null || $nombreRaw === '')) {
+                        // Nouveau lot sans nombre actuel saisi : lot complet.
+                        $nombreRaw = (string) $nouveauNombreInitial;
+                    }
                     if (!is_string($nombreRaw) || !ctype_digit($nombreRaw)
                         || (int) $nombreRaw < 1 || (int) $nombreRaw > $nombreInitial) {
                         $form_errors['nombre'] = sprintf(
@@ -868,6 +905,9 @@ class EquipementController extends AbstractController
                 if ($nombreLot !== null) {
                     $equipementData['nombre'] = $nombreLot;
                 }
+                if ($nouveauNombreInitial !== null) {
+                    $equipementData['nombre_initial'] = $nouveauNombreInitial;
+                }
                 if (isset($libelle)) {
                     $equipementData['libelle'] = $libelle;
                 }
@@ -952,6 +992,9 @@ class EquipementController extends AbstractController
             'categorie_saisie' => $categorieSaisie ?? null,
             'mot_confirmation_categorie' => self::MOT_CONFIRMATION_CATEGORIE,
             'categorie_libelle_max' => self::CATEGORIE_LIBELLE_MAX,
+            // [2026-10-24] Lot / nombre initial (super-administrateur)
+            'lot_saisie' => $lotSaisie ?? null,
+            'lot_max' => self::LOT_MAX,
         ]);
     }
 

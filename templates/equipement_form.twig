@@ -36,14 +36,15 @@
 		{% set ref_cat_modifiable = isGranted('ROLE_SUPER_ADMIN') and equipement.id is defined and equipement.id %}
 		{% set ref_cat_ouvert = ref_cat_modifiable and (reference_saisie is not null or categorie_saisie is not null
 			or form_errors.reference is defined or form_errors.confirmation_reference is defined
-			or form_errors.categorie_libelle is defined or form_errors.confirmation_categorie is defined) %}
+			or form_errors.categorie_libelle is defined or form_errors.confirmation_categorie is defined
+			or lot_saisie is not null or form_errors.nombre_initial is defined) %}
 		{% if ref_cat_modifiable %}
 			<div class="mb-2 text-end">
 				<button type="button" class="btn btn-outline-secondary btn-sm" id="deverrouiller-ref-cat"
 				        aria-pressed="{{ ref_cat_ouvert ? 'true' : 'false' }}" aria-controls="categorie reference"
-				        title="Modification de la référence et de la catégorie">
+				        title="Modification de la référence, de la catégorie et du lot">
 					<i class="fas fa-cog"></i>
-					<span>{{ ref_cat_ouvert ? 'Annuler la modification de la référence et de la catégorie' : 'Modifier la référence et la catégorie' }}</span>
+					<span>{{ ref_cat_ouvert ? 'Annuler la modification de la référence, de la catégorie et du lot' : 'Modifier la référence, la catégorie et le lot' }}</span>
 				</button>
 			</div>
 		{% endif %}
@@ -158,19 +159,46 @@
 			<small class="text-muted">La date d'achat est définie lors de l'acquisition.</small>
 		</div>
 
-		<!-- Lot : nombre d'éléments (modifiable, plafonné au nombre initial) -->
-		{% if equipement.nombre_initial is defined and equipement.nombre_initial > 1 %}
+		<!-- Lot : nombre d'éléments (modifiable, plafonné au nombre initial).
+		     [2026-10-24] Super-administrateur : lot et nombre initial modifiables
+		     après la roue dentée (sans mot de confirmation). -->
+		{% set ni_actuel = equipement.nombre_initial|default(1) %}
+		{% set est_lot = lot_saisie is not null ? lot_saisie.lot : ni_actuel > 1 %}
+		{% set ni_affiche = lot_saisie is not null ? lot_saisie.nombre_initial : ni_actuel %}
+		{% if ref_cat_modifiable %}
+			<div class="mb-3">
+				<input type="hidden" name="lot" value="0" id="lot_defaut" {% if not ref_cat_ouvert %}disabled{% endif %}>
+				<div class="form-check">
+					<input type="checkbox" class="form-check-input" name="lot" value="1" id="lot"
+					       data-initial="{{ ni_actuel > 1 ? '1' : '0' }}" {% if est_lot %}checked{% endif %} {% if not ref_cat_ouvert %}disabled{% endif %}>
+					<label class="form-check-label" for="lot">Lot</label>
+				</div>
+				<small class="text-muted">Plusieurs éléments identiques sous une même référence. Décocher ramène le nombre initial et le nombre actuel à 1.</small>
+			</div>
+			<div class="mb-3 {% if not est_lot %}d-none{% endif %}" id="bloc-nombre-initial">
+				<label for="nombre_initial">Nombre initial du lot</label>
+				<input type="number" class="form-control {% if form_errors.nombre_initial is defined %}is-invalid{% endif %}"
+				       id="nombre_initial" name="nombre_initial" min="2" max="{{ lot_max }}"
+				       value="{{ ni_affiche }}" data-initial="{{ ni_actuel }}" {% if not ref_cat_ouvert or not est_lot %}disabled{% endif %}>
+				{% if form_errors.nombre_initial is defined %}
+					<div class="invalid-feedback">{{ form_errors.nombre_initial }}</div>
+				{% endif %}
+				<small class="text-muted">Nombre d'éléments du lot à la création ; modifiable par un super-administrateur.</small>
+			</div>
+		{% elseif ni_actuel > 1 %}
 			<div class="mb-3">
 				<label>Nombre initial du lot</label>
-				<input type="text" class="form-control" value="{{ equipement.nombre_initial }}" readonly disabled>
+				<input type="text" class="form-control" value="{{ ni_actuel }}" readonly disabled>
 				<small class="text-muted">Nombre d'éléments du lot à la création — non modifiable.</small>
 			</div>
-			<div class="mb-3">
+		{% endif %}
+		{% if ni_actuel > 1 or ref_cat_modifiable %}
+			<div class="mb-3 {% if not est_lot %}d-none{% endif %}" id="bloc-nombre">
 				<label for="nombre">Nombre actuel d'éléments</label>
 				<input type="number" class="form-control {% if form_errors.nombre is defined and form_errors.nombre %}is-invalid{% endif %}"
-				       id="nombre" name="nombre" min="1" max="{{ equipement.nombre_initial }}"
-				       value="{{ equipement.nombre }}">
-				<small class="text-muted">Entre 1 et {{ equipement.nombre_initial }} (nombre initial du lot).</small>
+				       id="nombre" name="nombre" min="1" max="{{ est_lot ? (ni_affiche > 1 ? ni_affiche : ni_actuel) : 1 }}"
+				       value="{{ equipement.nombre|default(1) }}" data-initial="{{ equipement.nombre|default(1) }}">
+				<small class="text-muted">Entre 1 et le nombre initial du lot.</small>
 				{% if form_errors.nombre is defined and form_errors.nombre %}
 					<div class="invalid-feedback d-block">{{ form_errors.nombre }}</div>
 				{% endif %}
@@ -551,6 +579,10 @@
 			const reference = document.getElementById('reference');
 			if (!bouton || !categorie || !reference) return;
 			const libelle = bouton.querySelector('span');
+			const lot = document.getElementById('lot');
+			const lotDefaut = document.getElementById('lot_defaut');
+			const nombreInitial = document.getElementById('nombre_initial');
+			const nombre = document.getElementById('nombre');
 
 			function retablir(champ, valeur, idConfirmation) {
 				champ.classList.remove('is-invalid');
@@ -569,14 +601,67 @@
 					// La catégorie d'abord : elle peut remettre la référence proposée.
 					retablir(categorie, categorie.dataset.categorieActuelle, 'confirmation_categorie');
 					retablir(reference, reference.dataset.referenceActuelle, 'confirmation_reference');
+					// Lot : valeurs d'origine (nombre actuel compris)
+					lot.checked = lot.dataset.initial === '1';
+					nombreInitial.value = nombreInitial.dataset.initial;
+					nombreInitial.classList.remove('is-invalid');
+					nombre.value = nombre.dataset.initial;
+					lot.dispatchEvent(new Event('change'));
 				}
 				categorie.disabled = !ouvrir;
 				reference.disabled = !ouvrir;
+				lot.disabled = lotDefaut.disabled = !ouvrir;
+				// Masqué (lot décoché) : désactivé, sinon sa valeur 1 < min bloquerait l'envoi.
+				nombreInitial.disabled = !ouvrir || !lot.checked;
 				bouton.setAttribute('aria-pressed', ouvrir ? 'true' : 'false');
 				libelle.textContent = ouvrir
-					? 'Annuler la modification de la référence et de la catégorie'
-					: 'Modifier la référence et la catégorie';
+					? 'Annuler la modification de la référence, de la catégorie et du lot'
+					: 'Modifier la référence, la catégorie et le lot';
 				if (ouvrir) categorie.focus();
+			});
+		})();
+	</script>
+	<script>
+		/**
+		 * [2026-10-24] Lot (super-administrateur) : la case affiche le
+		 * nombre initial et le nombre actuel ; décochée, les deux reviennent
+		 * à 1. Le nombre actuel reste plafonné au nombre initial ; pour un
+		 * nouveau lot, il suit le nombre initial (lot complet) tant qu'il
+		 * n'a pas été saisi à la main.
+		 */
+		(function () {
+			const lot = document.getElementById('lot');
+			const nombreInitial = document.getElementById('nombre_initial');
+			const nombre = document.getElementById('nombre');
+			if (!lot || !nombreInitial || !nombre) return;
+			const blocInitial = document.getElementById('bloc-nombre-initial');
+			const blocNombre = document.getElementById('bloc-nombre');
+			const etaitLot = lot.dataset.initial === '1';
+			let niPrecedent = parseInt(nombreInitial.value, 10);
+
+			function plafonner(suivre) {
+				const ni = parseInt(nombreInitial.value, 10);
+				if (!(ni >= 2)) return;
+				nombre.max = ni;
+				if (suivre || parseInt(nombre.value, 10) > ni) nombre.value = ni;
+				niPrecedent = ni;
+			}
+			lot.addEventListener('change', function () {
+				blocInitial.classList.toggle('d-none', !lot.checked);
+				nombreInitial.disabled = lot.disabled || !lot.checked;
+				blocNombre.classList.toggle('d-none', !lot.checked);
+				if (lot.checked) {
+					if (!(parseInt(nombreInitial.value, 10) >= 2)) nombreInitial.value = 2;
+					plafonner(!etaitLot && nombre.value === '1');
+				} else {
+					nombreInitial.value = 1;
+					niPrecedent = 1;
+					nombre.value = 1;
+					nombre.max = 1;
+				}
+			});
+			nombreInitial.addEventListener('input', function () {
+				plafonner(!etaitLot && parseInt(nombre.value, 10) === niPrecedent);
 			});
 		})();
 	</script>
