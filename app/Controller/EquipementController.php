@@ -630,9 +630,12 @@ class EquipementController extends AbstractController
     }
 
     // --------------------------------------------------------------
-    // [2026-10-24] DISSOCIATION D'UN LOT (ROLE_SUPER_ADMIN), depuis le
-    // formulaire de modification (roue dentée). Références des nouveaux
-    // équipements proposées selon le modèle, mot de confirmation DISSOCIER.
+    // [2026-10-24] DISSOCIATION D'UN LOT (ROLE_ADMIN depuis le 2026-10-25),
+    // depuis le formulaire de modification (roue dentée du super-admin,
+    // bouton « Dissocier le lot » de l'admin). Références des nouveaux
+    // équipements proposées selon le modèle — modifiables par le seul
+    // super-administrateur, imposées à un admin —, mot de confirmation
+    // DISSOCIER.
     // --------------------------------------------------------------
 
     /**
@@ -642,7 +645,7 @@ class EquipementController extends AbstractController
      */
     public function referencesDissociation(Request $request): Response
     {
-        $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
+        $this->deniAccessUnlessGranted('ROLE_ADMIN');
 
         $idRaw = (string) $request->query->get('id', '');
         $nombreRaw = (string) $request->query->get('nombre', '');
@@ -650,11 +653,24 @@ class EquipementController extends AbstractController
             ? $this->equipementManager()->findId((int) $idRaw)
             : null;
         $nombre = ctype_digit($nombreRaw) ? (int) $nombreRaw : 0;
-        $categorie = $equipement && !empty($equipement['categorie_id'])
+
+        return new JsonResponse(['references' => $equipement ? $this->referencesProposees($equipement, $nombre) : []]);
+    }
+
+    /**
+     * Références libres proposées pour `nombre` nouveaux équipements issus
+     * du lot : n° de suivi suivants du modèle (catégorie, année d'achat).
+     * Liste vide si aucune proposition n'est possible.
+     *
+     * @return string[]
+     */
+    private function referencesProposees(array $equipement, int $nombre): array
+    {
+        $categorie = !empty($equipement['categorie_id'])
             ? $this->categorieManager()->findId((int) $equipement['categorie_id'])
             : null;
         if (!$categorie || $nombre < 1 || $nombre >= DissociationLot::PARTIES_MAX) {
-            return new JsonResponse(['references' => []]);
+            return [];
         }
 
         $references = [];
@@ -675,10 +691,10 @@ class EquipementController extends AbstractController
                 }
             }
         } catch (\Throwable $e) {
-            error_log('[EquipementController] referencesDissociation: ' . $e->getMessage());
+            error_log('[EquipementController] referencesProposees: ' . $e->getMessage());
         }
 
-        return new JsonResponse(['references' => $references]);
+        return $references;
     }
 
     /**
@@ -688,7 +704,7 @@ class EquipementController extends AbstractController
      */
     public function dissocier(Request $request): Response
     {
-        $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
+        $this->deniAccessUnlessGranted('ROLE_ADMIN');
         $this->validateCsrf($request);
 
         $id = $this->getValidId($request);
@@ -710,7 +726,19 @@ class EquipementController extends AbstractController
 
         $references = [];
         if ($erreur === null) {
-            $postees = $request->request->all('references');
+            // [2026-10-25] Un admin ne choisit pas les références : celles
+            // proposées selon le modèle sont recalculées et imposées.
+            if ($this->isGranted('ROLE_SUPER_ADMIN')) {
+                $postees = $request->request->all('references');
+            } else {
+                $postees = $this->referencesProposees($equipement, count($parties) - 1);
+                if (count($postees) !== count($parties) - 1) {
+                    $erreur = 'Aucune référence ne peut être proposée pour ce lot (catégorie ou modèle de référence) : '
+                        . 'demandez à un super-administrateur de le dissocier.';
+                }
+            }
+        }
+        if ($erreur === null) {
             foreach (array_slice($parties, 1) as $i => $taille) {
                 $reference = trim((string) ($postees[$i] ?? ''));
                 if (($erreur = self::erreurFormatReference($reference)) !== null) {
@@ -1136,6 +1164,7 @@ class EquipementController extends AbstractController
             'dissociation_erreur' => is_array($equipement) && !empty($equipement['id'])
                 ? DissociationLot::erreurEquipement($equipement) : null,
             'mot_confirmation_dissociation' => DissociationLot::MOT_CONFIRMATION,
+            'references_dissociation_modifiables' => $this->isGranted('ROLE_SUPER_ADMIN'),
         ]);
     }
 

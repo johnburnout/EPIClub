@@ -138,7 +138,7 @@ $routes->add('equipement_reference_disponible', new Route(
     [], [], '', [], ['GET']
 ));
 
-// ROLE_SUPER_ADMIN : dissociation d'un lot (formulaire de modification) —
+// ROLE_ADMIN : dissociation d'un lot (formulaire de modification) —
 // références proposées (AJAX) puis dissociation (POST)
 $routes->add('equipement_dissociation_references', new Route(
     '/equipements/dissociation-references',

@@ -19,8 +19,10 @@ use Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage;
 
 /**
  * [2026-10-24] Dissociation d'un lot depuis le formulaire de
- * modification (super-administrateur, roue dentée) : références
- * proposées selon le modèle, mot de confirmation DISSOCIER.
+ * modification (super-administrateur par la roue dentée ; admin par le
+ * bouton « Dissocier le lot » depuis le 2026-10-25) : références
+ * proposées selon le modèle (modifiables par le seul super-administrateur,
+ * imposées à un admin), mot de confirmation DISSOCIER.
  */
 final class EquipementControllerDissociationTest extends TestCase
 {
@@ -103,12 +105,32 @@ final class EquipementControllerDissociationTest extends TestCase
         self::assertStringContainsString('<code>DISSOCIER</code>', $html);
     }
 
-    public function testPasDeCartePourUnAdminNiPourUnEquipementUnique(): void
+    public function testAdminAfficheLaCarteParSonBouton(): void
     {
-        self::assertStringNotContainsString('id="carte-dissociation"', $this->formulaire('ROLE_ADMIN'));
+        $html = $this->formulaire('ROLE_ADMIN');
+
+        self::assertStringContainsString('id="afficher-dissociation"', $html);
+        self::assertStringNotContainsString('id="deverrouiller-ref-cat"', $html);
+        self::assertMatchesRegularExpression('/class="card mt-4 border-warning d-none" id="carte-dissociation"/', $html);
+        self::assertStringContainsString('id="form-dissociation"', $html);
+        self::assertStringContainsString('data-references-modifiables="0"', $html);
+        self::assertStringContainsString('attribuées automatiquement', $html);
+    }
+
+    public function testSuperAdminPasseParLaRoueDentee(): void
+    {
+        $html = $this->formulaire('ROLE_SUPER_ADMIN');
+
+        self::assertStringNotContainsString('id="afficher-dissociation"', $html);
+        self::assertStringContainsString('data-references-modifiables="1"', $html);
+    }
+
+    public function testPasDeCartePourUnControleurNiPourUnEquipementUnique(): void
+    {
+        self::assertStringNotContainsString('id="carte-dissociation"', $this->formulaire('ROLE_CONTROLLEUR'));
 
         $this->equipement['nombre'] = $this->equipement['nombre_initial'] = 1;
-        self::assertStringNotContainsString('id="carte-dissociation"', $this->formulaire('ROLE_SUPER_ADMIN'));
+        self::assertStringNotContainsString('id="carte-dissociation"', $this->formulaire('ROLE_ADMIN'));
     }
 
     public function testLotNonDissociableExpliquePourquoi(): void
@@ -166,10 +188,42 @@ final class EquipementControllerDissociationTest extends TestCase
         self::assertStringContainsString('contrôle en cours', $this->flash('error'));
     }
 
-    public function testReserveeAuSuperAdmin(): void
+    public function testAdminDissocieAvecLesReferencesImposees(): void
+    {
+        // Les références postées par un admin sont ignorées : celles du
+        // modèle sont recalculées (24COR011, déjà prise, est sautée).
+        $this->dissocier(
+            ['repartition' => '6, 2, 2', 'references' => ['FORGEE', 'AUTRE'], 'confirmation_dissociation' => 'DISSOCIER'],
+            'ROLE_ADMIN'
+        );
+
+        self::assertSame(['id' => 4, 'nombre' => 6, 'nombre_initial' => 6], $this->sauves[0]);
+        self::assertSame(['24COR010', '24COR012'], [$this->sauves[1]['reference'], $this->sauves[2]['reference']]);
+    }
+
+    public function testAdminSansReferenceProposableRefuse(): void
+    {
+        $this->equipement['categorie_id'] = null;
+        $this->dissocier(
+            ['repartition' => '6, 4', 'references' => ['24COR010'], 'confirmation_dissociation' => 'DISSOCIER'],
+            'ROLE_ADMIN'
+        );
+
+        self::assertSame([], $this->sauves);
+        self::assertStringContainsString('super-administrateur', $this->flash('error'));
+    }
+
+    public function testSuperAdminChoisitSesReferences(): void
+    {
+        $this->dissocier(['repartition' => '6, 4', 'references' => ['MAREF'], 'confirmation_dissociation' => 'DISSOCIER']);
+
+        self::assertSame('MAREF', $this->sauves[1]['reference']);
+    }
+
+    public function testInterditAuControleur(): void
     {
         $this->expectException(AccessDeniedException::class);
-        $this->dissocier(['repartition' => '6, 4'], 'ROLE_ADMIN');
+        $this->dissocier(['repartition' => '6, 4'], 'ROLE_CONTROLLEUR');
     }
 
     public function testCsrfObligatoire(): void
@@ -201,9 +255,11 @@ final class EquipementControllerDissociationTest extends TestCase
         }
     }
 
-    public function testPropositionReserveeAuSuperAdmin(): void
+    public function testPropositionPourUnAdminPasPourUnControleur(): void
     {
+        self::assertSame(['24COR010', '24COR012'], $this->proposees(['id' => '4', 'nombre' => '2'], 'ROLE_ADMIN'));
+
         $this->expectException(AccessDeniedException::class);
-        $this->proposees(['id' => '4', 'nombre' => '2'], 'ROLE_ADMIN');
+        $this->proposees(['id' => '4', 'nombre' => '2'], 'ROLE_CONTROLLEUR');
     }
 }
