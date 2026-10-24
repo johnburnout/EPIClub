@@ -10,6 +10,21 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v1.8.0] — 2026-10-24
+
+Catégorie d'un équipement modifiable par un super-administrateur.
+
+### Added
+
+- **Catégorie** : un super-administrateur la modifie dans le formulaire de
+  modification de l'équipement. Elle se saisit comme sur une ligne
+  d'acquisition (liste des catégories ; un nouveau nom crée la catégorie
+  à l'enregistrement). Une **référence libre** dans la nouvelle catégorie
+  est proposée pendant la saisie, pour l'année d'achat, et sa
+  disponibilité est vérifiée ; une référence tapée à la main n'est pas
+  écrasée. Le changement se confirme en saisissant le mot `CATEGORIE`
+  (et `REFERENCE` si la référence change aussi).
+
 ## [v1.7.5] — 2026-10-24
 
 Tri, filtres et navigation dans la liste des acquisitions.
