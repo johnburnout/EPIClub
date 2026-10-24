@@ -6,6 +6,7 @@ use Epiclub\Domain\CategorieManager;
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\EmplacementManager;
 use Epiclub\Domain\AcquisitionManager;
+use Epiclub\Domain\DissociationLot;
 use Epiclub\Domain\ReferenceGenerator;
 use Epiclub\Enum\EquipementStatut;
 use Epiclub\Engine\AbstractController;
@@ -91,6 +92,11 @@ class EquipementController extends AbstractController
     protected function referenceGenerator(): ReferenceGenerator
     {
         return new ReferenceGenerator();
+    }
+
+    protected function dissociationLot(): DissociationLot
+    {
+        return new DissociationLot($this->equipementManager());
     }
     
     // --------------------------------------------------------------
@@ -624,6 +630,137 @@ class EquipementController extends AbstractController
     }
 
     // --------------------------------------------------------------
+    // [2026-10-24] DISSOCIATION D'UN LOT (ROLE_SUPER_ADMIN), depuis le
+    // formulaire de modification (roue dentée). Références des nouveaux
+    // équipements proposées selon le modèle, mot de confirmation DISSOCIER.
+    // --------------------------------------------------------------
+
+    /**
+     * GET JSON /equipements/dissociation-references?id=&nombre=
+     * Références proposées pour les `nombre` nouveaux équipements : n° de
+     * suivi suivants du modèle (catégorie, année d'achat), libres.
+     */
+    public function referencesDissociation(Request $request): Response
+    {
+        $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
+
+        $idRaw = (string) $request->query->get('id', '');
+        $nombreRaw = (string) $request->query->get('nombre', '');
+        $equipement = ctype_digit($idRaw) && (int) $idRaw > 0
+            ? $this->equipementManager()->findId((int) $idRaw)
+            : null;
+        $nombre = ctype_digit($nombreRaw) ? (int) $nombreRaw : 0;
+        $categorie = $equipement && !empty($equipement['categorie_id'])
+            ? $this->categorieManager()->findId((int) $equipement['categorie_id'])
+            : null;
+        if (!$categorie || $nombre < 1 || $nombre >= DissociationLot::PARTIES_MAX) {
+            return new JsonResponse(['references' => []]);
+        }
+
+        $references = [];
+        try {
+            $annee = $this->anneeAchat($equipement);
+            $generateur = $this->referenceGenerator();
+            $premiere = $generateur->suggest((string) $categorie['libelle'], $annee);
+            $compteur = $generateur->compteurSiConforme($premiere, (int) $categorie['id'], $annee);
+            if ($compteur === null) {
+                $references = [$premiere];
+            } else {
+                $equipements = $this->equipementManager();
+                for ($essais = 0; count($references) < $nombre && $essais < $nombre + 1000; $essais++) {
+                    $reference = $generateur->referenceAuRang((int) $categorie['id'], $annee, $compteur++);
+                    if (!$equipements->referenceExists($reference)) {
+                        $references[] = $reference;
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log('[EquipementController] referencesDissociation: ' . $e->getMessage());
+        }
+
+        return new JsonResponse(['references' => $references]);
+    }
+
+    /**
+     * POST /equipements/equipement_dissocier-{id}
+     * Les contrôles faits à la volée dans le navigateur sont refaits ici ;
+     * en cas de refus, retour au formulaire de modification avec le motif.
+     */
+    public function dissocier(Request $request): Response
+    {
+        $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
+        $this->validateCsrf($request);
+
+        $id = $this->getValidId($request);
+        $equipement = $id !== null ? $this->equipementManager()->findId($id) : null;
+        if (!$equipement) {
+            $this->session->getFlashBag()->add('error', 'Équipement non trouvé.');
+            return $this->redirectTo('/equipements');
+        }
+        $flash = $this->session->getFlashBag();
+        $retour = '/equipements/equipement_modification-' . $id;
+
+        $erreur = DissociationLot::erreurEquipement($equipement);
+        $parties = $erreur === null
+            ? DissociationLot::parties((string) $request->request->get('repartition', ''), (int) $equipement['nombre'])
+            : [];
+        if (is_string($parties)) {
+            $erreur = $parties;
+        }
+
+        $references = [];
+        if ($erreur === null) {
+            $postees = $request->request->all('references');
+            foreach (array_slice($parties, 1) as $i => $taille) {
+                $reference = trim((string) ($postees[$i] ?? ''));
+                if (($erreur = self::erreurFormatReference($reference)) !== null) {
+                    $erreur = sprintf('Nouvel équipement n° %d : %s', $i + 1, $erreur);
+                    break;
+                }
+                if ($reference === (string) $equipement['reference'] || in_array($reference, $references, true)) {
+                    $erreur = sprintf('La référence « %s » est utilisée deux fois.', $reference);
+                    break;
+                }
+                if ($this->equipementManager()->referenceExists($reference)) {
+                    $erreur = sprintf(self::MESSAGE_REFERENCE_PRISE, $reference);
+                    break;
+                }
+                $references[] = $reference;
+            }
+        }
+        if ($erreur === null
+            && trim((string) $request->request->get('confirmation_dissociation', '')) !== DissociationLot::MOT_CONFIRMATION) {
+            $erreur = sprintf('Pour dissocier le lot, saisissez le mot %s (en majuscules).', DissociationLot::MOT_CONFIRMATION);
+        }
+        if ($erreur !== null) {
+            $flash->add('error', $erreur);
+            return $this->redirectTo($retour);
+        }
+
+        try {
+            $ids = $this->dissociationLot()->dissocier($equipement, $parties, $references);
+        } catch (\PDOException $e) {
+            // Course sur une référence (contrainte UNIQUE) : rien n'a été écrit.
+            if ((string) $e->getCode() !== '23000') {
+                throw $e;
+            }
+            $flash->add('error', 'Une des références vient d\'être attribuée à un autre équipement : rien n\'a été modifié, réessayez.');
+            return $this->redirectTo($retour);
+        }
+
+        $user = $this->session->get('user');
+        error_log(sprintf(
+            '[EquipementController] Lot id=%d « %s » dissocié (%s) : nouveaux équipements id=%s, références %s (utilisateur id=%s)',
+            $id, $equipement['reference'], implode('+', $parties), implode(',', $ids), implode(',', $references), $user['id'] ?? '?'
+        ));
+        $flash->add('success', sprintf(
+            'Lot « %s » dissocié : %d élément(s) restent sur « %s » ; %d nouvel(s) équipement(s) : %s. Pensez à imprimer leurs étiquettes.',
+            $equipement['reference'], $parties[0], $equipement['reference'], count($references), implode(', ', $references)
+        ));
+        return $this->redirectTo('/equipements/equipement-' . $id);
+    }
+
+    // --------------------------------------------------------------
     // ÉDITION
     // --------------------------------------------------------------
     public function edit(Request $request)
@@ -995,6 +1132,10 @@ class EquipementController extends AbstractController
             // [2026-10-24] Lot / nombre initial (super-administrateur)
             'lot_saisie' => $lotSaisie ?? null,
             'lot_max' => self::LOT_MAX,
+            // [2026-10-24] Dissociation du lot (super-administrateur)
+            'dissociation_erreur' => is_array($equipement) && !empty($equipement['id'])
+                ? DissociationLot::erreurEquipement($equipement) : null,
+            'mot_confirmation_dissociation' => DissociationLot::MOT_CONFIRMATION,
         ]);
     }
 

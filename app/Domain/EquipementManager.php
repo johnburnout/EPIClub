@@ -167,6 +167,24 @@ class EquipementManager extends AbstractManager
         return $this->db->lastInsertId('club_equipement');
     }
 
+    /** [2026-10-24] Transactions : la dissociation d'un lot écrit plusieurs lignes. */
+    public function beginTransaction(): void
+    {
+        $this->db->beginTransaction();
+    }
+
+    public function commit(): void
+    {
+        $this->db->commit();
+    }
+
+    public function rollBack(): void
+    {
+        if ($this->db->inTransaction()) {
+            $this->db->rollBack();
+        }
+    }
+
     public function codeExists(string $code): bool
     {
         $sql = "SELECT COUNT(*) FROM club_equipement WHERE code = :code";

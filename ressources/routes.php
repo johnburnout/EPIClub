@@ -138,6 +138,19 @@ $routes->add('equipement_reference_disponible', new Route(
     [], [], '', [], ['GET']
 ));
 
+// ROLE_SUPER_ADMIN : dissociation d'un lot (formulaire de modification) —
+// références proposées (AJAX) puis dissociation (POST)
+$routes->add('equipement_dissociation_references', new Route(
+    '/equipements/dissociation-references',
+    ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'referencesDissociation'],
+    [], [], '', [], ['GET']
+));
+$routes->add('equipement_dissocier', new Route(
+    '/equipements/equipement_dissocier-{id}',
+    ['_controller' => 'Epiclub\\Controller\\EquipementController', 'action' => 'dissocier'],
+    [], [], '', [], ['POST']
+));
+
 // ROLE_SUPER_ADMIN : référence proposée (AJAX) pour la catégorie saisie
 // dans le formulaire de modification (année d'achat de l'équipement)
 $routes->add('equipement_reference_suggestion', new Route(

@@ -344,6 +344,51 @@
 		<a href="{% if equipement.id is defined and equipement.id %}/equipements/equipement-{{ equipement.id }}{% else %}/equipements{% endif %}" class="btn btn-secondary">Annuler</a>
 	</form>
 
+	{# [2026-10-24] Dissociation du lot (super-administrateur) : formulaire
+	   distinct, affiché avec la roue dentée. #}
+	{% if ref_cat_modifiable and ni_actuel > 1 %}
+		<div class="card mt-4 border-warning {% if not ref_cat_ouvert %}d-none{% endif %}" id="carte-dissociation">
+			<div class="card-body">
+				<h5 class="card-title"><i class="fas fa-object-ungroup"></i> Dissocier le lot</h5>
+				{% if dissociation_erreur %}
+					<p class="text-muted mb-0">{{ dissociation_erreur }}</p>
+				{% else %}
+					<form method="post" action="/equipements/equipement_dissocier-{{ equipement.id }}" id="form-dissociation"
+					      data-equipement-id="{{ equipement.id }}">
+						<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+						<p class="small">
+							Le lot compte <strong>{{ equipement.nombre }}</strong> élément(s) restant(s). Indiquez la taille de chaque
+							partie, séparées par des virgules : la <strong>première</strong> reste à l'équipement
+							<strong>{{ equipement.reference }}</strong> (avec son historique), chacune des autres devient un
+							<strong>nouvel équipement</strong> (lot ou équipement individuel), avec les mêmes caractéristiques.
+						</p>
+						<div class="mb-2">
+							<label for="repartition" class="form-label">Répartition</label>
+							<div class="input-group">
+								<input type="text" class="form-control" name="repartition" id="repartition"
+								       placeholder="ex. {{ equipement.nombre > 2 ? (equipement.nombre - 2) ~ ', 1, 1' : '1, 1' }}"
+								       autocomplete="off" data-nombre="{{ equipement.nombre }}">
+								<button type="button" class="btn btn-outline-secondary" id="repartition-individuels">
+									En équipements individuels
+								</button>
+							</div>
+							<div class="form-text" id="repartition-statut" aria-live="polite"></div>
+						</div>
+						<div id="dissociation-references" class="mb-2"></div>
+						<div class="mb-3 p-2 border border-warning rounded">
+							<label for="confirmation_dissociation" class="form-label">
+								Pour confirmer la dissociation, saisissez <code>{{ mot_confirmation_dissociation }}</code>
+							</label>
+							<input type="text" class="form-control" name="confirmation_dissociation" id="confirmation_dissociation"
+							       autocomplete="off" spellcheck="false" data-mot="{{ mot_confirmation_dissociation }}">
+						</div>
+						<button type="submit" class="btn btn-warning">Dissocier le lot</button>
+					</form>
+				{% endif %}
+			</div>
+		</div>
+	{% endif %}
+
 	<!-- Modal -->
 	<div class="modal fade" id="categorieModalForm" tabindex="-1" aria-labelledby="categorieModalFormLabel" aria-hidden="true">
 		<div class="modal-dialog">
@@ -617,6 +662,12 @@
 				libelle.textContent = ouvrir
 					? 'Annuler la modification de la référence, de la catégorie et du lot'
 					: 'Modifier la référence, la catégorie et le lot';
+				// Carte « Dissocier le lot » : affichée avec la roue dentée.
+				const carte = document.getElementById('carte-dissociation');
+				if (carte) {
+					carte.classList.toggle('d-none', !ouvrir);
+					if (!ouvrir) carte.dispatchEvent(new Event('reinitialiser'));
+				}
 				if (ouvrir) categorie.focus();
 			});
 		})();
@@ -662,6 +713,184 @@
 			});
 			nombreInitial.addEventListener('input', function () {
 				plafonner(!etaitLot && parseInt(nombre.value, 10) === niPrecedent);
+			});
+		})();
+	</script>
+	<script>
+		/**
+		 * [2026-10-24] Dissociation du lot (super-administrateur) : la
+		 * répartition est contrôlée pendant la saisie (somme = nombre
+		 * actuel) ; une référence est proposée pour chaque nouvel
+		 * équipement (n° suivants du modèle), modifiable, et sa
+		 * disponibilité vérifiée. Mot de confirmation exigé avant l'envoi
+		 * (tout est revérifié côté serveur).
+		 */
+		(function () {
+			const form = document.getElementById('form-dissociation');
+			if (!form) return;
+			const carte = document.getElementById('carte-dissociation');
+			const saisie = document.getElementById('repartition');
+			const nombre = parseInt(saisie.dataset.nombre, 10);
+			const statut = document.getElementById('repartition-statut');
+			const liste = document.getElementById('dissociation-references');
+			const confirmation = document.getElementById('confirmation_dissociation');
+			const motAttendu = confirmation.dataset.mot;
+			const id = form.dataset.equipementId;
+			let parties = null;
+			let lignes = [];
+			let minuterie = null;
+			let requete = 0;
+
+			function afficher(element, classe, texte) {
+				element.className = 'form-text ' + classe;
+				element.textContent = texte;
+			}
+			// Même règle que DissociationLot::parties()
+			function analyser(texte) {
+				const morceaux = texte.trim().split(/[\s,;+]+/).filter(m => m !== '');
+				if (morceaux.length < 2) return 'Indiquez au moins deux parties.';
+				if (morceaux.some(m => !/^\d+$/.test(m) || parseInt(m, 10) < 1)) return 'Chaque partie doit être un entier ≥ 1.';
+				const tailles = morceaux.map(m => parseInt(m, 10));
+				const somme = tailles.reduce((a, b) => a + b, 0);
+				if (somme !== nombre) return 'Somme des parties : ' + somme + ' ; elle doit être égale à ' + nombre + '.';
+				return tailles;
+			}
+			function doublons() {
+				const vues = {};
+				lignes.forEach(l => { const v = l.input.value.trim(); vues[v] = (vues[v] || 0) + 1; });
+				return vues;
+			}
+			function verifier(ligne) {
+				const valeur = ligne.input.value.trim();
+				const numero = ++ligne.requete;
+				ligne.disponible = null;
+				if (valeur === '') { afficher(ligne.statut, 'text-danger', 'La référence est obligatoire.'); return; }
+				if (doublons()[valeur] > 1) {
+					ligne.disponible = false;
+					afficher(ligne.statut, 'text-danger', '✖ Référence saisie deux fois.');
+					return;
+				}
+				afficher(ligne.statut, 'text-muted', 'Vérification…');
+				fetch('/equipements/reference-disponible?' + new URLSearchParams({ id: id, reference: valeur }),
+					{ headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+					.then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+					.then(data => {
+						if (numero !== ligne.requete) return;
+						ligne.disponible = !!data.disponible;
+						afficher(ligne.statut, ligne.disponible ? 'text-success' : 'text-danger',
+							(ligne.disponible ? '✔ ' : '✖ ') + data.message);
+					})
+					.catch(() => {
+						if (numero !== ligne.requete) return;
+						afficher(ligne.statut, 'text-danger', 'Vérification impossible, réessayez.');
+					});
+			}
+			function verifierTout() {
+				lignes.forEach(verifier);
+			}
+			function creerLigne() {
+				const bloc = document.createElement('div');
+				bloc.className = 'mb-2';
+				const label = document.createElement('label');
+				label.className = 'form-label small mb-1';
+				const input = document.createElement('input');
+				input.type = 'text';
+				input.className = 'form-control form-control-sm';
+				input.name = 'references[]';
+				input.maxLength = {{ reference_max }};
+				input.autocomplete = 'off';
+				input.required = true;
+				input.id = 'reference_dissociation_' + lignes.length;
+				label.htmlFor = input.id;
+				const etat = document.createElement('div');
+				etat.className = 'form-text';
+				etat.setAttribute('aria-live', 'polite');
+				bloc.append(label, input, etat);
+				liste.appendChild(bloc);
+				const ligne = { bloc: bloc, label: label, input: input, statut: etat, manuelle: false, disponible: null, requete: 0, minuterie: null };
+				input.addEventListener('input', function () {
+					ligne.manuelle = true;
+					clearTimeout(ligne.minuterie);
+					ligne.minuterie = setTimeout(verifierTout, 300);
+				});
+				return ligne;
+			}
+			function proposer() {
+				const numero = ++requete;
+				fetch('/equipements/dissociation-references?' + new URLSearchParams({ id: id, nombre: lignes.length }),
+					{ headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+					.then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+					.then(data => {
+						if (numero !== requete) return;
+						const references = data.references || [];
+						lignes.forEach((ligne, i) => {
+							if (!ligne.manuelle && references[i]) ligne.input.value = references[i];
+						});
+						verifierTout();
+					})
+					.catch(() => { if (numero === requete) verifierTout(); });
+			}
+			function surSaisie() {
+				const resultat = analyser(saisie.value);
+				if (typeof resultat === 'string') {
+					parties = null;
+					afficher(statut, saisie.value.trim() === '' ? '' : 'text-danger', saisie.value.trim() === '' ? '' : resultat);
+					return;
+				}
+				parties = resultat;
+				afficher(statut, 'text-success', '✔ ' + parties[0] + ' élément(s) restent sur l\'équipement actuel ; '
+					+ (parties.length - 1) + ' nouvel(s) équipement(s).');
+				while (lignes.length > parties.length - 1) lignes.pop().bloc.remove();
+				while (lignes.length < parties.length - 1) lignes.push(creerLigne());
+				lignes.forEach((ligne, i) => {
+					const taille = parties[i + 1];
+					ligne.label.textContent = 'Nouvel équipement ' + (i + 1) + ' — '
+						+ (taille > 1 ? 'lot de ' + taille + ' éléments' : 'équipement individuel') + ' : référence';
+				});
+				proposer();
+			}
+
+			saisie.addEventListener('input', function () {
+				clearTimeout(minuterie);
+				minuterie = setTimeout(surSaisie, 300);
+			});
+			document.getElementById('repartition-individuels').addEventListener('click', function () {
+				saisie.value = Array(nombre).fill(1).join(', ');
+				surSaisie();
+			});
+			carte.addEventListener('reinitialiser', function () {
+				clearTimeout(minuterie);
+				requete++;
+				saisie.value = '';
+				confirmation.value = '';
+				confirmation.classList.remove('is-invalid');
+				parties = null;
+				lignes.forEach(l => l.bloc.remove());
+				lignes = [];
+				afficher(statut, '', '');
+			});
+			confirmation.addEventListener('input', function () {
+				confirmation.classList.remove('is-invalid');
+			});
+			form.addEventListener('submit', function (e) {
+				if (parties === null) {
+					e.preventDefault();
+					afficher(statut, 'text-danger', analyser(saisie.value));
+					saisie.focus();
+					return;
+				}
+				const enAttente = lignes.find(l => l.disponible !== true);
+				if (enAttente) {
+					e.preventDefault();
+					if (enAttente.disponible === null) afficher(enAttente.statut, 'text-danger', 'Vérification en cours, réessayez dans un instant.');
+					enAttente.input.focus();
+					return;
+				}
+				if (confirmation.value.trim() !== motAttendu) {
+					e.preventDefault();
+					confirmation.classList.add('is-invalid');
+					confirmation.focus();
+				}
 			});
 		})();
 	</script>

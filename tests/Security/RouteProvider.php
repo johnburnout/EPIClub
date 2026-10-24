@@ -106,6 +106,7 @@ class RouteProvider
             'utilisateur_delete',
             'controle_delete',
             'equipement_delete',
+            'equipement_dissocier',
             'acquisition_delete',
             'acquisition_ligne_delete',
             'acquisition_valider',
