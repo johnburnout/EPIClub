@@ -10,6 +10,25 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v2.1.0] — 2026-10-24
+
+Listes déroulantes par ordre alphabétique ; mail de bienvenue.
+
+### Added
+
+- **Mail de bienvenue** : à la création d'un utilisateur, un mail
+  l'informe de son compte (identifiant, rôle, lien de connexion et
+  « Mot de passe oublié ») — jamais le mot de passe. La fiche
+  utilisateur permet de le **renvoyer**. Nécessite l'email du club et le
+  serveur SMTP configurés.
+
+### Changed
+
+- **Listes déroulantes** (catégories, emplacements, fournisseurs,
+  contrôleurs, activités, catégories de l'import…) triées par ordre
+  alphabétique, à la française (majuscules et accents ignorés, nombres
+  dans l'ordre naturel).
+
 ## [v2.0.0] — 2026-10-24
 
 Demandes de modification (tickets) ; libellé modifiable par un
