@@ -1,0 +1,54 @@
+{#
+	[2026-10-25] Recherche, filtres et tri des listes de référentiels
+	(catégories, emplacements, fournisseurs) — cf. ListeReferentiel.
+	Variables : url, placeholder, tris {clé: libellé}, selects [{nom, label,
+	options {valeur: libellé}}], filtres, total, affiches, element (singulier),
+	elements (pluriel).
+#}
+<form method="get" action="{{ url }}" class="mb-3">
+	<div class="row g-3">
+		<div class="col-md-3">
+			<label for="q" class="form-label">Recherche</label>
+			<input type="search" name="q" id="q" value="{{ filtres.q }}" maxlength="100"
+			       class="form-control" placeholder="{{ placeholder }}">
+		</div>
+		{% for s in selects|default([])|merge([{nom: 'equipements', label: 'Équipements', options: {'': 'Tous', 'avec': 'Avec équipements', 'sans': 'Sans équipement'}}]) %}
+			<div class="col-md-2">
+				<label for="{{ s.nom }}" class="form-label">{{ s.label }}</label>
+				<select name="{{ s.nom }}" id="{{ s.nom }}" class="form-select">
+					{% for valeur, libelle in s.options %}
+						<option value="{{ valeur }}" {% if (filtres[s.nom] ?? '') == valeur %}selected{% endif %}>{{ libelle }}</option>
+					{% endfor %}
+				</select>
+			</div>
+		{% endfor %}
+	</div>
+	<div class="row g-3 mt-1">
+		<div class="col-md-3">
+			<label for="order_by" class="form-label">Trier par</label>
+			<select name="order_by" id="order_by" class="form-select">
+				{% for cle, libelle in tris %}
+					<option value="{{ cle }}" {% if filtres.order_by == cle %}selected{% endif %}>{{ libelle }}</option>
+				{% endfor %}
+			</select>
+		</div>
+		<div class="col-md-2">
+			<label for="order_dir" class="form-label">Ordre</label>
+			<select name="order_dir" id="order_dir" class="form-select">
+				<option value="asc" {% if filtres.order_dir == 'asc' %}selected{% endif %}>Croissant</option>
+				<option value="desc" {% if filtres.order_dir == 'desc' %}selected{% endif %}>Décroissant</option>
+			</select>
+		</div>
+		<div class="col-md-4 d-flex align-items-end gap-2">
+			<button type="submit" class="btn btn-secondary">Appliquer</button>
+			<a href="{{ url }}" class="btn btn-outline-secondary">Réinitialiser</a>
+		</div>
+	</div>
+	<p class="small text-muted mt-2 mb-0">
+		{% if affiches == total %}
+			{{ total }} {{ total > 1 ? elements : element }}
+		{% else %}
+			{{ affiches }} {{ affiches > 1 ? elements : element }} sur {{ total }}
+		{% endif %}
+	</p>
+</form>

@@ -42,6 +42,12 @@
 			</div>
 			<div class="mb-3 d-flex gap-2">
 				<a href="/admin/categories" class="btn btn-secondary">Retour à la liste</a>
+				{% if nb_equipements > 0 %}
+				<a href="/equipements?categorie={{ categorie.id }}" class="btn btn-primary">📋 {{ nb_equipements > 1 ? 'Voir les ' ~ nb_equipements ~ ' équipements' : 'Voir l\'équipement' }}</a>
+				{% else %}
+				<span class="btn btn-outline-secondary disabled">Aucun équipement</span>
+				{% endif %}
+				{% if isGranted('ROLE_ADMIN') %}
 				<a href="/admin/categories/categorie_modification-{{ categorie.id }}" class="btn btn-warning">Modifier</a>
 				<form method="post" action="/admin/categories/supprimer" class="ms-auto">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -51,6 +57,7 @@
 						🗑️ Supprimer
 					</button>
 				</form>
+				{% endif %}
 			</div>
 		</div>
 	</div>

@@ -9,6 +9,7 @@ use Epiclub\Domain\AcquisitionManager;
 use Epiclub\Domain\CategorieManager;
 use Epiclub\Domain\EmplacementManager;
 use Epiclub\Domain\EquipementManager;
+use Epiclub\Domain\FournisseurManager;
 use Epiclub\Domain\PretLigneManager;
 use Epiclub\Domain\ReferenceGenerator;
 use Epiclub\Engine\ImageUploader;
@@ -43,6 +44,14 @@ final class TestableEquipementController extends EquipementController
     protected function photoUploader(): ImageUploader
     {
         return $this->photoUploaderOverride ?? parent::photoUploader();
+    }
+
+    /** [2026-10-25] Doublure optionnelle des fournisseurs (filtre de la liste). */
+    public ?FournisseurManager $fournisseurManagerOverride = null;
+
+    protected function fournisseurManager(): FournisseurManager
+    {
+        return $this->fournisseurManagerOverride ?? parent::fournisseurManager();
     }
 
     /** [2026-10-24] Doublure optionnelle des lignes de prêt (regroupement en lot). */

@@ -32,6 +32,12 @@
 
 		<div class="form-actions d-flex gap-2 mt-3">
 			<a href="/admin/fournisseurs" class="btn btn-secondary">Retour à la liste</a>
+			{% if nb_equipements > 0 %}
+			<a href="/equipements?fournisseur={{ fournisseur.id }}" class="btn btn-primary">📋 {{ nb_equipements > 1 ? 'Voir les ' ~ nb_equipements ~ ' équipements' : 'Voir l\'équipement' }}</a>
+			{% else %}
+			<span class="btn btn-outline-secondary disabled">Aucun équipement</span>
+			{% endif %}
+			{% if isGranted('ROLE_ADMIN') %}
 			<a href="/admin/fournisseurs/fournisseur_modification-{{ fournisseur.id }}" class="btn btn-warning">Modifier</a>
 			<form method="post" action="/admin/fournisseurs/supprimer" class="ms-auto">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -41,6 +47,7 @@
 					🗑️ Supprimer
 				</button>
 			</form>
+			{% endif %}
 		</div>
 	{% else %}
 		<p>Fournisseur non trouvé.</p>

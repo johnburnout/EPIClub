@@ -6,6 +6,7 @@ use Epiclub\Domain\CategorieManager;
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\EmplacementManager;
 use Epiclub\Domain\AcquisitionManager;
+use Epiclub\Domain\FournisseurManager;
 use Epiclub\Domain\DissociationLot;
 use Epiclub\Domain\RegroupementLot;
 use Epiclub\Domain\ReferenceGenerator;
@@ -90,6 +91,18 @@ class EquipementController extends AbstractController
         return new AcquisitionManager();
     }
 
+    protected function fournisseurManager(): FournisseurManager
+    {
+        return new FournisseurManager();
+    }
+
+    /** [2026-10-25] Filtre « fournisseur » (id) de la requête, ou null. */
+    private static function fournisseurFiltre(Request $request): ?int
+    {
+        $valeur = (string) $request->query->get('fournisseur', '');
+        return ctype_digit($valeur) && (int) $valeur > 0 ? (int) $valeur : null;
+    }
+
     protected function referenceGenerator(): ReferenceGenerator
     {
         return new ReferenceGenerator();
@@ -157,6 +170,7 @@ class EquipementController extends AbstractController
             'order_dir' => $request->query->get('order_dir', 'asc'),
             'limit' => $limit,
             'acquisition' => $request->query->get('acquisition'),
+            'fournisseur' => self::fournisseurFiltre($request),
             'fin_avant' => self::dateFinAvant($request),
             'q' => self::recherche($request),
         ];
@@ -201,6 +215,10 @@ class EquipementController extends AbstractController
             ],
             'paginationUrls' => $paginationUrls,
             'acquisition_id' => $params['acquisition'],
+            // [2026-10-25] Bandeau du filtre fournisseur
+            'fournisseur_filtre' => $params['fournisseur'] !== null
+                ? ($this->fournisseurManager()->findId($params['fournisseur']) ?: ['id' => $params['fournisseur'], 'nom' => '#' . $params['fournisseur']])
+                : null,
         ]);
     }
     
@@ -297,6 +315,20 @@ class EquipementController extends AbstractController
         if ($acquisition_id) {
             $equipements = array_filter($equipements, function($e) use ($acquisition_id) {
                 return isset($e['acquisition_id']) && $e['acquisition_id'] == $acquisition_id;
+            });
+        }
+
+        // [2026-10-25] Filtre par fournisseur (celui de l'acquisition)
+        $fournisseurId = self::fournisseurFiltre($request);
+        if ($fournisseurId !== null) {
+            $acquisitionsDuFournisseur = [];
+            foreach ($this->acquisitionManager()->findAll() ?: [] as $a) {
+                if ((int) ($a['fournisseur_id'] ?? 0) === $fournisseurId) {
+                    $acquisitionsDuFournisseur[(int) $a['id']] = true;
+                }
+            }
+            $equipements = array_filter($equipements, static function ($e) use ($acquisitionsDuFournisseur) {
+                return isset($acquisitionsDuFournisseur[(int) ($e['acquisition_id'] ?? 0)]);
             });
         }
         
@@ -1577,6 +1609,7 @@ HTML;
             'emplacement' => $request->query->get('emplacement'),
             'dernier_controle' => $request->query->get('dernier_controle'),
             'acquisition' => $request->query->get('acquisition'), // AJOUT
+            'fournisseur' => self::fournisseurFiltre($request),
         ];
 
         // Génération du HTML pour le PDF
@@ -1622,6 +1655,10 @@ HTML;
         }
         if (!empty($filtres['acquisition'])) { // AJOUT
             $filtresLabels[] = 'Acquisition #' . $filtres['acquisition'];
+        }
+        if (!empty($filtres['fournisseur'])) {
+            $fournisseur = $this->fournisseurManager()->findId((int) $filtres['fournisseur']);
+            $filtresLabels[] = 'Fournisseur : ' . ($fournisseur['nom'] ?? '#' . $filtres['fournisseur']);
         }
         $filtresStr = self::html(empty($filtresLabels) ? 'Aucun filtre' : implode(' | ', $filtresLabels));
         

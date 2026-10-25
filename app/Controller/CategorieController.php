@@ -3,9 +3,11 @@
 namespace Epiclub\Controller;
 
 use Epiclub\Domain\CategorieManager;
+use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\ReferenceGenerator;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\ImageUploader;
+use Epiclub\Engine\ListeReferentiel;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
@@ -100,15 +102,61 @@ class CategorieController extends AbstractController
         return $name === '' ? 'image' : $name;
     }
 
+    /** [2026-10-25] Équipements — factory surchargeable en test. */
+    protected function equipementManager(): EquipementManager
+    {
+        return new EquipementManager();
+    }
+
+    /**
+     * [2026-10-25] Nombre d'équipements (non supprimés) par catégorie :
+     * [id => nombre] ; [] si le comptage est indisponible.
+     *
+     * @return array<int, int>
+     */
+    private function nbEquipements(): array
+    {
+        try {
+            return $this->equipementManager()->compterPar('categorie_id');
+        } catch (\Throwable $e) {
+            error_log('[' . static::class . '] nbEquipements : ' . $e->getMessage());
+            return [];
+        }
+    }
+
     public function list(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
 
         $categorieManager = $this->categorieManager();
-        $categories = $categorieManager->findAll();
+        $toutes = $categorieManager->findAll() ?: [];
+        $nb = $this->nbEquipements();
+
+        // [2026-10-25] Recherche, filtres (EPI, durée max, équipements) et tri
+        $params = ListeReferentiel::parametres($request, ['libelle', 'code', 'equipements'], 'libelle', [
+            'epi' => ['oui', 'non'],
+            'duree_max' => ['oui', 'non'],
+        ]);
+        $categories = ListeReferentiel::rechercher($toutes, $params['q'], ['libelle', 'code', 'description']);
+        if ($params['epi'] !== null) {
+            $categories = array_filter($categories, fn ($c) => !empty($c['est_epi']) === ($params['epi'] === 'oui'));
+        }
+        if ($params['duree_max'] !== null) {
+            $categories = array_filter($categories, fn ($c) => !empty($c['duree_max_utilisation']) === ($params['duree_max'] === 'oui'));
+        }
+        $categories = ListeReferentiel::filtrerEquipements($categories, $params['equipements'], $nb);
+        $categories = ListeReferentiel::trier($categories, $params['order_by'], $params['order_dir'], [
+            'libelle' => 'libelle',
+            'code' => 'code',
+            'equipements' => fn (array $c) => $nb[(int) $c['id']] ?? 0,
+        ], 'libelle');
 
         return $this->render('categorie_list.twig', [
-            'categories' => $categories
+            'categories' => $categories,
+            'total' => count($toutes),
+            'filtres' => $params,
+            // [2026-10-25] Lien vers les équipements de chaque catégorie
+            'nb_equipements' => $nb,
         ]);
     }
 
@@ -131,7 +179,8 @@ class CategorieController extends AbstractController
         }
 
         return $this->render('categorie_show.twig', [
-            'categorie' => $categorie
+            'categorie' => $categorie,
+            'nb_equipements' => $this->nbEquipements()[$id] ?? 0,
         ]);
     }
 

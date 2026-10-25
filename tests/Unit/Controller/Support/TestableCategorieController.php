@@ -6,6 +6,7 @@ namespace Epiclub\Tests\Unit\Controller\Support;
 
 use Epiclub\Controller\CategorieController;
 use Epiclub\Domain\CategorieManager;
+use Epiclub\Domain\EquipementManager;
 use Epiclub\Engine\Session;
 
 final class TestableCategorieController extends CategorieController
@@ -21,6 +22,14 @@ final class TestableCategorieController extends CategorieController
     protected function categorieManager(): CategorieManager
     {
         return $this->categorieManager;
+    }
+
+    /** [2026-10-25] Doublure du comptage des équipements ; sans elle, pas de comptage (pas de PDO). */
+    public ?EquipementManager $equipementManagerOverride = null;
+
+    protected function equipementManager(): EquipementManager
+    {
+        return $this->equipementManagerOverride ?? throw new \RuntimeException('Pas d\'équipements en test.');
     }
     
     /**

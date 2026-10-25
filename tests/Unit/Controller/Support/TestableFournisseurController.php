@@ -6,6 +6,7 @@ namespace Epiclub\Tests\Unit\Controller\Support;
 
 use Epiclub\Controller\FournisseurController;
 use Epiclub\Domain\FournisseurManager;
+use Epiclub\Domain\EquipementManager;
 use Epiclub\Engine\Session;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -21,6 +22,14 @@ final class TestableFournisseurController extends FournisseurController
     protected function fournisseurManager(): FournisseurManager
     {
         return $this->fournisseurManager;
+    }
+
+    /** [2026-10-25] Doublure du comptage des équipements ; sans elle, pas de comptage (pas de PDO). */
+    public ?EquipementManager $equipementManagerOverride = null;
+
+    protected function equipementManager(): EquipementManager
+    {
+        return $this->equipementManagerOverride ?? throw new \RuntimeException('Pas d\'équipements en test.');
     }
 
     protected function updateLastActivity(): void

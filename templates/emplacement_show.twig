@@ -1,33 +1,33 @@
 {% extends "_layout.twig" %}
 
+{# [2026-10-25] Fiche emplacement en lecture seule (le formulaire de
+   saisie est emplacement_form.twig, réservé aux administrateurs). #}
 {% block body %}
-	<h3>{% if emplacement.id %}Modifier{% else %}Nouvel{% endif %} emplacement</h3>
+	<h3>Fiche emplacement</h3>
 	<hr>
 
-	<form method="post">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-		<div class="mb-3">
-			<label for="libelle">Libellé *</label>
-			<input type="text" id="libelle" name="libelle" value="{{ emplacement.libelle }}"
-			       class="form-control {% if form_errors.libelle %}is-invalid{% endif %}">
-			{% if form_errors.libelle %}
-				<div class="invalid-feedback">{{ form_errors.libelle }}</div>
-			{% endif %}
+	<div class="row">
+		{% if emplacement.image %}
+			<div class="col-md-4 mb-3">
+				<img src="{{ emplacement.image }}" alt="{{ emplacement.libelle }}" class="img-fluid rounded">
+			</div>
+		{% endif %}
+		<div class="col-md-8">
+			<div class="mb-3"><strong>Libellé :</strong> {{ emplacement.libelle }}</div>
+			<div class="mb-3"><strong>Description :</strong>
+				{% if emplacement.description %}{{ emplacement.description }}{% else %}<em>Non renseignée</em>{% endif %}
+			</div>
+			<div class="mb-3 d-flex flex-wrap gap-2">
+				<a href="/admin/emplacements" class="btn btn-secondary">Retour à la liste</a>
+				{% if nb_equipements > 0 %}
+				<a href="/equipements?emplacement={{ emplacement.id }}" class="btn btn-primary">📋 {{ nb_equipements > 1 ? 'Voir les ' ~ nb_equipements ~ ' équipements' : 'Voir l\'équipement' }}</a>
+				{% else %}
+				<span class="btn btn-outline-secondary disabled">Aucun équipement</span>
+				{% endif %}
+				{% if isGranted('ROLE_ADMIN') %}
+				<a href="/admin/emplacements/emplacement_modification-{{ emplacement.id }}" class="btn btn-warning">Modifier</a>
+				{% endif %}
+			</div>
 		</div>
-		<div class="mb-3">
-			<label for="description">Description</label>
-			<textarea id="description" name="description" class="form-control" rows="3">{{ emplacement.description }}</textarea>
-		</div>
-		<div class="mb-3">
-			<label for="image">Image (URL)</label>
-			<input type="text" id="image" name="image" value="{{ emplacement.image }}"
-			       class="form-control {% if form_errors.image %}is-invalid{% endif %}"
-			       placeholder="https://exemple.com/photo.jpg">
-			{% if form_errors.image %}
-				<div class="invalid-feedback">{{ form_errors.image }}</div>
-			{% endif %}
-		</div>
-		<button type="submit" class="btn btn-primary">Enregistrer</button>
-		<a href="/admin/emplacements" class="btn btn-secondary">Annuler</a>
-	</form>
+	</div>
 {% endblock %}

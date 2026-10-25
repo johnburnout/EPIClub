@@ -181,6 +181,40 @@ class EquipementManager extends AbstractManager
         return $stmt->fetchAll();
     }
 
+    /**
+     * [2026-10-25] Nombre d'équipements (non supprimés) par catégorie ou
+     * par emplacement : [id => nombre].
+     *
+     * @return array<int, int>
+     */
+    public function compterPar(string $colonne): array
+    {
+        if (!in_array($colonne, ['categorie_id', 'emplacement_id'], true)) {
+            throw new \InvalidArgumentException("Colonne de comptage non autorisée : $colonne");
+        }
+        $stmt = $this->db->query(
+            "SELECT $colonne AS cle, COUNT(*) AS nombre FROM club_equipement
+              WHERE deleted_at IS NULL AND $colonne IS NOT NULL GROUP BY $colonne"
+        );
+        return array_map('intval', array_column($stmt->fetchAll(), 'nombre', 'cle'));
+    }
+
+    /**
+     * [2026-10-25] Nombre d'équipements (non supprimés) par fournisseur
+     * de leur acquisition : [id fournisseur => nombre].
+     *
+     * @return array<int, int>
+     */
+    public function compterParFournisseur(): array
+    {
+        $stmt = $this->db->query(
+            "SELECT a.fournisseur_id AS cle, COUNT(*) AS nombre
+               FROM club_equipement e JOIN acquisition a ON a.id = e.acquisition_id
+              WHERE e.deleted_at IS NULL GROUP BY a.fournisseur_id"
+        );
+        return array_map('intval', array_column($stmt->fetchAll(), 'nombre', 'cle'));
+    }
+
     /** [2026-10-24] Transactions : la dissociation d'un lot écrit plusieurs lignes. */
     public function beginTransaction(): void
     {

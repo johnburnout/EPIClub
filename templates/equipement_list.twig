@@ -14,10 +14,21 @@
     </div>
     {% endif %}
 
+    {# [2026-10-25] Équipements d'un fournisseur (depuis la liste des fournisseurs) #}
+    {% if fournisseur_filtre|default(null) %}
+    <div class="alert alert-info d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <span>🏷️ Équipements du fournisseur <strong>{{ fournisseur_filtre.nom }}</strong></span>
+        <a href="/equipements" class="btn btn-sm btn-outline-secondary">Retirer ce filtre</a>
+    </div>
+    {% endif %}
+
     <!-- Filtres + Tri + Limite -->
     <form method="get" class="mb-3">
         {% if filtres.fin_avant %}
         <input type="hidden" name="fin_avant" value="{{ filtres.fin_avant }}">
+        {% endif %}
+        {% if filtres.fournisseur|default(null) %}
+        <input type="hidden" name="fournisseur" value="{{ filtres.fournisseur }}">
         {% endif %}
         <!-- LIGNE 1 : Filtres -->
         <div class="row g-3">

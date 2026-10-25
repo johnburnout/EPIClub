@@ -282,6 +282,11 @@ Les prêts **en retard** (date de retour prévue dépassée) sont signalés en r
 ### Emplacements
 - Définir des emplacements physiques (lieu de stockage, rayonnage, etc.).
 
+### Catégories, emplacements et fournisseurs : consultation
+- Tout utilisateur connecté peut **consulter** (en lecture seule) les catégories, les emplacements et les fournisseurs : menu **📚 Référentiels** (pour les administrateurs : menu Administration, où ils restent modifiables).
+- Chaque liste et chaque fiche indique le **nombre d'équipements** affectés (hors équipements supprimés) ; un clic affiche ces équipements dans la liste des équipements (pour un fournisseur : les équipements de ses acquisitions).
+- Chaque liste a une **recherche** (sans tenir compte des accents ni des majuscules : libellé, code ou description pour les catégories ; libellé ou description pour les emplacements ; nom, email ou téléphone pour les fournisseurs), des **filtres** (avec ou sans équipements ; pour les catégories : EPI, durée maximum) et un **tri** croissant ou décroissant (libellé ou nom, code pour les catégories, nombre d'équipements). « Réinitialiser » revient à la liste complète.
+
 ### Acquisitions
 - Gérer les achats d'équipements avec factures et génération automatique des équipements.
 - **Importer (Excel / CSV)** : création groupée d'acquisitions validées à partir d'un fichier (voir §2.3).

@@ -3,7 +3,9 @@
 namespace Epiclub\Controller;
 
 use Epiclub\Domain\FournisseurManager;
+use Epiclub\Domain\EquipementManager;
 use Epiclub\Engine\AbstractController;
+use Epiclub\Engine\ListeReferentiel;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -25,22 +27,61 @@ class FournisseurController extends AbstractController
         return new FournisseurManager();
     }
 
+    /** [2026-10-25] Équipements — factory surchargeable en test. */
+    protected function equipementManager(): EquipementManager
+    {
+        return new EquipementManager();
+    }
+
+    /**
+     * [2026-10-25] Nombre d'équipements (non supprimés) par fournisseur :
+     * [id => nombre] ; [] si le comptage est indisponible.
+     *
+     * @return array<int, int>
+     */
+    private function nbEquipements(): array
+    {
+        try {
+            return $this->equipementManager()->compterParFournisseur();
+        } catch (\Throwable $e) {
+            error_log('[' . static::class . '] nbEquipements : ' . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * [2026-10-25] Consultable par tout utilisateur connecté (lecture
+     * seule) ; création, modification et suppression : administrateurs.
+     */
     public function list(Request $request)
     {
-        $this->deniAccessUnlessGranted('ROLE_ADMIN');
+        $this->deniAccessUnlessGranted('ROLE_USER');
 
         $fournisseurManager = $this->fournisseurManager();
-        $fournisseurs = $fournisseurManager->findAll();
+        $tous = $fournisseurManager->findAll() ?: [];
+        $nb = $this->nbEquipements();
+
+        // [2026-10-25] Recherche, filtre (équipements) et tri
+        $params = ListeReferentiel::parametres($request, ['nom', 'equipements'], 'nom');
+        $fournisseurs = ListeReferentiel::rechercher($tous, $params['q'], ['nom', 'email', 'phone']);
+        $fournisseurs = ListeReferentiel::filtrerEquipements($fournisseurs, $params['equipements'], $nb);
+        $fournisseurs = ListeReferentiel::trier($fournisseurs, $params['order_by'], $params['order_dir'], [
+            'nom' => 'nom',
+            'equipements' => fn (array $f) => $nb[(int) $f['id']] ?? 0,
+        ], 'nom');
 
         return $this->render('fournisseur_list.twig', [
-            'fournisseurs' => $fournisseurs
+            'fournisseurs' => $fournisseurs,
+            'total' => count($tous),
+            'filtres' => $params,
+            'nb_equipements' => $nb,
         ]);
     }
 
     public function show(Request $request)
     {
-        // Cohérent avec list() : les fiches fournisseurs sont réservées aux admins
-        $this->deniAccessUnlessGranted('ROLE_ADMIN');
+        // [2026-10-25] Cohérent avec list() : consultable par tout utilisateur connecté
+        $this->deniAccessUnlessGranted('ROLE_USER');
 
         $id = $this->getValidId($request);
         if ($id === null) {
@@ -57,7 +98,8 @@ class FournisseurController extends AbstractController
         }
 
         return $this->render('fournisseur_show.twig', [
-            'fournisseur' => $fournisseur
+            'fournisseur' => $fournisseur,
+            'nb_equipements' => $this->nbEquipements()[$id] ?? 0,
         ]);
     }
 

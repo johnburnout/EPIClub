@@ -3,7 +3,9 @@
 namespace Epiclub\Controller;
 
 use Epiclub\Domain\EmplacementManager;
+use Epiclub\Domain\EquipementManager;
 use Epiclub\Engine\AbstractController;
+use Epiclub\Engine\ListeReferentiel;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
@@ -24,15 +26,51 @@ class EmplacementController extends AbstractController
         return new EmplacementManager();
     }
 
+    /** [2026-10-25] Équipements — factory surchargeable en test. */
+    protected function equipementManager(): EquipementManager
+    {
+        return new EquipementManager();
+    }
+
+    /**
+     * [2026-10-25] Nombre d'équipements (non supprimés) par emplacement :
+     * [id => nombre] ; [] si le comptage est indisponible.
+     *
+     * @return array<int, int>
+     */
+    private function nbEquipements(): array
+    {
+        try {
+            return $this->equipementManager()->compterPar('emplacement_id');
+        } catch (\Throwable $e) {
+            error_log('[' . static::class . '] nbEquipements : ' . $e->getMessage());
+            return [];
+        }
+    }
+
     public function list(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_USER');
 
         $emplacementManager = $this->emplacementManager();
-        $emplacements = $emplacementManager->findAll();
+        $tous = $emplacementManager->findAll() ?: [];
+        $nb = $this->nbEquipements();
+
+        // [2026-10-25] Recherche, filtre (équipements) et tri
+        $params = ListeReferentiel::parametres($request, ['libelle', 'equipements'], 'libelle');
+        $emplacements = ListeReferentiel::rechercher($tous, $params['q'], ['libelle', 'description']);
+        $emplacements = ListeReferentiel::filtrerEquipements($emplacements, $params['equipements'], $nb);
+        $emplacements = ListeReferentiel::trier($emplacements, $params['order_by'], $params['order_dir'], [
+            'libelle' => 'libelle',
+            'equipements' => fn (array $e) => $nb[(int) $e['id']] ?? 0,
+        ], 'libelle');
 
         return $this->render('emplacement_list.twig', [
-            'emplacements' => $emplacements
+            'emplacements' => $emplacements,
+            'total' => count($tous),
+            'filtres' => $params,
+            // [2026-10-25] Lien vers les équipements de chaque emplacement
+            'nb_equipements' => $nb,
         ]);
     }
 
@@ -55,7 +93,8 @@ class EmplacementController extends AbstractController
         }
 
         return $this->render('emplacement_show.twig', [
-            'emplacement' => $emplacement
+            'emplacement' => $emplacement,
+            'nb_equipements' => $this->nbEquipements()[$id] ?? 0,
         ]);
     }
 
