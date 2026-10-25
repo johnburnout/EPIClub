@@ -1,4 +1,4 @@
-# EPIClub et Virtualmin : installation, mises à jour et sauvegardes
+# EPIClub et Virtualmin : installation et sauvegardes
 
 > **Statut : étude et proposition.** Rien n'est développé. Ce document
 > décrit l'existant, ce que Virtualmin propose, les options possibles et
@@ -6,6 +6,13 @@
 > (recommandation au § 5).
 >
 > Version étudiée : v2.2.0, octobre 2026.
+>
+> **Décision du 25/10/2026 : les mises à jour sortent du champ.** Les
+> super-administrateurs des clubs continuent de les faire depuis la page
+> *Mise à jour*. Ils sont prévenus des nouvelles versions par une liste
+> de diffusion. L'étude porte donc sur l'**installation** et les
+> **sauvegardes**. Les pistes de mise à jour depuis Virtualmin (§ 4.2)
+> restent notées pour mémoire.
 
 ## 1. Le besoin
 
@@ -14,7 +21,8 @@ Virtualmin chacune) sont hébergées sous Virtualmin. On veut pouvoir
 lancer depuis Virtualmin :
 
 - l'**installation** d'une nouvelle instance ;
-- ses **mises à jour** (fichiers et migrations SQL) ;
+- ses **mises à jour** (fichiers et migrations SQL), ce qui a été écarté
+  depuis (voir la décision en tête du document) ;
 - ses **sauvegardes** (base et fichiers).
 
 Aujourd'hui ces trois opérations ne passent que par le navigateur :
@@ -226,7 +234,11 @@ Constats utiles pour la suite :
 | Développement | Aucun | Moyen : extraire la logique de `setup/steps` dans un service | I2 **plus** environ 200 lignes de Perl, et un accès root pour le déposer |
 | Dépendance à Virtualmin | Aucune | Aucune (utile partout) | Forte (format Perl, GPL ou Pro à vérifier) |
 
-### 4.2 Mises à jour
+### 4.2 Mises à jour (écartées, pour mémoire)
+
+> Hors champ depuis la décision du 25/10/2026 : on garde **U1**, avec
+> une annonce des versions par liste de diffusion. U2 et U3 ne sont pas
+> développées.
 
 | | U1 – Page *Mise à jour* (actuelle) | U2 – `bin/mettre-a-jour.php` (cron ou *Custom Commands*) | U3 – Mise à jour de l'Install Script |
 |---|---|---|---|
@@ -266,27 +278,23 @@ brancher Virtualmin dessus par les moyens les plus légers :
      base, migrations, super-admin protégé, `SECRET_KEY`, club,
      catégories, `SETUP_COMPLETE`. Les étapes de `setup/` deviennent
      des formulaires minces qui l'appellent ;
-   - `MiseAJourService`, sorti d'`AppUpdateController::perform()`.
-     Le contrôleur ne garde que l'affichage.
-2. **Écrire trois commandes** : `bin/installer.php` (I2),
-   `bin/mettre-a-jour.php` (U2) et `bin/sauvegarder.php` (B2). Leur
-   contrat commun est décrit au § 6.
+   - la mise à jour reste dans `AppUpdateController` (U1, inchangée).
+2. **Écrire deux commandes** : `bin/installer.php` (I2) et
+   `bin/sauvegarder.php` (B2). Leur contrat commun est décrit au § 6.
 3. **Raccorder Virtualmin**, sans Perl dans un premier temps :
    - sauvegardes : **B2** (cron du domaine à 2 h, sauvegarde planifiée
      de Virtualmin à 3 h). B3 seulement si on veut une synchronisation
      stricte ;
-   - mises à jour : **U2**, avec `--verifier` chaque nuit par cron (mail
-     si une version est disponible) et un bouton *Custom Commands*
-     « Mettre à jour EPIClub » (paramètre : le domaine, ou toutes les
-     instances) ;
    - installation : **I2**, avec un bouton *Custom Commands*
      « Installer EPIClub » une fois le serveur virtuel créé avec MySQL.
 4. **Ensuite seulement**, et si les tests sur le serveur le confirment
    (installeurs personnalisés acceptés, docroot réglable), écrire
-   l'**Install Script `epiclub.pl` (I3 et U3)** comme une fine couche
-   au-dessus d'I2 et U2. Il apporte la création de la base, la gestion
-   de PHP et l'intégration native à l'interface. Il coûte du Perl à
-   maintenir et une dépendance au format de Virtualmin.
+   l'**Install Script `epiclub.pl` (I3)** comme une fine couche au-dessus
+   d'I2. Il apporte la création de la base, la gestion de PHP et
+   l'intégration native à l'interface. Il coûte du Perl à maintenir et
+   une dépendance au format de Virtualmin. Sa fonction de mise à jour
+   (U3) n'est pas utilisée : `_realversion` lit `version.txt`, pour que
+   Virtualmin affiche la version installée par les admins.
 
 Cet ordre livre vite quelque chose d'utile (les CLI et les boutons),
 profite aussi aux hébergements hors Virtualmin, et ne verrouille aucun
@@ -318,7 +326,7 @@ choix.
 - **Journal** : une ligne horodatée par étape dans
   `var/log/epiclub-cli.log` (0640, sans aucun secret). La même ligne
   part dans `error_log` pour garder la trace habituelle.
-- **Codes de sortie** (communs aux trois commandes) :
+- **Codes de sortie** (communs aux deux commandes) :
 
   | Code | Signification |
   |---|---|
@@ -327,29 +335,23 @@ choix.
   | 2 | Usage : option manquante ou invalide, lancement hors CLI, lancement en root |
   | 3 | Prérequis absents : version de PHP, extension, droits d'écriture, espace disque |
   | 4 | Verrou occupé : une autre opération est en cours |
-  | 5 | GitHub ou le réseau est indisponible |
-  | 6 | Archive rejetée : SHA-256, zip slip, `vendor/` absent |
-  | 7 | Sauvegarde impossible, rien n'a été modifié |
-  | 8 | Échec **après** modification (migration échouée) : l'instance reste en maintenance et il faut intervenir |
+  | 5 | Archive d'installation rejetée (SHA-256, zip slip), pour l'Install Script |
+  | 7 | Sauvegarde impossible |
+  | 8 | Installation interrompue **après** modification (migration échouée) : il faut intervenir |
   | 9 | Déjà installé : `SETUP_COMPLETE`, ou base non vide |
-  | 10 | `--verifier` : une mise à jour est disponible |
 
-### 6.2 Verrou et mode maintenance
+### 6.2 Verrou
 
 - **Verrou unique** `var/epiclub.lock` (`flock`, non bloquant), partagé
-  par l'installation, la mise à jour, la sauvegarde et la restauration,
-  par la CLI **et** par le web. Il remplace ou englobe
-  `var/backups/.verrou`.
-- **Mode maintenance** : un fichier `var/maintenance.json` (motif,
-  début, PID). `app/bootstrap.php` répond alors **503** avec
-  `Retry-After` à toute requête HTTP, avant la session et la base. Il
-  est posé juste avant la copie des fichiers et retiré après le
-  remplacement de `vendor/`. En cas d'échec après modification
-  (code 8), il **reste en place** : on ne sert pas une instance à moitié
-  migrée. `bin/mettre-a-jour.php --fin-maintenance` le retire à la main.
-- La page *Mise à jour* (U1) bénéficie du même mécanisme. Sa propre
-  requête doit être exemptée du 503 jusqu'à l'affichage du résultat,
-  qui est déjà préchargé.
+  par l'installation, la sauvegarde et la restauration (CLI et web)
+  **et par la page *Mise à jour***. Une sauvegarde planifiée ne doit pas
+  tourner pendant qu'un admin met à jour, ni l'inverse. Ce verrou
+  remplace ou englobe `var/backups/.verrou`. Pour la mise à jour, c'est
+  la seule retouche à prévoir : quelques lignes dans
+  `AppUpdateController::perform()`.
+- Le **mode maintenance** (503 pendant la copie des fichiers) n'est plus
+  nécessaire au périmètre retenu. Il reste une amélioration possible de
+  la page *Mise à jour*, indépendante de Virtualmin.
 
 ### 6.3 `bin/installer.php`
 
@@ -373,29 +375,10 @@ le verrou. Un échec en cours de route laisse un état identifiable :
 `.env.local.php` sans `SETUP_COMPLETE`, que l'assistant web sait
 reprendre.
 
-### 6.4 `bin/mettre-a-jour.php`
+### 6.4 `bin/mettre-a-jour.php` : abandonné
 
-```bash
-php8.4 bin/mettre-a-jour.php --verifier [--canal=stable|beta] [--quiet]
-```
-
-```bash
-php8.4 bin/mettre-a-jour.php --appliquer [--version=v2.3.0] [--archive=/chemin/epiclub-v2.3.0.zip --sha256=…] [--json]
-```
-
-```bash
-php8.4 bin/mettre-a-jour.php --fin-maintenance
-```
-
-- `--verifier` : rien n'est modifié. Code 10 si une version est
-  disponible (cron envoie alors un mail).
-- `--appliquer` : même déroulé que `perform()`, sous verrou et en
-  maintenance. `--archive` permet à l'Install Script (qui a déjà
-  téléchargé le zip via `_files`) ou à un serveur sans accès à GitHub de
-  fournir le fichier ; le SHA-256 reste obligatoire.
-- Le cron conseillé, sous l'utilisateur du domaine, est
-  `--verifier --quiet` chaque nuit. L'application automatique
-  (`--appliquer --quiet`) reste un choix de l'hébergeur.
+Les mises à jour restent sur la page *Mise à jour* (décision du
+25/10/2026).
 
 ### 6.5 `bin/sauvegarder.php`
 
@@ -412,39 +395,31 @@ php8.4 bin/sauvegarder.php [--garder=7] [--sql-seul] [--quiet] [--json]
 - Un nom distinct (`-planifiee`) sépare ces archives des exports faits à
   la main dans la page.
 
-### 6.6 Couche Virtualmin (option I3 et U3, plus tard)
+### 6.6 Couche Virtualmin (option I3, plus tard)
 
 - `ressources/virtualmin/epiclub.pl`, à copier par l'hébergeur dans
   `/etc/webmin/virtual-server/scripts/`.
 - `_files` télécharge `epiclub-vX.Y.Z.zip` et `.sha256` depuis la
   release GitHub.
-- `_install` décompresse dans `~/epiclub`, ou met à jour en appelant
-  `bin/mettre-a-jour.php --archive`. Il lance ensuite
+- `_install` décompresse dans `~/epiclub`, puis lance
   `bin/installer.php` **sous l'utilisateur du domaine** (avec le binaire
-  PHP du domaine), règle le docroot sur `~/epiclub/public` et renvoie
-  l'URL d'accès.
+  PHP du domaine). Il règle le docroot sur `~/epiclub/public` et renvoie
+  l'URL d'accès. Une mise à jour par Virtualmin (`$upgrade`) est
+  refusée, avec un message qui renvoie à la page *Mise à jour*.
 - `_realversion` lit `version.txt`.
 - `_uninstall` supprime `~/epiclub` et les tables de la base.
-- Exemple de boucle de mise à jour de toutes les instances :
-
-  ```bash
-  virtualmin list-scripts --all-domains --type epiclub --name-only
-  ```
-
-  suivie de `install-script --upgrade` pour chaque résultat (options
-  exactes à vérifier sur la version installée).
 
 ### 6.7 Boutons *Custom Commands* (sans Perl)
 
-Exemple : commande « Mettre à jour EPIClub », paramètre `domaine` (liste
+Exemple : commande « Sauvegarder EPIClub », paramètre `domaine` (liste
 des utilisateurs), exécutée en root :
 
 ```bash
-su -s /bin/sh "$domaine" -c 'cd ~/epiclub && /usr/bin/php8.4 bin/mettre-a-jour.php --appliquer'
+su -s /bin/sh "$domaine" -c 'cd ~/epiclub && /usr/bin/php8.4 bin/sauvegarder.php'
 ```
 
-Même principe pour « Sauvegarder » et « Installer ». La sortie s'affiche
-dans Webmin.
+Même principe pour « Installer EPIClub ». La sortie s'affiche dans
+Webmin.
 
 ## 7. Risques et précautions
 
@@ -456,8 +431,8 @@ dans Webmin.
 | **Extensions** | `gd`, `fileinfo`, `pdo_mysql` et `zip`, à installer **pour la bonne version** (`php8.4-gd`…). La CLI et FPM peuvent avoir des `php.ini` différents. | Contrôle des prérequis en CLI. `_php_modules` dans l'Install Script |
 | **Docroot** | EPIClub doit être servi depuis `public/`. Le docroot par défaut de Virtualmin est `~/public_html`. Le `.htaccess` racine refuse tout, par précaution. | Installer dans `~/epiclub` et régler le docroot (*Website Options*, ou `virtualmin modify-web --document-dir`, à vérifier), ou remplacer `public_html` par un lien vers `epiclub/public` |
 | **Limites d'upload** | 12 Mo recommandés. Les réglages du domaine sont modifiables dans Virtualmin. | `_php_vars`, ou documentation |
-| **Accès sortant** | La mise à jour télécharge depuis GitHub (`allow_url_fopen` ou cURL). La limite de l'API est de 60 requêtes par heure et par IP, partagée entre toutes les instances du serveur. | `GITHUB_TOKEN`, cache existant, ou `--archive` téléchargée une seule fois pour toutes les instances |
-| **Accès concurrents** | Le cron, le bouton et la page web peuvent agir en même temps. Il n'y a pas de verrou aujourd'hui pour la mise à jour. | Verrou unique et maintenance (§ 6.2) |
+| **Accès sortant** | La page *Mise à jour* interroge GitHub (`allow_url_fopen` ou cURL). La limite de l'API est de 60 requêtes par heure et par IP, partagée entre toutes les instances du serveur. | `GITHUB_TOKEN` et le cache existant. L'annonce par liste de diffusion évite que tous les admins vérifient en même temps |
+| **Accès concurrents** | La sauvegarde planifiée peut tomber pendant une mise à jour lancée par un admin. Il n'y a pas de verrou aujourd'hui pour la mise à jour. | Verrou unique (§ 6.2) |
 | **Espace disque** | Archives dans `var/backups`, sauvegardées **en plus** par Virtualmin, et anciens `vendor/`. | Rétention (`--garder`), exclusions de répertoires dans Virtualmin |
 | **Commandes avant / après de Virtualmin** | Lancées en root, une fois par sauvegarde, pas pour « Backup now ». Régression signalée en 7.7. | Préférer B2 (cron du domaine). Si B3 : un script qui boucle, testé sur la version installée |
 | **Install Scripts sous GPL** | Le support des installeurs personnalisés sans Pro n'est pas confirmé officiellement. | Tester un `epiclub.pl` minimal avant d'investir (raison de placer I3 en dernier) |
