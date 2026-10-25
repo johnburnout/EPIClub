@@ -1,8 +1,9 @@
 # EPIClub et Virtualmin : installation et sauvegardes
 
-> **Statut : étude et proposition.** Rien n'est développé. Ce document
-> décrit l'existant, ce que Virtualmin propose, les options possibles et
-> ce qu'il faudrait écrire. La solution retenue est décrite au § 5.
+> **Statut : étape 1 développée, non publiée.** Ce document décrit
+> l'existant, ce que Virtualmin propose, les options possibles et ce
+> qu'il faut écrire. La solution retenue est décrite au § 5. Pour
+> reprendre le travail, lire d'abord l'état d'avancement ci-dessous.
 >
 > Version étudiée : v2.2.0, octobre 2026.
 >
@@ -16,6 +17,58 @@
 > **Décision du 25/10/2026 : point d'entrée.** Une page
 > d'administration sur `admin.epiclub.fr` (§ 5), hébergée **sur le même
 > serveur Virtualmin que les instances**. L'agent est appelé par sudo.
+>
+> **Décision du 25/10/2026 : la console.** Dépôt séparé, architecture
+> Symfony et Composer, licence non GPL (§ 5.5).
+
+## État d'avancement (25/10/2026)
+
+Tout est sur la branche locale **`feat/installation-cli`** (partie de
+`main` v2.2.0). Elle n'est **ni poussée, ni fusionnée, ni publiée**.
+Le travail a été fait dans le worktree
+`.claude/worktrees/installation-cli`.
+
+| Commit | Contenu |
+|---|---|
+| `3253814` … `3a92362` | Cette étude et les décisions ci-dessus |
+| `69717ed` | Étape 1 : `InstallationService`, `bin/installer.php`, `bin/sauvegarder.php`, verrou commun `var/epiclub.lock` (y compris la page *Mise à jour*), assistant web branché sur le service, prérequis et catégories déplacés dans `ressources/`, correctif CSRF de l'étape Catégories |
+| `d73148c` | Correctif : l'assistant web n'est plus interrompu après la création du compte admin (`EtatInstallation`, `SETUP_EN_COURS`) |
+
+**Vérifié :**
+- suite Unit (1245 tests) et PHPStan, tous deux verts ;
+- 3 tests d'intégration MySQL (installation complète, refus d'une
+  seconde installation, commandes lancées en processus séparé) ;
+- parcours complet de l'assistant web avec curl, y compris le refus
+  d'un second visiteur.
+
+La suite Integration a 4 échecs, identiques sur `main` : ils viennent de
+la base de développement locale, pas de cette branche.
+
+**Reste à faire :**
+1. **Relire puis pousser** la branche et ouvrir une pull request. La CI
+   GitHub n'a pas encore tourné dessus.
+2. **Essai sur le serveur Virtualmin réel**, sous l'utilisateur d'un
+   domaine :
+   - lancer `bin/installer.php` avec le binaire PHP 8.4 du domaine ;
+   - lancer `bin/sauvegarder.php` en cron ;
+   - vérifier les droits de `.env.local.php` (0600), de `var/` et du
+     journal `var/log/epiclub-cli.log`.
+3. **Étape 2 : `epiclub-agent`** (§ 5.1 et 5.3) :
+   - script root à liste blanche d'actions et règle sudoers ;
+   - création de domaine par `virtualmin create-domain`, PHP 8.4,
+     docroot sur `public/` (commande `modify-web` à vérifier) ;
+   - archive de release vérifiée par SHA-256 ;
+   - tâches longues suivies en JSON.
+4. **Étape 3 : la console `admin.epiclub.fr`** (§ 5.2, 5.4, 5.5) :
+   - nouveau dépôt Symfony ;
+   - pages Instances, Nouvelle instance, Fiche, Sauvegardes, Journal ;
+   - TOTP obligatoire.
+5. **Décisions encore ouvertes :**
+   - licence de la console : propriétaire ou MIT ;
+   - nom du dépôt (`EPIClub-console` proposé) ;
+   - après création d'une instance : envoyer au super-admin l'email
+     « mot de passe oublié » (il faut un SMTP), ou afficher une seule
+     fois le mot de passe généré ?
 
 ## 1. Le besoin
 
