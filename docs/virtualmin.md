@@ -62,8 +62,7 @@ la base de développement locale, pas de cette branche.
 4. **Étape 3 : la console `admin.epiclub.fr`** (§ 5.2, 5.4, 5.5).
    Le dépôt privé **`johnburnout/EPIClub-console`** existe depuis le
    25/10/2026, avec un squelette Symfony 7.4 LTS vide, une licence
-   propriétaire et la description de l'agent (`agent/README.md`). Le
-   dossier local est `/Users/jean/Documents/php/EPIClub-console`. Reste
+   propriétaire et la description de l'agent (`agent/README.md`). Reste
    à écrire :
    - pages Instances, Nouvelle instance, Fiche, Sauvegardes, Journal ;
    - TOTP obligatoire.
