@@ -59,16 +59,17 @@ la base de développement locale, pas de cette branche.
      docroot sur `public/` (commande `modify-web` à vérifier) ;
    - archive de release vérifiée par SHA-256 ;
    - tâches longues suivies en JSON.
-4. **Étape 3 : la console `admin.epiclub.fr`** (§ 5.2, 5.4, 5.5) :
-   - nouveau dépôt Symfony ;
+4. **Étape 3 : la console `admin.epiclub.fr`** (§ 5.2, 5.4, 5.5).
+   Le dépôt privé **`johnburnout/EPIClub-console`** existe depuis le
+   25/10/2026, avec un squelette Symfony 7.4 LTS vide, une licence
+   propriétaire et la description de l'agent (`agent/README.md`). Le
+   dossier local est `/Users/jean/Documents/php/EPIClub-console`. Reste
+   à écrire :
    - pages Instances, Nouvelle instance, Fiche, Sauvegardes, Journal ;
    - TOTP obligatoire.
-5. **Décisions encore ouvertes :**
-   - licence de la console : propriétaire ou MIT ;
-   - nom du dépôt (`EPIClub-console` proposé) ;
-   - après création d'une instance : envoyer au super-admin l'email
-     « mot de passe oublié » (il faut un SMTP), ou afficher une seule
-     fois le mot de passe généré ?
+5. **Décision encore ouverte :** après la création d'une instance,
+   envoyer au super-admin l'email « mot de passe oublié » (il faut un
+   SMTP), ou afficher une seule fois le mot de passe généré ?
 
 ## 1. Le besoin
 
