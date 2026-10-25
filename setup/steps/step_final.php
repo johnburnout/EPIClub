@@ -7,7 +7,8 @@
     unset(
         $_SESSION['setup_reinstall_authorized'],
         $_SESSION['setup_reinstall_authorized_at'],
-        $_SESSION['setup_reinstall_authorized_by']
+        $_SESSION['setup_reinstall_authorized_by'],
+        $_SESSION[\Epiclub\Engine\EtatInstallation::SESSION_ADMIN_CREE]
     );
 
     // Marquer l'installation comme terminée

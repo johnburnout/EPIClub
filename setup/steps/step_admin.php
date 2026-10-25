@@ -4,6 +4,7 @@
  * Administrateur
  */
 
+use Epiclub\Engine\EtatInstallation;
 use Epiclub\Exception\InstallationException;
 use Epiclub\Process\InstallationService;
 
@@ -48,6 +49,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 InstallationService::connexionDepuisConfig($config),
                 $saisie
             );
+
+            // Seule cette session peut terminer l'assistant (SMTP, club,
+            // catégories) : pour tout autre visiteur, l'instance est
+            // désormais installée (EtatInstallation, app/bootstrap.php).
+            $_SESSION[EtatInstallation::SESSION_ADMIN_CREE] = true;
 
             // Clé de chiffrement : jamais régénérée si elle existe déjà.
             $cle = InstallationService::cleDeChiffrement($config);

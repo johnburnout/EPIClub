@@ -192,6 +192,18 @@ final class InstallationServiceTest extends TestCase
         $fichier = $this->dossier . '/.env.local.php';
         InstallationService::marquerTerminee($fichier);
         self::assertNotEmpty(InstallationService::lireConfig($fichier)['SETUP_COMPLETE']);
+        self::assertArrayNotHasKey('SETUP_EN_COURS', InstallationService::lireConfig($fichier), 'Ajouté seulement s\'il existait');
+    }
+
+    public function testMarquerTermineeLeveLAssistantEnCours(): void
+    {
+        $fichier = $this->dossier . '/.env.local.php';
+        InstallationService::ecrireConfig($fichier, ['SETUP_EN_COURS' => '1']);
+        InstallationService::marquerTerminee($fichier);
+
+        $config = InstallationService::lireConfig($fichier);
+        self::assertNotEmpty($config['SETUP_COMPLETE']);
+        self::assertEmpty($config['SETUP_EN_COURS']);
     }
 
     public function testCategoriesProposeesSelonActivite(): void

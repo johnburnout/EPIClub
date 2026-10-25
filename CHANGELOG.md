@@ -39,6 +39,11 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 - Assistant d'installation, étape Catégories : « jeton CSRF invalide »
   quand la liste était longue (session ouverte après l'envoi des
   en-têtes).
+- Assistant d'installation : dès la création du compte admin,
+  l'instance était considérée installée et les étapes SMTP, Club et
+  Catégories étaient sautées (renvoi vers la connexion). Seule la
+  session qui a créé le compte peut désormais terminer l'assistant ;
+  pour tout autre visiteur, l'instance reste vue comme installée.
 
 ## [v2.2.0] — 2026-10-25
 

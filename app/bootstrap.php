@@ -46,34 +46,31 @@ if (is_file($envFile) && is_readable($envFile)) {
 
 // L'installation est considérée terminée si :
 //  - SETUP_COMPLETE est explicitement posé, OU
-//  - les paramètres DB sont présents ET un utilisateur existe déjà en base
-$setupComplete = !empty($config['SETUP_COMPLETE']);
-
-if (!$setupComplete && !empty($config['DB_HOST']) && !empty($config['DB_NAME'])) {
-    // Fallback : détecter une installation existante sans flag SETUP_COMPLETE
-    try {
-        $pdo = new \PDO(
-            'mysql:host=' . $config['DB_HOST']
-            . ';dbname=' . $config['DB_NAME']
-            . ';charset=utf8mb4',
-            $config['DB_USER'],
-            $config['DB_PASS'],
-            [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]
-        );
-        $count = (int) $pdo->query("SELECT COUNT(*) FROM utilisateur")->fetchColumn();
-        if ($count > 0) {
-            // [SÉCURITÉ — audit P1] Installation existante détectée :
-            // on marque le setup complet EN MÉMOIRE uniquement. Le
-            // bootstrap ne doit JAMAIS réécrire .env.local.php (le
-            // processus web n'a pas à posséder un droit d'écriture sur
-            // le fichier de secrets — seul l'installeur le crée).
-            $setupComplete = true;
+//  - les paramètres DB sont présents ET un utilisateur existe déjà en
+//    base, sauf pour la session qui termine l'assistant (EtatInstallation).
+// [SÉCURITÉ — audit P1] Le repli vaut EN MÉMOIRE uniquement : le
+// bootstrap ne réécrit JAMAIS .env.local.php (le processus web n'a pas à
+// posséder un droit d'écriture sur le fichier de secrets).
+$setupComplete = !\Epiclub\Engine\EtatInstallation::installeurRequis(
+    $config,
+    static function () use ($config): int {
+        $pdo = \Epiclub\Process\InstallationService::connexionDepuisConfig($config);
+        return (int) $pdo->query("SELECT COUNT(*) FROM utilisateur")->fetchColumn();
+    },
+    // Session native de l'assistant (setup/includes/helpers.php) ; ouverte
+    // seulement dans ce cas rare, et refermée si elle n'est pas celle de
+    // l'installateur (la session de l'application démarre ensuite).
+    static function (): bool {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
         }
-    } catch (\Throwable $e) {
-        // Table utilisateur absente ou DB inaccessible → on reste sur le setup
-        error_log('[bootstrap] SETUP_COMPLETE fallback failed: ' . $e->getMessage());
+        $installateur = !empty($_SESSION[\Epiclub\Engine\EtatInstallation::SESSION_ADMIN_CREE]);
+        if (!$installateur) {
+            session_write_close();
+        }
+        return $installateur;
     }
-}
+);
 
 if (!$setupComplete) {
     if (is_dir(__DIR__ . '/../setup')) {

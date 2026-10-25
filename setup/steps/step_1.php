@@ -53,8 +53,13 @@ if ($canProceed && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit
     $errors = array_merge($errors, InstallationService::validerSite($siteName, $rootUrl));
 
     if (empty($errors)) {
-        $env->set('SITE_NAME', $siteName);
-        $env->set('ROOT_URL', $rootUrl);
+        // SETUP_EN_COURS : l'assistant reste accessible à son auteur après
+        // la création du compte admin (EtatInstallation), jusqu'à l'étape finale.
+        $env->setAll([
+            'SITE_NAME'      => $siteName,
+            'ROOT_URL'       => $rootUrl,
+            'SETUP_EN_COURS' => '1',
+        ]);
 
         header('Location: ?step=dbms');
         exit;

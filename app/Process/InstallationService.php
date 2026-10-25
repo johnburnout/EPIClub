@@ -419,9 +419,16 @@ final class InstallationService
         ];
     }
 
+    /**
+     * Pose SETUP_COMPLETE et lève SETUP_EN_COURS (assistant web) s'il existe.
+     */
     public static function marquerTerminee(string $fichier): void
     {
-        self::ecrireConfig($fichier, ['SETUP_COMPLETE' => true]);
+        $valeurs = ['SETUP_COMPLETE' => true];
+        if (array_key_exists('SETUP_EN_COURS', self::lireConfig($fichier))) {
+            $valeurs['SETUP_EN_COURS'] = '';
+        }
+        self::ecrireConfig($fichier, $valeurs);
     }
 
     // ==================================================================
