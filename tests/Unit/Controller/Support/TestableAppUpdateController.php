@@ -7,6 +7,7 @@ namespace Epiclub\Tests\Unit\Controller\Support;
 use Epiclub\Controller\AppUpdateController;
 use Epiclub\Engine\ConfigProvider;
 use Epiclub\Engine\DatabaseBackup;
+use Epiclub\Engine\VerrouInstance;
 use Epiclub\Engine\GitHubReleaseProviderInterface;
 use Epiclub\Engine\Session;
 
@@ -94,6 +95,15 @@ final class TestableAppUpdateController extends AppUpdateController
 
     /** [v1.4.0] Sauvegarde injectée (null = parent). */
     public ?DatabaseBackup $databaseBackupOverride = null;
+
+    /** Verrou injecté (null = verrou dans un dossier temporaire). */
+    public ?VerrouInstance $verrouOverride = null;
+
+    protected function verrouInstance(): VerrouInstance
+    {
+        return $this->verrouOverride
+            ?? new VerrouInstance(sys_get_temp_dir() . '/epiclub-test-verrou-' . getmypid() . '.lock');
+    }
 
     protected function migrationsAppliquees(): array
     {

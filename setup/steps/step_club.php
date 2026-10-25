@@ -1,12 +1,8 @@
 <?php
 
-use Epiclub\Domain\ClubManager;
+use Epiclub\Process\InstallationService;
 
-$activites = [
-    'Alpinisme',
-    'Escalade',
-    'Spéléologie'
-];
+$activites = InstallationService::ACTIVITES;
 
 $club = [
     'nom' => '',
@@ -24,32 +20,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $form_errors[] = 'Erreur de sécurité : jeton CSRF invalide ou expiré. Rechargez la page et réessayez.';
     }
 
-    if (empty($_POST['nom'])) {
-        $form_errors[] = 'Le nom du club est requis.';
-    }
-    if (empty($_POST['email']) || !filter_var($_POST['email'], FILTER_VALIDATE_EMAIL)) {
-        $form_errors[] = 'L\'adresse email du club est requise et doit être valide.';
-    }
+    $saisie = [
+        'nom'         => (string) ($_POST['nom'] ?? ''),
+        'activite'    => (string) ($_POST['activite'] ?? ''),
+        'description' => (string) ($_POST['description'] ?? ''),
+        'email'       => (string) ($_POST['email'] ?? ''),
+        'phone'       => (string) ($_POST['phone'] ?? ''),
+    ];
+
+    // Règles partagées avec bin/installer.php
+    $form_errors = array_merge($form_errors, InstallationService::validerClub($saisie));
 
     if (empty($form_errors)) {
-        $club = [
-            'nom' => $_POST['nom'],
-            'activite' => $_POST['activite'] ?? '',
-            'description' => $_POST['description'] ?? '',
-            'email' => $_POST['email'],
-            'phone' => $_POST['phone'] ?? '',
-        ];
-
-        $clubManager = new ClubManager();
-        $existingClub = $clubManager->findParameters();
-        if ($existingClub && isset($existingClub['id'])) {
-            $club['id'] = $existingClub['id'];
-        }
-        $clubManager->save($club);
+        (new InstallationService(dirname(__DIR__, 2)))->enregistrerClub(
+            InstallationService::connexionDepuisConfig(InstallationService::lireConfig(__DIR__ . '/../../.env.local.php')),
+            $saisie
+        );
 
         header('Location: ?step=categories');
         exit();
     }
+
+    $club = $saisie;
 }
 
 require __DIR__ . '/../includes/header.php';

@@ -1,7 +1,7 @@
 <?php
 
-use Epiclub\Domain\CategorieManager;
 use Epiclub\Domain\ClubManager;
+use Epiclub\Process\InstallationService;
 
 /**
  * Étape « Catégories » de l'installeur (décision produit 2026-10-19) :
@@ -10,7 +10,7 @@ use Epiclub\Domain\ClubManager;
  * modifiable ensuite dans Administration → Catégories.
  */
 
-$presets = require __DIR__ . '/../includes/categories_presets.php';
+$installation = new InstallationService(dirname(__DIR__, 2));
 
 // Activité du club saisie à l'étape précédente
 $clubManager = new ClubManager();
@@ -18,7 +18,7 @@ $club = $clubManager->findParameters();
 $activite = $club['activite'] ?? '';
 
 // Liste adaptée à l'activité (Escalade par défaut si inconnue)
-$categories = $presets[$activite] ?? $presets['Escalade'];
+$categories = $installation->categoriesProposees($activite);
 
 $form_errors = [];
 
@@ -31,20 +31,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($form_errors)) {
         $selection = $_POST['sel'] ?? [];
         if (is_array($selection)) {
-            $categorieManager = new CategorieManager();
-            foreach ($selection as $index => $on) {
-                $index = (int) $index;
-                if (!isset($categories[$index])) {
-                    continue; // index forgé → ignoré
-                }
-                $categorie = $categories[$index];
-                // Idempotent : ne pas créer de doublon si la catégorie
-                // existe déjà (ex. ré-exécution de l'étape).
-                if ($categorieManager->findOneByCriteria(['libelle' => $categorie['libelle']])) {
-                    continue;
-                }
-                $categorieManager->save($categorie);
-            }
+            // Index forgés ignorés ; idempotent (pas de doublon de libellé).
+            $installation->creerCategories(
+                InstallationService::connexionDepuisConfig(InstallationService::lireConfig(__DIR__ . '/../../.env.local.php')),
+                $activite,
+                array_map('intval', array_keys($selection))
+            );
         }
 
         header('Location: ?step=final');

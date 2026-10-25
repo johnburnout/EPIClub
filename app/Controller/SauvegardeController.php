@@ -6,7 +6,6 @@ namespace Epiclub\Controller;
 
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\MigrationManager;
-use Epiclub\Engine\MySqlDatabaseDumper;
 use Epiclub\Engine\SauvegardeService;
 use Epiclub\Exception\SauvegardeException;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -41,19 +40,12 @@ class SauvegardeController extends AbstractController
 
     protected function sauvegardeService(): SauvegardeService
     {
-        $racine = $this->racineProjet();
-        $config = $this->configProvider();
-
-        return new SauvegardeService(
-            new MySqlDatabaseDumper($this->databasePdo()),
-            [
-                'images'  => $this->getPublicPath('images'),
-                'uploads' => $racine . '/_storage/uploads',
-            ],
-            $racine . '/var/backups',
-            trim((string) @file_get_contents($racine . '/version.txt')) ?: '0.0.0',
-            SauvegardeService::empreinte((string) $config->get('SECRET_KEY', '')),
-            $this->migrationsDisponibles(),
+        // Même construction que bin/sauvegarder.php (verrou commun compris).
+        return SauvegardeService::pourInstance(
+            $this->racineProjet(),
+            $this->databasePdo(),
+            (string) $this->configProvider()->get('SECRET_KEY', ''),
+            $this->getPublicPath('images'),
         );
     }
 
@@ -85,17 +77,6 @@ class SauvegardeController extends AbstractController
             \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
             \PDO::ATTR_EMULATE_PREPARES   => false,
         ]);
-    }
-
-    /** @return string[] */
-    private function migrationsDisponibles(): array
-    {
-        $versions = array_map(
-            static fn (string $f) => basename($f, '.sql'),
-            glob($this->racineProjet() . '/migrations/*.sql') ?: []
-        );
-        sort($versions, SORT_STRING);
-        return $versions;
     }
 
     /** Opérations longues : pas de coupure par le temps d'exécution ni par le client. */

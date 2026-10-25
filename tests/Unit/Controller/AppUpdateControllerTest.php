@@ -6,6 +6,7 @@ namespace Epiclub\Tests\Unit\Controller;
 
 use Epiclub\Engine\GitHubReleaseProviderInterface;
 use Epiclub\Engine\Session;
+use Epiclub\Engine\VerrouInstance;
 use Epiclub\Tests\Unit\Controller\Support\TestableAppUpdateController;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockBuilder;
@@ -139,6 +140,54 @@ final class AppUpdateControllerTest extends TestCase
         self::assertDirectoryDoesNotExist(
             __DIR__ . '/../../../var/tmp/update/extracted'
         );
+    }
+
+    // ==================================================================
+    // Verrou commun de l'instance (var/epiclub.lock)
+    // ==================================================================
+
+    public function testPerformRefuseSiUneAutreOperationTientLeVerrou(): void
+    {
+        $fichier = sys_get_temp_dir() . '/epiclub-verrou-maj-' . bin2hex(random_bytes(4)) . '.lock';
+        $sauvegardeEnCours = new VerrouInstance($fichier);
+        $sauvegardeEnCours->acquerir('sauvegarde');
+
+        $provider = $this->makeProviderMock();
+        $provider->expects(self::never())->method('getLatestRelease');
+        $provider->expects(self::never())->method('downloadUrl');
+
+        $controller = $this->makeControllerWith($provider);
+        $controller->verrouOverride = new VerrouInstance($fichier);
+
+        try {
+            $html = (string) $controller->perform(
+                Request::create('/admin/update/perform', 'POST', ['csrf_token' => 'token_test'])
+            )->getContent();
+        } finally {
+            $sauvegardeEnCours->liberer();
+            @unlink($fichier);
+        }
+
+        self::assertStringContainsString('une sauvegarde est déjà en cours', $html);
+        self::assertStringContainsString('Rien n&#039;a été modifié', $html);
+    }
+
+    public function testPerformLibereLeVerrouApresUnEchec(): void
+    {
+        $fichier = sys_get_temp_dir() . '/epiclub-verrou-maj-' . bin2hex(random_bytes(4)) . '.lock';
+        $provider = $this->makeProviderMock();
+        $provider->method('getLatestRelease')->willReturn(null);
+
+        $controller = $this->makeControllerWith($provider);
+        $controller->verrouOverride = new VerrouInstance($fichier);
+        $controller->perform(Request::create('/admin/update/perform', 'POST', ['csrf_token' => 'token_test']));
+
+        // Une autre opération peut ensuite prendre le verrou.
+        $suivante = new VerrouInstance($fichier);
+        $suivante->acquerir('sauvegarde');
+        self::assertTrue($suivante->estAcquis());
+        $suivante->liberer();
+        @unlink($fichier);
     }
 
     /**

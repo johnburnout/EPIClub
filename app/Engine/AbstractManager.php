@@ -9,8 +9,19 @@ abstract class AbstractManager
     protected \PDO $db;
     const MAX_RESULTS = 25;
 
-    public function __construct()
+    /**
+     * @param \PDO|null $pdo Connexion déjà ouverte (installeur en ligne de
+     *                       commande : la base n'est pas encore décrite
+     *                       dans .env.local.php). Par défaut, la connexion
+     *                       est ouverte depuis le fichier de configuration.
+     */
+    public function __construct(?\PDO $pdo = null)
     {
+        if ($pdo !== null) {
+            $this->db = $pdo;
+            return;
+        }
+
         // [#109] Chemin résolu via ConfigFile : en test, la fixture
         // commitée remplace le .env.local.php gitignored.
         $configFile = ConfigFile::defaultPath();

@@ -367,11 +367,41 @@ final class SauvegardeServiceTest extends TestCase
         self::assertNotSame('', $resultat['filet']);
     }
 
+    public function testSauvegardesPlanifieesEtRetention(): void
+    {
+        $service = $this->service();
+        $manuelle = basename($service->creer());
+        $planifiees = [];
+        for ($i = 0; $i < 3; $i++) {
+            $planifiees[] = basename($service->creer(SauvegardeService::TYPE_PLANIFIEE));
+        }
+        self::assertMatchesRegularExpression('/-planifiee(-\d+)?\.zip$/', $planifiees[0]);
+        $types = array_column($service->lister(), 'type', 'nom');
+        self::assertSame(SauvegardeService::TYPE_PLANIFIEE, $types[$planifiees[0]]);
+        self::assertSame(SauvegardeService::TYPE_MANUELLE, $types[$manuelle]);
+
+        // Archives créées dans la même seconde : seul le suffixe « -N »
+        // départage ; on fixe des dates pour un ordre sans ambiguïté.
+        foreach ($planifiees as $rang => $nom) {
+            touch($this->sauvegardes . '/' . $nom, time() - 100 + $rang);
+        }
+
+        $supprimees = $service->conserver(SauvegardeService::TYPE_PLANIFIEE, 2);
+
+        self::assertSame([$planifiees[0]], $supprimees);
+        $restantes = array_column($service->lister(), 'nom');
+        self::assertContains($manuelle, $restantes, 'Un export manuel n\'est jamais supprimé par la rétention');
+        self::assertContains($planifiees[1], $restantes);
+        self::assertContains($planifiees[2], $restantes);
+        self::assertCount(3, $restantes);
+    }
+
     public function testUneSeuleOperationALaFois(): void
     {
         $service = $this->service();
         $service->preparerDossier();
-        $verrou = fopen($this->sauvegardes . '/.verrou', 'c');
+        // Verrou commun de l'instance : var/epiclub.lock (VerrouInstance).
+        $verrou = fopen(dirname($this->sauvegardes) . '/epiclub.lock', 'c');
         flock($verrou, LOCK_EX);
 
         try {

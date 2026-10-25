@@ -9,53 +9,14 @@
 require_once __DIR__ . '/../includes/helpers.php';
 
 use Epiclub\Engine\EnvironmentFileParser;
+use Epiclub\Process\InstallationService;
 
 // ----------------------------------------------------------------
-// VÉRIFICATION DES PRÉREQUIS SYSTÈME
+// VÉRIFICATION DES PRÉREQUIS SYSTÈME (ressources/prerequis.php)
 // ----------------------------------------------------------------
-$requirements = require __DIR__ . '/../requierements.php';
-
-$prereq_errors   = []; // Bloquants : l'installation ne peut pas continuer
-$prereq_warnings = []; // Non bloquants : l'app peut tourner avec limitations
-
-// 1. Version PHP
-$requiredPhp = ltrim($requirements['php_version'], '>=');
-if (version_compare(PHP_VERSION, $requiredPhp, '<')) {
-    $prereq_errors[] = sprintf(
-        "PHP %s ou supérieur est requis (version actuelle : %s).",
-        $requiredPhp,
-        PHP_VERSION
-    );
-}
-
-// 2. Extensions PHP
-foreach ($requirements['php_extensions'] as $ext) {
-    if (!extension_loaded($ext)) {
-        $prereq_errors[] = sprintf(
-            "L'extension PHP « %s » est requise mais non installée. "
-            . "Sur Debian/Ubuntu : sudo apt install php-%s",
-            $ext,
-            str_replace('_', '-', $ext)
-        );
-    }
-}
-
-// 3. Limites d'upload (avertissement seulement : non bloquant)
-if (isset($requirements['upload_limits'])) {
-    foreach ($requirements['upload_limits'] as $key => $required) {
-        $current = (string) ini_get($key);
-        if (parseIniSize($current) < parseIniSize($required)) {
-            $prereq_warnings[] = sprintf(
-                "La limite PHP « %s » est à %s alors que %s est recommandé. "
-                . "Les uploads de factures jusqu'à 10 Mo pourraient échouer. "
-                . "Ajustez-la dans php.ini, .user.ini, ou depuis votre panneau d'hébergement.",
-                $key,
-                $current !== '' ? $current : 'non définie',
-                $required
-            );
-        }
-    }
-}
+$prerequis = (new InstallationService(dirname(__DIR__, 2)))->verifierPrerequis();
+$prereq_errors   = $prerequis['erreurs'];        // Bloquants : l'installation ne peut pas continuer
+$prereq_warnings = $prerequis['avertissements']; // Non bloquants : l'app peut tourner avec limitations
 
 $canProceed = empty($prereq_errors);
 
@@ -67,10 +28,7 @@ $canProceed = empty($prereq_errors);
 // [#108 - Dette 25] 0600 (owner only) : le fichier contiendra DB_PASS et
 // SECRET_KEY — 0664 le rendait lisible par tous les utilisateurs locaux.
 $envFile = __DIR__ . '/../../.env.local.php';
-if (!file_exists($envFile)) {
-    file_put_contents($envFile, '<?php return [];');
-    chmod($envFile, 0600);
-}
+InstallationService::preparerFichierConfig($envFile);
 
 // [#106] La classe app (autoloadée) remplace l'ancien doublon setup :
 // elle échappe via var_export (#49). Pas de load() : lecture directe.
@@ -92,18 +50,16 @@ if ($canProceed && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit
     $siteName = trim($_POST['site_name'] ?? '');
     $rootUrl  = trim($_POST['root_url'] ?? '');
 
-    if (empty($siteName)) {
-        $errors[] = "Le nom du site est requis.";
-    }
-    if (empty($rootUrl)) {
-        $errors[] = "L'URL racine du site est requise.";
-    } elseif (!filter_var($rootUrl, FILTER_VALIDATE_URL)) {
-        $errors[] = "L'URL racine doit être une URL valide (ex: https://mon-site.com).";
-    }
+    $errors = array_merge($errors, InstallationService::validerSite($siteName, $rootUrl));
 
     if (empty($errors)) {
-        $env->set('SITE_NAME', $siteName);
-        $env->set('ROOT_URL', $rootUrl);
+        // SETUP_EN_COURS : l'assistant reste accessible à son auteur après
+        // la création du compte admin (EtatInstallation), jusqu'à l'étape finale.
+        $env->setAll([
+            'SITE_NAME'      => $siteName,
+            'ROOT_URL'       => $rootUrl,
+            'SETUP_EN_COURS' => '1',
+        ]);
 
         header('Location: ?step=dbms');
         exit;

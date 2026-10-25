@@ -9,6 +9,9 @@
  * duree_max_utilisation (durée de vie limitée par le fabricant).
  * L'utilisateur peut décocher les lignes non pertinentes ; tout reste
  * modifiable ensuite dans Administration → Catégories.
+ *
+ * Utilisé aussi par bin/installer.php (InstallationService), d'où son
+ * emplacement hors de setup/.
  */
 
 return [

@@ -27,4 +27,10 @@ if (!in_array($step, $allowedSteps)) {
     $step = '1';
 }
 
+// Session (et jeton CSRF) ouverte AVANT toute sortie : sinon, sur une
+// page longue (liste de catégories de l'alpinisme), le champ caché
+// appelle session_start() après l'envoi des en-têtes, le jeton n'est
+// pas conservé et le POST suivant est refusé (« jeton CSRF invalide »).
+setup_csrf_token();
+
 require __DIR__ . "/steps/step_$step.php";

@@ -1,6 +1,7 @@
 <?php
 
 use Epiclub\Engine\EnvironmentFileParser;
+use Epiclub\Process\InstallationService;
 
 $smtp = [
     'domain' => '',
@@ -17,30 +18,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Erreur de sécurité : jeton CSRF invalide ou expiré. Rechargez la page et réessayez.';
     }
 
-    $smtpEnabled = !empty($_POST['domain']);
-
-    if ($smtpEnabled) {
-        if (empty($_POST['port']) || !ctype_digit((string)$_POST['port'])) {
-            $errors[] = 'Le port SMTP doit être un nombre.';
-        }
-        if (empty($_POST['user'])) {
-            $errors[] = 'Le nom d\'utilisateur SMTP est requis.';
-        }
-    }
+    // Domaine vide : envoi désactivé (règles partagées avec bin/installer.php).
+    $hote        = (string) ($_POST['domain'] ?? '');
+    $port        = (string) ($_POST['port'] ?? '');
+    $utilisateur = (string) ($_POST['user'] ?? '');
+    $errors = array_merge($errors, InstallationService::validerSmtp($hote, $port, $utilisateur));
 
     if (empty($errors)) {
-        $env = new EnvironmentFileParser();
-
-        if ($smtpEnabled) {
-            $mailer_dsn = "smtp://" . urlencode($_POST['user']) . ":" . urlencode($_POST['password'] ?? '') . "@" . $_POST['domain'] . ":" . $_POST['port'];
-            $env->set('MAILER_DSN', $mailer_dsn);
-            $env->set('MAILER_FROM', 'admin@' . $_POST['domain']);
-            $env->set('MAILER_NAME', 'EPIClub');
-            $env->set('MAILER_ENABLED', 'true');
-        } else {
-            $env->set('MAILER_DSN', '');
-            $env->set('MAILER_ENABLED', 'false');
-        }
+        (new EnvironmentFileParser())->setAll(
+            InstallationService::parametresSmtp($hote, $port, $utilisateur, (string) ($_POST['password'] ?? ''))
+        );
 
         header('Location: ?step=club');
         exit();
