@@ -14,7 +14,8 @@
 > restent notées pour mémoire.
 >
 > **Décision du 25/10/2026 : point d'entrée.** Une page
-> d'administration sur `admin.epiclub.fr` (§ 5).
+> d'administration sur `admin.epiclub.fr` (§ 5), hébergée **sur le même
+> serveur Virtualmin que les instances**. L'agent est appelé par sudo.
 
 ## 1. Le besoin
 
@@ -308,9 +309,9 @@ Il y a trois briques :
    et journalise chaque appel dans `/var/log/epiclub-agent.log`. La
    console l'appelle par **une seule règle sudoers** :
    `admin_epiclub ALL=(root) NOPASSWD: /usr/local/sbin/epiclub-agent *`.
-   Si la console est hébergée sur une autre machine, on passe par SSH
-   avec une clé limitée à cette commande (`command="…"` dans
-   `authorized_keys`).
+   La console est sur le même serveur (décision du 25/10/2026). Si elle
+   devait un jour changer de machine, on passerait par SSH avec une clé
+   limitée à cette commande (`command="…"` dans `authorized_keys`).
 3. **La console** : une petite application PHP (même pile
    qu'EPIClub : composants Symfony, Twig), dans un dépôt à part. Elle
    ne possède **aucun** identifiant Virtualmin.
