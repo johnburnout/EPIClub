@@ -16,17 +16,20 @@ use Symfony\Component\HttpFoundation\Request;
  */
 final class AcquisitionControllerListTest extends TestCase
 {
-    private function lister(string $query): string
+    private function lister(string $query, int $supplementaires = 0): string
     {
         $acquisitionManager = $this->createMock(AcquisitionManager::class);
-        $acquisitionManager->method('findAll')->willReturn([
+        $acquisitionManager->method('findAll')->willReturn(array_merge([
             ['id' => 1, 'facture_reference' => 'FAC-C', 'facture_date' => '2026-03-01', 'est_validee' => 1,
              'fournisseur_id' => 2, 'fournisseur' => ['id' => 2, 'nom' => 'Zèbre Sport']],
             ['id' => 2, 'facture_reference' => 'FAC-A', 'facture_date' => '2026-01-15', 'est_validee' => 0,
              'fournisseur_id' => 1, 'fournisseur' => ['id' => 1, 'nom' => 'Alpin Shop']],
             ['id' => 3, 'facture_reference' => 'FAC-B', 'facture_date' => '2026-02-10', 'est_validee' => 1,
              'fournisseur_id' => 1, 'fournisseur' => ['id' => 1, 'nom' => 'Alpin Shop']],
-        ]);
+        ], array_map(static fn (int $i) => [
+            'id' => 100 + $i, 'facture_reference' => sprintf('FAC-Z%02d', $i), 'facture_date' => '2026-04-01', 'est_validee' => 1,
+            'fournisseur_id' => 1, 'fournisseur' => ['id' => 1, 'nom' => 'Alpin Shop'],
+        ], $supplementaires > 0 ? range(1, $supplementaires) : [])));
         $fournisseurManager = $this->createMock(FournisseurManager::class);
         $fournisseurManager->method('findAll')->willReturn([
             ['id' => 1, 'nom' => 'Alpin Shop'],
@@ -103,11 +106,27 @@ final class AcquisitionControllerListTest extends TestCase
 
     public function testPaginationConserveLesFiltres(): void
     {
-        $html = $this->lister('limit=1&page=2&order_by=facture_date');
+        // 12 acquisitions, 10 par page, tri par date : la page 2 contient les 2 plus récentes.
+        $html = $this->lister('page=2&order_by=facture_date', 9);
 
-        self::assertStringContainsString('<td>FAC-B</td>', $html);
+        self::assertStringContainsString('<td>FAC-Z09</td>', $html);
         self::assertStringNotContainsString('<td>FAC-A</td>', $html);
-        self::assertStringContainsString('Page 2 sur 3', $html);
+        self::assertStringContainsString('Page 2 sur 2', $html);
         self::assertStringContainsString('order_by=facture_date', $html);
+    }
+
+    public function testPasDePaginationJusquA10Elements(): void
+    {
+        // [2026-10-25] 10 éléments ou moins : tout sur une page, pagination cachée
+        // (une limite hors 10/25/50/100, comme 1, revient à 10).
+        $html = $this->lister('limit=1&page=2');
+
+        foreach (['FAC-A', 'FAC-B', 'FAC-C'] as $reference) {
+            self::assertStringContainsString('<td>' . $reference . '</td>', $html);
+        }
+        self::assertStringNotContainsString('Page 1 sur', $html);
+        self::assertStringNotContainsString('name="limit"', $html);
+
+        self::assertStringContainsString('name="limit"', $this->lister('', 8));
     }
 }

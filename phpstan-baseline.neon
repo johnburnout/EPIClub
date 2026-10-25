@@ -43,12 +43,6 @@ parameters:
 			path: app/Controller/EquipementController.php
 
 		-
-			message: '#^Comparison operation "\>" between int\<1, max\> and 0 is always true\.$#'
-			identifier: greater.alwaysTrue
-			count: 1
-			path: app/Controller/EquipementController.php
-
-		-
 			message: '#^Method Epiclub\\Controller\\EquipementController\:\:buildExportRows\(\) should return array\<int, array\<string, int\|string\>\> but returns list\<array\<int, mixed\>\>\.$#'
 			identifier: return.type
 			count: 1

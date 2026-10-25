@@ -1,0 +1,37 @@
+{#
+	[2026-10-25] Pagination commune (cf. Epiclub\Engine\Pagination) :
+	affichée seulement s'il y a plus de 10 éléments (p.visible).
+	Variables : p (pagination), affiches (nombre affiché), elements
+	(libellé au pluriel), avec_limite (choix du nombre de lignes, défaut oui).
+#}
+{% if p.visible %}
+	<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 my-2">
+		<nav aria-label="Pagination">
+			<ul class="pagination mb-0">
+				{% if p.hasPrevious %}
+					<li class="page-item"><a class="page-link" href="{{ p.urls.first }}">Premier</a></li>
+					<li class="page-item"><a class="page-link" href="{{ p.urls.previous }}">Précédent</a></li>
+				{% endif %}
+				<li class="page-item disabled"><span class="page-link">Page {{ p.page }} sur {{ p.totalPages }}</span></li>
+				{% if p.hasNext %}
+					<li class="page-item"><a class="page-link" href="{{ p.urls.next }}">Suivant</a></li>
+					<li class="page-item"><a class="page-link" href="{{ p.urls.last }}">Dernier</a></li>
+				{% endif %}
+			</ul>
+		</nav>
+		{% if avec_limite ?? true %}
+			<form method="get" action="{{ p.ancre }}" class="d-flex align-items-center gap-2 m-0">
+				{% for nom, valeur in p.query %}
+					<input type="hidden" name="{{ nom }}" value="{{ valeur }}">
+				{% endfor %}
+				<label for="{{ p.param_limit }}" class="small text-nowrap mb-0">Lignes par page</label>
+				<select name="{{ p.param_limit }}" id="{{ p.param_limit }}" class="form-select form-select-sm" onchange="this.form.submit()">
+					{% for n in p.limites %}
+						<option value="{{ n }}" {% if p.limit == n %}selected{% endif %}>{{ n }}</option>
+					{% endfor %}
+				</select>
+			</form>
+		{% endif %}
+	</div>
+	<p class="text-muted small">Affichage de {{ affiches }} {{ elements }} sur {{ p.total }} (page {{ p.page }}/{{ p.totalPages }})</p>
+{% endif %}

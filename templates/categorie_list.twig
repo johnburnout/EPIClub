@@ -14,7 +14,7 @@
 			{nom: 'epi', label: 'EPI', options: {'': 'Toutes', 'oui': 'EPI', 'non': 'Non EPI'}},
 			{nom: 'duree_max', label: 'Durée max', options: {'': 'Toutes', 'oui': 'Oui', 'non': 'Non'}}
 		],
-		affiches: categories|length, element: 'catégorie', elements: 'catégories'
+		affiches: nb_filtres, element: 'catégorie', elements: 'catégories'
 	} %}
 	<table class="table">
 		<thead>
@@ -69,4 +69,5 @@
 			{% endfor %}
 		</tbody>
 	</table>
+	{% include '_pagination.twig' with {p: pagination, affiches: categories|length, elements: 'catégories'} %}
 {% endblock %}

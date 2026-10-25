@@ -195,6 +195,7 @@ La demande ouvre un **ticket** par niveau requis (administrateur, super-administ
 L'une d'elles fait la modification puis clôt le ticket (**« Modification faite »**), ou le **refuse** (motif obligatoire). Le ticket disparaît alors des tableaux de bord, et le demandeur est notifié sur le sien jusqu'à ce qu'il consulte la réponse. Toutes les demandes sont listées dans **Contrôles → Demandes de modification**.
 
 ### 2.5 Consulter / Exporter
+- **Pagination** (toutes les listes : équipements, acquisitions, contrôles, journaux, prêts et matériel prêté, référentiels, utilisateurs, demandes) : elle n'apparaît que s'il y a **plus de 10 éléments** ; on choisit alors 10, 25, 50 ou 100 lignes par page. À 10 éléments ou moins, tout est affiché sur une seule page.
 
 - **Fiche individuelle** : depuis la liste, cliquer sur **« Voir »** pour consulter toutes les informations (y compris l’historique des contrôles et la facture associée).
 - **PDF individuel** : depuis la fiche, cliquer sur **« PDF »**.

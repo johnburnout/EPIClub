@@ -73,11 +73,11 @@
 				</select>
 			</div>
 
-			{% if pagination.total > 5 %}
+			{% if pagination.total > 10 %}
 			<div class="col-md-2">
 				<label for="limit" class="form-label">Lignes par page</label>
 				<select name="limit" id="limit" class="form-select" onchange="this.form.submit()">
-					{% for n in [5, 10, 25, 50, 100] %}
+					{% for n in [10, 25, 50, 100] %}
 					<option value="{{ n }}" {% if filtres.limit == n %}selected{% endif %}>{{ n }}</option>
 					{% endfor %}
 				</select>
@@ -161,7 +161,7 @@
 	</table>
 
 	<!-- Pagination sous la liste (uniquement si plusieurs pages) -->
-	{% if pagination.totalPages > 1 %}
+	{% if pagination.total > 10 %}
 	<div class="row mt-3">
 		<div class="col-md-12">
 			<nav aria-label="Pagination">

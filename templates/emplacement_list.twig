@@ -10,7 +10,7 @@
 	{% include '_filtres_referentiel.twig' with {
 		url: '/admin/emplacements', placeholder: 'Libellé, description',
 		tris: {'libelle': 'Libellé', 'equipements': 'Nombre d\'équipements'},
-		affiches: emplacements|length, element: 'emplacement', elements: 'emplacements'
+		affiches: nb_filtres, element: 'emplacement', elements: 'emplacements'
 	} %}
 	<table class="table table-striped">
 		<thead>
@@ -54,4 +54,5 @@
 			{% endfor %}
 		</tbody>
 	</table>
+	{% include '_pagination.twig' with {p: pagination, affiches: emplacements|length, elements: 'emplacements'} %}
 {% endblock %}

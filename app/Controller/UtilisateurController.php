@@ -7,6 +7,7 @@ use Epiclub\Domain\UtilisateurManager;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\MailerService;
 use Epiclub\Engine\MailerServiceInterface;
+use Epiclub\Engine\Pagination;
 use Epiclub\Enum\UserRole;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -96,8 +97,12 @@ class UtilisateurController extends AbstractController
                 default => null,
             };
         }
+        // [2026-10-25] Pagination au-delà de 10 éléments
+        [$utilisateurs, $pagination] = Pagination::paginer($utilisateurs, $request);
+
         return $this->render('utilisateur_list.twig', [
-            'utilisateurs' => $utilisateurs
+            'utilisateurs' => $utilisateurs,
+            'pagination' => $pagination,
         ]);
     }
 

@@ -11,6 +11,7 @@ use Epiclub\Domain\CategorieManager;
 use Epiclub\Domain\EmplacementManager;
 use Epiclub\Domain\UtilisateurManager;
 use Epiclub\Engine\AbstractController;
+use Epiclub\Engine\Pagination;
 use Epiclub\Enum\ControleLigneStatut;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -156,7 +157,7 @@ class ControleController extends AbstractController
         $order_by = $request->query->get('order_by', 'date_debut');
         $order_dir = $request->query->get('order_dir', 'desc');
         $page = (int) $request->query->get('page', 1);
-        $limit = (int) $request->query->get('limit', 10);
+        $limit = Pagination::limite($request->query->get('limit'));
 
         if ($statut === '') $statut = null;
         if ($controleur_id === '') $controleur_id = null;
@@ -593,7 +594,7 @@ class ControleController extends AbstractController
     {
         return [
             'page'      => (int) $request->query->get('lignes_page', 1),
-            'limit'     => (int) $request->query->get('lignes_limit', 10),
+            'limit'     => Pagination::limite($request->query->get('lignes_limit')),
             'order_by'  => $request->query->get('lignes_order_by', 'reference'),
             'order_dir' => $request->query->get('lignes_order_dir', 'asc'),
             'statut'    => $request->query->get('lignes_statut', null),
@@ -705,7 +706,7 @@ class ControleController extends AbstractController
         $order_by = $request->query->get('order_by', 'reference');
         $order_dir = $request->query->get('order_dir', 'asc');
         $page = (int) $request->query->get('page', 1);
-        $limit = (int) $request->query->get('limit', 10);
+        $limit = Pagination::limite($request->query->get('limit'));
 
         if ($categorie_id === '') $categorie_id = null;
         if ($filter_epi === '') $filter_epi = null;

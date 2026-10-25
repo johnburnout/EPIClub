@@ -14,6 +14,7 @@ use Epiclub\Domain\CategorieManager;
 use Epiclub\Domain\ReferenceGenerator;
 use Epiclub\Domain\AcquisitionValidatorInterface;
 use Epiclub\Engine\AbstractController;
+use Epiclub\Engine\Pagination;
 use Epiclub\Engine\FactureUploader; 
 use Epiclub\Engine\HandlerResult;
 use Epiclub\Engine\FactureUploaderInterface;
@@ -219,8 +220,8 @@ class AcquisitionController extends AbstractController
 
         // Pagination
         $page = max(1, (int) $request->query->get('page', 1));
-        $limit = (int) $request->query->get('limit', 10);
-        if ($limit < 1) $limit = 10;
+        // [2026-10-25] 10, 25, 50 ou 100 (cf. Pagination::limite)
+        $limit = Pagination::limite($request->query->get('limit'));
         $params['limit'] = $limit;
 
         $total = count($acquisitions);

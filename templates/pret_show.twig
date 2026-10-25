@@ -51,7 +51,7 @@
 	{# ---------------- Matériel ---------------- #}
 	<div class="card mb-4" id="retour">
 		<div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
-			<h5 class="mb-0">Matériel prêté ({{ lignes|length }})</h5>
+			<h5 class="mb-0">Matériel prêté ({{ nb_lignes }})</h5>
 			{% if s == 'termine' %}
 				{% if nb_a_verifier > 0 %}
 					<span class="badge bg-warning text-dark">{{ nb_a_verifier }} à vérifier</span>
@@ -128,10 +128,13 @@
 								onclick="return confirm('Enregistrer l\'état des matériels cochés ? Ce choix est définitif.');">
 								Enregistrer la vérification
 							</button>
-							<small class="text-muted">Le matériel sans état coché reste « Prêté » jusqu'à sa vérification.</small>
+							<small class="text-muted">Le matériel sans état coché reste « Prêté » jusqu'à sa vérification.{% if pagination_lignes.totalPages > 1 %} La vérification porte sur la page affichée.{% endif %}</small>
 						</div>
 					</form>
 				{% endif %}
+				<div class="px-3">
+					{% include '_pagination.twig' with {p: pagination_lignes, affiches: lignes|length, elements: 'matériels'} %}
+				</div>
 			{% endif %}
 		</div>
 	</div>
@@ -216,13 +219,7 @@
 						</div>
 						<button type="submit" class="btn btn-primary">➕ Ajouter la sélection</button>
 					</form>
-					{% if pagination.pages > 1 %}
-						<nav class="mt-2 d-flex align-items-center gap-2">
-							{% if pagination.precedente %}<a class="btn btn-sm btn-outline-secondary" href="{{ pagination.precedente }}">‹ Précédent</a>{% endif %}
-							<span class="small">Page {{ pagination.page }} / {{ pagination.pages }} ({{ pagination.total }} matériels)</span>
-							{% if pagination.suivante %}<a class="btn btn-sm btn-outline-secondary" href="{{ pagination.suivante }}">Suivant ›</a>{% endif %}
-						</nav>
-					{% endif %}
+					{% include '_pagination.twig' with {p: pagination, affiches: disponibles|length, elements: 'matériels'} %}
 				{% endif %}
 			</div>
 		</div>

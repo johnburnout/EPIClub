@@ -24,7 +24,7 @@
 	<hr>
 
 	{% if isGranted('ROLE_ADMIN') %}
-		<h5>À traiter <span class="badge bg-warning text-dark">{{ a_traiter|length }}</span></h5>
+		<h5>À traiter <span class="badge bg-warning text-dark">{{ pagination_a_traiter.total }}</span></h5>
 		{% if a_traiter %}
 			<div class="table-responsive mb-4">
 				<table class="table table-sm table-striped align-middle">
@@ -34,6 +34,7 @@
 					</tbody>
 				</table>
 			</div>
+			{% include '_pagination.twig' with {p: pagination_a_traiter, affiches: a_traiter|length, elements: 'demandes'} %}
 		{% else %}
 			<p class="text-muted mb-4">Aucune demande en attente.</p>
 		{% endif %}
@@ -49,6 +50,7 @@
 				</tbody>
 			</table>
 		</div>
+		{% include '_pagination.twig' with {p: pagination_mes_demandes, affiches: mes_demandes|length, elements: 'demandes'} %}
 	{% else %}
 		<p class="text-muted">Vous n'avez fait aucune demande. Elles se font depuis la fiche d'un équipement
 			(« Demander une modification »).</p>

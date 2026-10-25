@@ -12,6 +12,7 @@ use Epiclub\Domain\UtilisateurManager;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\MailerService;
 use Epiclub\Engine\MailerServiceInterface;
+use Epiclub\Engine\Pagination;
 use Epiclub\Exception\AccessDeniedException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -218,9 +219,18 @@ class TicketController extends AbstractController
         $this->deniAccessUnlessGranted('ROLE_CONTROLLEUR');
 
         $manager = $this->ticketManager();
+        // [2026-10-25] Pagination au-delà de 10 éléments (une par liste)
+        [$aTraiter, $paginationATraiter] = Pagination::paginer(
+            $manager->findOuvertsPourRoles($this->rolesTraitables()), $request, 'a_traiter_'
+        );
+        [$mesDemandes, $paginationMesDemandes] = Pagination::paginer(
+            $manager->findParDemandeur($this->utilisateurId()), $request, 'mes_'
+        );
         return $this->render('ticket_list.twig', [
-            'a_traiter' => $manager->findOuvertsPourRoles($this->rolesTraitables()),
-            'mes_demandes' => $manager->findParDemandeur($this->utilisateurId()),
+            'a_traiter' => $aTraiter,
+            'mes_demandes' => $mesDemandes,
+            'pagination_a_traiter' => $paginationATraiter,
+            'pagination_mes_demandes' => $paginationMesDemandes,
             'libelles' => self::libelles(),
         ]);
     }

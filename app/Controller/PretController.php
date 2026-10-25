@@ -13,6 +13,7 @@ use Epiclub\Domain\PretLigneManager;
 use Epiclub\Domain\PretManager;
 use Epiclub\Domain\PretRegles;
 use Epiclub\Engine\AbstractController;
+use Epiclub\Engine\Pagination;
 use Epiclub\Enum\EquipementStatut;
 use Epiclub\Enum\PretEtatRetour;
 use Epiclub\Enum\PretStatut;
@@ -37,7 +38,6 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class PretController extends AbstractController
 {
-    private const PAR_PAGE = 15;
 
     // ==================================================================
     // Factories — mockables en test Unit (pattern Vague 11)
@@ -154,7 +154,11 @@ class PretController extends AbstractController
             $prets = array_values(array_filter($prets, static fn(array $p) => $p['en_retard']));
         }
 
+        // [2026-10-25] Pagination au-delà de 10 éléments
+        [$prets, $pagination] = Pagination::paginer($prets, $request);
+
         return $this->render('pret_list.twig', [
+            'pagination' => $pagination,
             'prets' => $prets,
             'statuts' => PretStatut::cases(),
             'filtre_statut' => $statut?->value,
@@ -269,10 +273,16 @@ class PretController extends AbstractController
             );
         }
 
+        // [2026-10-25] Matériel prêté paginé au-delà de 10 lignes (les
+        // contrôles ci-dessus portent sur toutes les lignes).
+        [$lignesPage, $paginationLignes] = Pagination::paginer($lignes, $request, 'lignes_', '#retour');
+
         return $this->render('pret_show.twig', [
             'pret' => $saisie,
             'statut' => $statut,
-            'lignes' => $lignes,
+            'lignes' => $lignesPage,
+            'nb_lignes' => count($lignes),
+            'pagination_lignes' => $paginationLignes,
             'nb_a_verifier' => $nbAVerifier,
             'en_retard' => PretRegles::estEnRetard($pret, $jour),
             'erreurs_validation' => $statut === PretStatut::SAISIE ? self::erreursAffichees($pret, $lignes) : [],
@@ -329,23 +339,14 @@ class PretController extends AbstractController
             }
         ));
 
-        $total = count($liste);
-        $pages = max(1, (int) ceil($total / self::PAR_PAGE));
-        $page = min($pages, max(1, (int) $request->query->get('page', 1)));
-        $liste = array_slice($liste, ($page - 1) * self::PAR_PAGE, self::PAR_PAGE);
+        // [2026-10-25] Pagination commune (au-delà de 10 éléments)
+        [$liste, $pagination] = Pagination::paginer($liste, $request, '', '#ajout');
         foreach ($liste as &$e) {
             $e['categorie_libelle'] = $categories[(int) ($e['categorie_id'] ?? 0)]['libelle'] ?? '';
         }
         unset($e);
 
-        $base = array_filter(['q' => $recherche, 'categorie' => $categorieId], static fn($v) => $v !== '' && $v !== null);
-        return [$liste, [
-            'total' => $total,
-            'page' => $page,
-            'pages' => $pages,
-            'precedente' => $page > 1 ? '?' . http_build_query($base + ['page' => $page - 1]) . '#ajout' : null,
-            'suivante' => $page < $pages ? '?' . http_build_query($base + ['page' => $page + 1]) . '#ajout' : null,
-        ]];
+        return [$liste, $pagination];
     }
 
     /**

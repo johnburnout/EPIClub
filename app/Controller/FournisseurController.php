@@ -6,6 +6,7 @@ use Epiclub\Domain\FournisseurManager;
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\ListeReferentiel;
+use Epiclub\Engine\Pagination;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -70,8 +71,14 @@ class FournisseurController extends AbstractController
             'equipements' => fn (array $f) => $nb[(int) $f['id']] ?? 0,
         ], 'nom');
 
+        // [2026-10-25] Pagination au-delà de 10 éléments
+        $nbFiltres = count($fournisseurs);
+        [$fournisseurs, $pagination] = Pagination::paginer($fournisseurs, $request);
+
         return $this->render('fournisseur_list.twig', [
             'fournisseurs' => $fournisseurs,
+            'nb_filtres' => $nbFiltres,
+            'pagination' => $pagination,
             'total' => count($tous),
             'filtres' => $params,
             'nb_equipements' => $nb,

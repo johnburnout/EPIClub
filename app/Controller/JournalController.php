@@ -4,6 +4,7 @@
 namespace Epiclub\Controller;
 
 use Epiclub\Engine\AbstractController;
+use Epiclub\Engine\Pagination;
 use Epiclub\Engine\EncryptionService;
 use Epiclub\Domain\JournalManager;
 use Symfony\Component\HttpFoundation\Request;
@@ -42,7 +43,7 @@ class JournalController extends AbstractController
             'annee' => $request->query->get('annee'),
             'order_by' => $request->query->get('order_by', 'date_debut'),
             'order_dir' => $request->query->get('order_dir', 'desc'),
-            'limit' => (int) $request->query->get('limit', 10),
+            'limit' => Pagination::limite($request->query->get('limit')),
             'page' => (int) $request->query->get('page', 1)
         ];
 

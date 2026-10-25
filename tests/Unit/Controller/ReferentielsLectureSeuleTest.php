@@ -116,6 +116,27 @@ final class ReferentielsLectureSeuleTest extends TestCase
         self::assertStringContainsString('Aucune catégorie ne correspond', $liste('q=zzz'));
     }
 
+    public function testPaginationAuDelaDeDixFournisseurs(): void
+    {
+        $page = function (int $n, string $query = '') {
+            $manager = $this->createMock(FournisseurManager::class);
+            $manager->method('findAll')->willReturn(array_map(
+                static fn (int $i) => ['id' => $i, 'nom' => sprintf('Fournisseur %02d', $i), 'email' => '', 'phone' => ''],
+                range(1, $n)
+            ));
+            $controller = (new TestableFournisseurControllerBuilder($this))
+                ->withSession($this->session('ROLE_USER'))->withFournisseurManager($manager)->build();
+            return (string) $controller->list(Request::create('/admin/fournisseurs?' . $query))->getContent();
+        };
+
+        self::assertStringNotContainsString('aria-label="Pagination"', $page(10));
+        $html = $page(11);
+        self::assertStringContainsString('Page 1 sur 2', $html);
+        self::assertStringNotContainsString('Fournisseur 11', $html);
+        self::assertStringContainsString('Fournisseur 11', $page(11, 'page=2'));
+        self::assertStringContainsString('11 fournisseurs', $html); // résumé du filtre : total filtré
+    }
+
     public function testFicheCategorie(): void
     {
         $html = (string) $this->categories('ROLE_USER')->show($this->avecId('/admin/categories/categorie-1', 1))->getContent();

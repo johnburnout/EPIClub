@@ -8,6 +8,7 @@ use Epiclub\Domain\ReferenceGenerator;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\ImageUploader;
 use Epiclub\Engine\ListeReferentiel;
+use Epiclub\Engine\Pagination;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
@@ -151,8 +152,14 @@ class CategorieController extends AbstractController
             'equipements' => fn (array $c) => $nb[(int) $c['id']] ?? 0,
         ], 'libelle');
 
+        // [2026-10-25] Pagination au-delà de 10 éléments
+        $nbFiltres = count($categories);
+        [$categories, $pagination] = Pagination::paginer($categories, $request);
+
         return $this->render('categorie_list.twig', [
             'categories' => $categories,
+            'nb_filtres' => $nbFiltres,
+            'pagination' => $pagination,
             'total' => count($toutes),
             'filtres' => $params,
             // [2026-10-25] Lien vers les équipements de chaque catégorie

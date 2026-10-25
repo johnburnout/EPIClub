@@ -76,5 +76,6 @@
 				</tbody>
 			</table>
 		</div>
+		{% include '_pagination.twig' with {p: pagination, affiches: prets|length, elements: 'fiches de prêt'} %}
 	{% endif %}
 {% endblock %}

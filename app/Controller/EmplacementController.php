@@ -6,6 +6,7 @@ use Epiclub\Domain\EmplacementManager;
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\ListeReferentiel;
+use Epiclub\Engine\Pagination;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
@@ -65,8 +66,14 @@ class EmplacementController extends AbstractController
             'equipements' => fn (array $e) => $nb[(int) $e['id']] ?? 0,
         ], 'libelle');
 
+        // [2026-10-25] Pagination au-delà de 10 éléments
+        $nbFiltres = count($emplacements);
+        [$emplacements, $pagination] = Pagination::paginer($emplacements, $request);
+
         return $this->render('emplacement_list.twig', [
             'emplacements' => $emplacements,
+            'nb_filtres' => $nbFiltres,
+            'pagination' => $pagination,
             'total' => count($tous),
             'filtres' => $params,
             // [2026-10-25] Lien vers les équipements de chaque emplacement

@@ -10,7 +10,7 @@
 	{% include '_filtres_referentiel.twig' with {
 		url: '/admin/fournisseurs', placeholder: 'Nom, email, téléphone',
 		tris: {'nom': 'Nom', 'equipements': 'Nombre d\'équipements'},
-		affiches: fournisseurs|length, element: 'fournisseur', elements: 'fournisseurs'
+		affiches: nb_filtres, element: 'fournisseur', elements: 'fournisseurs'
 	} %}
 	{% if fournisseurs %}
 		<table class="table">
@@ -55,6 +55,7 @@
 				{% endfor %}
 			</tbody>
 		</table>
+		{% include '_pagination.twig' with {p: pagination, affiches: fournisseurs|length, elements: 'fournisseurs'} %}
 	{% else %}
 		<p>Aucun fournisseur trouvé!</p>
 	{% endif %}

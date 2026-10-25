@@ -13,6 +13,7 @@ use Epiclub\Domain\ReferenceGenerator;
 use Epiclub\Enum\EquipementStatut;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\ImageUploader;
+use Epiclub\Engine\Pagination;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -146,9 +147,9 @@ class EquipementController extends AbstractController
 
         // Récupération des paramètres de pagination
         $page = (int) $request->query->get('page', 1);
-        $limit = (int) $request->query->get('limit', 10);
+        // [2026-10-25] 10, 25, 50 ou 100 (cf. Pagination::limite)
+        $limit = Pagination::limite($request->query->get('limit'));
         if ($page < 1) $page = 1;
-        if ($limit < 1) $limit = 10;
 
         // Récupération de la liste filtrée et triée
         $equipements = $this->getFilteredEquipments($request);
