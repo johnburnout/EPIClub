@@ -10,6 +10,30 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v2.2.0] — 2026-10-25
+
+Connexion par email ; référentiels consultables, filtrables et triables ;
+pagination homogène.
+
+### Added
+
+- **Connexion** au choix avec l'identifiant ou l'adresse mail.
+- **Catégories, emplacements, fournisseurs** : consultables en lecture
+  seule par tout utilisateur connecté (menu « Référentiels ») ; nombre
+  d'équipements affectés, avec lien vers ces équipements ; recherche,
+  filtres (avec / sans équipements ; EPI, durée max) et tri croissant /
+  décroissant.
+- **Liste des équipements** : filtre par fournisseur.
+
+### Changed
+
+- **Pagination** de toutes les listes (y compris matériel prêté,
+  référentiels, utilisateurs, demandes) : affichée seulement au-delà de
+  10 éléments, avec 10, 25, 50 ou 100 lignes par page (le choix 5 est
+  retiré).
+- Les boutons de modification des référentiels ne s'affichent plus qu'aux
+  administrateurs ; la fiche emplacement est en lecture seule.
+
 ## [v2.1.0] — 2026-10-24
 
 Listes déroulantes par ordre alphabétique ; mail de bienvenue.
