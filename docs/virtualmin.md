@@ -312,9 +312,10 @@ Il y a trois briques :
    La console est sur le même serveur (décision du 25/10/2026). Si elle
    devait un jour changer de machine, on passerait par SSH avec une clé
    limitée à cette commande (`command="…"` dans `authorized_keys`).
-3. **La console** : une petite application PHP (même pile
-   qu'EPIClub : composants Symfony, Twig), dans un dépôt à part. Elle
-   ne possède **aucun** identifiant Virtualmin.
+3. **La console** : une application **Symfony complète**, installée par
+   Composer, dans un **dépôt séparé** (nom proposé :
+   `EPIClub-console`), sous une **licence non GPL** (§ 5.5). Elle ne
+   possède **aucun** identifiant Virtualmin.
 
 **Pourquoi pas l'API distante de Virtualmin ?** `remote.cgi` (HTTPS,
 port 10000) exécute les mêmes commandes, mais elle est **réservée à
@@ -385,7 +386,38 @@ qu'un plan de secours.
   `.env.local.php` de chaque instance.
 - Journal d'audit dans la console, en plus de celui de l'agent.
 
-### 5.5 Ordre de réalisation
+### 5.5 Dépôt, pile et licence de la console
+
+Décision du 25/10/2026 : **dépôt séparé**, **architecture Symfony et
+Composer**, **pas de licence GPL**.
+
+- **Pile** : `symfony/skeleton` avec `symfony/webapp-pack`, soit :
+  - SecurityBundle (comptes de l'équipe) ;
+  - Twig ;
+  - Doctrine ORM (base propre à la console : comptes, journal d'audit,
+    suivi des tâches) ;
+  - Messenger (optionnel, pour relever l'état des tâches longues) ;
+  - `scheb/2fa-bundle` (TOTP) ;
+  - le composant Process pour appeler l'agent, avec un tableau
+    d'arguments et jamais une chaîne de shell ;
+  - tests avec PHPUnit, analyse avec PHPStan, comme dans EPIClub.
+- **L'agent** vit dans ce même dépôt (dossier `agent/`), mais il est
+  déployé à part : copié dans `/usr/local/sbin/`, **propriété de root,
+  non modifiable** par l'utilisateur de la console. Sinon, la règle
+  sudo reviendrait à donner root à la console. Il ne dépend ni de
+  Symfony ni de `vendor/` : c'est un seul fichier PHP ou shell, lisible
+  et vérifiable.
+- **Licence et EPIClub** : EPIClub est en LGPL-3.0-or-later. La console
+  **n'intègre ni ne copie aucun code d'EPIClub**. Elle ne fait que lancer
+  ses commandes (`bin/installer.php`, `bin/sauvegarder.php`) comme
+  programmes séparés, ce qui ne la soumet pas à la licence d'EPIClub.
+  Symfony et les bundles cités sont sous licence MIT, compatible avec
+  une licence propriétaire. À trancher : licence **propriétaire**
+  (« tous droits réservés ») ou **permissive** (MIT, par exemple). Il
+  faudra vérifier la licence de chaque dépendance ajoutée
+  (`composer licenses`).
+
+### 5.6 Ordre de réalisation
 
 1. Dans EPIClub : extraire l'installation de `setup/` dans un service,
    écrire `bin/installer.php` et `bin/sauvegarder.php`, ajouter le
