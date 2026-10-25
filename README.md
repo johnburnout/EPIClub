@@ -27,6 +27,22 @@ EpiClub est une application de gestion et de journalisation des contrôles des E
 > **À la fin de l'installation**, supprimez le dossier `setup/` de votre serveur.
 > Tant qu'il est présent, l'application affichera une erreur 403 sur `/setup/`.
 
+### Installation en ligne de commande
+
+Même résultat que l'assistant, sans navigateur (hébergeur, Virtualmin,
+console d'hébergement). À lancer **sous l'utilisateur propriétaire des
+fichiers**, jamais en root :
+
+```bash
+EPICLUB_DB_PASS='…' EPICLUB_ADMIN_PASSWORD='…' php bin/installer.php --site-name="EPIClub – Club X" --root-url=https://epi.club-x.fr --db-name=clubx_epiclub --db-user=clubx --admin-username=jdupont --admin-email=j.dupont@club-x.fr --admin-nom=Dupont --admin-prenom=Jean --club-nom="Club X" --club-email=contact@club-x.fr --activite=Escalade
+```
+
+`php bin/installer.php --aide` liste toutes les options (SMTP, mot de
+passe généré, `--json`…). Les mots de passe ne passent jamais en
+argument : variables d'environnement ou fichiers. Codes de sortie : 0
+succès, 2 paramètres invalides, 3 prérequis, 4 autre opération en cours,
+8 installation interrompue, 9 déjà installé.
+
 ## Sauvegardes
 
 ### Sauvegardes automatiques avant migration
@@ -59,6 +75,21 @@ n'apparaît dans la liste des processus). En ligne de commande,
 *Administration → Sauvegarde / restauration* (super-administrateur) :
 archive `.zip` de la base **et** des photos, images et factures, avec
 restauration vérifiée depuis l'application. Voir le guide utilisateur.
+
+### Sauvegarde planifiée (ligne de commande)
+
+La même archive, à programmer en cron sous l'utilisateur du domaine :
+
+```bash
+php bin/sauvegarder.php --quiet
+```
+
+L'archive `var/backups/epiclub-sauvegarde-…-planifiee.zip` apparaît dans
+la page Sauvegarde / restauration. Seules les `BACKUP_RETENTION`
+dernières sauvegardes planifiées sont conservées (`--garder=N` pour
+changer). `--sql-seul` produit un simple dump SQL. Une sauvegarde ne
+démarre pas pendant une mise à jour ou une restauration (code de
+sortie 4).
 
 ## Développement
 

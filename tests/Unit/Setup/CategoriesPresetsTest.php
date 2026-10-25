@@ -18,7 +18,7 @@ final class CategoriesPresetsTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->presets = require dirname(__DIR__, 3) . '/setup/includes/categories_presets.php';
+        $this->presets = require dirname(__DIR__, 3) . '/ressources/categories_presets.php';
     }
 
     public function testChaqueActiviteAUneListeNonVide(): void

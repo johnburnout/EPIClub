@@ -9,7 +9,11 @@
  *  - si la base contient des tables → erreur, suppression manuelle requise
  *  - pas de réaffichage du mot de passe en cas d'erreur
  *  - parsing SQL délégué au MigrationManager
+ *  - logique partagée avec bin/installer.php (InstallationService)
  */
+
+use Epiclub\Exception\InstallationException;
+use Epiclub\Process\InstallationService;
 
 $db_params = [
     'db_host' => 'localhost',
@@ -42,102 +46,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $db_user = trim($_POST['db_user'] ?? '');
     $db_pass = $_POST['db_pass'] ?? '';
 
-    // ---- Validation stricte ----
-    if (empty($db_host)) {
-        $errors[] = "L'adresse du serveur est requise.";
-    } elseif (!preg_match('/^[a-zA-Z0-9\.\:\-\_]+$/', $db_host)) {
-        $errors[] = "L'adresse du serveur contient des caractères invalides.";
-    }
-
-    if (empty($db_name)) {
-        $errors[] = "Le nom de la base est requis.";
-    } elseif (!preg_match('/^[a-zA-Z0-9\_]+$/', $db_name)) {
-        $errors[] = "Le nom de la base ne peut contenir que des lettres, chiffres et underscores.";
-    } elseif (strlen($db_name) > 64) {
-        $errors[] = "Le nom de la base est trop long (64 caractères max).";
-    }
-
-    if (empty($db_user)) {
-        $errors[] = "Le nom d'utilisateur est requis.";
-    } elseif (!preg_match('/^[a-zA-Z0-9\.\-\_\@]+$/', $db_user)) {
-        $errors[] = "Le nom d'utilisateur contient des caractères invalides.";
-    }
+    // ---- Validation stricte (InstallationService) ----
+    $errors = array_merge($errors, InstallationService::validerBase($db_host, $db_name, $db_user));
 
     // ---- Connexion et installation ----
     if (empty($errors)) {
         try {
-            $dsn = 'mysql:host=' . $db_host . ';charset=utf8mb4';
-            $pdo = new \PDO($dsn, $db_user, $db_pass, [
-                \PDO::ATTR_ERRMODE            => \PDO::ERRMODE_EXCEPTION,
-                \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
-                \PDO::ATTR_EMULATE_PREPARES   => false,
+            $pdo = InstallationService::connexion($db_host, $db_user, $db_pass);
+
+            // Base créée si besoin ; refusée si elle contient déjà des
+            // tables (suppression manuelle requise) ; puis migrations.
+            $applied = (new InstallationService(dirname(__DIR__, 2)))->installerBase(
+                $pdo,
+                $db_name,
+                function (string $ligne) {
+                    error_log('[setup/dbms] ' . $ligne);
+                }
+            );
+
+            error_log(sprintf(
+                '[setup/dbms] Installation OK : %d migration(s) appliquée(s).',
+                count($applied)
+            ));
+
+            // ---- Écriture de la config ----
+            InstallationService::ecrireConfig($envFilePath, [
+                'DB_HOST' => $db_host,
+                'DB_NAME' => $db_name,
+                'DB_USER' => $db_user,
+                'DB_PASS' => $db_pass,
             ]);
 
-            // Créer la base si elle n'existe pas.
-            $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$db_name}` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
-            $pdo->exec("USE `{$db_name}`");
-
-            // ---- Vérifier si la base contient déjà des tables ----
-            // Si oui → on refuse. La suppression doit être manuelle (CLI).
-            $tables = $pdo->query("SHOW TABLES")->fetchAll(\PDO::FETCH_COLUMN);
-            $existingTables = count($tables);
-
-            if ($existingTables > 0) {
-                $errors[] = sprintf(
-                    "La base « %s » contient déjà %d table(s). " .
-                    "L'installation ne peut pas continuer. " .
-                    "Pour réinstaller, supprimez la base manuellement " .
-                    "et relancez l'installateur.",
-                    htmlspecialchars($db_name),
-                    $existingTables
-                );
-
-                error_log(sprintf(
-                    '[setup/dbms] Installation refusée : la base %s contient déjà %d table(s).',
-                    $db_name,
-                    $existingTables
-                ));
-            } else {
-                // ---- Exécution des migrations ----
-                $migrationsDir = __DIR__ . '/../../migrations';
-
-                if (!is_dir($migrationsDir)) {
-                    throw new \RuntimeException(
-                        "Le dossier des migrations est introuvable : $migrationsDir"
-                    );
-                }
-
-                $migrationManager = new \Epiclub\Engine\MigrationManager(
-                    $pdo,
-                    $migrationsDir
-                );
-
-                $applied = $migrationManager->migrate(function ($version) {
-                    error_log('[setup/dbms] Migration appliquée : ' . $version);
-                });
-
-                if (empty($applied)) {
-                    throw new \RuntimeException(
-                        "Aucune migration n'a été appliquée. " .
-                        "Vérifiez le contenu du dossier migrations/."
-                    );
-                }
-
-                error_log(sprintf(
-                    '[setup/dbms] Installation OK : %d migration(s) appliquée(s).',
-                    count($applied)
-                ));
-
-                // ---- Écriture de la config ----
-                $env = new \Epiclub\Engine\EnvironmentFileParser();
-                $env->set('DB_HOST', $db_host);
-                $env->set('DB_NAME', $db_name);
-                $env->set('DB_USER', $db_user);
-                $env->set('DB_PASS', $db_pass);
-
-                header('Location: ?step=admin');
-                exit();
-            }
+            header('Location: ?step=admin');
+            exit();
+        } catch (InstallationException $e) {
+            // Base non vide, nom invalide : message prévu pour l'utilisateur.
+            error_log('[setup/dbms] Installation refusée : ' . $e->getMessage());
+            $errors[] = htmlspecialchars($e->getMessage());
         } catch (\PDOException $e) {
             error_log('[setup/dbms] PDO error: ' . $e->getMessage());
             $errors[] = "Connexion impossible à la base de données. " .

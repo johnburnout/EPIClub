@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Epiclub\Engine;
 
 use Epiclub\Exception\SauvegardeException;
+use Epiclub\Exception\VerrouOccupeException;
 use ZipArchive;
 
 /**
@@ -31,7 +32,9 @@ use ZipArchive;
  *     empreinte de SECRET_KEY ;
  *  2. sauvegarde automatique de l'état courant (« filet ») ;
  *  3. en cas d'échec pendant l'application, retour automatique au filet ;
- *  4. une seule opération à la fois (verrou fichier).
+ *  4. une seule opération à la fois : verrou commun de l'instance
+ *     (VerrouInstance, var/epiclub.lock), partagé avec l'installation
+ *     et la mise à jour.
  */
 final class SauvegardeService
 {
@@ -47,6 +50,8 @@ final class SauvegardeService
     public const TYPE_MANUELLE = 'manuelle';
     public const TYPE_AVANT_RESTAURATION = 'avant-restauration';
     public const TYPE_TELEVERSEE = 'televersee';
+    /** Archive créée par bin/sauvegarder.php (cron, console d'hébergement). */
+    public const TYPE_PLANIFIEE = 'planifiee';
 
     /** Nombre de sauvegardes « avant restauration » conservées sur le serveur. */
     public const CONSERVER_AVANT_RESTAURATION = 3;
@@ -54,12 +59,13 @@ final class SauvegardeService
     /** Noms d'archives acceptés (le dossier n'est jamais parcouru au-delà). */
     private const MOTIF_NOM = '/^[A-Za-z0-9][A-Za-z0-9._-]{0,150}\.zip$/';
 
-    /** @var resource|null */
-    private $verrou = null;
+    private VerrouInstance $verrou;
 
     /**
      * @param array<string, string> $dossiers             Dossier logique => chemin absolu.
      * @param string[]              $migrationsDisponibles Migrations présentes sur le disque.
+     * @param VerrouInstance|null   $verrou                Verrou de l'instance ; par défaut
+     *                                                     var/epiclub.lock, à côté de var/backups.
      */
     public function __construct(
         private DatabaseDumperInterface $dumper,
@@ -68,6 +74,7 @@ final class SauvegardeService
         private string $version,
         private string $empreinteCle,
         private array $migrationsDisponibles,
+        ?VerrouInstance $verrou = null,
     ) {
         foreach (array_keys($this->dossiers) as $prefixe) {
             if (!preg_match('/^[a-z]+$/', $prefixe)) {
@@ -75,6 +82,43 @@ final class SauvegardeService
             }
         }
         $this->dossierSauvegardes = rtrim($this->dossierSauvegardes, '/');
+        $this->verrou = $verrou ?? new VerrouInstance(dirname($this->dossierSauvegardes) . '/epiclub.lock');
+    }
+
+    /**
+     * Service d'une installation EPIClub : dossiers des utilisateurs,
+     * var/backups, version.txt, migrations et verrou de l'instance.
+     * Partagé par la page Sauvegarde et bin/sauvegarder.php.
+     *
+     * @param string|null $dossierImages      Par défaut {racine}/public/images (PUBLIC_PATH).
+     * @param string|null $dossierSauvegardes Par défaut {racine}/var/backups.
+     */
+    public static function pourInstance(
+        string $racine,
+        \PDO $pdo,
+        string $secretKey,
+        ?string $dossierImages = null,
+        ?string $dossierSauvegardes = null,
+    ): self {
+        $racine = rtrim($racine, '/');
+        $migrations = array_map(
+            static fn (string $f) => basename($f, '.sql'),
+            glob($racine . '/migrations/*.sql') ?: []
+        );
+        sort($migrations, SORT_STRING);
+
+        return new self(
+            new MySqlDatabaseDumper($pdo),
+            [
+                'images'  => $dossierImages ?? $racine . '/public/images',
+                'uploads' => $racine . '/_storage/uploads',
+            ],
+            $dossierSauvegardes ?? $racine . '/var/backups',
+            trim((string) @file_get_contents($racine . '/version.txt')) ?: '0.0.0',
+            self::empreinte($secretKey),
+            $migrations,
+            VerrouInstance::pourRacine($racine),
+        );
     }
 
     /**
@@ -101,7 +145,7 @@ final class SauvegardeService
      */
     public function creer(string $type = self::TYPE_MANUELLE): string
     {
-        $this->verrouiller();
+        $this->verrouiller('sauvegarde');
         try {
             return $this->creerSansVerrou($type);
         } finally {
@@ -113,7 +157,11 @@ final class SauvegardeService
     {
         $this->preparerDossier();
 
-        $suffixe = $type === self::TYPE_AVANT_RESTAURATION ? '-avant-restauration' : '';
+        $suffixe = match ($type) {
+            self::TYPE_AVANT_RESTAURATION => '-avant-restauration',
+            self::TYPE_PLANIFIEE          => '-planifiee',
+            default                       => '',
+        };
         $base = 'epiclub-sauvegarde-' . date('Ymd-His') . $suffixe;
         $nom = $base . '.zip';
         for ($i = 2; file_exists($this->dossierSauvegardes . '/' . $nom); $i++) {
@@ -477,7 +525,7 @@ final class SauvegardeService
      */
     public function restaurer(string $chemin, ?callable $migrer = null): array
     {
-        $this->verrouiller();
+        $this->verrouiller('restauration');
         try {
             $manifeste = $this->analyser($chemin);
 
@@ -648,7 +696,32 @@ final class SauvegardeService
         if (str_contains($nom, '-avant-restauration')) {
             return self::TYPE_AVANT_RESTAURATION;
         }
+        if (str_contains($nom, '-planifiee')) {
+            return self::TYPE_PLANIFIEE;
+        }
         return self::TYPE_MANUELLE;
+    }
+
+    /**
+     * Ne garde que les $garder archives les plus récentes du type donné
+     * (rétention des sauvegardes planifiées).
+     *
+     * @return string[] Noms des archives supprimées.
+     */
+    public function conserver(string $type, int $garder): array
+    {
+        $garder = max(1, $garder);
+        $archives = array_values(array_filter(
+            $this->lister(),
+            static fn ($a) => $a['type'] === $type
+        ));
+        $supprimees = [];
+        foreach (array_slice($archives, $garder) as $ancienne) {
+            if (@unlink($this->dossierSauvegardes . '/' . $ancienne['nom'])) {
+                $supprimees[] = $ancienne['nom'];
+            }
+        }
+        return $supprimees;
     }
 
     /** Ne garde que les N dernières sauvegardes « avant restauration ». */
@@ -689,25 +762,21 @@ final class SauvegardeService
         @rmdir($dossier);
     }
 
-    private function verrouiller(): void
+    private function verrouiller(string $operation): void
     {
         $this->preparerDossier();
-        $f = @fopen($this->dossierSauvegardes . '/.verrou', 'c');
-        if ($f === false || !flock($f, LOCK_EX | LOCK_NB)) {
-            if ($f !== false) {
-                fclose($f);
-            }
-            throw new SauvegardeException('Une sauvegarde ou une restauration est déjà en cours. Réessayez dans quelques minutes.');
+        try {
+            $this->verrou->acquerir($operation);
+        } catch (VerrouOccupeException $e) {
+            throw new SauvegardeException($e->getMessage(), 0, $e);
+        } catch (\RuntimeException $e) {
+            error_log('[SauvegardeService] verrou : ' . $e->getMessage());
+            throw new SauvegardeException('Le verrou de l\'instance ne peut pas être posé (droits d\'écriture sur var/ ?).', 0, $e);
         }
-        $this->verrou = $f;
     }
 
     private function deverrouiller(): void
     {
-        if ($this->verrou !== null) {
-            flock($this->verrou, LOCK_UN);
-            fclose($this->verrou);
-            $this->verrou = null;
-        }
+        $this->verrou->liberer();
     }
 }

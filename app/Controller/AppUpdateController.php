@@ -7,6 +7,8 @@ use Epiclub\Engine\DatabaseBackup;
 use Epiclub\Engine\MySqlDatabaseDumper;
 use Epiclub\Engine\GitHubReleaseProvider;
 use Epiclub\Engine\GitHubReleaseProviderInterface;
+use Epiclub\Engine\VerrouInstance;
+use Epiclub\Exception\VerrouOccupeException;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -132,6 +134,16 @@ class AppUpdateController extends AbstractController
             ->getAppliedVersions();
     }
 
+    /**
+     * Verrou commun de l'instance (var/epiclub.lock) : pas de mise à jour
+     * pendant une sauvegarde planifiée, une restauration ou une
+     * installation, ni l'inverse. Surchargé en test Unit.
+     */
+    protected function verrouInstance(): VerrouInstance
+    {
+        return VerrouInstance::pourRacine(__DIR__ . '/../..');
+    }
+
     protected function databaseBackup(): DatabaseBackup
     {
         return new DatabaseBackup(
@@ -206,7 +218,8 @@ class AppUpdateController extends AbstractController
         // d'être rattrapée par le catch(\Throwable) du bas et transformée
         // en message d'erreur générique.
         $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
-        
+
+        $verrou = $this->verrouInstance();
         try {
             if ($request->getMethod() !== 'POST') {
                 return new RedirectResponse('/admin/update');
@@ -218,6 +231,18 @@ class AppUpdateController extends AbstractController
                 return $this->resultat([
                     'success' => false,
                     'message' => 'Token CSRF invalide. Merci de recharger la page.',
+                ]);
+            }
+
+            // Verrou commun : refus immédiat si une sauvegarde, une
+            // restauration ou une installation est en cours. Rien n'a
+            // encore été téléchargé ni modifié.
+            try {
+                $verrou->acquerir('mise-a-jour');
+            } catch (VerrouOccupeException $e) {
+                return $this->resultat([
+                    'success' => false,
+                    'message' => $e->getMessage() . ' Rien n\'a été modifié.',
                 ]);
             }
             
@@ -450,6 +475,8 @@ class AppUpdateController extends AbstractController
                 'success' => false,
                 'message' => 'Une erreur est survenue lors de la mise à jour. Merci de réessayer ou de contacter un administrateur.',
             ]);
+        } finally {
+            $verrou->liberer();
         }
     }
 

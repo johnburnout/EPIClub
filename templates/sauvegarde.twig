@@ -103,6 +103,8 @@
                                     <code>{{ a.nom }}</code>
                                     {% if a.type == 'avant-restauration' %}
                                         <span class="badge bg-secondary">avant restauration</span>
+                                    {% elseif a.type == 'planifiee' %}
+                                        <span class="badge bg-info text-dark">planifiée</span>
                                     {% elseif a.type == 'televersee' %}
                                         <span class="badge bg-warning text-dark">téléversée, non restaurée</span>
                                     {% endif %}

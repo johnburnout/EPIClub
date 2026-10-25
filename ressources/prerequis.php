@@ -1,6 +1,11 @@
 <?php
 
-
+/**
+ * Prérequis d'EPIClub, vérifiés par l'assistant d'installation (étape 1)
+ * et par bin/installer.php (InstallationService::verifierPrerequis()).
+ * Hors de setup/ : la ligne de commande doit les trouver même après la
+ * suppression de ce dossier.
+ */
 return [
     'php_version' => '>=8.4',
     'php_extensions' => [

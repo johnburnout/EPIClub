@@ -10,6 +10,36 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Added
+
+- **Installation en ligne de commande** : `bin/installer.php`, non
+  interactif (même résultat que l'assistant web : base, migrations,
+  super-administrateur protégé, `SECRET_KEY`, club, catégories). Les
+  secrets passent par l'environnement ou un fichier, jamais en argument.
+  Il propose `--json` et des codes de sortie documentés.
+- **Sauvegarde planifiée** : `bin/sauvegarder.php` (archive complète
+  restaurable depuis la page Sauvegarde, ou `--sql-seul`), avec
+  rétention des sauvegardes planifiées (`--garder`). Ces archives sont
+  marquées « planifiée » dans la page Sauvegarde.
+- **Verrou commun** de l'instance (`var/epiclub.lock`) : installation,
+  sauvegarde, restauration et mise à jour ne peuvent plus se
+  chevaucher.
+
+### Changed
+
+- L'assistant d'installation (`setup/`) s'appuie sur un service commun
+  avec la ligne de commande (`InstallationService`). Une base existante
+  et vide est utilisée sans être recréée (utile chez un hébergeur sans
+  droit `CREATE DATABASE`).
+- Les prérequis et les listes de catégories quittent `setup/` pour
+  `ressources/`.
+
+### Fixed
+
+- Assistant d'installation, étape Catégories : « jeton CSRF invalide »
+  quand la liste était longue (session ouverte après l'envoi des
+  en-têtes).
+
 ## [v2.2.0] — 2026-10-25
 
 Connexion par email ; référentiels consultables, filtrables et triables ;

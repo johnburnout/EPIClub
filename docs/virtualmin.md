@@ -422,7 +422,18 @@ Composer**, **pas de licence GPL**.
 1. Dans EPIClub : extraire l'installation de `setup/` dans un service,
    écrire `bin/installer.php` et `bin/sauvegarder.php`, ajouter le
    verrou unique (y compris dans la page *Mise à jour*). C'est utile
-   même sans console.
+   même sans console. **Fait sur la branche `feat/installation-cli`**
+   (non publié) :
+   - `app/Process/InstallationService.php`, utilisé par l'assistant et
+     la ligne de commande ;
+   - `bin/installer.php` et `bin/sauvegarder.php` (classe
+     `app/Engine/Cli/Commande.php`) ;
+   - `app/Engine/VerrouInstance.php`.
+
+   Écarts avec le § 6 : pas de code 5 (aucune archive à télécharger
+   pour l'instant) ; sans `--json`, le mot de passe généré s'affiche une
+   seule fois en clair ; options `--fichier-config` et `--dossier`
+   réservées aux tests.
 2. Écrire `epiclub-agent` et sa règle sudoers, et le tester en ligne de
    commande sur le serveur.
 3. Écrire la console, d'abord les pages Instances, Nouvelle instance et
