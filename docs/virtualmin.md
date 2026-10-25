@@ -2,8 +2,7 @@
 
 > **Statut : étude et proposition.** Rien n'est développé. Ce document
 > décrit l'existant, ce que Virtualmin propose, les options possibles et
-> ce qu'il faudrait écrire. Une option reste à choisir avant de coder
-> (recommandation au § 5).
+> ce qu'il faudrait écrire. La solution retenue est décrite au § 5.
 >
 > Version étudiée : v2.2.0, octobre 2026.
 >
@@ -13,6 +12,9 @@
 > de diffusion. L'étude porte donc sur l'**installation** et les
 > **sauvegardes**. Les pistes de mise à jour depuis Virtualmin (§ 4.2)
 > restent notées pour mémoire.
+>
+> **Décision du 25/10/2026 : point d'entrée.** Une page
+> d'administration sur `admin.epiclub.fr` (§ 5).
 
 ## 1. Le besoin
 
@@ -268,37 +270,131 @@ Point d'attention : une sauvegarde Virtualmin **contient
 `SECRET_KEY`. C'est nécessaire pour une restauration complète, mais la
 destination doit être protégée (chiffrement ou accès restreint).
 
-## 5. Recommandation
+## 5. Recommandation : une console `admin.epiclub.fr`
 
-Construire **une base en CLI, indépendante de Virtualmin**, puis
-brancher Virtualmin dessus par les moyens les plus légers :
+> **Décision du 25/10/2026 : point d'entrée.** L'hébergeur pilote
+> l'installation et les sauvegardes depuis une **page d'administration
+> sur `admin.epiclub.fr`**, et non depuis l'interface de Virtualmin.
+> Virtualmin reste le moteur : serveurs virtuels, bases, PHP et
+> sauvegardes planifiées.
 
-1. **Extraire** la logique métier dans des services testables :
-   - `app/Process/Installation` (ou `InstallationService`) : prérequis,
-     base, migrations, super-admin protégé, `SECRET_KEY`, club,
-     catégories, `SETUP_COMPLETE`. Les étapes de `setup/` deviennent
-     des formulaires minces qui l'appellent ;
-   - la mise à jour reste dans `AppUpdateController` (U1, inchangée).
-2. **Écrire deux commandes** : `bin/installer.php` (I2) et
-   `bin/sauvegarder.php` (B2). Leur contrat commun est décrit au § 6.
-3. **Raccorder Virtualmin**, sans Perl dans un premier temps :
-   - sauvegardes : **B2** (cron du domaine à 2 h, sauvegarde planifiée
-     de Virtualmin à 3 h). B3 seulement si on veut une synchronisation
-     stricte ;
-   - installation : **I2**, avec un bouton *Custom Commands*
-     « Installer EPIClub » une fois le serveur virtuel créé avec MySQL.
-4. **Ensuite seulement**, et si les tests sur le serveur le confirment
-   (installeurs personnalisés acceptés, docroot réglable), écrire
-   l'**Install Script `epiclub.pl` (I3)** comme une fine couche au-dessus
-   d'I2. Il apporte la création de la base, la gestion de PHP et
-   l'intégration native à l'interface. Il coûte du Perl à maintenir et
-   une dépendance au format de Virtualmin. Sa fonction de mise à jour
-   (U3) n'est pas utilisée : `_realversion` lit `version.txt`, pour que
-   Virtualmin affiche la version installée par les admins.
+### 5.1 Architecture
 
-Cet ordre livre vite quelque chose d'utile (les CLI et les boutons),
-profite aussi aux hébergements hors Virtualmin, et ne verrouille aucun
-choix.
+```
+admin.epiclub.fr (console PHP, son propre serveur virtuel)
+   │  sudo epiclub-agent <action> <arguments validés>
+   ▼
+/usr/local/sbin/epiclub-agent (root, liste blanche d'actions)
+   ├─ virtualmin create-domain / set-php-directory / modify-web / backup-domain …
+   └─ su <utilisateur du domaine> -c "php8.4 ~/epiclub/bin/installer.php …"
+                                   "php8.4 ~/epiclub/bin/sauvegarder.php …"
+```
+
+Il y a trois briques :
+
+1. **Dans EPIClub** : `bin/installer.php` et `bin/sauvegarder.php`
+   (§ 6). Ils sont indispensables quelle que soit la façon de les lancer.
+2. **L'agent `epiclub-agent`** : un script appartenant à root, installé
+   sur le serveur Virtualmin. C'est **le seul** composant qui a des
+   droits élevés. Il n'accepte qu'une liste fermée d'actions :
+   - `lister` ;
+   - `creer-instance` ;
+   - `etat` ;
+   - `sauvegarder` ;
+   - `lister-sauvegardes` ;
+   - `suivre <tâche>`.
+
+   Il valide chaque argument (nom de domaine, adresse email, activité)
+   et journalise chaque appel dans `/var/log/epiclub-agent.log`. La
+   console l'appelle par **une seule règle sudoers** :
+   `admin_epiclub ALL=(root) NOPASSWD: /usr/local/sbin/epiclub-agent *`.
+   Si la console est hébergée sur une autre machine, on passe par SSH
+   avec une clé limitée à cette commande (`command="…"` dans
+   `authorized_keys`).
+3. **La console** : une petite application PHP (même pile
+   qu'EPIClub : composants Symfony, Twig), dans un dépôt à part. Elle
+   ne possède **aucun** identifiant Virtualmin.
+
+**Pourquoi pas l'API distante de Virtualmin ?** `remote.cgi` (HTTPS,
+port 10000) exécute les mêmes commandes, mais elle est **réservée à
+l'administrateur principal**. La console devrait alors stocker un
+identifiant qui donne tout pouvoir sur le serveur. Avec l'agent, une
+console compromise ne peut que créer des instances EPIClub et lancer
+des sauvegardes.
+
+**Opérations longues.** La création d'une instance prend de l'ordre
+d'une minute et une sauvegarde peut être plus longue. L'agent lance donc
+la tâche en arrière-plan et rend aussitôt un identifiant. Il écrit l'état
+dans `/var/lib/epiclub-agent/taches/<id>.json` (en cours, réussie ou
+échouée, code de sortie, dernières lignes du journal). La console
+l'interroge avec `suivre <id>`. Le verrou unique (§ 6.2) empêche deux
+opérations simultanées sur une même instance.
+
+### 5.2 Pages de la console
+
+| Page | Contenu | Agent |
+|---|---|---|
+| **Instances** | Domaine, club, version installée (`version.txt`, en lecture seule), espace disque, dernière sauvegarde (EPIClub et Virtualmin) | `lister` |
+| **Nouvelle instance** | Domaine, nom et activité du club, email du club, identité et email du super-admin, catégories par défaut ou non, SMTP facultatif | `creer-instance` |
+| **Fiche d'une instance** | État, journal des opérations, sauvegardes présentes, bouton « Sauvegarder maintenant » | `etat`, `sauvegarder`, `lister-sauvegardes` |
+| **Sauvegardes** | Sauvegardes planifiées de Virtualmin et leurs derniers résultats | `virtualmin list-scheduled-backups` et `list-backup-logs` (via l'agent) |
+| **Journal** | Qui a fait quoi, quand, avec quel résultat | Base de la console |
+
+La console ne fait **pas de restauration** dans un premier temps. La
+restauration des données reste dans la page `/admin/sauvegarde` de
+l'instance, et celle du domaine entier dans Virtualmin. Ce sont des
+opérations rares et sensibles, à ajouter plus tard si le besoin se
+confirme.
+
+### 5.3 Déroulé de `creer-instance`
+
+1. `virtualmin create-domain --domain club-x.epiclub.fr --pass … --unix
+   --dir --web --ssl --mysql …`, ou avec un **modèle de serveur
+   EPIClub** (*Server Template*) préparé une fois dans Virtualmin : PHP
+   8.4, limites d'upload, certificat Let's Encrypt.
+2. Version de PHP du domaine : `virtualmin set-php-directory --domain …
+   --dir . --version 8.4`.
+3. Archive de la dernière release : téléchargée **une fois** dans un
+   cache de l'agent, avec vérification du SHA-256, puis décompressée
+   dans `~/epiclub` **sous l'utilisateur du domaine**.
+4. Docroot réglé sur `~/epiclub/public` (`virtualmin modify-web
+   --document-dir`, à vérifier sur la version installée).
+5. `bin/installer.php` sous l'utilisateur du domaine. Les identifiants
+   de la base viennent de Virtualmin. Les secrets passent par
+   l'environnement, jamais par la ligne de commande.
+6. **Mot de passe du super-admin** : il n'est ni saisi ni affiché dans
+   la console. L'installeur crée le compte avec un mot de passe
+   aléatoire, puis la console déclenche l'email « mot de passe oublié »
+   de l'instance. Si SMTP n'est pas configuré, le mot de passe est
+   affiché **une seule fois**.
+7. Cron du domaine pour `bin/sauvegarder.php`, et ajout du domaine à la
+   sauvegarde planifiée de Virtualmin.
+
+Avec ce déroulé, l'**Install Script Virtualmin (I3) devient inutile** :
+l'agent fait la même chose avec les commandes `virtualmin`, sans Perl
+ni question GPL/Pro. Les boutons *Custom Commands* (§ 6.7) ne sont plus
+qu'un plan de secours.
+
+### 5.4 Sécurité de la console
+
+- Comptes nominatifs de l'équipe d'hébergement, **TOTP obligatoire**,
+  sessions courtes, CSRF sur toutes les actions.
+- En option, restriction par adresse IP (`Require ip` dans Apache).
+- Aucun secret d'instance stocké dans la console : ils restent dans le
+  `.env.local.php` de chaque instance.
+- Journal d'audit dans la console, en plus de celui de l'agent.
+
+### 5.5 Ordre de réalisation
+
+1. Dans EPIClub : extraire l'installation de `setup/` dans un service,
+   écrire `bin/installer.php` et `bin/sauvegarder.php`, ajouter le
+   verrou unique (y compris dans la page *Mise à jour*). C'est utile
+   même sans console.
+2. Écrire `epiclub-agent` et sa règle sudoers, et le tester en ligne de
+   commande sur le serveur.
+3. Écrire la console, d'abord les pages Instances, Nouvelle instance et
+   Sauvegarder maintenant, puis le suivi des sauvegardes Virtualmin et
+   le journal.
 
 ## 6. Ce qu'il faudrait développer
 
@@ -365,6 +461,10 @@ EPICLUB_DB_PASS=… EPICLUB_ADMIN_PASSWORD=… php8.4 bin/installer.php \
   [--categories=defaut|aucune] [--smtp-dsn-fichier=…] [--creer-base] [--json]
 ```
 
+Sans `EPICLUB_ADMIN_PASSWORD`, l'option `--admin-mot-de-passe-aleatoire`
+crée le compte avec un mot de passe aléatoire. Il n'est restitué que
+dans la sortie `--json`, pour le cas sans SMTP (§ 5.3, étape 6).
+
 Étapes : vérifier les prérequis (code 3), contrôler que la base est
 vide (code 9), écrire `.env.local.php` en 0600 (avec la clé générée une
 seule fois), appliquer les migrations, créer le super-admin protégé,
@@ -395,7 +495,7 @@ php8.4 bin/sauvegarder.php [--garder=7] [--sql-seul] [--quiet] [--json]
 - Un nom distinct (`-planifiee`) sépare ces archives des exports faits à
   la main dans la page.
 
-### 6.6 Couche Virtualmin (option I3, plus tard)
+### 6.6 Couche Virtualmin (option I3 : remplacée par l'agent, § 5.3)
 
 - `ressources/virtualmin/epiclub.pl`, à copier par l'hébergeur dans
   `/etc/webmin/virtual-server/scripts/`.
@@ -409,7 +509,7 @@ php8.4 bin/sauvegarder.php [--garder=7] [--sql-seul] [--quiet] [--json]
 - `_realversion` lit `version.txt`.
 - `_uninstall` supprime `~/epiclub` et les tables de la base.
 
-### 6.7 Boutons *Custom Commands* (sans Perl)
+### 6.7 Boutons *Custom Commands* (plan de secours)
 
 Exemple : commande « Sauvegarder EPIClub », paramètre `domaine` (liste
 des utilisateurs), exécutée en root :
@@ -435,6 +535,7 @@ Webmin.
 | **Accès concurrents** | La sauvegarde planifiée peut tomber pendant une mise à jour lancée par un admin. Il n'y a pas de verrou aujourd'hui pour la mise à jour. | Verrou unique (§ 6.2) |
 | **Espace disque** | Archives dans `var/backups`, sauvegardées **en plus** par Virtualmin, et anciens `vendor/`. | Rétention (`--garder`), exclusions de répertoires dans Virtualmin |
 | **Commandes avant / après de Virtualmin** | Lancées en root, une fois par sauvegarde, pas pour « Backup now ». Régression signalée en 7.7. | Préférer B2 (cron du domaine). Si B3 : un script qui boucle, testé sur la version installée |
+| **Console et agent** | L'agent tourne en root. Une faille d'injection dans ses arguments donnerait la main sur le serveur. La console est une cible exposée sur Internet. | Liste blanche d'actions, arguments validés par expression régulière, aucun appel à un shell avec une chaîne construite (`exec` avec un tableau d'arguments), TOTP, journal d'audit |
 | **Install Scripts sous GPL** | Le support des installeurs personnalisés sans Pro n'est pas confirmé officiellement. | Tester un `epiclub.pl` minimal avant d'investir (raison de placer I3 en dernier) |
 
 ## 8. Sources
@@ -447,5 +548,7 @@ Webmin.
   forums) : <https://archive.virtualmin.com/node/3805>,
   <https://archive.virtualmin.com/node/25530>,
   <https://forum.virtualmin.com/t/command-to-run-after-backup/120541>
+- Virtualmin, API distante (`remote.cgi`, réservée à l'administrateur
+  principal) : <https://www.virtualmin.com/docs/development/remote-api/>
 - Installeurs personnalisés sous GPL :
   <https://forum.virtualmin.com/t/virtualmin-gpl-scripts/113411>
