@@ -38,8 +38,8 @@
 
 			<form method="post">
 				<div class="mb-3">
-					<label for="username">Identifiant :</label>
-					<input type="text" class="form-control {% if form_errors.username %} is-invalid{% endif %}" id="username" name="username" required autofocus>
+					<label for="username">Identifiant ou email :</label>
+					<input type="text" class="form-control {% if form_errors.username %} is-invalid{% endif %}" id="username" name="username" required autofocus autocomplete="username">
 					{% if form_errors.username %}
 						<div class="invalid-feedback">{{ form_errors.username }}</div>
 					{% endif %}

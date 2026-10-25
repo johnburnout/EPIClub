@@ -86,7 +86,12 @@ class AppUserAuthenticator
             return false;
         }
 
+        // [2026-10-25] Connexion par identifiant ou par email : l'identifiant
+        // d'abord (un identifiant peut contenir « @ »), puis l'email.
         $user = $this->utilisateurManager->findOneByCriteria(['username' => $username]);
+        if (!$user && str_contains($username, '@')) {
+            $user = $this->utilisateurManager->findOneByCriteria(['email' => trim($username)]);
+        }
 
         // Toujours un password_verify(), même pour un compte inexistant
         // (temps de réponse identique).

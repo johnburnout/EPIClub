@@ -258,7 +258,8 @@ Les prêts **en retard** (date de retour prévue dépassée) sont signalés en r
 
 ---
 
-## 5. Réinitialisation du mot de passe
+## 5. Connexion et mot de passe
+- On se connecte au choix avec son **identifiant** ou son **adresse mail**, et son mot de passe.
 - Depuis la page de connexion, cliquez sur **Mot de passe oublié**.
 - Un email avec un lien de réinitialisation (valable 24h) est envoyé.
 

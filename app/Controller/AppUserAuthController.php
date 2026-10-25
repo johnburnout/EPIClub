@@ -61,7 +61,7 @@ class AppUserAuthController extends AbstractController
             
             if (!$csrf_error) {
                 if (!$request->request->has('username')) {
-                    $form_errors['username'] = "Le nom d'utilisateur est requis.";
+                    $form_errors['username'] = "L'identifiant ou l'email est requis.";
                 }
                 if (!$request->request->has('password')) {
                     $form_errors['password'] = "Le mot de passe est requis.";
