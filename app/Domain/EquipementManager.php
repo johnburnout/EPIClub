@@ -4,6 +4,7 @@ namespace Epiclub\Domain;
 
 use Epiclub\Engine\AbstractManager;
 use Epiclub\Engine\EncryptionService;
+use Epiclub\Enum\EquipementStatut;
 
 class EquipementManager extends AbstractManager
 {
@@ -60,6 +61,31 @@ class EquipementManager extends AbstractManager
             'total' => (int) ($row['total'] ?? 0),
             'echus' => (int) ($row['echus'] ?? 0),
         ];
+    }
+
+    /**
+     * [migration 019] Nombre d'EPI non vérifiés depuis $avant (Y-m-d) :
+     * dernier contrôle — ou, à défaut, mise en service — antérieur à
+     * cette date, ou aucune des deux dates connue. Périmètre : EPI (de
+     * leur catégorie) non supprimés, hors « Hors service » et « Égaré ».
+     * Même périmètre que le filtre « non_verifie_avant » de la liste.
+     */
+    public function countNonVerifies(string $avant): int
+    {
+        $sql = "SELECT COUNT(*)
+                  FROM club_equipement ce
+                  JOIN categorie ca ON ca.id = ce.categorie_id
+                 WHERE ce.deleted_at IS NULL
+                   AND ca.est_epi = 1
+                   AND ce.statut NOT IN (:hors_service, :egare)
+                   AND COALESCE(ce.date_dernier_controle, ce.date_mise_en_service, '1000-01-01') < :avant";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute([
+            'hors_service' => EquipementStatut::HORS_SERVICE->value,
+            'egare' => EquipementStatut::EGARE->value,
+            'avant' => $avant,
+        ]);
+        return (int) $stmt->fetchColumn();
     }
 
     /**

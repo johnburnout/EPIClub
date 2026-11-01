@@ -3,6 +3,7 @@
 namespace Epiclub\Controller;
 
 use Epiclub\Engine\AbstractController;
+use Epiclub\Domain\JournalActiviteManager;
 use Epiclub\Engine\AppUserAuthenticator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -78,6 +79,8 @@ class AppUserAuthController extends AbstractController
                         // [SÉCURITÉ] Régénérer le token après login (anti-fixation de session)
                         $this->session->set('csrf_token', bin2hex(random_bytes(32)));
 
+                        $this->journaliser(JournalActiviteManager::TYPE_CONNEXION, 'Connexion', $request);
+
                         // Honorer ?redirect= (ex. scan QR non connecté :
                         // /se_connecter?redirect=/qr/{id} — le formulaire
                         // sans attribut action poste sur l'URL courante,
@@ -100,6 +103,18 @@ class AppUserAuthController extends AbstractController
                     }
 
                     $error_autentification = $appUserAuthenticator->getError();
+
+                    // [migration 019] Échec (identifiants incorrects ou
+                    // compte temporairement bloqué) : identifiant saisi.
+                    $this->journaliser(
+                        JournalActiviteManager::TYPE_CONNEXION,
+                        sprintf(
+                            'Échec de connexion (identifiant « %s ») : %s',
+                            mb_substr(trim((string) $request->request->get('username')), 0, 64),
+                            $error_autentification
+                        ),
+                        $request,
+                    );
                 }
             }
         }
@@ -118,6 +133,10 @@ class AppUserAuthController extends AbstractController
                 $ip = $request->server->get('REMOTE_ADDR', 'inconnue');
                 error_log("⚠️ Déconnexion avec token CSRF invalide - IP: $ip");
             }
+        }
+
+        if (is_array($this->session->get('user'))) {
+            $this->journaliser(JournalActiviteManager::TYPE_CONNEXION, 'Déconnexion', $request);
         }
 
         $this->session->clear();

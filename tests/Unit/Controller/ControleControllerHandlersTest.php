@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Epiclub\Tests\Unit\Controller;
 
+use Epiclub\Controller\ControleController;
+
 use Epiclub\Domain\ControleLigneManager;
 use Epiclub\Domain\ControleManager;
 use Epiclub\Domain\EquipementManager;
@@ -343,7 +345,12 @@ final class ControleControllerHandlersTest extends TestCase
             return (int) $e['statut'] === $expectedEquipementStatut
             && (int) $e['controle_en_cours'] === 0
             // [migration 017] date_egare posée pour « Égaré », effacée sinon
-            && ($expectedEquipementStatut === 4 ? !empty($e['date_egare']) : array_key_exists('date_egare', $e) && $e['date_egare'] === null);
+            && ($expectedEquipementStatut === 4 ? !empty($e['date_egare']) : array_key_exists('date_egare', $e) && $e['date_egare'] === null)
+            // [migration 019] date du dernier contrôle : équipement vérifié
+            // (sans date de ligne : jour de la clôture), pas s'il est égaré
+            && ($expectedEquipementStatut === 4
+                ? !array_key_exists('date_dernier_controle', $e)
+                : ($e['date_dernier_controle'] ?? null) === date('Y-m-d'));
         }));
         
         $controller = $this->makeControllerWith(
@@ -363,6 +370,14 @@ final class ControleControllerHandlersTest extends TestCase
             '/admin/controles',
             $result->headers->get('Location')
         );
+    }
+
+    /** [migration 019] Date de vérification d'une ligne de contrôle. */
+    public function testDateVerification(): void
+    {
+        self::assertSame('2026-10-12', ControleController::dateVerification(['date_controle' => '2026-10-12 14:30:00']));
+        self::assertSame(date('Y-m-d'), ControleController::dateVerification(['date_controle' => null]));
+        self::assertSame(date('Y-m-d'), ControleController::dateVerification(['date_controle' => '0000-00-00 00:00:00']));
     }
 
     // ==================================================================

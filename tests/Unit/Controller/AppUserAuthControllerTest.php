@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Epiclub\Tests\Unit\Controller;
 
+use Epiclub\Domain\JournalActiviteManager;
 use Epiclub\Engine\AppUserAuthenticator;
 use Epiclub\Controller\AppUserAuthController;
 use Epiclub\Engine\Session;
@@ -211,6 +212,41 @@ final class AppUserAuthControllerTest extends TestCase
 
         self::assertNotInstanceOf(RedirectResponse::class, $response);
         self::assertStringContainsString('Identifiants incorrects', $response->getContent());
+    }
+
+    /** [migration 019] Connexion réussie inscrite au journal d'activité. */
+    public function testLoginPostSuccessIsLogged(): void
+    {
+        $authenticator = $this->makeAuthenticator();
+        $authenticator->method('authenticate')->willReturn(true);
+        $journal = $this->createMock(JournalActiviteManager::class);
+        $journal->expects(self::once())->method('enregistrer')
+            ->with(JournalActiviteManager::TYPE_CONNEXION, 'Connexion', self::anything(), '127.0.0.1');
+
+        $controller = new TestableAppUserAuthController($this->mockSession(), $authenticator, $journal);
+        $controller->login(Request::create('/se_connecter', 'POST', [
+            'csrf_token' => self::CSRF, 'username' => 'jean', 'password' => 'secret',
+        ]));
+    }
+
+    /** [migration 019] Échec inscrit au journal avec l'identifiant saisi. */
+    public function testLoginPostFailureIsLogged(): void
+    {
+        $authenticator = $this->makeAuthenticator();
+        $authenticator->method('authenticate')->willReturn(false);
+        $authenticator->method('getError')->willReturn('Identifiants incorrects');
+        $journal = $this->createMock(JournalActiviteManager::class);
+        $journal->expects(self::once())->method('enregistrer')->with(
+            JournalActiviteManager::TYPE_CONNEXION,
+            'Échec de connexion (identifiant « jean ») : Identifiants incorrects',
+            null,
+            '127.0.0.1',
+        );
+
+        $controller = new TestableAppUserAuthController($this->mockSession(), $authenticator, $journal);
+        $controller->login(Request::create('/se_connecter', 'POST', [
+            'csrf_token' => self::CSRF, 'username' => ' jean ', 'password' => 'mauvais',
+        ]));
     }
 
     public function testLoginPostInvalidCsrfDoesNotCallAuthenticator(): void

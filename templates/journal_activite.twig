@@ -1,0 +1,96 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+	<div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+		<h3 class="mb-0">🗒️ Journal d'activité</h3>
+		<a href="{{ export_url }}" class="btn btn-outline-primary">⬇️ Exporter (texte)</a>
+	</div>
+	<p class="text-body-secondary small mt-2 mb-0">
+		Connexions, contrôles et prêts de matériel. L'export reprend les filtres en cours.
+	</p>
+	<hr>
+
+	<form method="get" class="mb-3">
+		<div class="row g-3 align-items-end">
+			<div class="col-md-2">
+				<label for="type" class="form-label">Type</label>
+				<select name="type" id="type" class="form-select">
+					<option value="">Tous</option>
+					{% for cle, libelle in types %}
+						<option value="{{ cle }}" {% if filtres.type == cle %}selected{% endif %}>{{ libelle }}</option>
+					{% endfor %}
+				</select>
+			</div>
+			<div class="col-md-2">
+				<label for="du" class="form-label">Du</label>
+				<input type="date" name="du" id="du" value="{{ filtres.du }}" class="form-control">
+			</div>
+			<div class="col-md-2">
+				<label for="au" class="form-label">Au</label>
+				<input type="date" name="au" id="au" value="{{ filtres.au }}" class="form-control">
+			</div>
+			<div class="col-md-4">
+				<label for="q" class="form-label">Recherche</label>
+				<input type="search" name="q" id="q" value="{{ filtres.q }}" maxlength="100"
+				       placeholder="Utilisateur, action…" class="form-control">
+			</div>
+			<div class="col-md-2 d-flex gap-2">
+				<button type="submit" class="btn btn-secondary flex-fill">Filtrer</button>
+				<a href="/admin/journal-activite" class="btn btn-outline-secondary" title="Retirer les filtres">✖</a>
+			</div>
+		</div>
+	</form>
+
+	{% if entrees is empty %}
+		<div class="alert alert-info">Aucune entrée{% if filtres.type or filtres.du or filtres.au or filtres.q %} pour ces filtres{% endif %}.</div>
+	{% else %}
+		<div class="table-responsive">
+			<table class="table table-striped table-sm align-middle">
+				<thead>
+					<tr>
+						<th class="text-nowrap">Date</th>
+						<th>Type</th>
+						<th>Utilisateur</th>
+						<th>Action</th>
+						<th>IP</th>
+					</tr>
+				</thead>
+				<tbody>
+					{% for e in entrees %}
+						<tr>
+							<td class="text-nowrap">{{ e.date_action|date('d/m/Y H:i:s') }}</td>
+							<td>
+								{% set couleur = {connexion: 'secondary', controle: 'success', pret: 'primary', journal: 'danger'}[e.type]|default('secondary') %}
+								<span class="badge bg-{{ couleur }}">{{ types[e.type]|default(e.type) }}</span>
+							</td>
+							<td>{{ e.utilisateur is not empty ? e.utilisateur : '—' }}</td>
+							<td>{{ e.action }}</td>
+							<td class="small text-body-secondary">{{ e.ip|default('—') }}</td>
+						</tr>
+					{% endfor %}
+				</tbody>
+			</table>
+		</div>
+		{% include '_pagination.twig' with {p: pagination, affiches: entrees|length, elements: 'entrées'} %}
+	{% endif %}
+
+	{% if isGranted('ROLE_SUPER_ADMIN') %}
+		<div class="card border-danger mt-4">
+			<div class="card-body">
+				<h5 class="card-title text-danger">Réinitialiser le journal</h5>
+				<p class="card-text small mb-2">
+					Supprime définitivement toutes les entrées (pensez à exporter le journal avant).
+					La réinitialisation est elle-même inscrite dans le nouveau journal.
+					Pour confirmer, saisissez <strong>{{ confirmation }}</strong>.
+				</p>
+				<form method="post" action="/admin/journal-activite/reinitialiser" class="d-flex flex-wrap gap-2 m-0">
+					<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+					<input type="text" name="confirmation" required autocomplete="off" pattern="{{ confirmation }}"
+					       placeholder="{{ confirmation }}" aria-label="Mot de confirmation"
+					       class="form-control" style="max-width: 16rem;">
+					<button type="submit" class="btn btn-danger">Réinitialiser</button>
+				</form>
+			</div>
+		</div>
+	{% endif %}
+{% endblock %}

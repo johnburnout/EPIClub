@@ -226,6 +226,11 @@ L'une d'elles fait la modification puis clôt le ticket (**« Modification faite
 - Un équipement égaré retrouvé est contrôlé normalement : un contrôle **OK** le remet **Disponible** (KO : en maintenance).
 - Un équipement **prêté** ne peut pas être ajouté à un contrôle tant que son prêt n'est pas rendu et vérifié.
 
+### EPI non vérifiés depuis trop longtemps
+- Option activable par un administrateur : **Administration → 🏠 Tableau de bord**, interrupteur **« Notification EPI non vérifiés »** et délai sans contrôle, **entre 3 et 12 mois (6 par défaut)**.
+- Une fois activée, le tableau de bord des contrôleurs et des administrateurs affiche le nombre d'EPI dont le **dernier contrôle clôturé** (ou, s'ils n'ont jamais été contrôlés, la **mise en service**) date de plus que ce délai. Les équipements « Hors service » et « Égaré » ne sont pas comptés.
+- Un clic ouvre la liste de ces EPI, du contrôle le plus ancien au plus récent. La notification disparaît d'elle-même quand ils ont été contrôlés.
+
 ---
 
 ## 3 bis. Prêts de matériel (module facultatif)
@@ -300,6 +305,12 @@ Les prêts **en retard** (date de retour prévue dépassée) sont signalés en r
 - La restauration **remplace toutes les données actuelles**. Juste avant, l'état actuel est sauvegardé automatiquement (archive « avant restauration », les 3 dernières sont conservées sur le serveur) ; en cas d'erreur pendant l'opération, il est rétabli automatiquement.
 - Une sauvegarde faite avec une version plus ancienne d'EPIClub est mise à niveau après la restauration. Une sauvegarde d'une version plus récente est refusée : mettez d'abord EPIClub à jour.
 - Archive trop volumineuse pour le téléversement : déposez-la par FTP dans le dossier `var/backups/` d'EPIClub ; elle apparaît dans la liste des sauvegardes du serveur.
+
+### Journal d'activité (administrateurs)
+- **Administration → 🗒️ Journal d'activité** : connexions (réussies, échouées, déconnexions), contrôles (création, clôture, suppression) et prêts (création, validation, fin, retour, suppression), avec la date, l'utilisateur et l'adresse IP.
+- Filtres par type, par période et par recherche (utilisateur, action).
+- **Exporter (texte)** télécharge un fichier `.txt` des entrées affichées par les filtres en cours (toutes les pages).
+- **Réinitialiser** (super-administrateur) : supprime définitivement toutes les entrées après saisie de **REINITIALISER**. Exportez le journal avant. La réinitialisation est elle-même inscrite dans le nouveau journal.
 
 ---
 

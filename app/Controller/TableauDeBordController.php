@@ -27,6 +27,10 @@ use Symfony\Component\HttpFoundation\Response;
  *   - [2026-10-24] les demandes de modification (tickets) à traiter
  *     (administrateurs) et les demandes traitées pas encore consultées
  *     par leur demandeur ;
+ *   - [migration 019] si les administrateurs l'ont activée, une
+ *     notification (contrôleurs et plus) des EPI non vérifiés depuis
+ *     plus de N mois (dernier contrôle ou, à défaut, mise en service ;
+ *     N = club.alerte_controle_mois, de 3 à 12, 6 par défaut) ;
  *   - un lien direct vers le scan de QR codes.
  *
  * Le logo et la photo de fond sont réglables par les administrateurs
@@ -40,6 +44,15 @@ class TableauDeBordController extends AbstractController
     public const DUREE_ALERTE_DEFAUT = 3;
     public const DUREE_ALERTE_MIN = 1;
     public const DUREE_ALERTE_MAX = 36;
+
+    /**
+     * [migration 019] Délai (mois) au-delà duquel un EPI est « non
+     * vérifié » (club.alerte_controle_mois, réglable par les
+     * administrateurs).
+     */
+    public const DUREE_CONTROLE_DEFAUT = 6;
+    public const DUREE_CONTROLE_MIN = 3;
+    public const DUREE_CONTROLE_MAX = 12;
 
     public const LOGO_DEFAUT = '/assets/img/EPIClub.png';
     public const FOND_DEFAUT = '/assets/img/screen.jpg';
@@ -150,6 +163,34 @@ class TableauDeBordController extends AbstractController
             }
         }
 
+        // [migration 019] EPI non vérifiés depuis plus de N mois (option
+        // club.alerte_controle_actif). Non fermable : disparaît quand
+        // les EPI ont été contrôlés.
+        $alerteControle = null;
+        if (!empty($club['alerte_controle_actif']) && $this->isGranted('ROLE_CONTROLLEUR')) {
+            $moisControle = self::normaliserDureeControle($club['alerte_controle_mois'] ?? null);
+            $avant = $aujourdhui->modify('-' . $moisControle . ' months')->format('Y-m-d');
+            try {
+                $nonVerifies = $this->equipementManager()->countNonVerifies($avant);
+            } catch (\Throwable $e) {
+                error_log('[TableauDeBordController] countNonVerifies: ' . $e->getMessage());
+                $nonVerifies = 0;
+            }
+            if ($nonVerifies > 0) {
+                $alerteControle = [
+                    'total' => $nonVerifies,
+                    'mois' => $moisControle,
+                    'avant' => $avant,
+                    'url' => '/equipements?' . http_build_query([
+                        'non_verifie_avant' => $avant,
+                        'order_by' => 'date_dernier_controle',
+                        'order_dir' => 'asc',
+                        'limit' => 100,
+                    ]),
+                ];
+            }
+        }
+
         // [2026-10-24] Demandes de modification : à traiter (administrateurs,
         // selon le rôle requis) et traitées non consultées (demandeur). Elles
         // disparaissent une fois closes / consultées.
@@ -179,6 +220,7 @@ class TableauDeBordController extends AbstractController
             'logo_url' => self::imageUrl($club['logo'] ?? null, self::LOGO_DEFAUT),
             'fond_url' => self::imageUrl($club['image_fond'] ?? null, self::FOND_DEFAUT),
             'alerte' => $alerte,
+            'alerte_controle' => $alerteControle,
         ]);
     }
 
@@ -210,6 +252,7 @@ class TableauDeBordController extends AbstractController
 
         $club = $this->clubManager()->findParameters() ?: [];
         $duree = self::normaliserDuree($club['alerte_renouvellement_mois'] ?? null);
+        $dureeControle = self::normaliserDureeControle($club['alerte_controle_mois'] ?? null);
         $form_errors = [];
 
         if ($request->getMethod() === 'POST') {
@@ -235,7 +278,31 @@ class TableauDeBordController extends AbstractController
                     $duree = (int) $dureeRaw;
                 }
 
-                $maj = ['id' => 1, 'alerte_renouvellement_mois' => $duree];
+                // [migration 019] Délai de l'alerte « EPI non vérifiés »
+                // (champ absent : valeur actuelle conservée).
+                if ($request->request->has('alerte_controle_mois')) {
+                    $controleRaw = trim((string) $request->request->get('alerte_controle_mois'));
+                    if (!ctype_digit($controleRaw)
+                        || (int) $controleRaw < self::DUREE_CONTROLE_MIN
+                        || (int) $controleRaw > self::DUREE_CONTROLE_MAX
+                    ) {
+                        $form_errors['alerte_controle_mois'] = sprintf(
+                            'Le délai de la notification « EPI non vérifiés » doit être un nombre entier de mois entre %d et %d.',
+                            self::DUREE_CONTROLE_MIN,
+                            self::DUREE_CONTROLE_MAX
+                        );
+                    } else {
+                        $dureeControle = (int) $controleRaw;
+                    }
+                }
+
+                $maj = [
+                    'id' => 1,
+                    'alerte_renouvellement_mois' => $duree,
+                    'alerte_controle_actif' => $request->request->has('alerte_controle_actif') ? 1 : 0,
+                    'alerte_controle_mois' => $dureeControle,
+                ];
+                $club['alerte_controle_actif'] = $maj['alerte_controle_actif'];
                 $aSupprimer = [];
 
                 foreach ([
@@ -286,6 +353,9 @@ class TableauDeBordController extends AbstractController
             'duree' => $duree,
             'duree_min' => self::DUREE_ALERTE_MIN,
             'duree_max' => self::DUREE_ALERTE_MAX,
+            'duree_controle' => $dureeControle,
+            'duree_controle_min' => self::DUREE_CONTROLE_MIN,
+            'duree_controle_max' => self::DUREE_CONTROLE_MAX,
             'logo_url' => self::imageUrl($club['logo'] ?? null, self::LOGO_DEFAUT),
             'fond_url' => self::imageUrl($club['image_fond'] ?? null, self::FOND_DEFAUT),
             'logo_personnalise' => !empty($club['logo']),
@@ -305,6 +375,15 @@ class TableauDeBordController extends AbstractController
             return self::DUREE_ALERTE_DEFAUT;
         }
         return max(self::DUREE_ALERTE_MIN, min(self::DUREE_ALERTE_MAX, (int) $valeur));
+    }
+
+    /** [migration 019] Délai de l'alerte « EPI non vérifiés » (borné, défaut 6). */
+    public static function normaliserDureeControle(mixed $valeur): int
+    {
+        if ($valeur === null || $valeur === '' || !is_numeric($valeur)) {
+            return self::DUREE_CONTROLE_DEFAUT;
+        }
+        return max(self::DUREE_CONTROLE_MIN, min(self::DUREE_CONTROLE_MAX, (int) $valeur));
     }
 
     private static function imageUrl(?string $fichier, string $defaut): string

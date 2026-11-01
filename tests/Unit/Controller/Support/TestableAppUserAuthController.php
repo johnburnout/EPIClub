@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Epiclub\Tests\Unit\Controller\Support;
 
 use Epiclub\Controller\AppUserAuthController;
+use Epiclub\Domain\JournalActiviteManager;
 use Epiclub\Engine\AppUserAuthenticator;
 use Epiclub\Engine\Session;
 
@@ -19,6 +20,7 @@ final class TestableAppUserAuthController extends AppUserAuthController
     public function __construct(
         Session $session,
         private ?AppUserAuthenticator $authenticatorMock = null,
+        private ?JournalActiviteManager $journalMock = null,
     ) {
         parent::__construct($session);
     }
@@ -31,5 +33,11 @@ final class TestableAppUserAuthController extends AppUserAuthController
     protected function authenticator(): AppUserAuthenticator
     {
         return $this->authenticatorMock ?? parent::authenticator();
+    }
+
+    /** [migration 019] Journal d'activité doublé ; sans doublure : désactivé. */
+    protected function journalActiviteManager(): ?JournalActiviteManager
+    {
+        return $this->journalMock;
     }
 }
