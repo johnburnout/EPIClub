@@ -61,6 +61,31 @@
 					tombe dans ce délai (ainsi que ceux déjà échus, hors équipements « Hors service »).
 				</div>
 			</div>
+
+			{# --- [migration 019] Notification « EPI non vérifiés » --- #}
+			<div class="col-md-6">
+				<span class="form-label fw-bold d-block">Notification « EPI non vérifiés »</span>
+				<div class="form-check form-switch">
+					<input class="form-check-input" type="checkbox" role="switch" id="alerte_controle_actif"
+					       name="alerte_controle_actif" value="1" {% if club.alerte_controle_actif|default(0) %}checked{% endif %}>
+					<label class="form-check-label" for="alerte_controle_actif">
+						Signaler les EPI non vérifiés depuis plus de :
+					</label>
+				</div>
+				<div class="input-group mt-1" style="max-width: 16rem;">
+					<input type="number" id="alerte_controle_mois" name="alerte_controle_mois"
+					       value="{{ duree_controle }}" min="{{ duree_controle_min }}" max="{{ duree_controle_max }}" step="1" required
+					       aria-label="Délai sans contrôle, en mois"
+					       class="form-control {% if form_errors.alerte_controle_mois is defined %}is-invalid{% endif %}">
+					<span class="input-group-text">mois</span>
+				</div>
+				<div class="form-text">
+					Entre {{ duree_controle_min }} et {{ duree_controle_max }} mois.
+					Date de référence : dernier contrôle clôturé ou, à défaut, mise en service
+					(hors équipements « Hors service » et « Égaré »). Notification affichée
+					aux contrôleurs et administrateurs.
+				</div>
+			</div>
 		</div>
 
 		<div class="mt-4">

@@ -43,11 +43,26 @@ final class Pagination
      */
     public static function paginer(array $lignes, Request $request, string $prefixe = '', string $ancre = ''): array
     {
+        $pagination = self::pourTotal(count($lignes), $request, $prefixe, $ancre);
+
+        return [
+            array_slice(array_values($lignes), $pagination['offset'], $pagination['limit']),
+            $pagination,
+        ];
+    }
+
+    /**
+     * [migration 019] Pagination calculée sur un total, pour les listes
+     * paginées en base (LIMIT / OFFSET) : clé « offset » en plus.
+     *
+     * @return array<string, mixed>
+     */
+    public static function pourTotal(int $total, Request $request, string $prefixe = '', string $ancre = ''): array
+    {
         $paramPage = $prefixe . 'page';
         $paramLimit = $prefixe . 'limit';
 
         $limit = self::limite($request->query->get($paramLimit));
-        $total = count($lignes);
         $totalPages = max(1, (int) ceil($total / $limit));
         $page = min($totalPages, max(1, (int) $request->query->get($paramPage, 1)));
 
@@ -60,26 +75,24 @@ final class Pagination
         $url = static fn (int $p) => '?' . http_build_query($query + [$paramLimit => $limit, $paramPage => $p]) . $ancre;
 
         return [
-            array_slice(array_values($lignes), ($page - 1) * $limit, $limit),
-            [
-                'visible' => $total > self::SEUIL,
-                'total' => $total,
-                'page' => $page,
-                'limit' => $limit,
-                'limites' => self::LIMITES,
-                'totalPages' => $totalPages,
-                'hasPrevious' => $page > 1,
-                'hasNext' => $page < $totalPages,
-                'param_page' => $paramPage,
-                'param_limit' => $paramLimit,
-                'ancre' => $ancre,
-                'query' => $query,
-                'urls' => [
-                    'first' => $url(1),
-                    'previous' => $url(max(1, $page - 1)),
-                    'next' => $url(min($totalPages, $page + 1)),
-                    'last' => $url($totalPages),
-                ],
+            'visible' => $total > self::SEUIL,
+            'total' => $total,
+            'page' => $page,
+            'limit' => $limit,
+            'offset' => ($page - 1) * $limit,
+            'limites' => self::LIMITES,
+            'totalPages' => $totalPages,
+            'hasPrevious' => $page > 1,
+            'hasNext' => $page < $totalPages,
+            'param_page' => $paramPage,
+            'param_limit' => $paramLimit,
+            'ancre' => $ancre,
+            'query' => $query,
+            'urls' => [
+                'first' => $url(1),
+                'previous' => $url(max(1, $page - 1)),
+                'next' => $url(min($totalPages, $page + 1)),
+                'last' => $url($totalPages),
             ],
         ];
     }

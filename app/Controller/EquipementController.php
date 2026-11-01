@@ -173,6 +173,7 @@ class EquipementController extends AbstractController
             'acquisition' => $request->query->get('acquisition'),
             'fournisseur' => self::fournisseurFiltre($request),
             'fin_avant' => self::dateFinAvant($request),
+            'non_verifie_avant' => self::dateFinAvant($request, 'non_verifie_avant'),
             'q' => self::recherche($request),
         ];
         // Nettoyer les valeurs vides pour l'URL
@@ -239,6 +240,24 @@ class EquipementController extends AbstractController
         return $dateFacture === null || substr((string) $dms, 0, 10) !== $dateFacture;
     }
 
+    /**
+     * [migration 019] EPI non vérifié avant $avant (Y-m-d) ? Équipement
+     * enrichi de sa catégorie (clé « categorie »).
+     */
+    public static function nonVerifieAvant(array $e, string $avant): bool
+    {
+        if (empty($e['categorie']['est_epi'])
+            || in_array((int) ($e['statut'] ?? 0), [EquipementStatut::HORS_SERVICE->value, EquipementStatut::EGARE->value], true)
+        ) {
+            return false;
+        }
+        $reference = $e['date_dernier_controle'] ?? null;
+        if ($reference === null || $reference === '') {
+            $reference = $e['date_mise_en_service'] ?? null;
+        }
+        return $reference === null || $reference === '' || substr((string) $reference, 0, 10) < $avant;
+    }
+
     /** Texte recherché (« q »), nettoyé ; null si vide. */
     private static function recherche(Request $request): ?string
     {
@@ -254,9 +273,9 @@ class EquipementController extends AbstractController
      * [Tableau de bord] Paramètre « fin_avant » (Y-m-d) validé ; null si
      * absent ou mal formé (le filtre est alors ignoré).
      */
-    private static function dateFinAvant(Request $request): ?string
+    private static function dateFinAvant(Request $request, string $parametre = 'fin_avant'): ?string
     {
-        $valeur = $request->query->get('fin_avant');
+        $valeur = $request->query->get($parametre);
         if (!is_string($valeur) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $valeur)) {
             return null;
         }
@@ -382,6 +401,16 @@ class EquipementController extends AbstractController
                 return !empty($e['date_fin_utilisation'])
                     && $e['date_fin_utilisation'] <= $fin_avant
                     && (int) ($e['statut'] ?? 0) !== EquipementStatut::HORS_SERVICE->value;
+            });
+        }
+        // [migration 019] EPI non vérifiés : dernier contrôle (à défaut,
+        // mise en service) antérieur à non_verifie_avant, ou inconnu ;
+        // hors « Hors service » et « Égaré » — même périmètre que
+        // EquipementManager::countNonVerifies().
+        $non_verifie_avant = self::dateFinAvant($request, 'non_verifie_avant');
+        if ($non_verifie_avant !== null) {
+            $equipements = array_filter($equipements, function($e) use ($non_verifie_avant) {
+                return self::nonVerifieAvant($e, $non_verifie_avant);
             });
         }
         if ($dernier_controle !== null) {

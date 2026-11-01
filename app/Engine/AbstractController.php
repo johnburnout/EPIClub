@@ -6,6 +6,7 @@ use Twig\TwigFunction;
 use Epiclub\Engine\Session;
 use Epiclub\Domain\UtilisateurManager;
 use Epiclub\Domain\ClubManager;
+use Epiclub\Domain\JournalActiviteManager;
 use Symfony\Component\Mime\Email;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -109,6 +110,40 @@ abstract class AbstractController
     protected function clubManagerModules(): ClubManager
     {
         return new ClubManager();
+    }
+
+    /**
+     * [migration 019] Inscrit une action au journal d'activité (connexions,
+     * contrôles, prêts). Utilisateur par défaut : celui de la session.
+     *
+     * Ne bloque jamais l'action journalisée : une erreur (base
+     * inaccessible, migration 019 non jouée) est seulement tracée.
+     */
+    protected function journaliser(string $type, string $action, ?Request $request = null, ?array $utilisateur = null): void
+    {
+        try {
+            $manager = $this->journalActiviteManager();
+            if ($manager === null) {
+                return;
+            }
+            $utilisateur ??= is_array($this->session->get('user')) ? $this->session->get('user') : null;
+            $manager->enregistrer($type, $action, $utilisateur, $request?->getClientIp());
+        } catch (\Throwable $e) {
+            error_log('[AbstractController] Journal d\'activité : ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Factory — surchargeable en test Unit. null : journal désactivé
+     * (suite de tests Unit, cf. tests/bootstrap.php : aucune écriture
+     * dans la base de développement).
+     */
+    protected function journalActiviteManager(): ?JournalActiviteManager
+    {
+        if (defined('EPICLUB_JOURNAL_ACTIVITE_DESACTIVE')) {
+            return null;
+        }
+        return new JournalActiviteManager();
     }
 
     public function isAuthenticated(): bool

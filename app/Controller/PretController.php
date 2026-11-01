@@ -9,6 +9,7 @@ use Dompdf\Options;
 use Epiclub\Domain\CategorieManager;
 use Epiclub\Domain\ClubManager;
 use Epiclub\Domain\EquipementManager;
+use Epiclub\Domain\JournalActiviteManager;
 use Epiclub\Domain\PretLigneManager;
 use Epiclub\Domain\PretManager;
 use Epiclub\Domain\PretRegles;
@@ -113,6 +114,13 @@ class PretController extends AbstractController
         return isset($user['id']) ? (int) $user['id'] : null;
     }
 
+    /** [migration 019] « prêt n° 12 (Prénom Nom) » pour le journal d'activité. */
+    public static function libelleJournal(array $pret): string
+    {
+        $emprunteur = trim(($pret['emprunteur_prenom'] ?? '') . ' ' . ($pret['emprunteur_nom'] ?? ''));
+        return 'prêt n° ' . (int) ($pret['id'] ?? 0) . ($emprunteur !== '' ? " ({$emprunteur})" : '');
+    }
+
     private static function urlFiche(array $pret): string
     {
         return '/prets/pret-' . (int) $pret['id'];
@@ -197,6 +205,11 @@ class PretController extends AbstractController
                 $data['statut'] = PretStatut::SAISIE->value;
                 $data['cree_par'] = $this->utilisateurId();
                 $id = $this->pretManager()->save($data);
+                $this->journaliser(
+                    JournalActiviteManager::TYPE_PRET,
+                    'Création du ' . self::libelleJournal(['id' => $id] + $data),
+                    $request
+                );
                 $this->session->getFlashBag()->add('success', 'Fiche de prêt créée : ajoutez maintenant le matériel.');
                 return $this->redirectTo('/prets/pret-' . (int) $id);
             }
@@ -598,6 +611,12 @@ class PretController extends AbstractController
                 $this->session->getFlashBag()->add('error', "Le prêt n'a pas été validé : retirez ou remplacez le matériel concerné.");
                 return $this->redirectTo(self::urlFiche($pret));
             }
+            $this->journaliser(JournalActiviteManager::TYPE_PRET, sprintf(
+                'Validation du %s : %d matériel(s) prêté(s)%s',
+                self::libelleJournal($pret),
+                count($lignes),
+                $signature === null ? ', signature sur papier' : ''
+            ), $request);
             $this->session->getFlashBag()->add('success', sprintf(
                 'Prêt validé : %d matériel(s) passé(s) en « Prêté ».%s',
                 count($lignes),
@@ -701,6 +720,11 @@ class PretController extends AbstractController
             'termine_par' => $this->utilisateurId(),
             'date_fin' => date('Y-m-d H:i:s'),
         ]);
+        $this->journaliser(
+            JournalActiviteManager::TYPE_PRET,
+            'Fin du ' . self::libelleJournal($pret) . ' (retour le ' . date('d/m/Y', (int) strtotime($date)) . ')',
+            $request
+        );
         $this->session->getFlashBag()->add('success', 'Prêt terminé : vérifiez maintenant chaque matériel rendu.');
         return $this->redirectTo(self::urlFiche($pret) . '#retour');
     }
@@ -765,6 +789,14 @@ class PretController extends AbstractController
         }
 
         $restants = count(array_filter($lignes, static fn(array $l) => $l['etat_retour'] === null)) - count($aTraiter);
+        $this->journaliser(JournalActiviteManager::TYPE_PRET, sprintf(
+            'Retour du %s — %s',
+            self::libelleJournal($pret),
+            implode(', ', array_map(
+                static fn(array $t) => $t[0]['reference'] . ' : ' . mb_strtolower($t[1]->label()),
+                $aTraiter
+            ))
+        ), $request);
         $this->session->getFlashBag()->add('success', sprintf(
             '%d matériel(s) vérifié(s).%s',
             count($aTraiter),
@@ -795,6 +827,7 @@ class PretController extends AbstractController
             return $this->redirectTo(self::urlFiche($pret));
         }
         $this->pretManager()->delete((int) $pret['id']);
+        $this->journaliser(JournalActiviteManager::TYPE_PRET, 'Suppression du ' . self::libelleJournal($pret) . ' (en saisie)', $request);
         $this->session->getFlashBag()->add('success', 'Fiche de prêt supprimée.');
         return $this->redirectTo('/prets');
     }

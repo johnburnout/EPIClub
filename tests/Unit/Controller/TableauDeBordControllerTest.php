@@ -191,7 +191,7 @@ final class TableauDeBordControllerTest extends TestCase
         $this->clubManager->method('findParameters')->willReturn(['id' => 1, 'alerte_renouvellement_mois' => 3]);
         $this->clubManager->expects(self::once())
             ->method('save')
-            ->with(['id' => 1, 'alerte_renouvellement_mois' => 6]);
+            ->with(['id' => 1, 'alerte_renouvellement_mois' => 6, 'alerte_controle_actif' => 0, 'alerte_controle_mois' => 6]);
 
         $response = $this->controller()->reglages(
             $this->post('/admin/tableau-de-bord', ['alerte_renouvellement_mois' => '6'])
@@ -251,7 +251,7 @@ final class TableauDeBordControllerTest extends TestCase
         file_put_contents($this->imagesDir . 'fond-ancien.webp', 'x');
         $this->clubManager->method('findParameters')->willReturn(['id' => 1, 'image_fond' => 'fond-ancien.webp']);
         $this->clubManager->expects(self::once())->method('save')
-            ->with(['id' => 1, 'alerte_renouvellement_mois' => 3, 'image_fond' => null]);
+            ->with(['id' => 1, 'alerte_renouvellement_mois' => 3, 'alerte_controle_actif' => 0, 'alerte_controle_mois' => 6, 'image_fond' => null]);
 
         $this->controller()->reglages($this->post('/admin/tableau-de-bord', [
             'alerte_renouvellement_mois' => '3',

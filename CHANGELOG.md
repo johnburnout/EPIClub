@@ -24,6 +24,20 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 - **Verrou commun** de l'instance (`var/epiclub.lock`) : installation,
   sauvegarde, restauration et mise à jour ne peuvent plus se
   chevaucher.
+- **Journal d'activité** (Administration › Journal d'activité) :
+  connexions (réussies, échouées, déconnexions), contrôles (création,
+  clôture, suppression) et prêts (création, validation, fin, retour,
+  suppression), avec l'utilisateur, la date et l'adresse IP. Les
+  administrateurs le consultent (filtres par type, période, recherche)
+  et l'exportent au format texte. Les super-administrateurs peuvent le
+  réinitialiser en saisissant REINITIALISER. La réinitialisation est
+  elle-même inscrite au journal (migration 019).
+- **Notification « EPI non vérifiés »** (option des réglages du tableau
+  de bord, désactivée par défaut) : sur le tableau de bord des
+  contrôleurs et administrateurs, nombre d'EPI dont le dernier contrôle
+  (ou, à défaut, la mise en service) date de plus de N mois, avec un
+  lien vers la liste filtrée. Le délai est réglable par les
+  administrateurs entre 3 et 12 mois (6 par défaut).
 
 ### Changed
 
@@ -36,6 +50,10 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ### Fixed
 
+- La clôture d'un contrôle ne renseignait plus la **date du dernier
+  contrôle** des équipements vérifiés (OK, KO, hors service). Le filtre
+  « Dernier contrôle » de la liste des équipements était donc faux. La
+  migration 019 rattrape cette date depuis les contrôles clôturés.
 - Assistant d'installation, étape Catégories : « jeton CSRF invalide »
   quand la liste était longue (session ouverte après l'envoi des
   en-têtes).

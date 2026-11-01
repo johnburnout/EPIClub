@@ -40,6 +40,21 @@
 						</div>
 					{% endif %}
 
+					{# [migration 019] EPI non vérifiés depuis plus de 6 mois #}
+					{% if alerte_controle|default(null) %}
+						<div id="alerte-controle" class="alert alert-warning mb-0" role="alert">
+							<a href="{{ alerte_controle.url }}" class="alert-link text-decoration-none d-block"
+							   title="Afficher les EPI non vérifiés, du plus ancien contrôle au plus récent">
+								🔎 <strong>{{ alerte_controle.total }} EPI non vérifié{{ alerte_controle.total > 1 ? 's' : '' }}</strong>
+								depuis plus de {{ alerte_controle.mois }} mois
+								<span class="d-block small fw-normal">
+									(dernier contrôle ou mise en service avant le {{ alerte_controle.avant|date('d/m/Y') }})
+								</span>
+								<span class="d-block small mt-1">Voir la liste →</span>
+							</a>
+						</div>
+					{% endif %}
+
 					{% if prets_en_retard|default(0) > 0 %}
 						<div id="alerte-prets-retard" class="alert alert-danger mb-0" role="alert">
 							<a href="/prets?retard=1" class="alert-link text-decoration-none d-block"

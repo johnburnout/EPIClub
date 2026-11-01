@@ -14,6 +14,8 @@ class ClubManager extends AbstractManager
         'pret_actif',
         // [migration 017]
         'delai_suppression_egare_mois',
+        // [migration 019]
+        'alerte_controle_actif', 'alerte_controle_mois',
     ];
 
     public function findParameters()

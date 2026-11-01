@@ -9,6 +9,7 @@ use Epiclub\Domain\ControleLigneManager;
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\CategorieManager;
 use Epiclub\Domain\EmplacementManager;
+use Epiclub\Domain\JournalActiviteManager;
 use Epiclub\Domain\UtilisateurManager;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\Pagination;
@@ -300,6 +301,8 @@ class ControleController extends AbstractController
         $utilisateurManager = $this->utilisateurManager();
         $utilisateurManager->save($user);
         $this->session->set('user', $user);
+
+        $this->journaliser(JournalActiviteManager::TYPE_CONTROLE, "Création du contrôle n° {$id}", $request);
 
         $this->session->getFlashBag()->add('success', 'Contrôle créé avec succès.');
         return $this->redirectTo("/admin/controles/edit/$id");
@@ -1072,6 +1075,16 @@ class ControleController extends AbstractController
         return DureeDeVie::finDeVie($date !== '' ? $date : date('Y-m-d'));
     }
 
+    /**
+     * [migration 019] Date (Y-m-d) de vérification d'une ligne : sa date
+     * de contrôle si elle est valide, sinon la date du jour.
+     */
+    public static function dateVerification(array $ligne): string
+    {
+        $date = substr(trim((string) ($ligne['date_controle'] ?? '')), 0, 10);
+        return \Epiclub\Domain\PretRegles::dateValide($date) ? $date : date('Y-m-d');
+    }
+
     public function cloturer(Request $request)
     {
         $this->deniAccessUnlessGranted('ROLE_CONTROLLEUR');
@@ -1219,9 +1232,26 @@ class ControleController extends AbstractController
                 $equipement['date_egare'] = null;
             }
 
+            // [migration 019] Date du dernier contrôle (alerte « EPI non
+            // vérifiés ») : équipement effectivement vérifié.
+            if (in_array($statutLigne, [
+                ControleLigneStatut::CONTROLE_OK,
+                ControleLigneStatut::CONTROLE_KO,
+                ControleLigneStatut::HORS_SERVICE,
+            ], true)) {
+                $equipement['date_dernier_controle'] = self::dateVerification($ligne);
+            }
+
             $equipement['controle_en_cours'] = 0;
             $equipementManager->save($equipement);
         }
+
+        $this->journaliser(JournalActiviteManager::TYPE_CONTROLE, sprintf(
+            'Clôture du contrôle n° %d (%d équipement%s)',
+            $id,
+            count($lignes),
+            count($lignes) > 1 ? 's' : ''
+        ), $request);
 
         // Nettoyage de la session
         if ($user['controle_en_cours_id'] == $id) {
@@ -1312,6 +1342,8 @@ class ControleController extends AbstractController
             // [SÉCURITÉ] La FK ON DELETE CASCADE supprime automatiquement
             // les controle_ligne associées.
             $controleManager->delete($id);
+
+            $this->journaliser(JournalActiviteManager::TYPE_CONTROLE, "Suppression du contrôle n° {$id} (non clôturé)", $request);
 
             $this->session->getFlashBag()->add('success', "Le contrôle a été supprimé.");
             return $this->redirectTo('/admin/controles');

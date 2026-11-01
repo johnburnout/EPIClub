@@ -16,4 +16,10 @@ declare(strict_types=1);
 
 define('EPICLUB_CONFIG_FILE', __DIR__ . '/Fixtures/env.test.php');
 
+// [migration 019] Pas d'écriture du journal d'activité depuis les tests
+// en processus (AbstractController::journalActiviteManager()). Les tests
+// qui le vérifient surchargent la factory. Le serveur web des tests
+// d'intégration (processus séparé) n'est pas concerné.
+define('EPICLUB_JOURNAL_ACTIVITE_DESACTIVE', true);
+
 require dirname(__DIR__) . '/vendor/autoload.php';

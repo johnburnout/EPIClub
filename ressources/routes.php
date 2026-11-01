@@ -202,6 +202,29 @@ $routes->add('journal_pdf',  new Route('/journaux/pdf/{id}', ['_controller' => '
 
 
 // =====================================================================
+// JOURNAL D'ACTIVITÉ (migration 019)
+// =====================================================================
+// ROLE_ADMIN : consultation et export texte ; ROLE_SUPER_ADMIN :
+// réinitialisation (saisie de « REINITIALISER »)
+
+$routes->add('journal_activite', new Route(
+    '/admin/journal-activite',
+    ['_controller' => 'Epiclub\\Controller\\JournalActiviteController', 'action' => 'index'],
+    [], [], '', [], ['GET']
+));
+$routes->add('journal_activite_export', new Route(
+    '/admin/journal-activite/export',
+    ['_controller' => 'Epiclub\\Controller\\JournalActiviteController', 'action' => 'export'],
+    [], [], '', [], ['GET']
+));
+$routes->add('journal_activite_reinitialiser', new Route(
+    '/admin/journal-activite/reinitialiser',
+    ['_controller' => 'Epiclub\\Controller\\JournalActiviteController', 'action' => 'reinitialiser'],
+    [], [], '', [], ['POST']
+));
+
+
+// =====================================================================
 // CONTROLES
 // =====================================================================
 // ROLE_CONTROLLEUR : création, édition et clôture des contrôles
