@@ -10,6 +10,11 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v2.3.0] — 2026-11-01
+
+Journal d'activité ; notification des EPI non vérifiés ; installation et
+sauvegarde en ligne de commande.
+
 ### Added
 
 - **Installation en ligne de commande** : `bin/installer.php`, non
