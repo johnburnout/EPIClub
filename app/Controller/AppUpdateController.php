@@ -8,7 +8,9 @@ use Epiclub\Engine\MySqlDatabaseDumper;
 use Epiclub\Engine\GitHubReleaseProvider;
 use Epiclub\Engine\GitHubReleaseProviderInterface;
 use Epiclub\Engine\VerrouInstance;
+use Epiclub\Exception\MiseAJourException;
 use Epiclub\Exception\VerrouOccupeException;
+use Epiclub\Process\MiseAJourService;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -25,22 +27,7 @@ class AppUpdateController extends AbstractController
     private const GITHUB_REPO = 'johnburnout/EPIClub';
     private const VERSION_FILE = __DIR__ . '/../../version.txt';
     private const TEMP_DIR = __DIR__ . '/../../var/tmp/update';
-    // [audit 2026-10-19 F2] 'public' n'est PLUS exclu : l'exclure
-    // empêchait toute mise à jour de index.php, des .htaccess et des
-    // assets (le durcissement public/.htaccess de la beta.4 n'atteignait
-    // jamais les instances mises à jour). L'exclusion n'apportait pas de
-    // vraie protection : app/ est copié et exécuté de toute façon. La
-    // protection contre un zip compromis relève de la vérification
-    // d'intégrité de l'archive (audit S3), pas de cette liste.
-    private const EXCLUDED_DIRS = ['var', 'vendor', '.git', '_storage', 'config', 'setup'];
-
-    // [audit 2026-10-19 F2] Données des utilisateurs dans le docroot
-    // (photos d'équipement, QR codes, images de catégorie) : jamais
-    // écrasées ni complétées par une release. Seuls les .htaccess de
-    // protection de ce dossier sont mis à jour.
-    private const USER_DATA_DIR = 'public/images';
-    private const USER_DATA_ALLOWED_FILES = ['.htaccess'];
-    private const EXCLUDED_FILES = ['.env', '.env.local', '.env.local.php', 'version.txt'];
+    // Listes d'exclusion de la copie : MiseAJourService.
     
     /**
     * [REFACTOR VAGUE 10] Factory du fournisseur de releases GitHub.
@@ -109,22 +96,12 @@ class AppUpdateController extends AbstractController
      */
     protected function sauvegarderAvantMigrations(string $migrationsLivrees): ?string
     {
-        $livrees = array_map(
-            static fn (string $f) => basename($f, '.sql'),
-            glob(rtrim($migrationsLivrees, '/') . '/*.sql') ?: []
+        return MiseAJourService::sauvegarderSiMigrationsEnAttente(
+            $migrationsLivrees,
+            fn (): array => $this->migrationsAppliquees(),
+            $this->databaseBackup(),
+            $this->configProvider()->get('BACKUP_RETENTION'),
         );
-        if ($livrees === []) {
-            return null;
-        }
-        $enAttente = array_diff($livrees, $this->migrationsAppliquees());
-        if ($enAttente === []) {
-            return null;
-        }
-
-        $backup = $this->databaseBackup();
-        $fichier = $backup->dump();
-        $backup->cleanup(DatabaseBackup::retention($this->configProvider()->get('BACKUP_RETENTION')));
-        return $fichier;
     }
 
     /** @return string[] */
@@ -214,9 +191,7 @@ class AppUpdateController extends AbstractController
     {
         // ⚠️ Mise à jour de l'application : réservé au SUPER_ADMIN
         // Vérification HORS du try pour que l'AccessDeniedException
-        // remonte à la couche de gestion d'erreur (403 propre) au lieu
-        // d'être rattrapée par le catch(\Throwable) du bas et transformée
-        // en message d'erreur générique.
+        // remonte à la couche de gestion d'erreur (403 propre).
         $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
 
         $verrou = $this->verrouInstance();
@@ -224,7 +199,7 @@ class AppUpdateController extends AbstractController
             if ($request->getMethod() !== 'POST') {
                 return new RedirectResponse('/admin/update');
             }
-            
+
             $token = $request->request->get('csrf_token');
             $expected = $this->session->get('csrf_token');
             if (!$token || !$expected || !hash_equals((string) $expected, (string) $token)) {
@@ -245,224 +220,38 @@ class AppUpdateController extends AbstractController
                     'message' => $e->getMessage() . ' Rien n\'a été modifié.',
                 ]);
             }
-            
-            $latest = $this->githubReleaseProvider()->getLatestRelease();
-            if (!$latest) {
-                return $this->resultat([
-                    'success' => false,
-                    'message' => 'Impossible de récupérer la version distante.',
-                ]);
-            }
-            
-            $zipUrl = $latest['zip_url'];
-            $version = $latest['tag'];
-            
-            $tempZip = self::TEMP_DIR . '/release.zip';
-            if (!is_dir(self::TEMP_DIR)) {
-                mkdir(self::TEMP_DIR, 0755, true);
-            }
-            
-            // Télécharger le zip
-            $zipContent = $this->githubReleaseProvider()->downloadUrl($zipUrl);
-            if (empty($zipContent)) {
-                return $this->resultat([
-                    'success' => false,
-                    'message' => 'Le fichier téléchargé est vide.',
-                ]);
-            }
 
-            // [audit 2026-10-19 F1] Somme de contrôle de l'archive complète.
-            // Obligatoire pour une archive « bundle » (vendor/ inclus) :
-            // sans elle, on ne remplace pas vendor/ à l'aveugle.
+            // [v2.4.0] Déroulé commun avec bin/mettre-a-jour.php (console
+            // d'hébergement) : Epiclub\Process\MiseAJourService.
+            $reponse = null;
             try {
-                $this->verifierSommeDeControle($latest, $zipContent);
-            } catch (\RuntimeException $e) {
-                error_log('[AppUpdateController] Archive rejetée : ' . $e->getMessage());
-                return $this->resultat([
-                    'success' => false,
-                    'message' => 'Archive invalide : le fichier téléchargé a été rejeté (somme de contrôle).',
-                ]);
-            }
-
-            file_put_contents($tempZip, $zipContent);
-            
-            // Décompresser
-            $zip = new ZipArchive();
-            if ($zip->open($tempZip) !== true) {
-                return $this->resultat([
-                    'success' => false,
-                    'message' => 'Impossible d\'ouvrir l\'archive téléchargée.',
-                ]);
-            }
-
-            // [SÉCURITÉ — audit C1] Validation des entrées AVANT extraction :
-            // rejet des chemins « .. », absolus ou Windows (zip slip). Un zip
-            // GitHub compromis ne doit pas pouvoir écrire hors du dossier
-            // d'extraction.
-            try {
-                $this->assertZipEntriesSafe($zip);
-            } catch (\RuntimeException $e) {
-                $zip->close();
-                @unlink($tempZip);
-                error_log('[AppUpdateController] Archive rejetée : ' . $e->getMessage());
-                return $this->resultat([
-                    'success' => false,
-                    'message' => 'Archive invalide : le fichier téléchargé a été rejeté pour des raisons de sécurité.',
-                ]);
-            }
-
-            $extractPath = self::TEMP_DIR . '/extracted';
-            if (!is_dir($extractPath)) {
-                mkdir($extractPath, 0755, true);
-            }
-            if (!$zip->extractTo($extractPath)) {
-                return $this->resultat([
-                    'success' => false,
-                    'message' => 'Erreur lors de l\'extraction de l\'archive.',
-                ]);
-            }
-            $zip->close();
-            unlink($tempZip);
-            
-            // Trouver le dossier source
-            $extractedItems = scandir($extractPath);
-            $sourceDir = null;
-            foreach ($extractedItems as $item) {
-                if ($item !== '.' && $item !== '..' && is_dir($extractPath . '/' . $item)) {
-                    $sourceDir = $extractPath . '/' . $item;
-                    break;
-                }
-            }
-            if (!$sourceDir) {
-                return $this->resultat([
-                    'success' => false,
-                    'message' => 'Aucun dossier trouvé après extraction.',
-                ]);
-            }
-            
-            // Copier les fichiers (sauf exclus)
-            $targetDir = __DIR__ . '/../..';
-            $vendorLivre = is_file($sourceDir . '/vendor/autoload.php');
-
-            // [v1.2.0-beta.2] Sans vendor/ livré, on n'installe RIEN : le
-            // vendor/ en place a un classmap « authoritative » qui ignore
-            // toute nouvelle classe (incident v1.2.0-beta.1 : mise à jour
-            // lancée avant que la CI ait attaché l'archive complète, les
-            // sources ont été copiées sans dépendances → « Class not found »).
-            // composer n'est généralement pas disponible sur l'hébergement.
-            if (!$vendorLivre) {
-                error_log('[AppUpdateController] Archive sans vendor/ refusée pour ' . $version);
-                $this->deleteDirectory($extractPath);
-                $this->cleanupTempDir();
-                return $this->resultat([
-                    'success' => false,
-                    'message' => "L'archive complète de la version " . $version . ' n\'est pas encore disponible '
-                        . '(GitHub la prépare quelques minutes après la publication). Rien n\'a été modifié : '
-                        . 'réessayez dans quelques minutes.',
-                ]);
-            }
-
-            // [v1.4.0] Sauvegarde SQL de la base AVANT toute modification,
-            // si la version installée apporte des migrations. Échec → rien
-            // n'est copié ni migré (les fichiers et la base restent cohérents).
-            try {
-                $sauvegarde = $this->sauvegarderAvantMigrations($sourceDir . '/migrations');
-                if ($sauvegarde !== null) {
-                    error_log('[AppUpdateController] Sauvegarde de la base avant migrations : ' . $sauvegarde);
-                }
-            } catch (\Throwable $e) {
-                error_log('[AppUpdateController] Mise à jour annulée, sauvegarde impossible : ' . $e->getMessage());
-                $this->deleteDirectory($extractPath);
-                $this->cleanupTempDir();
-                return $this->resultat([
-                    'success' => false,
-                    'message' => 'La base de données n\'a pas pu être sauvegardée avant les migrations : '
-                        . 'mise à jour annulée, rien n\'a été modifié. Consultez les journaux du serveur '
-                        . '(espace disque, droits d\'écriture sur var/backups/).',
-                ]);
-            }
-
-            // [v1.5.1] La requête s'exécute avec l'ANCIEN code alors que
-            // copyFiles() remplace les gabarits : la page de résultat est
-            // compilée avant la copie (sinon un nouveau gabarit peut appeler
-            // une fonction Twig inconnue de l'ancien code — cas v1.4.0 →
-            // v1.5.0 avec pret_actif()).
-            $this->prechargerGabaritsResultat();
-
-            $this->copyFiles($sourceDir, $targetDir);
-
-            // ------------------------------------------------------------
-            // MIGRATIONS DE BASE DE DONNÉES
-            // ------------------------------------------------------------
-            try {
-                $pdo = $this->databasePdo();
-                
-                $migrationManager = new \Epiclub\Engine\MigrationManager(
-                    $pdo,
-                    __DIR__ . '/../../migrations'
+                $resultat = $this->miseAJourService()->mettreAJour(
+                    static function (string $ligne): void {
+                        error_log('[AppUpdateController] ' . $ligne);
+                    },
+                    true, // la page réinstalle la dernière version (comportement historique)
+                    // [v1.5.1] La requête s'exécute avec l'ANCIEN code alors que
+                    // la copie remplace les gabarits : page de résultat compilée
+                    // avant la copie.
+                    fn () => $this->prechargerGabaritsResultat(),
+                    // [audit 2026-10-19 F1] Page de résultat rendue AVANT de
+                    // toucher à vendor/ (une fois vendor/ remplacé, la requête
+                    // ne doit plus charger de classe Twig).
+                    function () use (&$reponse): void {
+                        $reponse = $this->resultat([
+                            'success' => true,
+                            'message' => 'Mise à jour réussie. Version actuelle : ' . $this->versionLivree(),
+                        ]);
+                    },
                 );
-                
-                $applied = $migrationManager->migrate(function ($migrationVersion) {
-                    error_log('[AppUpdateController] Migration appliquée : ' . $migrationVersion);
-                });
-                
-                if (!empty($applied)) {
-                    error_log(sprintf(
-                        '[AppUpdateController] %d migration(s) appliquée(s).',
-                        count($applied)
-                    ));
-                } else {
-                    error_log('[AppUpdateController] Base déjà à jour.');
-                }
-            } catch (\Throwable $e) {
-                error_log(sprintf(
-                    '[AppUpdateController] Migration failed: %s in %s:%d',
-                    $e->getMessage(),
-                    $e->getFile(),
-                    $e->getLine()
-                ));
-                
-                return $this->resultat([
-                    'success' => false,
-                    'message' => 'Les fichiers ont été mis à jour mais les migrations '
-                    . 'de base de données ont échoué. Consultez les logs '
-                    . 'serveur avant de relancer l\'application.',
-                ]);
+            } catch (MiseAJourException $e) {
+                return $this->resultat(['success' => false, 'message' => $e->getMessage()]);
             }
-            
-            // Mettre à jour le numéro de version
-            file_put_contents(self::VERSION_FILE, $version);
 
-            // [audit 2026-10-19 F1] La page de résultat est rendue AVANT de
-            // toucher à vendor/ : une fois vendor/ remplacé, la requête en
-            // cours ne doit plus charger de classe Twig (versions mêlées).
-            $reponse = $this->resultat([
+            return $reponse ?? $this->resultat([
                 'success' => true,
-                'message' => 'Mise à jour réussie. Version actuelle : ' . $version,
+                'message' => 'Mise à jour réussie. Version actuelle : ' . $resultat['version'],
             ]);
-
-            // [audit 2026-10-19 F1] Dépendances : l'archive complète publiée
-            // par la CI embarque vendor/ (remplacé d'un bloc) ; composer
-            // n'est pas nécessaire (et une archive sans vendor/ est refusée
-            // plus haut).
-            try {
-                $this->remplacerVendor($sourceDir . '/vendor', $targetDir . '/vendor');
-            } catch (\Throwable $e) {
-                error_log('[AppUpdateController] vendor/ non remplacé : ' . $e->getMessage());
-                $reponse = $this->resultat([
-                    'success' => false,
-                    'message' => 'Les fichiers et la base sont à jour, mais les dépendances (vendor/) '
-                        . "n'ont pas pu être remplacées. L'ancienne version a été conservée : "
-                        . 'consultez les logs serveur.',
-                ]);
-            }
-
-            // Nettoyage final (dossier extrait compris)
-            $this->deleteDirectory($extractPath);
-            $this->cleanupTempDir();
-
-            return $reponse;
-            
         } catch (\Throwable $e) {
             error_log(sprintf(
                 '[AppUpdateController] Update failed: %s in %s:%d',
@@ -470,7 +259,7 @@ class AppUpdateController extends AbstractController
                 $e->getFile(),
                 $e->getLine()
             ));
-            
+
             return $this->resultat([
                 'success' => false,
                 'message' => 'Une erreur est survenue lors de la mise à jour. Merci de réessayer ou de contacter un administrateur.',
@@ -478,6 +267,24 @@ class AppUpdateController extends AbstractController
         } finally {
             $verrou->liberer();
         }
+    }
+
+    /** Version écrite dans version.txt par la mise à jour en cours. */
+    private function versionLivree(): string
+    {
+        return $this->getCurrentVersion();
+    }
+
+    /** [v2.4.0] Service de mise à jour, branché sur les fabriques surchargeables en test. */
+    protected function miseAJourService(): MiseAJourService
+    {
+        return new MiseAJourService(
+            $this->githubReleaseProvider(),
+            __DIR__ . '/../..',
+            self::TEMP_DIR,
+            fn (): \PDO => $this->databasePdo(),
+            fn (string $migrationsLivrees): ?string => $this->sauvegarderAvantMigrations($migrationsLivrees),
+        );
     }
 
     /**
@@ -555,207 +362,39 @@ class AppUpdateController extends AbstractController
         return 'v0.0.0';
     }
 
-    /**
-     * [SÉCURITÉ — audit C1] Rejette les archives contenant des entrées
-     * dangereuses : « .. » (zip slip), chemins absolus Unix (« / ») ou
-     * Windows (« C:\ », « \ »), backslashes.
-     *
-     * Méthode protected pour être testable en Unit (sous-classe de test).
-     *
-     * @throws \RuntimeException si une entrée est malveillante
-     */
+    // Méthodes conservées pour les tests Unit (TestableAppUpdateController) :
+    // le code est dans MiseAJourService.
+
     protected function assertZipEntriesSafe(ZipArchive $zip): void
     {
-        for ($i = 0; $i < $zip->numFiles; $i++) {
-            $name = $zip->getNameIndex($i);
-            if ($name === false) {
-                throw new \RuntimeException("Entrée zip #$i illisible");
-            }
-            if (str_contains($name, '..') || preg_match('#^[/\\\\]#', $name) || str_contains($name, '\\')) {
-                throw new \RuntimeException(sprintf('Entrée zip malveillante : %s', $name));
-            }
-        }
+        MiseAJourService::assertZipEntriesSafe($zip);
     }
 
-    /**
-     * [audit 2026-10-19 F1] Vérifie l'archive téléchargée contre la
-     * somme SHA-256 publiée avec la release.
-     *
-     * - archive complète (bundle) : somme OBLIGATOIRE ;
-     * - zipball de sources (anciennes releases) : pas de somme publiée,
-     *   comportement historique conservé.
-     *
-     * NB : protège contre une archive corrompue ou substituée en transit /
-     * dans le cache ; pas contre un compte GitHub compromis (il faudrait
-     * une signature — audit S3).
-     *
-     * @throws \RuntimeException
-     */
+    /** @param array<string, mixed> $release */
     protected function verifierSommeDeControle(array $release, string $zipContent): void
     {
-        $shaUrl = $release['sha256_url'] ?? null;
-
-        if (!is_string($shaUrl) || $shaUrl === '') {
-            if (!empty($release['bundle'])) {
-                throw new \RuntimeException('somme de contrôle absente pour une archive complète');
-            }
-            return;
-        }
-
-        $publie = $this->githubReleaseProvider()->downloadUrl($shaUrl);
-        if (!preg_match('/\b([a-f0-9]{64})\b/i', $publie, $m)) {
-            throw new \RuntimeException('fichier de somme de contrôle illisible');
-        }
-
-        if (!hash_equals(strtolower($m[1]), hash('sha256', $zipContent))) {
-            throw new \RuntimeException('somme de contrôle différente');
-        }
+        $this->miseAJourService()->verifierSommeDeControle($release, $zipContent);
     }
 
-    /**
-     * [audit 2026-10-19 F1] Remplace vendor/ d'un bloc par celui de
-     * l'archive : l'ancien est mis de côté puis supprimé, et restauré si
-     * la bascule échoue (jamais d'installation sans autoloader).
-     *
-     * @throws \RuntimeException
-     */
     protected function remplacerVendor(string $nouveau, string $cible): void
     {
-        if (!is_file($nouveau . '/autoload.php')) {
-            throw new \RuntimeException('vendor/ livré incomplet');
-        }
-
-        $ancien = $cible . '.ancien-' . date('YmdHis');
-        $avaitUnVendor = is_dir($cible);
-
-        if ($avaitUnVendor && !rename($cible, $ancien)) {
-            throw new \RuntimeException('impossible de mettre l\'ancien vendor/ de côté');
-        }
-
-        // rename() échoue entre deux systèmes de fichiers : repli sur une copie.
-        if (!@rename($nouveau, $cible)) {
-            try {
-                $this->copierDossier($nouveau, $cible);
-            } catch (\Throwable $e) {
-                $this->deleteDirectory($cible);
-                if ($avaitUnVendor) {
-                    rename($ancien, $cible);
-                }
-                throw new \RuntimeException('remplacement de vendor/ impossible : ' . $e->getMessage(), 0, $e);
-            }
-        }
-
-        if ($avaitUnVendor) {
-            $this->deleteDirectory($ancien);
-        }
+        MiseAJourService::remplacerVendor($nouveau, $cible);
     }
 
-    private function copierDossier(string $source, string $cible): void
-    {
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($source, \RecursiveDirectoryIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::SELF_FIRST
-        );
-        if (!is_dir($cible) && !mkdir($cible, 0755, true)) {
-            throw new \RuntimeException("mkdir $cible");
-        }
-        foreach ($iterator as $item) {
-            $chemin = $cible . '/' . substr($item->getPathname(), strlen($source) + 1);
-            if ($item->isDir()) {
-                if (!is_dir($chemin) && !mkdir($chemin, 0755, true)) {
-                    throw new \RuntimeException("mkdir $chemin");
-                }
-            } elseif (!copy($item->getPathname(), $chemin)) {
-                throw new \RuntimeException("copy $chemin");
-            }
-        }
-    }
-
-    /**
-     * Copie récursive de la release extraite vers l'installation, en
-     * respectant isExcluded(). Protected : testable en Unit.
-     */
     protected function copyFiles(string $source, string $target): void
     {
-        $iterator = new \RecursiveIteratorIterator(
-            new \RecursiveDirectoryIterator($source, \RecursiveDirectoryIterator::SKIP_DOTS),
-            \RecursiveIteratorIterator::SELF_FIRST
-        );
-
-        foreach ($iterator as $item) {
-            $relativePath = substr($item->getPathname(), strlen($source) + 1);
-            $targetPath = $target . '/' . $relativePath;
-
-            if ($this->isExcluded($relativePath)) {
-                continue;
-            }
-
-            if ($item->isDir()) {
-                if (!is_dir($targetPath)) {
-                    mkdir($targetPath, 0755, true);
-                }
-            } else {
-                $parent = dirname($targetPath);
-                if (!is_dir($parent)) {
-                    mkdir($parent, 0755, true);
-                }
-                copy($item->getPathname(), $targetPath);
-            }
-        }
+        MiseAJourService::copyFiles($source, $target);
     }
 
     protected function isExcluded(string $path): bool
     {
-        $path = ltrim(str_replace('\\', '/', $path), '/');
-
-        // [audit 2026-10-19 F2] Dossier de données utilisateur du docroot :
-        // le dossier lui-même et ses sous-dossiers sont ignorés (copyFiles
-        // crée les parents nécessaires), seuls les .htaccess passent.
-        if ($path === self::USER_DATA_DIR || str_starts_with($path, self::USER_DATA_DIR . '/')) {
-            return !in_array(basename($path), self::USER_DATA_ALLOWED_FILES, true);
-        }
-
-        foreach (self::EXCLUDED_DIRS as $dir) {
-            if (strpos($path, $dir . '/') === 0 || $path === $dir) {
-                return true;
-            }
-        }
-        foreach (self::EXCLUDED_FILES as $file) {
-            if (basename($path) === $file) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private function deleteDirectory(string $dir): void
-    {
-        if (!is_dir($dir)) {
-            return;
-        }
-
-        try {
-            $iterator = new \RecursiveDirectoryIterator($dir, \RecursiveDirectoryIterator::SKIP_DOTS);
-            $files = new \RecursiveIteratorIterator($iterator, \RecursiveIteratorIterator::CHILD_FIRST);
-            foreach ($files as $file) {
-                if ($file->isDir()) {
-                    rmdir($file->getRealPath());
-                } else {
-                    unlink($file->getRealPath());
-                }
-            }
-            rmdir($dir);
-        } catch (\Exception $e) {
-            if (function_exists('system')) {
-                system('rm -rf ' . escapeshellarg($dir));
-            }
-        }
+        return MiseAJourService::isExcluded($path);
     }
 
     private function cleanupTempDir(): void
     {
         if (is_dir(self::TEMP_DIR)) {
-            $this->deleteDirectory(self::TEMP_DIR);
+            MiseAJourService::deleteDirectory(self::TEMP_DIR);
         }
         if (!is_dir(self::TEMP_DIR)) {
             mkdir(self::TEMP_DIR, 0755, true);

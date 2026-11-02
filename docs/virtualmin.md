@@ -572,10 +572,27 @@ le verrou. Un échec en cours de route laisse un état identifiable :
 `.env.local.php` sans `SETUP_COMPLETE`, que l'assistant web sait
 reprendre.
 
-### 6.4 `bin/mettre-a-jour.php` : abandonné
+### 6.4 `bin/mettre-a-jour.php`
 
-Les mises à jour restent sur la page *Mise à jour* (décision du
-25/10/2026).
+> **Décision du 02/11/2026** (remplace celle du 25/10) : la console peut
+> aussi mettre à jour les instances, une par une ou toutes celles en
+> retard. Les super-administrateurs gardent la page *Mise à jour*. Les
+> deux passent par `Epiclub\Process\MiseAJourService` et le même verrou.
+
+```bash
+php8.4 bin/mettre-a-jour.php [--verifier] [--quiet] [--json]
+```
+
+- Sans option : installe la dernière release si elle est plus récente
+  (code 0 « déjà à jour » sinon).
+- `--verifier` : version installée et version disponible, sans rien
+  modifier.
+- Codes : 3 non installée ou GitHub injoignable, 4 verrou occupé,
+  5 archive rejetée, 7 sauvegarde impossible (rien n'a été modifié),
+  8 interrompue **après** modification (fichiers copiés : il faut
+  intervenir).
+- Une instance antérieure à cette commande doit être mise à jour une
+  première fois depuis sa page *Mise à jour*.
 
 ### 6.5 `bin/sauvegarder.php`
 
