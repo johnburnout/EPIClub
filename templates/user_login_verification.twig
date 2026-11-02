@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Epiclub</title>
+		<link rel="shortcut icon" href="/assets/img/favicon.ico" type="image/x-icon">
+		<link rel="stylesheet" type="text/css" href="/assets/css/cosmo.min.css">
+	</head>
+
+	<body>
+		<header class="container mt-3">
+			<div class="text-center">
+				<hr>
+				<img src="/assets/img/EPIClub.png" class="" width="64" alt="Logo EPIClub">
+				<span class="h1 text-primary align-middle ps-3">
+					<strong>Gestionnaire EPI</strong>
+				</span>
+				<hr>
+			</div>
+		</header>
+		<main class="container mt-2">
+			{% for label, messages in session.getFlashBag.all %}
+				{% for message in messages %}
+					<div class="alert alert-{{ label == 'note' ? 'warning' : label }}" role="alert">{{ message }}</div>
+				{% endfor %}
+			{% endfor %}
+			<h3>Double authentification</h3>
+			<hr>
+
+			{% if erreur %}
+				<div class="alert alert-danger" role="alert">{{ erreur }}</div>
+			{% endif %}
+
+			{% if a_passkey %}
+				<div id="passkey-connexion" class="mb-4" hidden>
+					<p>Utilisez la passkey de ce compte (empreinte, visage, code de l'appareil ou clé de sécurité) :</p>
+					<button type="button" class="btn btn-primary" id="passkey-bouton" data-csrf="{{ csrf_token }}" data-redirect="">
+						🔑 Utiliser ma passkey
+					</button>
+					<div class="text-danger mt-2" id="passkey-erreur" role="alert"></div>
+					<hr>
+				</div>
+			{% endif %}
+
+			{% if a_application or a_codes_secours %}
+				<form method="post" autocomplete="off">
+					<div class="mb-3">
+						<label for="code" class="form-label">
+							{% if a_application %}
+								Code à 6 chiffres affiché par votre application d'authentification
+								{% if a_codes_secours %}<br><small class="text-muted">ou un code de secours (format abcde-fghjk)</small>{% endif %}
+							{% else %}
+								Code de secours (format abcde-fghjk)
+							{% endif %}
+						</label>
+						<input type="text" class="form-control" id="code" name="code" required autofocus
+						       autocomplete="one-time-code" inputmode="{{ a_application ? 'numeric' : 'text' }}" maxlength="16">
+					</div>
+					<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+					<button type="submit" class="btn btn-primary">Valider</button>
+					<a href="/se_connecter" class="btn btn-link">Annuler</a>
+				</form>
+			{% endif %}
+
+			<p class="mt-4 text-muted small">
+				Appareil perdu et plus de code de secours ? Un administrateur peut réinitialiser
+				la double authentification de votre compte depuis sa fiche utilisateur.
+			</p>
+		</main>
+		<footer class="container">
+			<hr>
+			<p class="text-center text-body-secondary">
+				<a href="https://epiclub.fr">Epiclub {{ app_version }}</a>
+			</p>
+		</footer>
+		<script src="/assets/js/passkey.js"></script>
+		<script>
+			EpiclubPasskey.initConnexion(document.getElementById('passkey-connexion'));
+		</script>
+	</body>
+</html>

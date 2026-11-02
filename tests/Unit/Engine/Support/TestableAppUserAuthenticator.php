@@ -20,6 +20,7 @@ final class TestableAppUserAuthenticator extends AppUserAuthenticator
         Session $session,
         private readonly UtilisateurManager $manager,
         private ?LoginThrottleManager $limiteur = null,
+        private bool $passkeysConfigurees = false,
     ) {
         parent::__construct($session);
     }
@@ -33,5 +34,11 @@ final class TestableAppUserAuthenticator extends AppUserAuthenticator
     protected function loginThrottle(): LoginThrottleManager
     {
         return $this->limiteur ??= new InMemoryLoginThrottleManager();
+    }
+
+    /** [migration 020] Passkeys simulées (pas de requête). */
+    protected function deuxiemeFacteurRequis(array $user): bool
+    {
+        return !empty($user['totp_active_le']) || $this->passkeysConfigurees;
     }
 }

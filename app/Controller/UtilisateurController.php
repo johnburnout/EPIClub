@@ -3,6 +3,8 @@
 namespace Epiclub\Controller;
 
 use Epiclub\Domain\ClubManager;
+use Epiclub\Domain\DoubleAuthentificationManager;
+use Epiclub\Domain\JournalActiviteManager;
 use Epiclub\Domain\UtilisateurManager;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\MailerService;
@@ -31,6 +33,75 @@ class UtilisateurController extends AbstractController
     protected function mailerService(): MailerServiceInterface
     {
         return new MailerService($this->configProvider());
+    }
+
+    /** [migration 020] Factory — surchargée en test Unit. */
+    protected function doubleAuthentification(): DoubleAuthentificationManager
+    {
+        return new DoubleAuthentificationManager();
+    }
+
+    /**
+     * [migration 020] Le compte a-t-il une double authentification
+     * (application ou passkey) ? null si illisible (migration non jouée).
+     *
+     * @param array<string, mixed> $utilisateur ligne complète (findId)
+     */
+    private function doubleAuthentificationActive(array $utilisateur): ?bool
+    {
+        if (!empty($utilisateur['totp_active_le'])) {
+            return true;
+        }
+        try {
+            return $this->doubleAuthentification()->compterPasskeys((int) $utilisateur['id']) > 0;
+        } catch (\Throwable $e) {
+            error_log('[UtilisateurController] Double authentification illisible : ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * [migration 020] POST /admin/utilisateurs/utilisateur_2fa_reinitialiser-{id} :
+     * retire l'application, les codes de secours et les passkeys d'un
+     * compte qui a perdu ses facteurs. Mêmes droits que la fiche ; ni son
+     * propre compte (page Sécurité du compte), ni le compte protégé d'un
+     * autre.
+     */
+    public function reinitialiserDoubleAuthentification(Request $request): RedirectResponse
+    {
+        $this->deniAccessUnlessGranted('ROLE_ADMIN');
+        $this->validateCsrf($request);
+
+        $id = $this->getValidId($request);
+        $utilisateur = $id !== null ? $this->utilisateurManager()->findId($id) : null;
+        if (!$utilisateur) {
+            return new RedirectResponse('/admin/utilisateurs');
+        }
+        $acteur = $this->session->get('user') ?: [];
+        if (!$this->canManageUser($acteur, $utilisateur)) {
+            $this->session->getFlashBag()->add('error', "Vous n'avez pas les droits pour modifier cet utilisateur.");
+            return new RedirectResponse('/admin/utilisateurs');
+        }
+        if (($acteur['id'] ?? null) == $utilisateur['id']) {
+            $this->session->getFlashBag()->add('warning', 'Gérez votre propre double authentification depuis la page « Sécurité du compte ».');
+            return new RedirectResponse('/mon-compte/securite');
+        }
+        if (!empty($utilisateur['est_protege'])) {
+            $this->session->getFlashBag()->add('error', 'La double authentification du compte protégé ne peut être modifiée que par son titulaire.');
+            return new RedirectResponse('/admin/utilisateurs/utilisateur-' . $id);
+        }
+
+        $this->doubleAuthentification()->reinitialiser((int) $id);
+        $this->journaliser(
+            JournalActiviteManager::TYPE_CONNEXION,
+            sprintf('Double authentification réinitialisée pour « %s »', $utilisateur['username'] ?? $id),
+            $request
+        );
+        $this->session->getFlashBag()->add('success', sprintf(
+            'Double authentification réinitialisée : %s se connectera avec son seul mot de passe et pourra la réactiver.',
+            $utilisateur['username'] ?? 'la personne'
+        ));
+        return new RedirectResponse('/admin/utilisateurs/utilisateur-' . $id);
     }
 
     /**
@@ -372,7 +443,10 @@ class UtilisateurController extends AbstractController
             'est_protege' => $estProtege,
             'protege_pour_acteur' => $estProtegePourActeur,
             'can_delete' => $canDelete,
-            'form_errors' => $form_errors
+            'form_errors' => $form_errors,
+            // [migration 020] Réinitialisation possible : autre compte, non protégé.
+            'double_auth' => $this->doubleAuthentificationActive($utilisateur),
+            'peut_reinitialiser_2fa' => !$isSelf && !$estProtege,
         ]);
     }
 

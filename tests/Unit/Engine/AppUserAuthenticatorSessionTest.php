@@ -106,6 +106,80 @@ final class AppUserAuthenticatorSessionTest extends TestCase
         self::assertTrue($authenticator->authenticate('adurand', self::PLAIN_PASSWORD));
     }
 
+    /**
+     * [migration 020] Second facteur configuré : le mot de passe seul
+     * n'ouvre PAS la session ; seule la connexion en attente est notée.
+     */
+    public function testSecondFacteurConfigureLaSessionResteFermee(): void
+    {
+        $userRow = [
+            'id'             => 7,
+            'username'       => 'adurand',
+            'role'           => 'ROLE_USER',
+            'password'       => password_hash(self::PLAIN_PASSWORD, PASSWORD_DEFAULT),
+            'totp_active_le' => '2026-11-01 10:00:00',
+        ];
+        $session = new Session(new \Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage());
+
+        $authenticator = new TestableAppUserAuthenticator(
+            $session,
+            new TestableUtilisateurManager($this->makePdoReturning($userRow))
+        );
+
+        self::assertTrue($authenticator->authenticate('adurand', self::PLAIN_PASSWORD));
+        self::assertTrue($authenticator->deuxiemeFacteurEnAttente());
+        self::assertFalse($session->has('user'));
+        $enAttente = $session->get(\Epiclub\Engine\AppUserAuthenticator::SESSION_EN_ATTENTE);
+        self::assertSame(7, $enAttente['id']);
+        self::assertGreaterThan(time(), $enAttente['expire']);
+    }
+
+    public function testPasskeySeuleExigeAussiLeSecondFacteur(): void
+    {
+        $userRow = [
+            'id'       => 7,
+            'username' => 'adurand',
+            'role'     => 'ROLE_USER',
+            'password' => password_hash(self::PLAIN_PASSWORD, PASSWORD_DEFAULT),
+        ];
+        $session = new Session(new \Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage());
+
+        $authenticator = new TestableAppUserAuthenticator(
+            $session,
+            new TestableUtilisateurManager($this->makePdoReturning($userRow)),
+            null,
+            true
+        );
+
+        self::assertTrue($authenticator->authenticate('adurand', self::PLAIN_PASSWORD));
+        self::assertTrue($authenticator->deuxiemeFacteurEnAttente());
+        self::assertFalse($session->has('user'));
+    }
+
+    public function testSansSecondFacteurLaSessionSOuvre(): void
+    {
+        $userRow = [
+            'id'       => 7,
+            'username' => 'adurand',
+            'role'     => 'ROLE_USER',
+            'password' => password_hash(self::PLAIN_PASSWORD, PASSWORD_DEFAULT),
+            'totp_secret' => 'chiffre',
+            'codes_secours' => '[]',
+        ];
+        $session = new Session(new \Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage());
+
+        $authenticator = new TestableAppUserAuthenticator(
+            $session,
+            new TestableUtilisateurManager($this->makePdoReturning($userRow))
+        );
+
+        self::assertTrue($authenticator->authenticate('adurand', self::PLAIN_PASSWORD));
+        self::assertFalse($authenticator->deuxiemeFacteurEnAttente());
+        self::assertSame(7, $session->get('user')['id']);
+        self::assertArrayNotHasKey('totp_secret', $session->get('user'));
+        self::assertArrayNotHasKey('codes_secours', $session->get('user'));
+    }
+
     private function makePdoReturning(array $row): \PDO
     {
         $pdo = $this->createMock(\PDO::class);

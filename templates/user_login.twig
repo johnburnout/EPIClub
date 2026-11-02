@@ -57,6 +57,22 @@
 					<a href="/mot_de_passe_oublie">Mot de passe oublié ?</a>
 				</div>
 			</form>
+
+			{# [migration 020] Connexion sans mot de passe (passkey enregistrée
+			   depuis « Sécurité du compte »). Masqué si le navigateur ne gère
+			   pas WebAuthn. #}
+			<div id="passkey-connexion" class="mb-3" hidden>
+				<hr>
+				<button type="button" class="btn btn-outline-primary" id="passkey-bouton"
+				        data-csrf="{{ csrf_token }}" data-redirect="{{ redirect|default('') }}">
+					🔑 Se connecter avec une passkey
+				</button>
+				<div class="text-danger mt-2" id="passkey-erreur" role="alert"></div>
+			</div>
+			<script src="/assets/js/passkey.js"></script>
+			<script>
+				EpiclubPasskey.initConnexion(document.getElementById('passkey-connexion'));
+			</script>
 		</main>
 		<footer class="container">
 			<hr>

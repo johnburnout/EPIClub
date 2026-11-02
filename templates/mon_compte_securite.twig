@@ -1,0 +1,147 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+
+	<h3>🔐 Sécurité du compte</h3>
+	<hr>
+
+	<p>
+		La double authentification est <strong>facultative</strong>. Une fois activée, une
+		connexion par mot de passe demande en plus un code de votre application
+		d'authentification ou votre passkey. Une passkey permet aussi de se connecter
+		<strong>sans mot de passe</strong>.
+	</p>
+
+	{% if codes_a_afficher is not empty %}
+		<div class="alert alert-warning">
+			<h5>Vos codes de secours</h5>
+			<p>
+				Notez-les ou imprimez-les et conservez-les en lieu sûr : ils ne seront
+				<strong>plus jamais affichés</strong>. Chacun permet une seule connexion si vous
+				n'avez plus accès à votre téléphone ou à votre passkey.
+			</p>
+			<div class="row row-cols-2 row-cols-md-5 g-2 font-monospace fs-5 mb-2">
+				{% for code in codes_a_afficher %}
+					<div class="col">{{ code }}</div>
+				{% endfor %}
+			</div>
+			<button type="button" class="btn btn-sm btn-outline-dark" onclick="window.print()">🖨️ Imprimer</button>
+		</div>
+	{% endif %}
+
+	{% if not confirmee %}
+		<div class="card mb-4">
+			<div class="card-body">
+				<h5 class="card-title">Confirmez votre mot de passe</h5>
+				<p class="card-text">Pour modifier ces réglages, confirmez votre identité (valable 10 minutes).</p>
+				{% if erreur %}<div class="alert alert-danger">{{ erreur }}</div>{% endif %}
+				<form method="post" class="row g-2 align-items-end">
+					<div class="col-sm-6">
+						<label for="mot_de_passe" class="form-label">Mot de passe</label>
+						<input type="password" id="mot_de_passe" name="mot_de_passe" class="form-control" required autocomplete="current-password" autofocus>
+					</div>
+					<div class="col-sm-auto">
+						<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+						<button type="submit" class="btn btn-primary">Confirmer</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	{% endif %}
+
+	<div class="card mb-4">
+		<div class="card-body">
+			<h5 class="card-title">📱 Application d'authentification</h5>
+			{% if application %}
+				<p><span class="badge bg-success">Activée</span> depuis le {{ application|date('d/m/Y') }}.</p>
+				{% if confirmee %}
+					<form method="post" action="/mon-compte/securite/application/desactiver"
+					      onsubmit="return confirm('Désactiver l\'application d\'authentification ?')">
+						<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+						<button type="submit" class="btn btn-outline-danger btn-sm">Désactiver</button>
+					</form>
+				{% endif %}
+			{% else %}
+				<p>
+					<span class="badge bg-secondary">Non activée</span>
+					Codes à 6 chiffres générés par une application de votre téléphone
+					(Google Authenticator, Microsoft Authenticator, Aegis, FreeOTP, 2FAS, Bitwarden…).
+				</p>
+				{% if confirmee %}
+					<a href="/mon-compte/securite/application" class="btn btn-primary btn-sm">Activer</a>
+				{% endif %}
+			{% endif %}
+		</div>
+	</div>
+
+	<div class="card mb-4">
+		<div class="card-body">
+			<h5 class="card-title">🔑 Passkeys</h5>
+			<p>
+				Une passkey est gardée par votre téléphone, votre ordinateur, votre gestionnaire de
+				mots de passe ou une clé de sécurité, et déverrouillée par empreinte, visage ou code.
+			</p>
+			{% if passkeys is empty %}
+				<p class="text-muted">Aucune passkey enregistrée.</p>
+			{% else %}
+				<table class="table table-sm align-middle">
+					<thead><tr><th>Nom</th><th>Ajoutée le</th><th>Dernière utilisation</th><th></th></tr></thead>
+					<tbody>
+						{% for passkey in passkeys %}
+							<tr>
+								<td>{{ passkey.nom }}</td>
+								<td>{{ passkey.date_creation|date('d/m/Y') }}</td>
+								<td>{{ passkey.derniere_utilisation ? passkey.derniere_utilisation|date('d/m/Y H:i') : '—' }}</td>
+								<td class="text-end">
+									{% if confirmee %}
+										<form method="post" action="/mon-compte/securite/passkey/supprimer-{{ passkey.id }}"
+										      onsubmit="return confirm('Supprimer la passkey « {{ passkey.nom|e('js') }} » ?')">
+											<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+											<button type="submit" class="btn btn-outline-danger btn-sm">Supprimer</button>
+										</form>
+									{% endif %}
+								</td>
+							</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			{% endif %}
+
+			{% if passkeys_indisponibles %}
+				<div class="alert alert-warning mb-0">{{ passkeys_indisponibles }}</div>
+			{% elseif confirmee %}
+				<div id="passkey-enregistrement" class="row g-2 align-items-end">
+					<div class="col-sm-6">
+						<label for="passkey-nom" class="form-label">Nom de la nouvelle passkey</label>
+						<input type="text" id="passkey-nom" class="form-control" maxlength="64" placeholder="ex. Téléphone de Jean">
+					</div>
+					<div class="col-sm-auto">
+						<button type="button" class="btn btn-primary" id="passkey-ajouter" data-csrf="{{ csrf_token }}">Ajouter une passkey</button>
+					</div>
+					<div class="col-12 text-danger" id="passkey-erreur" role="alert"></div>
+				</div>
+				<script src="/assets/js/passkey.js"></script>
+				<script>
+					EpiclubPasskey.initEnregistrement(document.getElementById('passkey-enregistrement'));
+				</script>
+			{% endif %}
+		</div>
+	</div>
+
+	{% if application or passkeys is not empty %}
+		<div class="card mb-4">
+			<div class="card-body">
+				<h5 class="card-title">🧾 Codes de secours</h5>
+				<p>Il vous reste <strong>{{ codes_restants }}</strong> code{{ codes_restants > 1 ? 's' : '' }} de secours.</p>
+				{% if confirmee %}
+					<form method="post" action="/mon-compte/securite/codes-secours"
+					      onsubmit="return confirm('Générer de nouveaux codes ? Les anciens ne fonctionneront plus.')">
+						<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+						<button type="submit" class="btn btn-outline-primary btn-sm">Générer de nouveaux codes</button>
+					</form>
+				{% endif %}
+			</div>
+		</div>
+	{% endif %}
+
+{% endblock %}

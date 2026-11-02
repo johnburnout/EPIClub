@@ -1,0 +1,42 @@
+{% extends "_layout.twig" %}
+
+{% block body %}
+
+	<h3>📱 Activer l'application d'authentification</h3>
+	<hr>
+
+	<ol>
+		<li>Ouvrez votre application d'authentification et ajoutez un compte.</li>
+		<li>Scannez ce QR code, ou saisissez la clé à la main.</li>
+		<li>Saisissez le code à 6 chiffres affiché pour confirmer.</li>
+	</ol>
+
+	<div class="row g-4 align-items-center mb-4">
+		<div class="col-auto">
+			<img src="{{ qr_code }}" width="240" height="240" alt="QR code à scanner avec l'application d'authentification">
+		</div>
+		<div class="col">
+			<p class="mb-1">Clé (saisie manuelle, type « basé sur le temps ») :</p>
+			<p class="font-monospace fs-5 user-select-all">{{ secret }}</p>
+			<p class="text-muted small mb-0">Ne communiquez jamais cette clé ni ce QR code.</p>
+		</div>
+	</div>
+
+	{% if erreur %}
+		<div class="alert alert-danger" role="alert">{{ erreur }}</div>
+	{% endif %}
+
+	<form method="post" autocomplete="off" class="row g-2 align-items-end">
+		<div class="col-sm-4">
+			<label for="code" class="form-label">Code à 6 chiffres</label>
+			<input type="text" id="code" name="code" class="form-control" required autofocus
+			       inputmode="numeric" pattern="[0-9 ]{6,7}" maxlength="7" autocomplete="one-time-code">
+		</div>
+		<div class="col-sm-auto">
+			<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+			<button type="submit" class="btn btn-primary">Activer</button>
+			<a href="/mon-compte/securite" class="btn btn-secondary">Annuler</a>
+		</div>
+	</form>
+
+{% endblock %}

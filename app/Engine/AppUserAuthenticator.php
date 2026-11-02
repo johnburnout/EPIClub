@@ -3,6 +3,7 @@
 namespace Epiclub\Engine;
 
 use Epiclub\Engine\Session;
+use Epiclub\Domain\DoubleAuthentificationManager;
 use Epiclub\Domain\LoginThrottleManager;
 use Epiclub\Domain\UtilisateurManager;
 
@@ -11,6 +12,17 @@ class AppUserAuthenticator
     protected UtilisateurManager $utilisateurManager;
     private string $error = '';
     private ?LoginThrottleManager $loginThrottle = null;
+    private bool $deuxiemeFacteurEnAttente = false;
+
+    /**
+     * [migration 020] Clé de session de la connexion en attente du second
+     * facteur : ['id' => int, 'expire' => int]. La session « user »
+     * n'est PAS ouverte tant que le second facteur n'est pas vérifié.
+     */
+    public const SESSION_EN_ATTENTE = 'auth_second_facteur';
+
+    /** Délai laissé pour saisir le second facteur, en secondes. */
+    public const DELAI_SECOND_FACTEUR = 300;
 
     public function __construct(private Session $session)
     {
@@ -64,7 +76,19 @@ class AppUserAuthenticator
         'reset_token',
         'reset_token_expires',
         'reset_email_sent_at',
+        // [migration 020] Double authentification
+        'totp_secret',
+        'totp_active_le',
+        'totp_dernier_pas',
+        'codes_secours',
     ];
+
+    /**
+     * [migration 020] Clé, dans la session « user », de l'horodatage de
+     * la dernière preuve d'identité (connexion ou mot de passe confirmé)
+     * : les réglages de double authentification l'exigent récente.
+     */
+    public const CLE_AUTHENTIFIE_LE = 'authentifie_le';
 
     public function authenticate(string $username, string $plainTextPassword, ?string $ip = null)
     {
@@ -101,24 +125,21 @@ class AppUserAuthenticator
         if ($user && $motDePasseValide) {
             $this->limiter(fn (LoginThrottleManager $t) => $t->reinitialiser(array_key_first($cles)));
 
-            // [SÉCURITÉ — audit P34] La session ne reçoit que la
-            // projection non sensible de l'utilisateur.
-            $sessionUser = array_diff_key(
-                $user,
-                array_flip(self::SESSION_EXCLUDED_FIELDS)
-            );
-            $this->session->set('user', $sessionUser);
+            // [migration 020] Second facteur configuré : la session
+            // utilisateur n'est pas encore ouverte, seule la connexion en
+            // attente est mémorisée (5 minutes).
+            if ($this->deuxiemeFacteurRequis($user)) {
+                $this->session->remove('user');
+                $this->session->set(self::SESSION_EN_ATTENTE, [
+                    'id'     => (int) $user['id'],
+                    'expire' => time() + self::DELAI_SECOND_FACTEUR,
+                ]);
+                $this->session->migrate(true);
+                $this->deuxiemeFacteurEnAttente = true;
+                return true;
+            }
 
-            // [SÉCURITÉ — audit C3/P22] save() ne peut plus réécrire
-            // password/role (ALLOWED_FIELDS restreint) ; on ne transmet
-            // de toute façon que la projection non sensible.
-            $sessionUser['derniere_connexion'] = date('Y-m-d');
-            $this->utilisateurManager->save($sessionUser);
-
-            // [SÉCURITÉ — audit 2026-10-19 S5] migrate(true) : l'ancien
-            // identifiant de session est DÉTRUIT (anti-fixation), pas
-            // seulement remplacé.
-            $this->session->migrate(true);
+            $this->ouvrirSession($user);
 
             return true;
         }
@@ -132,6 +153,70 @@ class AppUserAuthenticator
         $this->error = "Identifiants incorrects";
 
         return false;
+    }
+
+    /**
+     * Ouvre la session de l'utilisateur (identité prouvée : mot de passe,
+     * puis second facteur s'il est configuré, ou passkey).
+     *
+     * @param array<string, mixed> $user ligne complète de la table utilisateur
+     */
+    public function ouvrirSession(array $user): void
+    {
+        $this->session->remove(self::SESSION_EN_ATTENTE);
+
+        // [SÉCURITÉ — audit P34] La session ne reçoit que la
+        // projection non sensible de l'utilisateur.
+        $sessionUser = array_diff_key(
+            $user,
+            array_flip(self::SESSION_EXCLUDED_FIELDS)
+        );
+
+        // [SÉCURITÉ — audit C3/P22] save() ne peut plus réécrire
+        // password/role (ALLOWED_FIELDS restreint) ; on ne transmet
+        // de toute façon que la projection non sensible.
+        $sessionUser['derniere_connexion'] = date('Y-m-d');
+        $this->utilisateurManager->save($sessionUser);
+
+        $sessionUser[self::CLE_AUTHENTIFIE_LE] = time();
+        $this->session->set('user', $sessionUser);
+
+        // [SÉCURITÉ — audit 2026-10-19 S5] migrate(true) : l'ancien
+        // identifiant de session est DÉTRUIT (anti-fixation), pas
+        // seulement remplacé.
+        $this->session->migrate(true);
+    }
+
+    /**
+     * [migration 020] La connexion attend-elle le second facteur (dernier
+     * authenticate() réussi) ?
+     */
+    public function deuxiemeFacteurEnAttente(): bool
+    {
+        return $this->deuxiemeFacteurEnAttente;
+    }
+
+    /**
+     * [migration 020] Un second facteur (application ou passkey) est-il
+     * configuré pour ce compte ? Il est alors exigé quel que soit le rôle
+     * actuel (un administrateur rétrogradé le garde).
+     *
+     * @param array<string, mixed> $user
+     */
+    protected function deuxiemeFacteurRequis(array $user): bool
+    {
+        if (!empty($user['totp_active_le'])) {
+            return true;
+        }
+        // Une base en panne fait échouer la connexion (exception) plutôt
+        // que d'ignorer un second facteur peut-être configuré.
+        return $this->doubleAuthentification()->compterPasskeys((int) $user['id']) > 0;
+    }
+
+    /** Factory — surchargée en test Unit. */
+    protected function doubleAuthentification(): DoubleAuthentificationManager
+    {
+        return new DoubleAuthentificationManager($this->utilisateurManager->getDb());
     }
 
     /**
