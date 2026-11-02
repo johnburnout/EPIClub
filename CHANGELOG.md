@@ -10,6 +10,11 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Changed
+
+- **Bandeau** : le bouton 🔐 Sécurité précède le nom de l'utilisateur
+  connecté, désormais placé juste avant « Déconnexion ».
+
 ## [v2.4.0] — 2026-11-02
 
 Double authentification facultative : application d'authentification et

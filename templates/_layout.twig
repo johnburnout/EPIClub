@@ -134,12 +134,12 @@
 								'ROLE_ADMIN': 'Administrateur',
 								'ROLE_SUPER_ADMIN': 'Super Administrateur'
 							} %}
-							<span class="me-3 text-white">
+							{# [migration 020] Double authentification et passkeys #}
+							<a href="/mon-compte/securite" class="btn btn-outline-light me-3" title="Sécurité du compte : double authentification et passkeys">🔐<span class="d-none d-lg-inline"> Sécurité</span></a>
+							<span class="me-1 text-white">
 								{{ user.prenom }} {{ user.nom }}
 								<span class="badge bg-light text-dark">{{ roleLabels[user.role]|default(user.role) }}</span>
 							</span>
-							{# [migration 020] Double authentification et passkeys #}
-							<a href="/mon-compte/securite" class="btn btn-outline-light me-2" title="Sécurité du compte : double authentification et passkeys">🔐<span class="d-none d-lg-inline"> Sécurité</span></a>
 							{% endif %}
 							<form action="/se_deconnecter" method="post" style="display: inline;">
 								<input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
