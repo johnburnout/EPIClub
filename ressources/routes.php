@@ -99,6 +99,63 @@ $routes->add('forgot_password',         new Route('/mot_de_passe_oublie',       
 $routes->add('forgot_password_confirm', new Route('/mot_de_passe_oublie/confirmation',    ['_controller' => 'Epiclub\\Controller\\AppUserRegisterController', 'action' => 'forgotPasswordConfirm']));
 $routes->add('reset_password',          new Route('/regenerer_mot_de_passe',              ['_controller' => 'Epiclub\\Controller\\AppUserRegisterController', 'action' => 'resetPassword']));
 
+// [migration 020] Double authentification — Public : second facteur après
+// le mot de passe (exige une connexion en attente, sinon retour au
+// formulaire) et connexion par passkey.
+$routes->add('login_verification', new Route(
+    '/se_connecter/verification',
+    ['_controller' => 'Epiclub\\Controller\\DoubleAuthentificationController', 'action' => 'verification'],
+    [], [], '', [], ['GET', 'POST']
+));
+$routes->add('login_passkey_options', new Route(
+    '/se_connecter/passkey/options',
+    ['_controller' => 'Epiclub\\Controller\\DoubleAuthentificationController', 'action' => 'passkeyOptionsConnexion'],
+    [], [], '', [], ['POST']
+));
+$routes->add('login_passkey', new Route(
+    '/se_connecter/passkey',
+    ['_controller' => 'Epiclub\\Controller\\DoubleAuthentificationController', 'action' => 'passkeyConnexion'],
+    [], [], '', [], ['POST']
+));
+
+// [migration 020] ROLE_USER : sécurité de son propre compte (application
+// d'authentification, codes de secours, passkeys)
+$routes->add('compte_securite', new Route(
+    '/mon-compte/securite',
+    ['_controller' => 'Epiclub\\Controller\\DoubleAuthentificationController', 'action' => 'securite'],
+    [], [], '', [], ['GET', 'POST']
+));
+$routes->add('compte_application', new Route(
+    '/mon-compte/securite/application',
+    ['_controller' => 'Epiclub\\Controller\\DoubleAuthentificationController', 'action' => 'application'],
+    [], [], '', [], ['GET', 'POST']
+));
+$routes->add('compte_application_desactiver', new Route(
+    '/mon-compte/securite/application/desactiver',
+    ['_controller' => 'Epiclub\\Controller\\DoubleAuthentificationController', 'action' => 'desactiverApplication'],
+    [], [], '', [], ['POST']
+));
+$routes->add('compte_codes_secours', new Route(
+    '/mon-compte/securite/codes-secours',
+    ['_controller' => 'Epiclub\\Controller\\DoubleAuthentificationController', 'action' => 'codesSecours'],
+    [], [], '', [], ['POST']
+));
+$routes->add('compte_passkey_options', new Route(
+    '/mon-compte/securite/passkey/options',
+    ['_controller' => 'Epiclub\\Controller\\DoubleAuthentificationController', 'action' => 'passkeyOptionsEnregistrement'],
+    [], [], '', [], ['POST']
+));
+$routes->add('compte_passkey_enregistrer', new Route(
+    '/mon-compte/securite/passkey',
+    ['_controller' => 'Epiclub\\Controller\\DoubleAuthentificationController', 'action' => 'passkeyEnregistrer'],
+    [], [], '', [], ['POST']
+));
+$routes->add('compte_passkey_supprimer', new Route(
+    '/mon-compte/securite/passkey/supprimer-{id}',
+    ['_controller' => 'Epiclub\\Controller\\DoubleAuthentificationController', 'action' => 'passkeySupprimer'],
+    [], [], '', [], ['POST']
+));
+
 
 // =====================================================================
 // EQUIPEMENTS
@@ -516,6 +573,14 @@ $routes->add('utilisateur_delete', new Route(
     ['_controller' => 'Epiclub\\Controller\\UtilisateurController', 'action' => 'delete'],
     [], [], '', [], ['POST']
 ));
+// [migration 020] ROLE_SUPER_ADMIN : réinitialisation de la double
+// authentification d'un autre compte (facteurs perdus)
+$routes->add('utilisateur_2fa_reinitialiser', new Route(
+    '/admin/utilisateurs/utilisateur_2fa_reinitialiser-{id}',
+    ['_controller' => 'Epiclub\\Controller\\UtilisateurController', 'action' => 'reinitialiserDoubleAuthentification'],
+    [], [], '', [], ['POST']
+));
+
 // [2026-10-24] ROLE_ADMIN : renvoi du mail de bienvenue (fiche utilisateur)
 $routes->add('utilisateur_bienvenue', new Route(
     '/admin/utilisateurs/utilisateur_bienvenue-{id}',

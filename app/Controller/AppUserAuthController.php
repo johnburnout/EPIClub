@@ -79,6 +79,19 @@ class AppUserAuthController extends AbstractController
                         // [SÉCURITÉ] Régénérer le token après login (anti-fixation de session)
                         $this->session->set('csrf_token', bin2hex(random_bytes(32)));
 
+                        // [migration 020] Second facteur configuré : la
+                        // session n'est ouverte qu'après sa vérification.
+                        // La cible ?redirect= est conservée pour la suite.
+                        if ($appUserAuthenticator->deuxiemeFacteurEnAttente()) {
+                            $redirect = $request->query->get('redirect');
+                            $enAttente = $this->session->get(AppUserAuthenticator::SESSION_EN_ATTENTE);
+                            if (is_array($enAttente) && is_string($redirect) && self::estRedirectionLocale($redirect)) {
+                                $enAttente['redirect'] = $redirect;
+                                $this->session->set(AppUserAuthenticator::SESSION_EN_ATTENTE, $enAttente);
+                            }
+                            return new RedirectResponse('/se_connecter/verification');
+                        }
+
                         $this->journaliser(JournalActiviteManager::TYPE_CONNEXION, 'Connexion', $request);
 
                         // Honorer ?redirect= (ex. scan QR non connecté :
@@ -122,6 +135,9 @@ class AppUserAuthController extends AbstractController
         return $this->render('user_login.twig', [
             'error_autentification' => $error_autentification,
             'form_errors' => $form_errors,
+            // [migration 020] Bouton « Se connecter avec une passkey »
+            'redirect' => is_string($request->query->get('redirect')) && self::estRedirectionLocale($request->query->get('redirect'))
+                ? $request->query->get('redirect') : null,
         ]);
     }
 

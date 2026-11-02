@@ -33,6 +33,14 @@ final class TestableUtilisateurController extends UtilisateurController
         return $this->clubManagerOverride ?? throw new \RuntimeException('Pas de club en test.');
     }
 
+    /** [migration 020] Doublure injectable ; sans elle : état « illisible ». */
+    public ?\Epiclub\Domain\DoubleAuthentificationManager $doubleAuth = null;
+
+    protected function doubleAuthentification(): \Epiclub\Domain\DoubleAuthentificationManager
+    {
+        return $this->doubleAuth ?? throw new \RuntimeException('Double authentification non simulée.');
+    }
+
     protected function mailerService(): MailerServiceInterface
     {
         return $this->mailerOverride ?? throw new \RuntimeException('Pas de mailer en test.');

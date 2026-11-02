@@ -285,6 +285,33 @@ final class AppUserAuthControllerTest extends TestCase
         self::assertSame('/', $response->getTargetUrl());
     }
 
+    /**
+     * [migration 020] Second facteur configuré : redirection vers la
+     * vérification (la cible ?redirect= est conservée pour la suite).
+     */
+    public function testLoginAvecSecondFacteurRedirigeVersLaVerification(): void
+    {
+        $authenticator = $this->makeAuthenticator();
+        $authenticator->method('authenticate')->willReturn(true);
+        $authenticator->method('deuxiemeFacteurEnAttente')->willReturn(true);
+
+        $session = new Session(new \Symfony\Component\HttpFoundation\Session\Storage\MockArraySessionStorage());
+        $session->set('csrf_token', self::CSRF);
+        $session->set(AppUserAuthenticator::SESSION_EN_ATTENTE, ['id' => 7, 'expire' => time() + 300]);
+        $controller = new TestableAppUserAuthController($session, $authenticator);
+
+        $response = $controller->login(Request::create('/se_connecter?redirect=/qr/5', 'POST', [
+            'csrf_token' => self::CSRF,
+            'username'   => 'jean',
+            'password'   => 'secret',
+        ]));
+
+        self::assertInstanceOf(RedirectResponse::class, $response);
+        self::assertSame('/se_connecter/verification', $response->getTargetUrl());
+        self::assertSame('/qr/5', $session->get(AppUserAuthenticator::SESSION_EN_ATTENTE)['redirect']);
+        self::assertFalse($session->has('user'));
+    }
+
     private function makeAuthenticator(): AppUserAuthenticator
     {
         return $this->getMockBuilder(AppUserAuthenticator::class)

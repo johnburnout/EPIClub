@@ -10,6 +10,24 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Added
+
+- **Double authentification facultative**, pour tous les rôles (bouton
+  🔐 Sécurité, page « Sécurité du compte », confirmation du mot de passe
+  exigée pour la modifier) :
+  - **application d'authentification** (codes TOTP à 6 chiffres, QR
+    code) ; secret chiffré en base, rejeu d'un code refusé ;
+  - **passkeys** (WebAuthn) : second facteur après le mot de passe, ou
+    connexion sans mot de passe (« Se connecter avec une passkey »,
+    vérification de l'utilisateur exigée). HTTPS requis ;
+  - **10 codes de secours** à usage unique, affichés une seule fois ;
+  - blocage progressif après 5 codes incorrects ; événements inscrits au
+    journal d'activité ;
+  - **réinitialisation** par un administrateur depuis la fiche
+    utilisateur (appareil perdu), jamais sur le compte protégé d'un
+    autre (migration 020).
+- Dépendance `lbuchs/webauthn` (MIT, sans dépendance).
+
 ## [v2.3.0] — 2026-11-01
 
 Journal d'activité ; notification des EPI non vérifiés ; installation et

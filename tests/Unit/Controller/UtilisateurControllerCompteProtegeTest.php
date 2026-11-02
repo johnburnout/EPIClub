@@ -149,4 +149,19 @@ final class UtilisateurControllerCompteProtegeTest extends TestCase
         self::assertStringNotContainsString('utilisateur_supprimer-1"', $html);
         self::assertStringNotContainsString('utilisateur_supprimer-2"', $html);
     }
+
+    /** [migration 020] Le compte protégé garde sa double authentification. */
+    public function testDoubleAuthentificationDuCompteProtegeNonReinitialisable(): void
+    {
+        $doubleAuth = new \Epiclub\Tests\Unit\Domain\Support\InMemoryDoubleAuthentificationManager();
+        $doubleAuth->activerTotp(1, 'secret', 1);
+        $c = $this->controller();
+        $c->doubleAuth = $doubleAuth;
+
+        $request = Request::create('/admin/utilisateurs/utilisateur_2fa_reinitialiser-1', 'POST', ['csrf_token' => 'csrf']);
+        $request->attributes->set('id', '1');
+        $c->reinitialiserDoubleAuthentification($request);
+
+        self::assertNotNull($doubleAuth->etats[1]['totp_active_le']);
+    }
 }
