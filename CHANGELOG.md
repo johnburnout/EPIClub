@@ -10,6 +10,10 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v2.4.1] — 2026-11-02
+
+Retouche du bandeau.
+
 ### Changed
 
 - **Bandeau** : le bouton 🔐 Sécurité précède le nom de l'utilisateur
