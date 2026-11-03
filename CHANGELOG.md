@@ -10,6 +10,10 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v2.6.0] — 2026-11-03
+
+Coordonnées du club en ligne de commande, pour la console d'hébergement.
+
 ### Added
 
 - `bin/infos.php` : coordonnées du club (nom, activité, email, téléphone) en
