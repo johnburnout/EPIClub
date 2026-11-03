@@ -608,6 +608,20 @@ php8.4 bin/sauvegarder.php [--garder=7] [--sql-seul] [--quiet] [--json]
   restauration ».
 - Un nom distinct (`-planifiee`) sépare ces archives des exports faits à
   la main dans la page.
+- `--manuelle` : archive « manuelle » (bouton « Sauvegarder maintenant » de
+  la console), non concernée par `--garder`.
+
+### 6.5 bis `bin/restaurer.php`
+
+```bash
+php8.4 bin/restaurer.php --nom=epiclub-sauvegarde-AAAAMMJJ-HHMMSS.zip [--json]
+```
+
+Restaure une archive de `var/backups` (nom seul), comme le bouton de la page
+*Sauvegarde / restauration* : sauvegarde « avant restauration » d'abord,
+retour automatique en cas d'échec, migrations manquantes ensuite. Codes :
+4 verrou occupé, 7 restauration impossible (rien de modifié ou état
+rétabli), 8 état précédent non rétabli (intervenir).
 
 ### 6.6 Couche Virtualmin (option I3 : remplacée par l'agent, § 5.3)
 

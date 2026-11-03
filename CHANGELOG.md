@@ -20,6 +20,13 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
   avant migrations, verrou de l'instance). `--json` et codes de sortie
   documentés : 5 archive rejetée, 7 sauvegarde impossible (rien n'a été
   modifié), 8 interrompue après modification.
+- **Restauration en ligne de commande** : `bin/restaurer.php --nom=…`, pour
+  la console d'hébergement. Même déroulé que le bouton « Restaurer » de la
+  page *Sauvegarde / restauration* (sauvegarde « avant restauration »,
+  retour automatique en cas d'échec, migrations manquantes appliquées).
+  Code 8 si l'état précédent n'a pas pu être rétabli.
+- `bin/sauvegarder.php --manuelle` : archive « manuelle », non concernée par
+  la rétention des sauvegardes planifiées.
 
 ### Changed
 

@@ -13,4 +13,10 @@ namespace Epiclub\Exception;
  */
 class SauvegardeException extends \RuntimeException
 {
+    /**
+     * Code de l'exception quand une restauration a échoué ET que l'état
+     * précédent n'a pas pu être rétabli : il faut intervenir (même valeur que
+     * le code de sortie « interrompue » des commandes bin/).
+     */
+    public const ETAT_NON_RETABLI = 8;
 }

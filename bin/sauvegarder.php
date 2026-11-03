@@ -7,12 +7,14 @@ declare(strict_types=1);
  *
  * Usage (sous l'utilisateur du domaine, jamais en root) :
  *
- *   php bin/sauvegarder.php [--garder=N] [--sql-seul] [--quiet] [--json]
+ *   php bin/sauvegarder.php [--garder=N] [--sql-seul] [--manuelle] [--quiet] [--json]
  *
  *  - par défaut : archive complète (base + photos, images, factures),
  *    restaurable depuis la page Sauvegarde / restauration :
  *    var/backups/epiclub-sauvegarde-AAAAMMJJ-HHMMSS-planifiee.zip ;
  *  - --sql-seul : dump SQL seul, var/backups/db_AAAA-MM-JJ_HHMMSS.sql ;
+ *  - --manuelle : archive « manuelle » (comme le bouton de la page
+ *    Sauvegarde / restauration), non concernée par --garder ;
  *  - --garder=N : nombre de sauvegardes planifiées conservées (défaut :
  *    BACKUP_RETENTION de .env.local.php, sinon 5). Les exports manuels et
  *    les filets « avant restauration » ne sont pas concernés.
@@ -45,7 +47,7 @@ try {
         array_slice($argv, 1),
         // fichier-config, dossier : réservés aux tests et aux cas particuliers.
         ['garder', 'fichier-config', 'dossier'],
-        ['sql-seul'],
+        ['sql-seul', 'manuelle'],
         $racine . '/var/log/epiclub-cli.log'
     );
 } catch (UsageException $e) {
@@ -100,8 +102,13 @@ try {
             isset($config['PUBLIC_PATH']) ? rtrim((string) $config['PUBLIC_PATH'], '/') . '/images' : null,
             (string) $dossier,
         );
-        $fichier = $service->creer(SauvegardeService::TYPE_PLANIFIEE);
-        $supprimees = $service->conserver(SauvegardeService::TYPE_PLANIFIEE, $garder);
+        if ($cmd->drapeau('manuelle')) {
+            $fichier = $service->creer(SauvegardeService::TYPE_MANUELLE);
+            $supprimees = [];
+        } else {
+            $fichier = $service->creer(SauvegardeService::TYPE_PLANIFIEE);
+            $supprimees = $service->conserver(SauvegardeService::TYPE_PLANIFIEE, $garder);
+        }
     }
 } catch (VerrouOccupeException $e) {
     exit($cmd->terminer(Commande::VERROU_OCCUPE, $e->getMessage()));

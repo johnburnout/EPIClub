@@ -546,7 +546,7 @@ final class SauvegardeService
                         'La restauration a échoué et l\'état précédent n\'a pas pu être rétabli automatiquement. '
                         . 'Restaurez la sauvegarde « %s » dès que possible.',
                         basename($filet)
-                    ), 0, $e2);
+                    ), SauvegardeException::ETAT_NON_RETABLI, $e2);
                 }
                 throw new SauvegardeException(
                     'La restauration a échoué ; les données d\'avant la restauration ont été rétablies. '
