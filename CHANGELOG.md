@@ -10,6 +10,11 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v2.5.0] — 2026-11-03
+
+Lien vers la notice du fabricant sur la fiche équipement ; mise à jour,
+restauration et sauvegarde manuelle en ligne de commande.
+
 ### Added
 
 - **Fiche équipement** : champ **« Lien vers la notice »** (URL `http://`
