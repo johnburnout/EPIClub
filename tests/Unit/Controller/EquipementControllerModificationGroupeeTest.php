@@ -149,6 +149,7 @@ final class EquipementControllerModificationGroupeeTest extends TestCase
             'emplacement inconnu' => [['appliquer' => ['emplacement_id' => '1'], 'emplacement_id' => '99'], 'Emplacement invalide.'],
             'date' => [['appliquer' => ['date_fin_utilisation' => '1'], 'date_fin_utilisation' => '2030-02-31'], 'Date invalide.'],
             'photo absente' => [['appliquer' => ['photo' => '1']], 'Choisissez une photo à appliquer.'],
+            'notice invalide' => [['appliquer' => ['notice_url' => '1'], 'notice_url' => 'ftp://exemple.fr/n.pdf'], 'http:// ou https://'],
         ];
     }
 
@@ -172,6 +173,18 @@ final class EquipementControllerModificationGroupeeTest extends TestCase
         $this->post(['appliquer' => ['libelle' => '1'], 'libelle' => ' Casque Boreo ']);
 
         self::assertSame(['Casque Boreo', 'Casque Boreo'], array_column($this->enregistres, 'libelle'));
+    }
+
+    public function testNoticeAppliqueeATousLesEquipements(): void
+    {
+        $this->equipementManager->method('findByIds')->willReturn($this->equipements());
+
+        $this->post(['appliquer' => ['notice_url' => '1'], 'notice_url' => ' https://fabricant.example/notice.pdf ']);
+
+        self::assertSame(
+            ['https://fabricant.example/notice.pdf', 'https://fabricant.example/notice.pdf'],
+            array_column($this->enregistres, 'notice_url')
+        );
     }
 
     public function testRemarquesAjouteesALaSuite(): void

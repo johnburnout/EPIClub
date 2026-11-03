@@ -10,6 +10,15 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Added
+
+- **Fiche équipement** : champ **« Lien vers la notice »** (URL `http://`
+  ou `https://` de la notice du fabricant, facultatif). Lien
+  « Consulter la notice » sur la fiche (nouvel onglet), adresse reprise
+  dans la fiche PDF ; modifiable en modification groupée et recopié lors
+  d'une dissociation de lot. Migration `021_notice_equipement.sql`
+  (colonne `club_equipement.notice_url`).
+
 ## [v2.4.1] — 2026-11-02
 
 Retouche du bandeau.

@@ -28,7 +28,7 @@ final class DemandeModification
         'statut' => ['Statut', 'ROLE_ADMIN', null],
         'dates' => ['Dates (mise en service, fin d\'utilisation)', 'ROLE_ADMIN', null],
         'nombre' => ['Nombre actuel d\'éléments du lot', 'ROLE_ADMIN', 'lot'],
-        'remarques' => ['Remarques ou photo', 'ROLE_ADMIN', null],
+        'remarques' => ['Remarques, photo ou notice', 'ROLE_ADMIN', null],
         'dissociation' => ['Dissocier le lot', 'ROLE_ADMIN', 'lot'],
         'regroupement' => ['Regrouper en lot (équipements identiques)', 'ROLE_ADMIN', null],
         'libelle' => ['Libellé', 'ROLE_ADMIN', null],
