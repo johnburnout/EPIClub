@@ -10,6 +10,11 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Added
+
+- `bin/infos.php` : coordonnées du club (nom, activité, email, téléphone) en
+  lecture seule, pour la fiche de l'instance dans la console d'hébergement.
+
 ## [v2.5.0] — 2026-11-03
 
 Lien vers la notice du fabricant sur la fiche équipement ; mise à jour,

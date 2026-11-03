@@ -623,6 +623,16 @@ retour automatique en cas d'échec, migrations manquantes ensuite. Codes :
 4 verrou occupé, 7 restauration impossible (rien de modifié ou état
 rétabli), 8 état précédent non rétabli (intervenir).
 
+### 6.5 ter `bin/infos.php`
+
+```bash
+php8.4 bin/infos.php [--json]
+```
+
+Lecture seule : nom, activité, email et téléphone du club (page *Gestion du
+club*), affichés par la console sur la fiche de l'instance. Rien n'est
+journalisé. Code 3 si l'instance n'est pas installée ou la base illisible.
+
 ### 6.6 Couche Virtualmin (option I3 : remplacée par l'agent, § 5.3)
 
 - `ressources/virtualmin/epiclub.pl`, à copier par l'hébergeur dans
