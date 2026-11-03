@@ -328,6 +328,8 @@ class EquipementManager extends AbstractManager
         'emplacement_id', 'date_mise_en_service', 'date_fin_utilisation',
         'nombre', 'nombre_initial', 'photo', 'est_epi', 'duree_max_utilisation',
         'textile_remplacable',
+        // [migration 021] lien vers la notice du fabricant
+        'notice_url',
         // [migration 017] date de déclaration « Égaré »
         'date_egare',
     ];
@@ -357,6 +359,7 @@ class EquipementManager extends AbstractManager
         $equipement['est_epi'] = $equipement['est_epi'] ?? 1;
         $equipement['duree_max_utilisation'] = $equipement['duree_max_utilisation'] ?? 0;
         $equipement['textile_remplacable'] = $equipement['textile_remplacable'] ?? 0;
+        $equipement['notice_url'] = $equipement['notice_url'] ?? null;
 
         return $this->filteredInsert($equipement, self::ALLOWED_FIELDS, self::CREATE_NULL_DEFAULTS);
     }

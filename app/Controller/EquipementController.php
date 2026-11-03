@@ -1058,6 +1058,12 @@ class EquipementController extends AbstractController
             
             $date_fin_utilisation = $request->request->get('date_fin_utilisation');
             if ($date_fin_utilisation === '') $date_fin_utilisation = null;
+
+            // [2026-11-03] Lien vers la notice du fabricant (facultatif).
+            $noticeSaisie = trim((string) $request->request->get('notice_url', ''));
+            if (($erreur = self::erreurNoticeUrl($noticeSaisie)) !== null) {
+                $form_errors['notice_url'] = $erreur;
+            }
             
             $photoPath = null;
             $uploadedPhoto = $request->files->get('photo');
@@ -1250,6 +1256,7 @@ class EquipementController extends AbstractController
                     // [MÉTIER 2026-10-21] Élément textile remplaçable :
                     // hérité de la catégorie, modifiable ici.
                     'textile_remplacable' => $request->request->has('textile_remplacable') ? 1 : 0,
+                    'notice_url' => $noticeSaisie === '' ? null : $noticeSaisie,
                 ];
 
                 if ($nombreLot !== null) {
@@ -1336,6 +1343,7 @@ class EquipementController extends AbstractController
             'emplacement_seul' => $emplacementSeul,
             // [2026-10-23] Changement de référence (super-administrateur)
             'reference_saisie' => $referenceSaisie ?? null,
+            'notice_saisie' => $noticeSaisie ?? null,
             'mot_confirmation_reference' => self::MOT_CONFIRMATION_REFERENCE,
             'reference_max' => self::REFERENCE_MAX,
             // [2026-10-24] Changement de catégorie (super-administrateur)
@@ -1509,6 +1517,9 @@ class EquipementController extends AbstractController
         
         $etatUsure = self::html($equipement['etat_usure_id'] ?? 'Non défini');
         $remarques = self::html($equipement['remarques'] ?? 'Aucune');
+        $notice = !empty($equipement['notice_url'])
+            ? '<a href="' . self::html($equipement['notice_url']) . '">' . self::html($equipement['notice_url']) . '</a>'
+            : 'Non renseignée';
         
         // --- Photo (4 cm max, proportions conservées) ---
         $photoHtml = $photoBase64
@@ -1577,6 +1588,7 @@ class EquipementController extends AbstractController
                     <div class="row"><span class="label">Statut :</span> {$statutHtml}</div>
                     <div class="row"><span class="label">État d'usure :</span> {$etatUsure}</div>
                     <div class="row"><span class="label">Remarques :</span> {$remarques}</div>
+                    <div class="row"><span class="label">Notice :</span> {$notice}</div>
                 </div>
                 
                 <!-- Photo + QR côte à côte -->
@@ -2091,7 +2103,7 @@ HTML;
     /** Champs modifiables en groupe (page réservée aux administrateurs). */
     private const CHAMPS_GROUPE = [
         'statut', 'emplacement_id', 'date_mise_en_service', 'date_fin_utilisation',
-        'duree_max_utilisation', 'remarques', 'photo', 'libelle',
+        'duree_max_utilisation', 'remarques', 'photo', 'libelle', 'notice_url',
     ];
 
     /**
@@ -2214,6 +2226,14 @@ HTML;
                             $valeurs['libelle'] = $libelle;
                         }
                         break;
+                    case 'notice_url':
+                        $notice = trim((string) $brut);
+                        if (($erreur = self::erreurNoticeUrl($notice)) !== null) {
+                            $form_errors['notice_url'] = $erreur;
+                        } else {
+                            $valeurs['notice_url'] = $notice === '' ? null : $notice;
+                        }
+                        break;
                     case 'photo':
                         $fichier = $request->files->get('photo');
                         if (!$fichier instanceof UploadedFile || !$fichier->isValid()) {
@@ -2271,7 +2291,7 @@ HTML;
         foreach ($equipements as $equipement) {
             $data = ['id' => (int) $equipement['id']];
 
-            foreach (['statut', 'emplacement_id', 'date_fin_utilisation', 'duree_max_utilisation', 'libelle', 'photo'] as $champ) {
+            foreach (['statut', 'emplacement_id', 'date_fin_utilisation', 'duree_max_utilisation', 'libelle', 'photo', 'notice_url'] as $champ) {
                 if (array_key_exists($champ, $valeurs)) {
                     $data[$champ] = $valeurs[$champ];
                 }
@@ -2395,6 +2415,32 @@ HTML;
     }
 
     /** Message d'erreur du libellé, ou null s'il est recevable. */
+    /** Longueur maximale du lien vers la notice (colonne notice_url, migration 021). */
+    public const NOTICE_URL_MAX = 2048;
+
+    /**
+     * [2026-11-03] Lien vers la notice : facultatif (chaîne vide acceptée),
+     * sinon URL valide en http:// ou https:// (rejette javascript:, data:…,
+     * le lien étant affiché cliquable sur la fiche).
+     */
+    public static function erreurNoticeUrl(string $url): ?string
+    {
+        if ($url === '') {
+            return null;
+        }
+        if (mb_strlen($url) > self::NOTICE_URL_MAX) {
+            return sprintf('Le lien vers la notice ne doit pas dépasser %d caractères.', self::NOTICE_URL_MAX);
+        }
+        if (!filter_var($url, FILTER_VALIDATE_URL)) {
+            return "Le lien vers la notice n'est pas une URL valide.";
+        }
+        $schema = strtolower((string) parse_url($url, PHP_URL_SCHEME));
+        if (!in_array($schema, ['http', 'https'], true)) {
+            return 'Le lien vers la notice doit commencer par http:// ou https://';
+        }
+        return null;
+    }
+
     private static function erreurLibelle(string $libelle): ?string
     {
         if ($libelle === '') {

@@ -31,7 +31,7 @@ final class DissociationLot
         'acquisition_id', 'categorie_id', 'libelle', 'statut', 'remarques',
         'date_dernier_controle', 'emplacement_id', 'date_mise_en_service',
         'date_fin_utilisation', 'photo', 'est_epi', 'duree_max_utilisation',
-        'textile_remplacable',
+        'textile_remplacable', 'notice_url',
     ];
 
     public function __construct(private readonly EquipementManager $equipementManager)

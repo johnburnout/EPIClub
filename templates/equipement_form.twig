@@ -447,6 +447,18 @@
 			<textarea class="form-control" name="remarques" id="remarques" rows="3">{{ equipement.remarques }}</textarea>
 		</div>
 
+		<!-- Lien vers la notice du fabricant (facultatif) -->
+		<div class="mb-3">
+			<label for="notice_url">Lien vers la notice</label>
+			<input type="url" class="form-control {% if form_errors.notice_url is defined %}is-invalid{% endif %}"
+			       name="notice_url" id="notice_url" maxlength="2048" placeholder="https://"
+			       value="{{ notice_saisie ?? equipement.notice_url|default('') }}">
+			{% if form_errors.notice_url is defined %}
+				<div class="invalid-feedback">{{ form_errors.notice_url }}</div>
+			{% endif %}
+			<small class="text-muted">Adresse de la notice du fabricant (PDF ou page web). Laisser vide si aucune.</small>
+		</div>
+
 		{# ⬇️ NOUVEAU CHAMP : PHOTO #}
 		<div class="mb-3">
 			<label for="photo">Photo de l'équipement</label>

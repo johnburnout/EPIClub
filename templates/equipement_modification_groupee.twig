@@ -118,6 +118,15 @@
 					</div>
 				</div>
 
+				{# --- Lien vers la notice --- #}
+				<div class="card card-body mb-3">
+					{{ m.champ('notice_url', 'Lien vers la notice', saisie, form_errors) }}
+					<div id="bloc_notice_url">
+						<input type="url" name="notice_url" class="form-control" maxlength="2048" placeholder="https://" value="{{ saisie.notice_url ?? '' }}">
+						<small class="text-muted">Même notice pour tous les équipements sélectionnés. Laisser vide pour effacer le lien.</small>
+					</div>
+				</div>
+
 				{# --- Photo --- #}
 				<div class="card card-body mb-3">
 					{{ m.champ('photo', 'Photo', saisie, form_errors) }}

@@ -99,6 +99,15 @@
 								<span class="text-muted">Aucune remarque</span>
 							{% endif %}
 						</p>
+						<p><strong>Notice :</strong>
+							{% if equipement.notice_url|default(null) %}
+								<a href="{{ equipement.notice_url }}" target="_blank" rel="noopener noreferrer">
+									📄 Consulter la notice ↗
+								</a>
+							{% else %}
+								<span class="text-muted">Non renseignée</span>
+							{% endif %}
+						</p>
 						
 						{# --- Acquisition d'origine --- #}
 						{% if acquisition is defined and acquisition %}
