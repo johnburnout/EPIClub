@@ -10,6 +10,10 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v2.7.0] — 2026-11-04
+
+Test du SMTP en ligne de commande, pour la console d'hébergement.
+
 ### Added
 
 - `bin/tester-smtp.php` : teste la configuration SMTP de l'instance depuis
