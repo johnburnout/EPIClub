@@ -632,6 +632,22 @@ php8.4 bin/infos.php [--json]
 Lecture seule : nom, activité, email et téléphone du club (page *Gestion du
 club*), affichés par la console sur la fiche de l'instance. Rien n'est
 journalisé. Code 3 si l'instance n'est pas installée ou la base illisible.
+Rend aussi `smtp` : serveur, port, protocole, identifiant et expéditeur de
+`MAILER_DSN` / `MAILER_FROM` (jamais le mot de passe), ou `null` sans SMTP.
+
+### 6.5 quater `bin/tester-smtp.php`
+
+```bash
+php8.4 bin/tester-smtp.php [--connexion] [--destinataire=<email>] [--json]
+```
+
+Teste le SMTP de l'instance **depuis son serveur virtuel** (pare-feu,
+port sortant, identifiants) : `--connexion` ouvre la session et
+s'authentifie sans rien envoyer ; sinon un email de test part vers
+`--destinataire` (par défaut `MAILER_FROM`). Délai de 15 s. Le message
+d'erreur du serveur SMTP est rendu tel quel, le mot de passe jamais.
+Codes : 0 succès, 2 usage, 3 non installée ou SMTP non configuré,
+6 connexion ou envoi en échec.
 
 ### 6.6 Couche Virtualmin (option I3 : remplacée par l'agent, § 5.3)
 

@@ -10,6 +10,15 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Added
+
+- `bin/tester-smtp.php` : teste la configuration SMTP de l'instance depuis
+  le serveur qui l'héberge (connexion et authentification avec
+  `--connexion`, sinon email de test à `--destinataire`, par défaut
+  l'expéditeur). Pour la fiche de l'instance dans la console d'hébergement.
+- `bin/infos.php` rend aussi le résumé de la configuration SMTP (serveur,
+  port, identifiant, expéditeur ; jamais le mot de passe).
+
 ## [v2.6.0] — 2026-11-03
 
 Coordonnées du club en ligne de commande, pour la console d'hébergement.
