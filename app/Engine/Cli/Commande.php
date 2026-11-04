@@ -24,6 +24,7 @@ final class Commande
     public const PREREQUIS = 3;
     public const VERROU_OCCUPE = 4;
     public const ARCHIVE_REJETEE = 5;
+    public const SMTP_EN_ECHEC = 6;
     public const SAUVEGARDE_IMPOSSIBLE = 7;
     public const INTERROMPUE = 8;
     public const DEJA_INSTALLE = 9;

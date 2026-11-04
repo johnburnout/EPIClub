@@ -10,9 +10,11 @@ declare(strict_types=1);
  *
  *   php bin/infos.php [--json]
  *
- * Renvoie le nom, l'activité, l'email et le téléphone du club. Rien n'est
- * modifié, rien n'est journalisé (la console l'appelle à chaque affichage
- * de la fiche de l'instance).
+ * Renvoie le nom, l'activité, l'email et le téléphone du club, et le
+ * résumé de la configuration SMTP (serveur, port, identifiant, expéditeur ;
+ * jamais le mot de passe ; null si aucun SMTP). Rien n'est modifié, rien
+ * n'est journalisé (la console l'appelle à chaque affichage de la fiche de
+ * l'instance). Pour tester le SMTP : bin/tester-smtp.php.
  *
  * Codes de sortie : 0 succès, 1 erreur inattendue, 2 usage, 3 instance non
  * installée ou base inaccessible.
@@ -21,6 +23,7 @@ declare(strict_types=1);
 require __DIR__ . '/../vendor/autoload.php';
 
 use Epiclub\Engine\Cli\Commande;
+use Epiclub\Engine\Cli\ResumeSmtp;
 use Epiclub\Engine\Cli\UsageException;
 use Epiclub\Process\InstallationService;
 
@@ -64,4 +67,4 @@ $infos = [
     'telephone' => $texte($club['phone'] ?? null),
 ];
 
-exit($cmd->terminer(Commande::SUCCES, $infos['nom'] !== null ? 'Club : ' . $infos['nom'] . '.' : 'Fiche du club vide.', ['club' => $infos]));
+exit($cmd->terminer(Commande::SUCCES, $infos['nom'] !== null ? 'Club : ' . $infos['nom'] . '.' : 'Fiche du club vide.', ['club' => $infos, 'smtp' => ResumeSmtp::depuisConfig($config)]));
