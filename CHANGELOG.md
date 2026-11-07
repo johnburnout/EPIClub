@@ -10,6 +10,11 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v2.7.2] — 2026-11-07
+
+Photos d'équipement refusées par Apache après une restauration en ligne de
+commande ; photos de développement retirées de l'archive de release.
+
 ### Fixed
 
 - **Photos en erreur 403 après une restauration en ligne de commande.**
@@ -19,6 +24,15 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
   refusait de les servir (« file permissions deny server access »). La
   restauration et la mise à jour posent désormais des droits indépendants
   de l'umask (fichiers ≥ 0644, dossiers ≥ 0755). + 4 tests.
+
+### Removed
+
+- **Photos de développement** retirées du dépôt (`public/images/Harnais-….webp`,
+  4 photos de `public/images/equipements/`) : suivies avant la règle
+  `.gitignore`, elles partaient dans l'archive de release et arrivaient sur
+  chaque nouvelle installation. La mise à jour ne supprime rien dans
+  `public/images/` : sur une instance existante, elles restent en place
+  (inoffensives ; supprimables à la main si aucun équipement ne les utilise).
 
 ### Upgrade notes
 
