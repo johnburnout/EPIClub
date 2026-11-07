@@ -50,6 +50,13 @@ Correctifs de l'audit de sécurité du 2026-11-07.
   référence et nom forcés en texte dans l'export Excel avec photos.
 - `bin/migrate.php` refuse de s'exécuter hors ligne de commande.
 
+### Changed
+
+- **Réinitialisation de la double authentification** d'un compte (appareil
+  perdu) réservée au super-administrateur : un administrateur ne peut plus
+  la retirer à un utilisateur ou à un contrôleur. La fiche utilisateur
+  l'indique.
+
 ### Upgrade notes
 
 - **Archives créées avant cette version** (non signées) : elles ne
