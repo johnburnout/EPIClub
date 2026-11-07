@@ -20,12 +20,10 @@ use Epiclub\Engine\HandlerResult;
 use Epiclub\Engine\FactureUploaderInterface;
 use Epiclub\Exception\DuplicateReferenceException;
 use Epiclub\Exception\FactureUploadException;
-use Epiclub\Exception\NotFoundException;
 use Epiclub\Process\AcquisitionProcess;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class AcquisitionController extends AbstractController
 {
@@ -1115,33 +1113,6 @@ class AcquisitionController extends AbstractController
 
         // [REFACTOR #34] Bloc extrait vers AcquisitionValidator::performValidation()
         return $this->performValidation($acquisition);
-    }
-
-    public function serveFile(Request $request): BinaryFileResponse
-    {
-        $this->deniAccessUnlessGranted('ROLE_ADMIN');
-
-        $path = (string) $request->attributes->get('path');
-
-        // [SÉCURITÉ] Path traversal correctement bloqué via realpath()
-        $uploadsDir = $this->getUploadsDir();
-        $realBase = realpath($uploadsDir);
-        $realPath = realpath($uploadsDir . ltrim($path, '/'));
-
-        if ($realBase === false
-            || $realPath === false
-            || !str_starts_with($realPath, $realBase . DIRECTORY_SEPARATOR)
-        ) {
-            throw new NotFoundException('Fichier non trouvé');
-        }
-
-        $finfo = new \finfo(FILEINFO_MIME_TYPE);
-        $mimeType = $finfo->file($realPath) ?: 'application/octet-stream';
-
-        return new BinaryFileResponse($realPath, 200, [
-            'Content-Type' => $mimeType,
-            'Content-Disposition' => 'inline; filename="' . basename($realPath) . '"',
-        ]);
     }
 
     /**
