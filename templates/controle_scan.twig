@@ -46,7 +46,7 @@
 
 {% block javascripts %}
 	<script src="/assets/js/html5-qrcode.min.js"></script>
-	<script>
+	<script nonce="{{ csp_nonce }}">
 	(function () {
 		const controleOuvert = {{ controle ? 'true' : 'false' }};
 		const csrfToken = {{ csrf_token|json_encode|raw }};

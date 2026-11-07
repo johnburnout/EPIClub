@@ -25,7 +25,7 @@
 					<div class="col">{{ code }}</div>
 				{% endfor %}
 			</div>
-			<button type="button" class="btn btn-sm btn-outline-dark" onclick="window.print()">🖨️ Imprimer</button>
+			<button type="button" class="btn btn-sm btn-outline-dark" data-print>🖨️ Imprimer</button>
 		</div>
 	{% endif %}
 
@@ -56,7 +56,7 @@
 				<p><span class="badge bg-success">Activée</span> depuis le {{ application|date('d/m/Y') }}.</p>
 				{% if confirmee %}
 					<form method="post" action="/mon-compte/securite/application/desactiver"
-					      onsubmit="return confirm('Désactiver l\'application d\'authentification ?')">
+					      data-confirm="Désactiver l'application d'authentification ?">
 						<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 						<button type="submit" class="btn btn-outline-danger btn-sm">Désactiver</button>
 					</form>
@@ -95,7 +95,7 @@
 								<td class="text-end">
 									{% if confirmee %}
 										<form method="post" action="/mon-compte/securite/passkey/supprimer-{{ passkey.id }}"
-										      onsubmit="return confirm('Supprimer la passkey « {{ passkey.nom|e('js') }} » ?')">
+										      data-confirm="Supprimer la passkey « {{ passkey.nom }} » ?">
 											<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 											<button type="submit" class="btn btn-outline-danger btn-sm">Supprimer</button>
 										</form>
@@ -121,7 +121,7 @@
 					<div class="col-12 text-danger" id="passkey-erreur" role="alert"></div>
 				</div>
 				<script src="/assets/js/passkey.js"></script>
-				<script>
+				<script nonce="{{ csp_nonce }}">
 					EpiclubPasskey.initEnregistrement(document.getElementById('passkey-enregistrement'));
 				</script>
 			{% endif %}
@@ -135,7 +135,7 @@
 				<p>Il vous reste <strong>{{ codes_restants }}</strong> code{{ codes_restants > 1 ? 's' : '' }} de secours.</p>
 				{% if confirmee %}
 					<form method="post" action="/mon-compte/securite/codes-secours"
-					      onsubmit="return confirm('Générer de nouveaux codes ? Les anciens ne fonctionneront plus.')">
+					      data-confirm="Générer de nouveaux codes ? Les anciens ne fonctionneront plus.">
 						<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 						<button type="submit" class="btn btn-outline-primary btn-sm">Générer de nouveaux codes</button>
 					</form>

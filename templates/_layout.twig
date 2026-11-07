@@ -7,6 +7,8 @@
 		<title>Epiclub</title>
 		<link rel="shortcut icon" href="/assets/img/favicon.ico" type="image/x-icon">
 		<link rel="stylesheet" type="text/css" href="/assets/css/cosmo.min.css">
+		{# [audit 2026-11-07] Confirmations, envois automatiques… sans on*= (CSP) #}
+		<script src="/assets/js/app.js"></script>
 	</head>
 
 	<body>
@@ -186,14 +188,14 @@
 		{# ============================================ #}
 		{% block javascripts %}
 			<!-- Scripts par défaut pour les QR codes -->
-			<script>
+			<script nonce="{{ csp_nonce }}">
 				/**
 				 * Sauvegarde un QR code sur le serveur
 				 * @param {number} equipementId - L'ID de l'équipement
 				 */
 				function sauvegarderQR(equipementId) {
 					// Afficher un indicateur de chargement
-					const btn = document.querySelector('[onclick*="sauvegarderQR(' + equipementId + ')"]');
+					const btn = document.querySelector('[data-qr-action="sauvegarder"][data-equipement-id="' + equipementId + '"]');
 					if (btn) {
 						const originalHtml = btn.innerHTML;
 						btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sauvegarde...';

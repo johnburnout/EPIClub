@@ -147,7 +147,7 @@
             {% if pagination.total > 10 %}
             <div class="col-md-2">
                 <label for="limit" class="form-label">Lignes par page</label>
-                <select name="limit" id="limit" class="form-select" onchange="this.form.submit()">
+                <select name="limit" id="limit" class="form-select" data-auto-submit>
                     <option value="10" {% if filtres.limit == 10 %}selected{% endif %}>10</option>
                     <option value="25" {% if filtres.limit == 25 %}selected{% endif %}>25</option>
                     <option value="50" {% if filtres.limit == 50 %}selected{% endif %}>50</option>
@@ -263,7 +263,7 @@
     <div class="row g-3">
         <div class="col-md-2">
             <label for="lignes_limit" class="form-label">Lignes par page</label>
-            <select name="lignes_limit" id="lignes_limit" class="form-select" onchange="this.form.submit()">
+            <select name="lignes_limit" id="lignes_limit" class="form-select" data-auto-submit>
                 <option value="10" {% if lignes_filtres.limit == 10 %}selected{% endif %}>10</option>
                 <option value="25" {% if lignes_filtres.limit == 25 %}selected{% endif %}>25</option>
                 <option value="50" {% if lignes_filtres.limit == 50 %}selected{% endif %}>50</option>
@@ -371,7 +371,7 @@
             <form method="post" action="/admin/controles/cloturer/{{ controle.id }}" style="display:inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <button type="submit" class="btn btn-success"
-                        onclick="return confirm('Clôturer ce contrôle ? Les remarques seront chiffrées et le contrôle ne sera plus modifiable.')">
+                        data-confirm="Clôturer ce contrôle ? Les remarques seront chiffrées et le contrôle ne sera plus modifiable.">
                     Clôturer le contrôle
                 </button>
             </form>
@@ -381,7 +381,7 @@
     <form method="post" action="/admin/controles/supprimer/{{ controle.id }}" style="display:inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <button type="submit" class="btn btn-danger"
-                onclick="return confirm('⚠️ Supprimer ce contrôle ?\n\nToutes les lignes saisies seront perdues. Cette action est irréversible.');">
+                data-confirm="⚠️ Supprimer ce contrôle ?&#10;&#10;Toutes les lignes saisies seront perdues. Cette action est irréversible.">
             🗑️ Supprimer le contrôle
         </button>
     </form>

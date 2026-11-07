@@ -37,7 +37,7 @@
 					<button type="submit" class="btn btn-primary">Enregistrer la signature</button>
 				{% else %}
 					<button type="submit" class="btn btn-primary"
-						onclick="return confirm('Valider le prêt ? Le matériel passera au statut « Prêté ».');">
+						data-confirm="Valider le prêt ? Le matériel passera au statut « Prêté ».">
 						✅ Valider le prêt
 					</button>
 				{% endif %}
@@ -52,7 +52,7 @@
 
 {% block javascripts %}
 	{{ parent() }}
-	<script>
+	<script nonce="{{ csp_nonce }}">
 	(function () {
 		const canvas = document.getElementById('pad');
 		const ctx = canvas.getContext('2d');

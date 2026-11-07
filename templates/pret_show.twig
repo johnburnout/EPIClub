@@ -125,7 +125,7 @@
 						<div class="p-3 d-flex flex-wrap gap-2 align-items-center">
 							<button type="button" class="btn btn-outline-success btn-sm" id="tout-disponible">Tout le reste : rendu — disponible</button>
 							<button type="submit" class="btn btn-primary"
-								onclick="return confirm('Enregistrer l\'état des matériels cochés ? Ce choix est définitif.');">
+								data-confirm="Enregistrer l'état des matériels cochés ? Ce choix est définitif.">
 								Enregistrer la vérification
 							</button>
 							<small class="text-muted">Le matériel sans état coché reste « Prêté » jusqu'à sa vérification.{% if pagination_lignes.totalPages > 1 %} La vérification porte sur la page affichée.{% endif %}</small>
@@ -156,7 +156,7 @@
 				<form method="post" action="/prets/pret-{{ pret.id }}/supprimer" class="d-inline">
 					<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 					<button type="submit" class="btn btn-outline-danger"
-						onclick="return confirm('Supprimer cette fiche de prêt en saisie ?');">Supprimer la fiche</button>
+						data-confirm="Supprimer cette fiche de prêt en saisie ?">Supprimer la fiche</button>
 				</form>
 			</div>
 		</div>
@@ -235,7 +235,7 @@
 							min="{{ pret.date_pret|date('Y-m-d') }}">
 					</div>
 					<button type="submit" class="btn btn-primary"
-						onclick="return confirm('Terminer le prêt ? Vous vérifierez ensuite chaque matériel rendu.');">
+						data-confirm="Terminer le prêt ? Vous vérifierez ensuite chaque matériel rendu.">
 						🏁 Terminer le prêt
 					</button>
 				</form>
@@ -247,7 +247,7 @@
 
 {% block javascripts %}
 	{{ parent() }}
-	<script>
+	<script nonce="{{ csp_nonce }}">
 		document.addEventListener('DOMContentLoaded', function () {
 			const bouton = document.getElementById('tout-disponible');
 			if (!bouton) return;

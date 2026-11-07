@@ -164,7 +164,7 @@
 									 style="width: 120px; height: 120px;" 
 									 class="img-thumbnail border-0 p-1"
 									 loading="lazy"
-									 onerror="this.src='/assets/img/qr-placeholder.png'; this.alt='QR Code non disponible';">
+									 data-fallback-src="/assets/img/qr-placeholder.png" data-fallback-alt="QR Code non disponible">
 								
 								<!-- Actions du QR Code -->
 								<div class="d-flex flex-column gap-1">
@@ -181,13 +181,13 @@
 									<a href="#" 
 									   class="btn btn-sm btn-outline-secondary text-start" 
 									   title="Sauvegarder sur le serveur"
-									   onclick="event.preventDefault(); sauvegarderQR({{ equipement.id }});">
+									   data-qr-action="sauvegarder" data-equipement-id="{{ equipement.id }}">
 										<i class="fas fa-save"></i> Sauvegarder
 									</a>
 									<a href="#" 
 									   class="btn btn-sm btn-outline-primary text-start" 
 									   title="Copier l'URL du QR code"
-									   onclick="event.preventDefault(); copierUrlQR({{ equipement.id }});">
+									   data-qr-action="copier" data-equipement-id="{{ equipement.id }}">
 										<i class="fas fa-copy"></i> Copier l'URL
 									</a>
 								</div>
@@ -396,7 +396,7 @@
 				<form method="post" action="/equipements/equipement_supprimer-{{ equipement.id }}" style="display:inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 					<button type="submit" class="btn btn-danger"
-						onclick="return confirm('Confirmer la suppression définitive de cet équipement « {{ equipement.reference }} » ?\n\nCette action est irréversible.');">
+						data-confirm="Confirmer la suppression définitive de cet équipement « {{ equipement.reference }} » ?&#10;&#10;Cette action est irréversible.">
 						<i class="fas fa-trash"></i> Supprimer
 					</button>
 				</form>
@@ -422,7 +422,7 @@
 {# ============================================ #}
 {% block javascripts %}
 	{{ parent() }}
-	<script>
+	<script nonce="{{ csp_nonce }}">
 		/**
 		 * Met à jour le statut du QR code après sauvegarde
 		 */
@@ -439,7 +439,7 @@
 		 * Sauvegarde le QR code sur le serveur (avec mise à jour du statut)
 		 */
 		function sauvegarderQR(equipementId) {
-			const btn = document.querySelector('[onclick*="sauvegarderQR(' + equipementId + ')"]');
+			const btn = document.querySelector('[data-qr-action="sauvegarder"][data-equipement-id="' + equipementId + '"]');
 			const originalHtml = btn ? btn.innerHTML : '';
 			
 			if (btn) {
@@ -572,6 +572,21 @@
 				if (img.dataset.saved === 'true') {
 					updateQRStatus(true);
 				}
+			}
+		});
+
+		// [audit 2026-11-07] Actions du QR code (plus d'attribut onclick : CSP).
+		document.addEventListener('click', function (e) {
+			const lien = e.target.closest('[data-qr-action]');
+			if (!lien) {
+				return;
+			}
+			e.preventDefault();
+			const id = parseInt(lien.dataset.equipementId, 10);
+			if (lien.dataset.qrAction === 'sauvegarder') {
+				sauvegarderQR(id);
+			} else if (lien.dataset.qrAction === 'copier') {
+				copierUrlQR(id);
 			}
 		});
 	</script>

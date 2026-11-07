@@ -152,6 +152,24 @@ Les tests d'intégration démarrent automatiquement un serveur de dev sur
 et l'arrêtent en fin de suite. Un serveur déjà lancé manuellement est
 réutilisé (et laissé intact).
 
+### JavaScript et CSP
+
+Les pages HTML sont servies avec une CSP stricte : `script-src 'self'
+'nonce-…' https://cdn.jsdelivr.net`, sans `'unsafe-inline'`. Dans les
+gabarits :
+
+- un script inline porte le nonce de la requête :
+  `<script nonce="{{ csp_nonce }}">` ;
+- aucun attribut `onclick=`, `onsubmit=`, `onchange=`… (bloqués par le
+  navigateur, sans message visible). Utiliser les attributs gérés par
+  `public/assets/js/app.js` : `data-confirm="Message"` (bouton, lien ou
+  formulaire), `data-auto-submit` (liste déroulante), `data-print`,
+  `data-alert="Message"`, `data-fallback-src="…"` (image de secours), ou
+  un `addEventListener` dans le script de la page.
+
+`tests/Unit/TemplatesCspTest.php` vérifie ces deux règles sur tous les
+gabarits.
+
 ## Licence
 
 LGPL-3.0-or-later — voir [licence.md](licence.md).

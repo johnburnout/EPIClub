@@ -513,7 +513,7 @@
 {% endblock %}
 
 {% block javascripts %}
-	<script>
+	<script nonce="{{ csp_nonce }}">
 		// [MÉTIER] Date de mise en service modifiable une seule fois :
 		// confirmation avant enregistrement si elle a changé.
 		(function () {
@@ -530,7 +530,7 @@
 			});
 		})();
 	</script>
-	<script>
+	<script nonce="{{ csp_nonce }}">
 		/**
 		 * [2026-10-23] Changement de référence (super-administrateur) :
 		 * unicité vérifiée à la volée ; si la référence change, le mot de
@@ -609,7 +609,7 @@
 			if (changee()) { surSaisie(); }
 		})();
 	</script>
-	<script>
+	<script nonce="{{ csp_nonce }}">
 		/**
 		 * [2026-10-24] Changement de catégorie (super-administrateur) :
 		 * une référence libre est proposée pour la catégorie saisie (année
@@ -709,7 +709,7 @@
 			if (changee()) { surSaisie(); }
 		})();
 	</script>
-	<script>
+	<script nonce="{{ csp_nonce }}">
 		/**
 		 * [2026-10-24] Roue dentée (super-administrateur) : active ou
 		 * verrouille ensemble la référence et la catégorie. Au verrouillage,
@@ -770,7 +770,7 @@
 			});
 		})();
 	</script>
-	<script>
+	<script nonce="{{ csp_nonce }}">
 		/**
 		 * [2026-10-24] Lot (super-administrateur) : la case affiche le
 		 * nombre initial et le nombre actuel ; décochée, les deux reviennent
@@ -814,7 +814,7 @@
 			});
 		})();
 	</script>
-	<script>
+	<script nonce="{{ csp_nonce }}">
 		/**
 		 * [2026-10-24] Dissociation du lot (super-administrateur) : la
 		 * répartition est contrôlée pendant la saisie (somme = nombre
@@ -1003,7 +1003,7 @@
 			});
 		})();
 	</script>
-	<script>
+	<script nonce="{{ csp_nonce }}">
 		/**
 		 * [2026-10-24] Admin : bouton « Dissocier le lot » / « Regrouper en
 		 * lot » (le super-administrateur passe par la roue dentée). Il affiche
@@ -1024,7 +1024,7 @@
 			});
 		})();
 	</script>
-	<script>
+	<script nonce="{{ csp_nonce }}">
 		/**
 		 * [2026-10-24] Regroupement en lot : récapitulatif du lot obtenu ;
 		 * au moins un équipement coché et mot de confirmation exigés avant
@@ -1076,7 +1076,7 @@
 			});
 		})();
 	</script>
-	<script>
+	<script nonce="{{ csp_nonce }}">
 		const add_category_submit = document.getElementById('add_category_submit');
 
         add_category_submit.addEventListener('click', (e) => {

@@ -10,6 +10,37 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v2.8.0] — 2026-11-07
+
+CSP stricte pour les scripts : dernier point de l'audit de sécurité du
+2026-11-07.
+
+### Security
+
+- **CSP stricte pour les scripts** (dernier point de l'audit du
+  2026-11-07) : `script-src 'self' 'nonce-…' https://cdn.jsdelivr.net`,
+  sans `'unsafe-inline'` ni `'unsafe-eval'`. Un script injecté par une
+  faille XSS ne connaît pas le nonce (renouvelé à chaque requête) et n'est
+  pas exécuté. Les 31 scripts inline des gabarits portent le nonce ; les
+  43 attributs `onclick` / `onsubmit` / `onchange` / `onerror` sont
+  remplacés par `data-confirm`, `data-auto-submit`, `data-print`,
+  `data-alert` et `data-fallback-src`, gérés par le nouveau
+  `public/assets/js/app.js`. Les messages de confirmation sont désormais
+  échappés comme du HTML : un nom contenant une apostrophe (fournisseur,
+  catégorie, équipement…) ne casse plus la boîte de confirmation.
+  + 122 tests (dont une garde sur tous les gabarits) ; parcours de 49
+  pages en navigateur headless avec la CSP appliquée : aucune violation.
+
+### Upgrade notes
+
+- Après la mise à jour, vérifiez rapidement les boutons de suppression
+  (boîte de confirmation), la pagination, le scan QR et la signature d'un
+  prêt. Un script oublié serait bloqué par le navigateur sans message
+  visible : la console du navigateur (F12) afficherait alors une erreur
+  « Content Security Policy ».
+- Personnalisation locale des gabarits : un `onclick=` ajouté à la main ne
+  fonctionnera plus (voir « JavaScript et CSP » dans le README).
+
 ## [v2.7.3] — 2026-11-07
 
 Jetons de réinitialisation du mot de passe stockés sous forme d'empreinte ;

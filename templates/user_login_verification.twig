@@ -76,7 +76,7 @@
 			</p>
 		</footer>
 		<script src="/assets/js/passkey.js"></script>
-		<script>
+		<script nonce="{{ csp_nonce }}">
 			EpiclubPasskey.initConnexion(document.getElementById('passkey-connexion'));
 		</script>
 	</body>

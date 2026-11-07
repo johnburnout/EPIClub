@@ -85,7 +85,7 @@
 			{# [2026-10-24] Formulaire séparé (attribut `form`), comme la suppression. #}
 			<button type="submit" form="bienvenue-utilisateur-form" class="btn btn-outline-secondary"
 			        title="Identifiant, rôle et lien de connexion — jamais le mot de passe"
-			        onclick="return confirm('Renvoyer le mail de bienvenue à {{ utilisateur.email|e('js') }} ?')">
+			        data-confirm="Renvoyer le mail de bienvenue à {{ utilisateur.email }} ?">
 				✉️ Renvoyer le mail de bienvenue
 			</button>
 
@@ -93,7 +93,7 @@
 			   un formulaire séparé (les formulaires ne peuvent pas être imbriqués). #}
 			{% if can_delete is defined and can_delete %}
 				<button type="submit" form="delete-utilisateur-form" class="btn btn-danger ms-auto"
-				        onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.')">
+				        data-confirm="Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.">
 					🗑️ Supprimer l'utilisateur
 				</button>
 			{% elseif is_self is defined and is_self %}
@@ -124,7 +124,7 @@
 					<a href="/mon-compte/securite" class="btn btn-outline-primary btn-sm">Gérer ma double authentification</a>
 				{% elseif peut_reinitialiser_2fa %}
 					<form method="post" action="/admin/utilisateurs/utilisateur_2fa_reinitialiser-{{ utilisateur.id }}" class="d-inline"
-					      onsubmit="return confirm('Réinitialiser la double authentification de {{ utilisateur.username|e('js') }} ? Ses passkeys, son application et ses codes de secours seront supprimés : la connexion se fera avec le seul mot de passe.')">
+					      data-confirm="Réinitialiser la double authentification de {{ utilisateur.username }} ? Ses passkeys, son application et ses codes de secours seront supprimés : la connexion se fera avec le seul mot de passe.">
 						<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 						<button type="submit" class="btn btn-outline-danger btn-sm">Réinitialiser (appareil perdu)</button>
 					</form>

@@ -170,7 +170,7 @@
 
 {% block javascripts %}
 	{{ parent() }}
-	<script>
+	<script nonce="{{ csp_nonce }}">
 		// Les champs ne sont actifs que si « Modifier » est coché.
 		document.addEventListener('DOMContentLoaded', function () {
 			const cases = document.querySelectorAll('.case-appliquer');

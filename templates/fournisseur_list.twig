@@ -45,7 +45,7 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 								<input type="hidden" name="id" value="{{ fournisseur.id }}">
 								<button type="submit" class="btn btn-danger btn-block"
-								        onclick="return confirm('Êtes-vous sûr de vouloir supprimer le fournisseur « {{ fournisseur.nom }} » ?')">
+								        data-confirm="Êtes-vous sûr de vouloir supprimer le fournisseur « {{ fournisseur.nom }} » ?">
 									Supprimer
 								</button>
 							</form>

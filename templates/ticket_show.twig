@@ -80,7 +80,7 @@
 {% endblock %}
 
 {% block javascripts %}
-	<script>
+	<script nonce="{{ csp_nonce }}">
 		// [2026-10-24] Refus : motif obligatoire (revérifié côté serveur).
 		(function () {
 			const form = document.getElementById('form-traiter');
