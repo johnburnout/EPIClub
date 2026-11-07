@@ -319,7 +319,7 @@ Chaque utilisateur, quel que soit son rôle, peut renforcer la sécurité de son
 - Archive trop volumineuse pour le téléversement : déposez-la par FTP dans le dossier `var/backups/` d'EPIClub ; elle apparaît dans la liste des sauvegardes du serveur.
 
 ### Journal d'activité (administrateurs)
-- **Administration → 🗒️ Journal d'activité** : connexions (réussies, échouées, déconnexions), contrôles (création, clôture, suppression) et prêts (création, validation, fin, retour, suppression), avec la date, l'utilisateur et l'adresse IP.
+- **Administration → 🗒️ Journal d'activité** : connexions (réussies, échouées, déconnexions), contrôles (création, clôture, suppression) et prêts (création, validation, fin, retour, suppression), avec la date, l'utilisateur et l'adresse IP. Un échec de connexion est rattaché au compte visé ; si l'identifiant saisi ne correspond à aucun compte, il est noté « identifiant inconnu » (le texte saisi n'est jamais conservé : ce pourrait être un mot de passe).
 - Filtres par type, par période et par recherche (utilisateur, action).
 - **Exporter (texte)** télécharge un fichier `.txt` des entrées affichées par les filtres en cours (toutes les pages).
 - **Réinitialiser** (super-administrateur) : supprime définitivement toutes les entrées après saisie de **REINITIALISER**. Exportez le journal avant. La réinitialisation est elle-même inscrite dans le nouveau journal.

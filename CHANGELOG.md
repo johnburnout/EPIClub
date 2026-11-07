@@ -34,6 +34,21 @@ Correctifs de l'audit de sécurité du 2026-11-07.
 - **Dépendances** : Symfony http-foundation et routing 7.4.23, mailer et
   mime 7.4.22 (6 alertes de sécurité, dont une injection d'en-têtes d'email
   dans symfony/mime, CVE-2026-45070).
+- **Journal d'activité** : un échec de connexion n'inscrit plus le texte
+  saisi comme identifiant (un mot de passe tapé dans ce champ restait
+  lisible par les administrateurs). L'entrée est rattachée au compte visé
+  s'il existe, sinon notée « identifiant inconnu ».
+- **Double authentification** : si le limiteur de tentatives est
+  indisponible (base en panne), le code de second facteur et la
+  confirmation du mot de passe sont refusés au lieu d'être acceptés sans
+  limite. La connexion par mot de passe garde son comportement.
+- **En-têtes HTTP** : CSP complétée sur les pages HTML (`object-src 'none'`,
+  `base-uri 'self'`, `form-action 'self'`) ; HSTS (1 an, sans
+  sous-domaines) quand le site est servi en HTTPS.
+- **Exports** : CSV des équipements protégé contre l'injection de formules
+  (cellule commençant par `=`, `+`, `-`, `@` préfixée d'une apostrophe) ;
+  référence et nom forcés en texte dans l'export Excel avec photos.
+- `bin/migrate.php` refuse de s'exécuter hors ligne de commande.
 
 ### Upgrade notes
 

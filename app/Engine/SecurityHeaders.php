@@ -25,21 +25,48 @@ use Symfony\Component\HttpFoundation\Response;
  * - Permissions-Policy : caméra limitée à l'application (scan QR) ;
  *   micro et géolocalisation désactivés.
  *
+ * - [audit 2026-11-07] CSP complétée : object-src 'none' (aucun plugin),
+ *   base-uri 'self' (pas de <base> injecté détournant les liens relatifs),
+ *   form-action 'self' (aucun formulaire envoyé vers un site tiers).
+ *   Pages HTML seulement : un PDF ou une image servis avec object-src
+ *   'none' peuvent être bloqués par la visionneuse intégrée du navigateur ;
+ *   ces réponses gardent la CSP frame-ancestors seule.
+ *   Pas de script-src : les gabarits contiennent de nombreux scripts
+ *   inline ; une politique avec 'unsafe-inline' n'apporterait presque rien,
+ *   une politique stricte demande d'abord de les sortir des gabarits
+ *   (nonces ou fichiers .js).
+ * - [audit 2026-11-07] HSTS, en HTTPS seulement : le navigateur refuse
+ *   ensuite le HTTP pendant un an (pas de includeSubDomains : d'autres
+ *   sites du club peuvent vivre sur des sous-domaines).
+ *
  * Un en-tête déjà posé par un contrôleur n'est pas écrasé.
  */
 final class SecurityHeaders
 {
     public const HEADERS = [
-        'Content-Security-Policy' => "frame-ancestors 'self'",
+        'Content-Security-Policy' => "frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self'",
         'X-Frame-Options'         => 'SAMEORIGIN',
         'X-Content-Type-Options'  => 'nosniff',
         'Referrer-Policy'         => 'strict-origin-when-cross-origin',
         'Permissions-Policy'      => 'camera=(self), microphone=(), geolocation=()',
     ];
 
-    public static function apply(Response $response): Response
+    public const HSTS = 'max-age=31536000';
+
+    /** CSP des réponses non HTML (PDF, images, exports). */
+    public const CSP_FICHIER = "frame-ancestors 'self'";
+
+    public static function apply(Response $response, bool $https = false): Response
     {
-        foreach (self::HEADERS as $nom => $valeur) {
+        $entetes = self::HEADERS;
+        $type = (string) $response->headers->get('Content-Type', '');
+        if ($type !== '' && !str_starts_with(strtolower($type), 'text/html')) {
+            $entetes['Content-Security-Policy'] = self::CSP_FICHIER;
+        }
+        if ($https) {
+            $entetes['Strict-Transport-Security'] = self::HSTS;
+        }
+        foreach ($entetes as $nom => $valeur) {
             if (!$response->headers->has($nom)) {
                 $response->headers->set($nom, $valeur);
             }

@@ -15,6 +15,15 @@ class AppUserAuthenticator
     private bool $deuxiemeFacteurEnAttente = false;
 
     /**
+     * [SÉCURITÉ — audit 2026-11-07] Compte désigné par l'identifiant saisi
+     * lors du dernier authenticate() (projection non sensible), ou null
+     * si l'identifiant ne correspond à aucun compte.
+     *
+     * @var array<string, mixed>|null
+     */
+    private ?array $compteVise = null;
+
+    /**
      * [migration 020] Clé de session de la connexion en attente du second
      * facteur : ['id' => int, 'expire' => int]. La session « user »
      * n'est PAS ouverte tant que le second facteur n'est pas vérifié.
@@ -99,8 +108,10 @@ class AppUserAuthenticator
             $cles['login-ip:' . $ip] = self::SEUIL_IP;
         }
 
+        $this->compteVise = null;
         $attente = $this->secondesDeBlocage(array_keys($cles));
         if ($attente > 0) {
+            $this->compteVise = $this->projection($this->trouverCompte($username));
             $minutes = (int) ceil($attente / 60);
             $this->error = sprintf(
                 'Trop de tentatives de connexion. Réessayez dans %d minute%s.',
@@ -112,10 +123,8 @@ class AppUserAuthenticator
 
         // [2026-10-25] Connexion par identifiant ou par email : l'identifiant
         // d'abord (un identifiant peut contenir « @ »), puis l'email.
-        $user = $this->utilisateurManager->findOneByCriteria(['username' => $username]);
-        if (!$user && str_contains($username, '@')) {
-            $user = $this->utilisateurManager->findOneByCriteria(['email' => trim($username)]);
-        }
+        $user = $this->trouverCompte($username);
+        $this->compteVise = $this->projection($user);
 
         // Toujours un password_verify(), même pour un compte inexistant
         // (temps de réponse identique).
@@ -153,6 +162,43 @@ class AppUserAuthenticator
         $this->error = "Identifiants incorrects";
 
         return false;
+    }
+
+    /**
+     * [2026-10-25] Connexion par identifiant ou par email : l'identifiant
+     * d'abord (un identifiant peut contenir « @ »), puis l'email.
+     *
+     * @return array<string, mixed>|null ligne complète
+     */
+    private function trouverCompte(string $username): ?array
+    {
+        $user = $this->utilisateurManager->findOneByCriteria(['username' => $username]);
+        if (!$user && str_contains($username, '@')) {
+            $user = $this->utilisateurManager->findOneByCriteria(['email' => trim($username)]);
+        }
+        return is_array($user) ? $user : null;
+    }
+
+    /**
+     * @param array<string, mixed>|null $user
+     * @return array<string, mixed>|null
+     */
+    private function projection(?array $user): ?array
+    {
+        return $user === null ? null : array_diff_key($user, array_flip(self::SESSION_EXCLUDED_FIELDS));
+    }
+
+    /**
+     * [SÉCURITÉ — audit 2026-11-07] Compte visé par le dernier
+     * authenticate() : le journal d'activité n'inscrit jamais le texte
+     * saisi (un mot de passe tapé dans le champ identifiant y serait
+     * resté lisible par les administrateurs), seulement le compte existant.
+     *
+     * @return array<string, mixed>|null
+     */
+    public function compteVise(): ?array
+    {
+        return $this->compteVise;
     }
 
     /**

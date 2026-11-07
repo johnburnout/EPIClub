@@ -22,6 +22,9 @@ final class TestableDoubleAuthentificationController extends DoubleAuthentificat
 {
     public int $horloge = 1_800_000_000;
 
+    /** Simule une table de limitation inaccessible. */
+    public bool $limiteurEnPanne = false;
+
     public function __construct(
         Session $session,
         public readonly InMemoryDoubleAuthentificationManager $manager,
@@ -54,6 +57,9 @@ final class TestableDoubleAuthentificationController extends DoubleAuthentificat
 
     protected function loginThrottle(): LoginThrottleManager
     {
+        if ($this->limiteurEnPanne) {
+            throw new \PDOException('table login_throttle inaccessible');
+        }
         $this->limiteur->horloge = $this->horloge;
         return $this->limiteur;
     }

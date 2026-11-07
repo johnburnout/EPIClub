@@ -41,8 +41,11 @@ final class AppUserAuthenticatorEmailTest extends TestCase
         });
 
         $session = new Session(new MockArraySessionStorage());
-        return (new TestableAppUserAuthenticator($session, $manager))->authenticate($saisie, $mdp, '203.0.113.7');
+        $this->authenticator = new TestableAppUserAuthenticator($session, $manager);
+        return $this->authenticator->authenticate($saisie, $mdp, '203.0.113.7');
     }
+
+    private ?TestableAppUserAuthenticator $authenticator = null;
 
     public function testConnexionParIdentifiant(): void
     {
@@ -67,5 +70,21 @@ final class AppUserAuthenticatorEmailTest extends TestCase
         self::assertFalse($this->authentifier('anne.durand@club.test', 'faux-mot-de-passe'));
         self::assertFalse($this->authentifier('inconnu@club.test'));
         self::assertFalse($this->authentifier('inconnu'));
+    }
+
+    /** [audit 2026-11-07] Compte visé par un échec : projection non sensible. */
+    public function testCompteViseParUnEchecSansDonneeSensible(): void
+    {
+        self::assertFalse($this->authentifier('anne.durand@club.test', 'faux-mot-de-passe'));
+        $compte = $this->authenticator?->compteVise();
+        self::assertSame(1, $compte['id'] ?? null);
+        self::assertArrayNotHasKey('password', (array) $compte);
+    }
+
+    /** Un mot de passe tapé dans le champ identifiant ne désigne aucun compte. */
+    public function testAucunCompteViseSiLIdentifiantEstInconnu(): void
+    {
+        self::assertFalse($this->authentifier('MonMotDePasse!2026', 'x'));
+        self::assertNull($this->authenticator?->compteVise());
     }
 }

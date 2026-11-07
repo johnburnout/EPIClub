@@ -54,6 +54,8 @@ class DoubleAuthentificationController extends AbstractController
     /** Échecs de confirmation du mot de passe tolérés par compte. */
     public const SEUIL_CONFIRMATION = 5;
 
+    private const MESSAGE_LIMITEUR_INDISPONIBLE = 'Vérification momentanément indisponible. Réessayez dans quelques minutes.';
+
     private const SESSION_TOTP_EN_PREPARATION = 'totp_en_preparation';
     private const SESSION_CODES_A_AFFICHER = 'codes_secours_a_afficher';
     private const SESSION_CEREMONIE_CONNEXION = 'webauthn_connexion';
@@ -122,9 +124,11 @@ class DoubleAuthentificationController extends AbstractController
         if ($request->isMethod('POST')) {
             $this->validateCsrf($request);
             $cle = 'login-2fa:' . $utilisateur['id'];
-            $attente = $this->limiter(fn (LoginThrottleManager $t) => $t->secondesRestantes($cle)) ?? 0;
+            $attente = $this->attenteOuPanne($cle);
 
-            if ($attente > 0) {
+            if ($attente === null) {
+                $erreur = self::MESSAGE_LIMITEUR_INDISPONIBLE;
+            } elseif ($attente > 0) {
                 $minutes = (int) ceil($attente / 60);
                 $erreur = sprintf('Trop de codes incorrects. Réessayez dans %d minute%s.', $minutes, $minutes > 1 ? 's' : '');
             } else {
@@ -615,7 +619,10 @@ class DoubleAuthentificationController extends AbstractController
     private function confirmerMotDePasse(array $moi, string $motDePasse): ?string
     {
         $cle = 'confirm-2fa:' . $moi['id'];
-        $attente = $this->limiter(fn (LoginThrottleManager $t) => $t->secondesRestantes($cle)) ?? 0;
+        $attente = $this->attenteOuPanne($cle);
+        if ($attente === null) {
+            return self::MESSAGE_LIMITEUR_INDISPONIBLE;
+        }
         if ($attente > 0) {
             return sprintf('Trop de tentatives. Réessayez dans %d minute(s).', (int) ceil($attente / 60));
         }
@@ -669,7 +676,28 @@ class DoubleAuthentificationController extends AbstractController
         }
     }
 
-    /** Opération du limiteur — ne bloque jamais si celui-ci est indisponible. */
+    /**
+     * [SÉCURITÉ — audit 2026-11-07] Secondes de blocage restantes, ou null
+     * si le limiteur est indisponible. Contrairement à la connexion par mot
+     * de passe, le second facteur (6 chiffres) et la confirmation du mot de
+     * passe sont REFUSÉS dans ce cas : sans limiteur, un code à 6 chiffres
+     * se devine en quelques heures.
+     */
+    private function attenteOuPanne(string $cle): ?int
+    {
+        try {
+            return $this->loginThrottle()->secondesRestantes($cle);
+        } catch (\Throwable $e) {
+            error_log('[DoubleAuthentification] Limiteur indisponible, vérification refusée : ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Opération du limiteur (enregistrement d'un échec, remise à zéro) —
+     * n'échoue jamais : la vérification préalable (attenteOuPanne()) a
+     * déjà refusé la tentative si le limiteur est indisponible.
+     */
     private function limiter(callable $operation): mixed
     {
         try {

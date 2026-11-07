@@ -118,15 +118,18 @@ class AppUserAuthController extends AbstractController
                     $error_autentification = $appUserAuthenticator->getError();
 
                     // [migration 019] Échec (identifiants incorrects ou
-                    // compte temporairement bloqué) : identifiant saisi.
+                    // compte temporairement bloqué).
+                    // [SÉCURITÉ — audit 2026-11-07] Jamais le texte saisi
+                    // (un mot de passe tapé dans le champ identifiant
+                    // resterait lisible par les administrateurs) : le
+                    // compte visé s'il existe, sinon « identifiant inconnu ».
+                    $compte = $appUserAuthenticator->compteVise();
                     $this->journaliser(
                         JournalActiviteManager::TYPE_CONNEXION,
-                        sprintf(
-                            'Échec de connexion (identifiant « %s ») : %s',
-                            mb_substr(trim((string) $request->request->get('username')), 0, 64),
-                            $error_autentification
-                        ),
+                        ($compte !== null ? 'Échec de connexion : ' : 'Échec de connexion (identifiant inconnu) : ')
+                            . $error_autentification,
                         $request,
+                        $compte,
                     );
                 }
             }

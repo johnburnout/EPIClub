@@ -1821,8 +1821,10 @@ HTML;
         $tempFiles = [];
         
         foreach ($equipements as $e) {
-            $sheet->setCellValue('A' . $row, $e['reference'] ?? '');
-            $sheet->setCellValue('B' . $row, $e['libelle'] ?? '');
+            // [SÉCURITÉ — audit 2026-11-07] Texte explicite : un libellé
+            // commençant par « = » n'est jamais interprété comme formule.
+            $sheet->setCellValueExplicit('A' . $row, (string) ($e['reference'] ?? ''), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
+            $sheet->setCellValueExplicit('B' . $row, (string) ($e['libelle'] ?? ''), \PhpOffice\PhpSpreadsheet\Cell\DataType::TYPE_STRING);
             
             // --- Photo (colonne C) ---
             $photoPath = null;
@@ -1985,6 +1987,21 @@ HTML;
     }
 
     /**
+     * [SÉCURITÉ — audit 2026-11-07] Injection de formules (CSV) : une
+     * cellule texte commençant par = + - @ (ou tabulation, retour chariot)
+     * serait exécutée comme formule par Excel ou LibreOffice. Elle est
+     * préfixée d'une apostrophe, qui la force en texte. Les nombres sont
+     * laissés tels quels.
+     */
+    public static function celluleCsvSure(mixed $valeur): mixed
+    {
+        if (!is_string($valeur) || $valeur === '' || is_numeric($valeur)) {
+            return $valeur;
+        }
+        return str_contains("=+-@\t\r", $valeur[0]) ? "'" . $valeur : $valeur;
+    }
+
+    /**
      * Exporte la liste filtrée des équipements en CSV « données ».
      *
      * BOM UTF-8 + séparateur « ; » : lisible directement dans Excel
@@ -2004,7 +2021,7 @@ HTML;
         // dépréciation PHP 8.4+ quand $escape est omis.
         fputcsv($fp, self::EXPORT_DATA_HEADERS, ';', escape: '');
         foreach ($rows as $row) {
-            fputcsv($fp, $row, ';', escape: '');
+            fputcsv($fp, array_map([self::class, 'celluleCsvSure'], $row), ';', escape: '');
         }
         rewind($fp);
         $csv = stream_get_contents($fp);
