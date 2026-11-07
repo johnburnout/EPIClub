@@ -15,11 +15,32 @@ final class SecurityHeadersTest extends TestCase
     {
         $r = SecurityHeaders::apply(new Response('ok'));
 
-        self::assertSame("frame-ancestors 'self'", $r->headers->get('Content-Security-Policy'));
+        self::assertSame(
+            "frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self'",
+            $r->headers->get('Content-Security-Policy')
+        );
+        self::assertFalse($r->headers->has('Strict-Transport-Security'), 'pas de HSTS en HTTP');
         self::assertSame('SAMEORIGIN', $r->headers->get('X-Frame-Options'));
         self::assertSame('nosniff', $r->headers->get('X-Content-Type-Options'));
         self::assertSame('strict-origin-when-cross-origin', $r->headers->get('Referrer-Policy'));
         self::assertStringContainsString('camera=(self)', (string) $r->headers->get('Permissions-Policy'));
+    }
+
+    /** Un PDF garde la CSP minimale (visionneuse intégrée du navigateur). */
+    public function testUnPdfGardeLaCspMinimale(): void
+    {
+        $r = SecurityHeaders::apply(new Response('%PDF', 200, ['Content-Type' => 'application/pdf']));
+
+        self::assertSame("frame-ancestors 'self'", $r->headers->get('Content-Security-Policy'));
+        self::assertSame('nosniff', $r->headers->get('X-Content-Type-Options'));
+    }
+
+    /** [audit 2026-11-07] HSTS en HTTPS uniquement. */
+    public function testHstsEnHttps(): void
+    {
+        $r = SecurityHeaders::apply(new Response('ok'), true);
+
+        self::assertSame('max-age=31536000', $r->headers->get('Strict-Transport-Security'));
     }
 
     public function testSappliqueAussiAuxRedirections(): void
@@ -46,6 +67,6 @@ final class SecurityHeadersTest extends TestCase
         $index = (string) file_get_contents(__DIR__ . '/../../../public/index.php');
 
         self::assertSame(2, substr_count($index, '->send()'));
-        self::assertSame(2, substr_count($index, 'SecurityHeaders::apply($response)->send()'));
+        self::assertSame(2, substr_count($index, 'SecurityHeaders::apply($response, $enHttps)->send()'));
     }
 }

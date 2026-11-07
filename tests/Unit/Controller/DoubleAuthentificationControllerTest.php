@@ -142,6 +142,25 @@ final class DoubleAuthentificationControllerTest extends TestCase
         self::assertFalse($this->session->has('user'));
     }
 
+    /** [audit 2026-11-07] Limiteur indisponible : même le bon code est refusé. */
+    public function testLimiteurIndisponibleRefuseLeSecondFacteur(): void
+    {
+        $c = $this->controleur();
+        $c->limiteurEnPanne = true;
+        $this->activerApplication(7);
+        $this->enAttente(7, $c->horloge + 300);
+
+        $ancien = ini_set('error_log', '/dev/null');
+        try {
+            $reponse = $c->verification($this->post('/se_connecter/verification', ['code' => $this->codeCourant($c)]));
+        } finally {
+            ini_set('error_log', (string) $ancien);
+        }
+
+        self::assertStringContainsString('momentanément indisponible', (string) $reponse->getContent());
+        self::assertFalse($this->session->has('user'));
+    }
+
     public function testCodeDeSecoursAUsageUnique(): void
     {
         $c = $this->controleur();
@@ -323,6 +342,24 @@ final class DoubleAuthentificationControllerTest extends TestCase
         $reponse = $c->securite($this->post('/mon-compte/securite', ['mot_de_passe' => self::MOT_DE_PASSE]));
         self::assertInstanceOf(RedirectResponse::class, $reponse);
         self::assertSame($c->horloge, $this->session->get('user')[AppUserAuthenticator::CLE_AUTHENTIFIE_LE]);
+    }
+
+    /** [audit 2026-11-07] Limiteur indisponible : la confirmation est refusée. */
+    public function testLimiteurIndisponibleRefuseLaConfirmationDuMotDePasse(): void
+    {
+        $c = $this->controleur();
+        $c->limiteurEnPanne = true;
+        $this->connecter(7, $c->horloge - 3600);
+
+        $ancien = ini_set('error_log', '/dev/null');
+        try {
+            $reponse = $c->securite($this->post('/mon-compte/securite', ['mot_de_passe' => self::MOT_DE_PASSE]));
+        } finally {
+            ini_set('error_log', (string) $ancien);
+        }
+
+        self::assertStringContainsString('momentanément indisponible', (string) $reponse->getContent());
+        self::assertSame($c->horloge - 3600, $this->session->get('user')[AppUserAuthenticator::CLE_AUTHENTIFIE_LE]);
     }
 
     public function testActivationDeLApplicationExigeUneConfirmationRecente(): void

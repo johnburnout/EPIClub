@@ -92,6 +92,12 @@ final class MySqlDatabaseDumper implements DatabaseDumperInterface
                 if ($ligne === '' || str_starts_with($ligne, '--')) {
                     continue;
                 }
+                if (!self::instructionAutorisee($ligne)) {
+                    throw new \RuntimeException(sprintf(
+                        'Instruction SQL non autorisée ligne %d : seules celles produites par l\'export EPIClub sont acceptées.',
+                        $numero
+                    ));
+                }
                 try {
                     $this->pdo->exec($ligne);
                 } catch (\PDOException $e) {
@@ -121,6 +127,26 @@ final class MySqlDatabaseDumper implements DatabaseDumperInterface
             ->query('SELECT version FROM schema_migrations ORDER BY version')
             ->fetchAll(\PDO::FETCH_COLUMN);
         return array_map('strval', $versions);
+    }
+
+    /**
+     * [SÉCURITÉ — audit 2026-11-07] Liste blanche des instructions qu'un
+     * export EPIClub contient (voir exporter()) : réglages de session,
+     * DROP TABLE / CREATE TABLE / INSERT INTO d'une table nommée.
+     *
+     * Défense en profondeur seulement : un INSERT peut toujours contenir un
+     * SELECT ou une seconde instruction. La protection réelle est la
+     * signature du manifeste (SauvegardeService), vérifiée avant l'import.
+     */
+    public static function instructionAutorisee(string $ligne): bool
+    {
+        $nom = '`(?:[^`]|``)+`';
+        return preg_match('/^SET NAMES utf8mb4;$/', $ligne) === 1
+            || preg_match("/^SET SESSION sql_mode = '[A-Z_,]*';$/", $ligne) === 1
+            || preg_match('/^SET FOREIGN_KEY_CHECKS = [01];$/', $ligne) === 1
+            || preg_match('/^DROP TABLE IF EXISTS ' . $nom . ';$/', $ligne) === 1
+            || preg_match('/^CREATE TABLE ' . $nom . ' \(/', $ligne) === 1
+            || preg_match('/^INSERT INTO ' . $nom . ' \(/', $ligne) === 1;
     }
 
     // ------------------------------------------------------------------

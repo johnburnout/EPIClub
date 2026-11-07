@@ -63,13 +63,14 @@ class UtilisateurController extends AbstractController
     /**
      * [migration 020] POST /admin/utilisateurs/utilisateur_2fa_reinitialiser-{id} :
      * retire l'application, les codes de secours et les passkeys d'un
-     * compte qui a perdu ses facteurs. Mêmes droits que la fiche ; ni son
-     * propre compte (page Sécurité du compte), ni le compte protégé d'un
-     * autre.
+     * compte qui a perdu ses facteurs. [audit 2026-11-07] Réservé au
+     * super-administrateur (décision produit) : retirer le second facteur
+     * d'un compte rouvre l'accès par le seul mot de passe. Ni son propre
+     * compte (page Sécurité du compte), ni le compte protégé d'un autre.
      */
     public function reinitialiserDoubleAuthentification(Request $request): RedirectResponse
     {
-        $this->deniAccessUnlessGranted('ROLE_ADMIN');
+        $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
         $this->validateCsrf($request);
 
         $id = $this->getValidId($request);
@@ -446,7 +447,7 @@ class UtilisateurController extends AbstractController
             'form_errors' => $form_errors,
             // [migration 020] Réinitialisation possible : autre compte, non protégé.
             'double_auth' => $this->doubleAuthentificationActive($utilisateur),
-            'peut_reinitialiser_2fa' => !$isSelf && !$estProtege,
+            'peut_reinitialiser_2fa' => !$isSelf && !$estProtege && $this->isGranted('ROLE_SUPER_ADMIN'),
         ]);
     }
 

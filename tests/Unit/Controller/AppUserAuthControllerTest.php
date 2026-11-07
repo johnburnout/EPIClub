@@ -229,23 +229,52 @@ final class AppUserAuthControllerTest extends TestCase
         ]));
     }
 
-    /** [migration 019] Échec inscrit au journal avec l'identifiant saisi. */
-    public function testLoginPostFailureIsLogged(): void
+    /**
+     * [migration 019] Échec inscrit au journal, rattaché au compte visé.
+     * [audit 2026-11-07] Jamais le texte saisi.
+     */
+    public function testLoginPostFailureIsLoggedOnTheTargetedAccount(): void
     {
+        $compte = ['id' => 7, 'username' => 'jean', 'prenom' => 'Jean', 'nom' => 'R'];
         $authenticator = $this->makeAuthenticator();
         $authenticator->method('authenticate')->willReturn(false);
         $authenticator->method('getError')->willReturn('Identifiants incorrects');
+        $authenticator->method('compteVise')->willReturn($compte);
         $journal = $this->createMock(JournalActiviteManager::class);
         $journal->expects(self::once())->method('enregistrer')->with(
             JournalActiviteManager::TYPE_CONNEXION,
-            'Échec de connexion (identifiant « jean ») : Identifiants incorrects',
-            null,
+            'Échec de connexion : Identifiants incorrects',
+            $compte,
             '127.0.0.1',
         );
 
         $controller = new TestableAppUserAuthController($this->mockSession(), $authenticator, $journal);
         $controller->login(Request::create('/se_connecter', 'POST', [
             'csrf_token' => self::CSRF, 'username' => ' jean ', 'password' => 'mauvais',
+        ]));
+    }
+
+    /** [audit 2026-11-07] Identifiant inconnu (peut-être un mot de passe) : rien de la saisie. */
+    public function testLoginPostFailureWithUnknownIdentifierLogsNothingTyped(): void
+    {
+        $authenticator = $this->makeAuthenticator();
+        $authenticator->method('authenticate')->willReturn(false);
+        $authenticator->method('getError')->willReturn('Identifiants incorrects');
+        $authenticator->method('compteVise')->willReturn(null);
+        $journal = $this->createMock(JournalActiviteManager::class);
+        $journal->expects(self::once())->method('enregistrer')->with(
+            JournalActiviteManager::TYPE_CONNEXION,
+            self::logicalAnd(
+                self::identicalTo('Échec de connexion (identifiant inconnu) : Identifiants incorrects'),
+                self::logicalNot(self::stringContains('MonMotDePasse'))
+            ),
+            null,
+            '127.0.0.1',
+        );
+
+        $controller = new TestableAppUserAuthController($this->mockSession(), $authenticator, $journal);
+        $controller->login(Request::create('/se_connecter', 'POST', [
+            'csrf_token' => self::CSRF, 'username' => 'MonMotDePasse!2026', 'password' => 'x',
         ]));
     }
 

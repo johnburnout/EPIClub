@@ -2,6 +2,14 @@
 
 declare(strict_types=1);
 
+// [SÉCURITÉ — audit 2026-11-07] Ligne de commande uniquement : bin/ est
+// déjà refusé par son .htaccess, mais un serveur qui l'ignore (nginx, docroot
+// mal réglé) ne doit pas pouvoir jouer les migrations depuis le navigateur.
+if (PHP_SAPI !== 'cli') {
+    http_response_code(403);
+    exit('Ligne de commande uniquement.');
+}
+
 require __DIR__ . '/../vendor/autoload.php';
 
 use Epiclub\Engine\MigrationManager;

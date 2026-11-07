@@ -38,7 +38,7 @@ final class SauvegardeControllerTest extends TestCase
             ['images' => $this->racine . '/images', 'uploads' => $this->racine . '/uploads'],
             $this->racine . '/backups',
             '1.2.0',
-            SauvegardeService::empreinte('cle'),
+            'cle',
             ['001_initial'],
         );
     }

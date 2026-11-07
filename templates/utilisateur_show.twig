@@ -128,6 +128,8 @@
 						<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 						<button type="submit" class="btn btn-outline-danger btn-sm">Réinitialiser (appareil perdu)</button>
 					</form>
+				{% elseif not isGranted('ROLE_SUPER_ADMIN') %}
+					<small class="text-muted">Appareil perdu : seul un super-administrateur peut la réinitialiser.</small>
 				{% else %}
 					<small class="text-muted">Seul le titulaire du compte protégé peut la modifier.</small>
 				{% endif %}

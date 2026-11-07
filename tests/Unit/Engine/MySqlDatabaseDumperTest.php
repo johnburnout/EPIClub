@@ -130,9 +130,64 @@ final class MySqlDatabaseDumperTest extends TestCase
         self::assertSame([], array_filter($nouvelles, fn ($s) => str_starts_with($s, 'DROP')));
     }
 
+    /**
+     * [audit 2026-11-07] Seules les instructions produites par exporter()
+     * sont rejouées.
+     *
+     * @return iterable<string, array{string}>
+     */
+    public static function instructionsInterdites(): iterable
+    {
+        yield 'SELECT INTO OUTFILE' => ["SELECT '<?php' INTO OUTFILE '/var/www/public/x.php';"];
+        yield 'GRANT'               => ["GRANT ALL ON *.* TO 'x'@'%';"];
+        yield 'UPDATE'              => ["UPDATE `utilisateur` SET `role` = 'ROLE_SUPER_ADMIN';"];
+        yield 'INSERT SELECT'       => ['INSERT INTO `t` SELECT 1;'];
+        yield 'CREATE TABLE SELECT' => ['CREATE TABLE `t` SELECT LOAD_FILE(\'/etc/passwd\');'];
+        yield 'SET autre variable'  => ['SET GLOBAL general_log = 1;'];
+        yield 'DROP DATABASE'       => ['DROP DATABASE `epiclub`;'];
+        yield 'casse détournée'     => ['set names utf8mb4; SELECT 1;'];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('instructionsInterdites')]
+    public function testImportRefuseLesInstructionsHorsExport(string $instruction): void
+    {
+        file_put_contents($this->fichier, MySqlDatabaseDumper::ENTETE . "\nCREATE TABLE `t` (id INT);\n" . $instruction . "\n");
+        $avant = count($this->pdo->executees);
+
+        try {
+            (new MySqlDatabaseDumper($this->pdo))->importer($this->fichier);
+            self::fail('instruction acceptée : ' . $instruction);
+        } catch (\RuntimeException $e) {
+            self::assertStringContainsString('non autorisée ligne 3', $e->getMessage());
+        }
+        self::assertNotContains($instruction, array_slice($this->pdo->executees, $avant));
+    }
+
+    public function testToutesLesInstructionsDeLExportSontAutorisees(): void
+    {
+        // Tables du setUp (texte, binaire, valeurs échappées).
+        (new MySqlDatabaseDumper($this->pdo))->exporter($this->fichier);
+
+        $lignes = file($this->fichier, FILE_IGNORE_NEW_LINES);
+        array_shift($lignes);
+        foreach ($lignes as $ligne) {
+            if ($ligne === '' || str_starts_with($ligne, '--')) {
+                continue;
+            }
+            self::assertTrue(MySqlDatabaseDumper::instructionAutorisee($ligne), $ligne);
+        }
+    }
+
+    public function testUnNomDeTableAvecAccentGraveEchappeEstAutorise(): void
+    {
+        self::assertTrue(MySqlDatabaseDumper::instructionAutorisee('DROP TABLE IF EXISTS `a``b`;'));
+        self::assertTrue(MySqlDatabaseDumper::instructionAutorisee('INSERT INTO `a``b` (`id`) VALUES (1);'));
+        self::assertFalse(MySqlDatabaseDumper::instructionAutorisee('DROP TABLE IF EXISTS `a`; SELECT 1;'));
+    }
+
     public function testErreurSqlIndiqueLaLigne(): void
     {
-        file_put_contents($this->fichier, MySqlDatabaseDumper::ENTETE . "\nCREATE TABLE `t` (id INT);\nINSERT INTO `absente` VALUES (1);\n");
+        file_put_contents($this->fichier, MySqlDatabaseDumper::ENTETE . "\nCREATE TABLE `t` (id INT);\nINSERT INTO `absente` (`id`) VALUES (1);\n");
 
         $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('ligne 3');

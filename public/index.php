@@ -42,7 +42,7 @@ $isLoggedIn = $session->has('user');
 if (time() - $session->getMetadataBag()->getLastUsed() > Session::SESSION_LIFETIME) {
     $session->invalidate();
     $response = new RedirectResponse('/');
-    SecurityHeaders::apply($response)->send();
+    SecurityHeaders::apply($response, $enHttps)->send();
     exit();
 }
 
@@ -106,4 +106,4 @@ try {
     );
 }
 
-SecurityHeaders::apply($response)->send();
+SecurityHeaders::apply($response, $enHttps)->send();

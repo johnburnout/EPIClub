@@ -9,13 +9,19 @@ declare(strict_types=1);
  *
  * Usage (sous l'utilisateur du domaine, jamais en root) :
  *
- *   php bin/restaurer.php --nom=epiclub-sauvegarde-AAAAMMJJ-HHMMSS.zip [--quiet] [--json]
+ *   php bin/restaurer.php --nom=epiclub-sauvegarde-AAAAMMJJ-HHMMSS.zip [--accepter-non-signee] [--quiet] [--json]
  *
  * L'archive doit se trouver dans var/backups (nom seul, jamais un chemin).
  * Base ET fichiers sont remplacés. L'état courant est d'abord conservé dans
  * une sauvegarde « avant restauration » ; en cas d'échec, il est rétabli
  * automatiquement. Les migrations manquantes (archive d'une version
  * antérieure) sont appliquées ensuite.
+ *
+ * L'archive doit être signée avec la SECRET_KEY de l'installation (archives
+ * créées depuis la v2.7.1). --accepter-non-signee accepte une archive SANS
+ * signature (créée par une version antérieure) : à réserver à une archive
+ * dont vous connaissez la provenance, car son SQL est exécuté tel quel. Une
+ * signature fausse est toujours refusée.
  *
  * Codes de sortie : 0 succès, 1 erreur inattendue, 2 usage, 3 instance non
  * installée, 4 verrou occupé, 7 restauration impossible (rien n'a été
@@ -36,7 +42,7 @@ use Epiclub\Process\InstallationService;
 $racine = dirname(__DIR__);
 
 try {
-    $cmd = new Commande('restaurer', array_slice($argv, 1), ['nom'], [], $racine . '/var/log/epiclub-cli.log');
+    $cmd = new Commande('restaurer', array_slice($argv, 1), ['nom'], ['accepter-non-signee'], $racine . '/var/log/epiclub-cli.log');
 } catch (UsageException $e) {
     exit(Commande::echecUsage('restaurer', array_slice($argv, 1), $e->getMessage()));
 }
@@ -84,6 +90,7 @@ try {
     $resultat = $service->restaurer(
         $service->chemin($nom),
         static fn (): array => (new MigrationManager($pdo, $racine . '/migrations'))->migrate(),
+        $cmd->drapeau('accepter-non-signee'),
     );
 } catch (VerrouOccupeException $e) {
     exit($cmd->terminer(Commande::VERROU_OCCUPE, $e->getMessage()));

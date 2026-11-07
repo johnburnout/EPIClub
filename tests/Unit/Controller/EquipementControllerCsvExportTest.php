@@ -62,4 +62,38 @@ final class EquipementControllerCsvExportTest extends TestCase
         $ligne = explode("\n", $csv)[1];
         self::assertSame($libelle, str_getcsv($ligne, ';', '"', '')[1]);
     }
+
+    /** [audit 2026-11-07] Une cellule qui ressemble à une formule est forcée en texte. */
+    public function testFormulesNeutralisees(): void
+    {
+        $csv = $this->exporter([
+            ['id' => 1, 'reference' => '-C3', 'libelle' => '=HYPERLINK("https://x.test","Clic")', 'statut' => 1],
+            ['id' => 2, 'reference' => '@SUM(A1)', 'libelle' => '+33 6 12', 'statut' => 1],
+        ]);
+        $lignes = explode("\n", rtrim($csv, "\n"));
+
+        self::assertSame(["'-C3", "'=HYPERLINK(\"https://x.test\",\"Clic\")"], array_slice(str_getcsv($lignes[1], ';', '"', ''), 0, 2));
+        self::assertSame(["'@SUM(A1)", "'+33 6 12"], array_slice(str_getcsv($lignes[2], ';', '"', ''), 0, 2));
+    }
+
+    /**
+     * @return iterable<string, array{mixed, mixed}>
+     */
+    public static function cellules(): iterable
+    {
+        yield 'texte ordinaire'  => ['Casque', 'Casque'];
+        yield 'vide'             => ['', ''];
+        yield 'entier'           => [3, 3];
+        yield 'nombre négatif'   => ['-5', '-5'];
+        yield 'date'             => ['2026-11-07', '2026-11-07'];
+        yield 'égal'             => ['=1+1', "'=1+1"];
+        yield 'tabulation'       => ["\t=1", "'\t=1"];
+        yield 'retour chariot'   => ["\r=1", "'\r=1"];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('cellules')]
+    public function testCelluleCsvSure(mixed $valeur, mixed $attendu): void
+    {
+        self::assertSame($attendu, \Epiclub\Controller\EquipementController::celluleCsvSure($valeur));
+    }
 }

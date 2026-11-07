@@ -262,7 +262,7 @@ Les prêts **en retard** (date de retour prévue dépassée) sont signalés en r
 - Le bouton **« Renvoyer le mail de bienvenue »** de la fiche utilisateur renvoie ce même mail (par exemple après une panne de messagerie, ou s'il n'a pas été reçu). Il suit les mêmes droits que la modification du compte.
 - Le **compte super-administrateur créé à l'installation** est **protégé** (🔒 dans la liste) : il ne peut être ni supprimé ni rétrogradé, et seul son titulaire peut modifier son adresse mail et son mot de passe.
 - Il reste toujours au moins un super-administrateur : le dernier ne peut être ni supprimé ni rétrogradé.
-- La fiche utilisateur indique si la **double authentification** est activée. Si la personne a perdu son téléphone ou sa passkey et n'a plus de code de secours, **« Réinitialiser (appareil perdu) »** retire son application, ses passkeys et ses codes : elle se reconnecte avec son seul mot de passe et peut la réactiver. Mêmes droits que la modification du compte ; impossible sur le compte protégé d'un autre.
+- La fiche utilisateur indique si la **double authentification** est activée. Si la personne a perdu son téléphone ou sa passkey et n'a plus de code de secours, **« Réinitialiser (appareil perdu) »** retire son application, ses passkeys et ses codes : elle se reconnecte avec son seul mot de passe et peut la réactiver. Réservé au **super-administrateur** ; impossible sur le compte protégé d'un autre.
 
 ---
 
@@ -279,7 +279,7 @@ Chaque utilisateur, quel que soit son rôle, peut renforcer la sécurité de son
 - **Passkey** : enregistrée sur votre téléphone, votre ordinateur, votre gestionnaire de mots de passe ou une clé de sécurité, et déverrouillée par empreinte, visage ou code. Elle sert de second facteur après le mot de passe, ou permet de se connecter **sans mot de passe** avec le bouton **« 🔑 Se connecter avec une passkey »** de la page de connexion. Les passkeys exigent un site en HTTPS ; elles sont liées à l'adresse du site (un changement de domaine oblige à les réenregistrer).
 - **Codes de secours** : 10 codes à usage unique sont affichés **une seule fois** à l'activation du premier facteur. Notez-les ou imprimez-les : chacun remplace le code de l'application ou la passkey pour une connexion. Vous pouvez en générer de nouveaux (les anciens ne fonctionnent plus).
 - Après 5 codes incorrects, la saisie est bloquée quelques minutes.
-- Appareil perdu et plus de code de secours : demandez à un administrateur de réinitialiser votre double authentification (fiche utilisateur).
+- Appareil perdu et plus de code de secours : demandez à un super-administrateur de réinitialiser votre double authentification (fiche utilisateur).
 
 ---
 
@@ -313,13 +313,13 @@ Chaque utilisateur, quel que soit son rôle, peut renforcer la sécurité de son
 - **Administration → 💾 Sauvegarde / restauration**.
 - **Télécharger une sauvegarde** : une archive `.zip` contenant toute la base (équipements, contrôles, acquisitions, utilisateurs, réglages) et tous les fichiers (photos, images du club et des catégories, QR codes, factures). Conservez-la hors du serveur (ordinateur, clé USB, cloud).
 - La configuration du serveur (`.env.local.php`) n'est **pas** dans l'archive. Gardez-en une copie à part : sa clé `SECRET_KEY` est indispensable pour restaurer sur une nouvelle installation.
-- **Restaurer** : choisir l'archive puis **Vérifier l'archive**. Rien n'est modifié à ce stade : EPIClub contrôle que l'archive est complète, intacte et compatible (version, clé de chiffrement). La restauration ne démarre qu'après avoir saisi **RESTAURER**.
+- **Restaurer** : choisir l'archive puis **Vérifier l'archive**. Rien n'est modifié à ce stade : EPIClub contrôle que l'archive est complète, intacte, signée par une installation qui utilise la même clé `SECRET_KEY`, et compatible (version, clé de chiffrement). Une archive modifiée hors d'EPIClub est refusée. Les archives créées avant la version 2.7.1 ne sont pas signées : elles ne peuvent être restaurées que depuis le serveur (`php bin/restaurer.php --nom=… --accepter-non-signee`). La restauration ne démarre qu'après avoir saisi **RESTAURER**.
 - La restauration **remplace toutes les données actuelles**. Juste avant, l'état actuel est sauvegardé automatiquement (archive « avant restauration », les 3 dernières sont conservées sur le serveur) ; en cas d'erreur pendant l'opération, il est rétabli automatiquement.
 - Une sauvegarde faite avec une version plus ancienne d'EPIClub est mise à niveau après la restauration. Une sauvegarde d'une version plus récente est refusée : mettez d'abord EPIClub à jour.
 - Archive trop volumineuse pour le téléversement : déposez-la par FTP dans le dossier `var/backups/` d'EPIClub ; elle apparaît dans la liste des sauvegardes du serveur.
 
 ### Journal d'activité (administrateurs)
-- **Administration → 🗒️ Journal d'activité** : connexions (réussies, échouées, déconnexions), contrôles (création, clôture, suppression) et prêts (création, validation, fin, retour, suppression), avec la date, l'utilisateur et l'adresse IP.
+- **Administration → 🗒️ Journal d'activité** : connexions (réussies, échouées, déconnexions), contrôles (création, clôture, suppression) et prêts (création, validation, fin, retour, suppression), avec la date, l'utilisateur et l'adresse IP. Un échec de connexion est rattaché au compte visé ; si l'identifiant saisi ne correspond à aucun compte, il est noté « identifiant inconnu » (le texte saisi n'est jamais conservé : ce pourrait être un mot de passe).
 - Filtres par type, par période et par recherche (utilisateur, action).
 - **Exporter (texte)** télécharge un fichier `.txt` des entrées affichées par les filtres en cours (toutes les pages).
 - **Réinitialiser** (super-administrateur) : supprime définitivement toutes les entrées après saisie de **REINITIALISER**. Exportez le journal avant. La réinitialisation est elle-même inscrite dans le nouveau journal.

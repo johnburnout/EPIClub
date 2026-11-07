@@ -44,19 +44,23 @@ final class UtilisateurControllerDoubleAuthentificationTest extends TestCase
         return $c->reinitialiserDoubleAuthentification($request);
     }
 
-    public function testUnAdministrateurReinitialiseUnUtilisateur(): void
+    public function testUnSuperAdministrateurReinitialiseUnUtilisateur(): void
     {
-        $reponse = $this->reinitialiser('ROLE_ADMIN', 'ROLE_USER');
+        $reponse = $this->reinitialiser('ROLE_SUPER_ADMIN', 'ROLE_USER');
 
         self::assertSame('/admin/utilisateurs/utilisateur-5', $reponse->getTargetUrl());
         self::assertFalse($this->doubleAuth->estConfiguree(5));
         self::assertSame([], $this->doubleAuth->etat(5)['codes_secours']);
     }
 
-    public function testUnAdministrateurNeReinitialisePasUnAutreAdministrateur(): void
+    /** [audit 2026-11-07] Réservé au super-administrateur, même pour un simple utilisateur. */
+    public function testUnAdministrateurNeReinitialisePas(): void
     {
-        $this->reinitialiser('ROLE_ADMIN', 'ROLE_ADMIN');
-
+        try {
+            $this->reinitialiser('ROLE_ADMIN', 'ROLE_USER');
+            self::fail('réinitialisation acceptée pour un administrateur');
+        } catch (AccessDeniedException) {
+        }
         self::assertTrue($this->doubleAuth->estConfiguree(5));
     }
 
@@ -79,5 +83,11 @@ final class UtilisateurControllerDoubleAuthentificationTest extends TestCase
     {
         $this->expectException(AccessDeniedException::class);
         $this->reinitialiser('ROLE_CONTROLLEUR', 'ROLE_USER');
+    }
+
+    public function testRefuseSousAdministrateurEtAdministrateurPourUnControleur(): void
+    {
+        $this->expectException(AccessDeniedException::class);
+        $this->reinitialiser('ROLE_ADMIN', 'ROLE_CONTROLLEUR');
     }
 }
