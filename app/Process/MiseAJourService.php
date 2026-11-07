@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Epiclub\Process;
 
 use Epiclub\Engine\DatabaseBackup;
+use Epiclub\Engine\DroitsFichiers;
 use Epiclub\Engine\GitHubReleaseProviderInterface;
 use Epiclub\Engine\MigrationManager;
 use Epiclub\Exception\MiseAJourException;
@@ -349,16 +350,13 @@ final class MiseAJourService
                 continue;
             }
 
+            // [2026-11-07] Droits indépendants de l'umask (CLI : 077).
             if ($item->isDir()) {
-                if (!is_dir($targetPath)) {
-                    mkdir($targetPath, 0755, true);
-                }
+                DroitsFichiers::creerDossier($targetPath);
             } else {
-                $parent = dirname($targetPath);
-                if (!is_dir($parent)) {
-                    mkdir($parent, 0755, true);
-                }
+                DroitsFichiers::creerDossier(dirname($targetPath));
                 copy($item->getPathname(), $targetPath);
+                DroitsFichiers::fichierCopie($item->getPathname(), $targetPath);
             }
         }
     }
@@ -398,17 +396,19 @@ final class MiseAJourService
             new \RecursiveDirectoryIterator($source, \RecursiveDirectoryIterator::SKIP_DOTS),
             \RecursiveIteratorIterator::SELF_FIRST
         );
-        if (!is_dir($cible) && !mkdir($cible, 0755, true)) {
+        if (!DroitsFichiers::creerDossier($cible)) {
             throw new \RuntimeException("mkdir $cible");
         }
         foreach ($iterator as $item) {
             $chemin = $cible . '/' . substr($item->getPathname(), strlen($source) + 1);
             if ($item->isDir()) {
-                if (!is_dir($chemin) && !mkdir($chemin, 0755, true)) {
+                if (!DroitsFichiers::creerDossier($chemin)) {
                     throw new \RuntimeException("mkdir $chemin");
                 }
             } elseif (!copy($item->getPathname(), $chemin)) {
                 throw new \RuntimeException("copy $chemin");
+            } else {
+                DroitsFichiers::fichierCopie($item->getPathname(), $chemin);
             }
         }
     }

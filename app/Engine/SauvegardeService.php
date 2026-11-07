@@ -698,7 +698,7 @@ final class SauvegardeService
      */
     private function remplacerFichiers(string $source, string $cible): void
     {
-        if (!is_dir($cible) && !@mkdir($cible, 0755, true)) {
+        if (!DroitsFichiers::creerDossier($cible)) {
             throw new \RuntimeException('Dossier impossible à créer : ' . $cible);
         }
 
@@ -714,12 +714,14 @@ final class SauvegardeService
         foreach ($this->fichiersUtilisateur($source) as $relatif => $absolu) {
             $destination = rtrim($cible, '/') . '/' . $relatif;
             $dossier = dirname($destination);
-            if (!is_dir($dossier) && !@mkdir($dossier, 0755, true)) {
+            if (!DroitsFichiers::creerDossier($dossier)) {
                 throw new \RuntimeException('Dossier impossible à créer : ' . $dossier);
             }
             if (!@copy($absolu, $destination)) {
                 throw new \RuntimeException('Copie impossible : ' . $destination);
             }
+            // Lisible par le serveur web quel que soit l'umask (CLI : 077).
+            DroitsFichiers::fichierCopie($absolu, $destination);
         }
     }
 

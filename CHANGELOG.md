@@ -10,6 +10,22 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Fixed
+
+- **Photos en erreur 403 après une restauration en ligne de commande.**
+  Lancée depuis SSH ou la console d'hébergement (umask 077 courant),
+  `bin/restaurer.php` recréait photos et factures en `0600` et les dossiers
+  en `0700` : Apache, qui ne tourne pas sous le propriétaire des fichiers,
+  refusait de les servir (« file permissions deny server access »). La
+  restauration et la mise à jour posent désormais des droits indépendants
+  de l'umask (fichiers ≥ 0644, dossiers ≥ 0755). + 4 tests.
+
+### Upgrade notes
+
+- Une instance déjà touchée se répare une fois, depuis la racine du projet :
+  `find public/images -type d -exec chmod 755 {} +` puis
+  `find public/images -type f -exec chmod 644 {} +`.
+
 ## [v2.7.1] — 2026-11-07
 
 Correctifs de l'audit de sécurité du 2026-11-07.

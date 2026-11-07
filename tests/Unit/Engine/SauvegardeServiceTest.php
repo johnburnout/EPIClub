@@ -361,6 +361,29 @@ final class SauvegardeServiceTest extends TestCase
         self::assertSame(2, $filet['tables']['club_equipement']);
     }
 
+    /**
+     * [2026-11-07] Restauration en CLI (umask 077) : les photos restaurées
+     * étaient en 0600, refusées par Apache (403).
+     */
+    public function testLesFichiersRestauresSontLisiblesParLeServeurWebEnUmask077(): void
+    {
+        $service = $this->service();
+        $chemin = $service->creer();
+        $this->supprimer($this->images . '/equipements');
+
+        $ancien = umask(0077);
+        try {
+            $service->restaurer($chemin);
+        } finally {
+            umask($ancien);
+        }
+
+        clearstatcache();
+        self::assertSame(0755, fileperms($this->images . '/equipements') & 0777);
+        self::assertSame(0644, fileperms($this->images . '/equipements/photo-1.webp') & 0777);
+        self::assertSame(0644, fileperms($this->uploads . '/factures/facture_1.pdf') & 0777);
+    }
+
     public function testRestaurerAppelleLaMiseANiveauDeLaBase(): void
     {
         $service = $this->service();
