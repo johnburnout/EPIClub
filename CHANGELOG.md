@@ -10,6 +10,39 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v2.7.1] — 2026-11-07
+
+Correctifs de l'audit de sécurité du 2026-11-07.
+
+### Security
+
+- **Restauration d'une sauvegarde : archives signées.** Jusqu'ici, rien ne
+  prouvait qu'une archive avait été produite par EPIClub : les sommes de
+  contrôle étaient déclarées par le manifeste lui-même et l'empreinte de
+  `SECRET_KEY` y figurait en clair. Une archive fabriquée ou modifiée
+  pouvait donc faire exécuter n'importe quel SQL à la restauration
+  (création de comptes ; écriture de fichiers sur le serveur si
+  l'utilisateur MySQL a le droit `FILE`). Désormais :
+  - chaque archive contient `manifest.sig`, un HMAC-SHA256 du manifeste
+    calculé avec une clé dérivée de `SECRET_KEY` (le manifeste couvrant les
+    sommes de la base et des fichiers, toute l'archive est authentifiée) ;
+  - une signature fausse est toujours refusée, avant toute modification ;
+  - l'import SQL n'accepte plus que les instructions produites par l'export
+    (réglages de session, `DROP TABLE` / `CREATE TABLE` / `INSERT INTO`),
+    en défense en profondeur.
+  + 17 tests.
+- **Dépendances** : Symfony http-foundation et routing 7.4.23, mailer et
+  mime 7.4.22 (6 alertes de sécurité, dont une injection d'en-têtes d'email
+  dans symfony/mime, CVE-2026-45070).
+
+### Upgrade notes
+
+- **Archives créées avant cette version** (non signées) : elles ne
+  peuvent plus être restaurées depuis la page *Sauvegarde / restauration*.
+  Si vous êtes certain de leur provenance, restaurez-les depuis le serveur :
+  `php bin/restaurer.php --nom=… --accepter-non-signee`. Pensez à refaire
+  une sauvegarde après la mise à jour : elle sera signée.
+
 ## [v2.7.0] — 2026-11-04
 
 Test du SMTP en ligne de commande, pour la console d'hébergement.
