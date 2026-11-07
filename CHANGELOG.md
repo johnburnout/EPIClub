@@ -10,6 +10,11 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v2.8.0] — 2026-11-07
+
+CSP stricte pour les scripts : dernier point de l'audit de sécurité du
+2026-11-07.
+
 ### Security
 
 - **CSP stricte pour les scripts** (dernier point de l'audit du
@@ -25,6 +30,16 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
   catégorie, équipement…) ne casse plus la boîte de confirmation.
   + 122 tests (dont une garde sur tous les gabarits) ; parcours de 49
   pages en navigateur headless avec la CSP appliquée : aucune violation.
+
+### Upgrade notes
+
+- Après la mise à jour, vérifiez rapidement les boutons de suppression
+  (boîte de confirmation), la pagination, le scan QR et la signature d'un
+  prêt. Un script oublié serait bloqué par le navigateur sans message
+  visible : la console du navigateur (F12) afficherait alors une erreur
+  « Content Security Policy ».
+- Personnalisation locale des gabarits : un `onclick=` ajouté à la main ne
+  fonctionnera plus (voir « JavaScript et CSP » dans le README).
 
 ## [v2.7.3] — 2026-11-07
 
