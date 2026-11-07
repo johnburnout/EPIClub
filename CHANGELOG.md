@@ -10,6 +10,11 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Removed
+
+- `AcquisitionController::serveFile()` : code mort, relié à aucune route
+  (les factures sont servies par `UploadController`, route `/uploads/…`).
+
 ## [v2.7.2] — 2026-11-07
 
 Photos d'équipement refusées par Apache après une restauration en ligne de
