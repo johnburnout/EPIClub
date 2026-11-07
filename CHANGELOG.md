@@ -10,6 +10,23 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Added
+
+- **Journal d'activité : acquisitions et équipements.** Deux nouveaux types,
+  filtrables sur la page *Journal d'activité* et repris dans l'export :
+  - **Acquisition** : création, modification, ligne ajoutée / modifiée /
+    supprimée, facture téléversée, validation (avec les références des
+    équipements générés), correction de la référence ou de la date,
+    suppression d'un brouillon, import (une entrée par acquisition
+    importée, créée déjà validée) ;
+  - **Équipement** : dissociation d'un lot (répartition et nouvelles
+    références), regroupement en lot (équipements archivés, taille du
+    lot), changement du nombre d'éléments d'un lot sur la fiche (nombre
+    actuel ou initial, transformation en lot ou retour à l'unité),
+    suppression d'un équipement (avec son motif : hors service au dernier
+    contrôle, ou égaré).
+  Aucune migration : la colonne `type` accepte déjà ces valeurs. + 18 tests.
+
 ## [v2.8.0] — 2026-11-07
 
 CSP stricte pour les scripts : dernier point de l'audit de sécurité du

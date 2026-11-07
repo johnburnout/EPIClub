@@ -4,6 +4,7 @@ namespace Epiclub\Controller;
 
 use Epiclub\Process\AcquisitionImportService;
 use Epiclub\Engine\AbstractController;
+use Epiclub\Domain\JournalActiviteManager;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -85,6 +86,8 @@ class AcquisitionImportController extends AbstractController
                         if ($rapport['erreur_globale'] !== null) {
                             $erreur = $rapport['erreur_globale'];
                             $rapport = null;
+                        } else {
+                            $this->journaliserImport($rapport, $request);
                         }
                     } catch (\Throwable $e) {
                         error_log('[AcquisitionImportController] Import failed: ' . $e->getMessage());
@@ -155,6 +158,39 @@ class AcquisitionImportController extends AbstractController
      *
      * @return array<int, string>
      */
+    /**
+     * [2026-11-07] Une entrée par acquisition importée (l'import les crée
+     * déjà validées, équipements générés).
+     *
+     * @param array{acquisitions: array<int, array{id:int, facture_reference:string, nb_lignes:int, equipements_generes:int}>} $rapport
+     */
+    private function journaliserImport(array $rapport, Request $request): void
+    {
+        foreach (self::actionsJournalImport($rapport) as $action) {
+            $this->journaliser(JournalActiviteManager::TYPE_ACQUISITION, $action, $request);
+        }
+    }
+
+    /**
+     * @param array{acquisitions: array<int, array{id:int, facture_reference:string, nb_lignes:int, equipements_generes:int}>} $rapport
+     * @return list<string>
+     */
+    public static function actionsJournalImport(array $rapport): array
+    {
+        $actions = [];
+        foreach ($rapport['acquisitions'] as $a) {
+            $lignes = (int) $a['nb_lignes'];
+            $equipements = (int) $a['equipements_generes'];
+            $actions[] = sprintf(
+                'Import : %s créée et validée (%d ligne%s, %d équipement%s généré%s)',
+                JournalActiviteManager::libelleAcquisition($a),
+                $lignes, $lignes > 1 ? 's' : '',
+                $equipements, $equipements > 1 ? 's' : '', $equipements > 1 ? 's' : ''
+            );
+        }
+        return $actions;
+    }
+
     private function nettoyerMapping(array $mapping): array
     {
         $out = [];

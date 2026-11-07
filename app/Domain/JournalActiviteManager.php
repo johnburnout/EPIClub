@@ -7,7 +7,8 @@ namespace Epiclub\Domain;
 use Epiclub\Engine\AbstractManager;
 
 /**
- * [migration 019] Journal d'activité : connexions, contrôles et prêts.
+ * [migration 019] Journal d'activité : connexions, contrôles et prêts ;
+ * [2026-11-07] acquisitions, lots et suppressions d'équipements.
  *
  * Consultation et export texte : administrateurs ; réinitialisation :
  * super administrateurs (JournalActiviteController).
@@ -19,14 +20,34 @@ class JournalActiviteManager extends AbstractManager
     public const TYPE_PRET = 'pret';
     /** Opérations sur le journal lui-même (réinitialisation). */
     public const TYPE_JOURNAL = 'journal';
+    /** [2026-11-07] Étapes d'une acquisition, de la création à la validation. */
+    public const TYPE_ACQUISITION = 'acquisition';
+    /** [2026-11-07] Lots (dissociation, regroupement, nombre) et suppressions d'équipements. */
+    public const TYPE_EQUIPEMENT = 'equipement';
 
     /** Libellés affichés (clé technique => libellé). */
     public const TYPES = [
         self::TYPE_CONNEXION => 'Connexion',
         self::TYPE_CONTROLE => 'Contrôle',
         self::TYPE_PRET => 'Prêt',
+        self::TYPE_ACQUISITION => 'Acquisition',
+        self::TYPE_EQUIPEMENT => 'Équipement',
         self::TYPE_JOURNAL => 'Journal',
     ];
+
+    /** « acquisition n° 12 (facture F-2026-01) » */
+    public static function libelleAcquisition(array $acquisition): string
+    {
+        $facture = trim((string) ($acquisition['facture_reference'] ?? ''));
+        return 'acquisition n° ' . (int) ($acquisition['id'] ?? 0) . ($facture !== '' ? " (facture {$facture})" : '');
+    }
+
+    /** « « 26/BAU/3 » (Baudrier Petzl) » */
+    public static function libelleEquipement(array $equipement): string
+    {
+        $libelle = trim((string) ($equipement['libelle'] ?? ''));
+        return '« ' . ($equipement['reference'] ?? '?') . ' »' . ($libelle !== '' ? " ({$libelle})" : '');
+    }
 
     private const LONGUEUR_ACTION = 255;
     private const LONGUEUR_UTILISATEUR = 100;

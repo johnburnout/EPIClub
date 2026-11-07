@@ -8,6 +8,7 @@ use Epiclub\Domain\EmplacementManager;
 use Epiclub\Domain\AcquisitionManager;
 use Epiclub\Domain\FournisseurManager;
 use Epiclub\Domain\DissociationLot;
+use Epiclub\Domain\JournalActiviteManager;
 use Epiclub\Domain\RegroupementLot;
 use Epiclub\Domain\ReferenceGenerator;
 use Epiclub\Enum\EquipementStatut;
@@ -849,6 +850,18 @@ class EquipementController extends AbstractController
             '[EquipementController] Lot id=%d « %s » dissocié (%s) : nouveaux équipements id=%s, références %s (utilisateur id=%s)',
             $id, $equipement['reference'], implode('+', $parties), implode(',', $ids), implode(',', $references), $user['id'] ?? '?'
         ));
+        $this->journaliser(JournalActiviteManager::TYPE_EQUIPEMENT, sprintf(
+            'Dissociation du lot %s (%d éléments) : %d restent sur « %s », nouveaux équipements %s',
+            JournalActiviteManager::libelleEquipement($equipement),
+            (int) $equipement['nombre'],
+            $parties[0],
+            $equipement['reference'],
+            implode(', ', array_map(
+                static fn (string $r, int $n) => $n > 1 ? "{$r} ({$n})" : $r,
+                $references,
+                array_slice($parties, 1)
+            ))
+        ), $request);
         $flash->add('success', sprintf(
             'Lot « %s » dissocié : %d élément(s) restent sur « %s » ; %d nouvel(s) équipement(s) : %s. Pensez à imprimer leurs étiquettes.',
             $equipement['reference'], $parties[0], $equipement['reference'], count($references), implode(', ', $references)
@@ -965,6 +978,15 @@ class EquipementController extends AbstractController
             '[EquipementController] Regroupement en lot sur id=%d « %s » : équipements %s archivés (utilisateur id=%s)',
             $id, $depart['reference'], implode(',', $references), $user['id'] ?? '?'
         ));
+        $total = (int) ($depart['nombre'] ?? 1) + array_sum(array_map(static fn (array $e) => max(1, (int) ($e['nombre'] ?? 1)), $autres));
+        $this->journaliser(JournalActiviteManager::TYPE_EQUIPEMENT, sprintf(
+            'Regroupement dans le lot %s : %s archivé%s, lot de %d élément%s',
+            JournalActiviteManager::libelleEquipement($depart),
+            implode(', ', $references),
+            count($references) > 1 ? 's' : '',
+            $total,
+            $total > 1 ? 's' : ''
+        ), $request);
         $flash->add('success', sprintf(
             '%d équipement(s) regroupé(s) dans le lot « %s » : %s. Retirez leurs étiquettes.',
             count($autres), $depart['reference'], implode(', ', $references)
@@ -1281,6 +1303,11 @@ class EquipementController extends AbstractController
                     $equipementData['photo'] = $photoPath;
                 }
                 
+                // [2026-11-07] Composition du lot avant modification (journal).
+                $lotAvant = [
+                    'nombre' => (int) ($equipement['nombre'] ?? 1),
+                    'nombre_initial' => (int) ($equipement['nombre_initial'] ?? 1),
+                ];
                 $equipement = array_merge($equipement, $equipementData);
                 try {
                     $equipementManager->save($equipement);
@@ -1302,6 +1329,13 @@ class EquipementController extends AbstractController
                 // s'il n'est plus référencé (vérifié après l'enregistrement).
                 if (!empty($anciennePhoto)) {
                     $this->supprimerPhotoSiOrpheline($anciennePhoto);
+                }
+                if (($message = self::changementLot($lotAvant, $equipement)) !== null) {
+                    $this->journaliser(
+                        JournalActiviteManager::TYPE_EQUIPEMENT,
+                        $message . ' : ' . JournalActiviteManager::libelleEquipement($equipement),
+                        $request
+                    );
                 }
                 if ($nouvelleReference !== null) {
                     $user = $this->session->get('user');
@@ -1399,6 +1433,35 @@ class EquipementController extends AbstractController
     // --------------------------------------------------------------
     // SUPPRESSION
     // --------------------------------------------------------------
+    /**
+     * [2026-11-07] Message du journal quand la composition d'un lot change
+     * sur la fiche (nombre actuel, nombre initial), sinon null.
+     *
+     * @param array{nombre:int, nombre_initial:int} $avant
+     * @param array<string, mixed> $apres
+     */
+    public static function changementLot(array $avant, array $apres): ?string
+    {
+        $nombre = (int) ($apres['nombre'] ?? $avant['nombre']);
+        $initial = (int) ($apres['nombre_initial'] ?? $avant['nombre_initial']);
+        $changes = [];
+        if ($initial !== $avant['nombre_initial']) {
+            $changes[] = sprintf('nombre initial %d → %d', $avant['nombre_initial'], $initial);
+        }
+        if ($nombre !== $avant['nombre']) {
+            $changes[] = sprintf('nombre actuel %d → %d', $avant['nombre'], $nombre);
+        }
+        if ($changes === []) {
+            return null;
+        }
+        $verbe = match (true) {
+            $avant['nombre_initial'] <= 1 && $initial > 1 => 'Transformation en lot',
+            $avant['nombre_initial'] > 1 && $initial <= 1 => 'Lot ramené à un élément unique',
+            default => 'Modification du lot',
+        };
+        return $verbe . ' (' . implode(', ', $changes) . ')';
+    }
+
     public function delete(Request $request): Response
     {
         $this->deniAccessUnlessGranted('ROLE_ADMIN');
@@ -1444,7 +1507,15 @@ class EquipementController extends AbstractController
         }
         
         $equipementManager->delete($id);
-        
+
+        $this->journaliser(JournalActiviteManager::TYPE_EQUIPEMENT, sprintf(
+            'Suppression de l\'équipement %s%s (%s)',
+            JournalActiviteManager::libelleEquipement($equipement),
+            (int) ($equipement['nombre'] ?? 1) > 1 ? ', lot de ' . (int) $equipement['nombre'] . ' éléments' : '',
+            (int) ($equipement['statut'] ?? -1) === EquipementStatut::EGARE->value
+                ? 'égaré'
+                : 'hors service au dernier contrôle'
+        ), $request);
         $this->session->getFlashBag()->add('success', "L'équipement '{$equipement['reference']}' a été supprimé.");
         
         return $this->redirectTo('/equipements');

@@ -97,4 +97,12 @@ final class TestableEquipementController extends EquipementController
     protected function updateLastActivity()
     {
     }
+
+    /** [2026-11-07] Journal d'activité en mémoire (null : journal désactivé). */
+    public ?\Epiclub\Domain\JournalActiviteManager $journalOverride = null;
+
+    protected function journalActiviteManager(): ?\Epiclub\Domain\JournalActiviteManager
+    {
+        return $this->journalOverride;
+    }
 }
