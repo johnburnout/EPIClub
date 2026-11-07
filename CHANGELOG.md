@@ -10,6 +10,11 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v2.9.0] — 2026-11-07
+
+Journal d'activité : étapes des acquisitions, modifications de lots et
+suppressions d'équipements.
+
 ### Added
 
 - **Journal d'activité : acquisitions et équipements.** Deux nouveaux types,
