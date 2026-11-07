@@ -1,8 +1,8 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-10-20 (session — import Excel/CSV : sélection des lignes, catégories à créer, stock des lots, EPI à durée de vie limitée [beta.6])
-**Version courante** : v1.0.0-beta.6
-**Branche** : `main` (travail direct)
+**Dernière mise à jour** : 2026-11-08 (session des 7 et 8 novembre — audit de sécurité complet v2.7.1 → v2.8.0, droits des fichiers restaurés v2.7.2, journal des acquisitions et des lots v2.9.0)
+**Version courante** : v2.9.0 (`48f59bb`)
+**Branche** : `main` ; chaque changement passe par une branche et une PR (voir « Règles de travail »)
 
 > **Note canal bêta** : l'endpoint GitHub `/releases/latest` ignore les
 > pré-releases — une instance en canal `stable` ne voit donc pas les
@@ -14,7 +14,8 @@
 > numéro de version) — sinon le code déjà déployé ne verrait pas la
 > correction.
 >
-> **Depuis la v1.0.0 (stable, 2026-10-20)** : les bêtas suivantes
+> **Depuis la v1.0.0 (stable, 2026-10-20)** — toujours valable en v2.9.0 ;
+> aucune bêta n'a été publiée depuis la v1.2.0-beta.2 : les bêtas suivantes
 > (`v1.1.0-beta.N`…) sont publiées avec `--prerelease` pour que le
 > canal `stable` ne les propose pas ; les versions stables (`v1.0.1`,
 > `v1.1.0`…) sans.
@@ -31,7 +32,55 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v1.0.0-beta.6 | — | Import Excel/CSV : lignes cochables (non conformes décochées) ; catégories à créer avec nom/code/durée de vie limitée, regroupement, catégorie imposée par ligne ; stock max / stock actuel des lots modifiables (migration 011) ; EPI à durée de vie limitée : date d'achat obligatoire, fin de vie par défaut 31/12 achat + 10 ans, dates modifiables + 20 tests | `<hash>` |
+| v2.9.0 | PR #114 | Journal d'activité : étapes des acquisitions, modifications de lots et suppressions d'équipements. | `48f59bb` |
+| v2.8.0 | PR #113 | CSP stricte pour les scripts : dernier point de l'audit de sécurité du 2026-11-07. | `f0037b0` |
+| v2.7.3 | PR #111 + #112 | Jetons de réinitialisation du mot de passe stockés sous forme d'empreinte ; code mort retiré. | `e641a3c` |
+| v2.7.2 | PR #110 | Photos d'équipement refusées par Apache après une restauration en ligne de commande ; photos de développement retirées de l'archive de release. | `5116a1e` |
+| v2.7.1 | PR #109 | Correctifs de l'audit de sécurité du 2026-11-07. | `8007f37` |
+| v2.7.0 | PR #108 | Test du SMTP en ligne de commande, pour la console d'hébergement. | `a0a2b84` |
+| v2.6.0 | PR #107 | Coordonnées du club en ligne de commande, pour la console d'hébergement. | `da847af` |
+| v2.5.0 | — | Lien vers la notice du fabricant sur la fiche équipement ; mise à jour, restauration et sauvegarde manuelle en ligne de commande. | `cb09407` |
+| v2.4.1 | — | Retouche du bandeau. | `4ce493d` |
+| v2.4.0 | PR #103 | Double authentification facultative : application d'authentification et passkeys. | `2f25077` |
+| v2.3.0 | — | Journal d'activité ; notification des EPI non vérifiés ; installation et sauvegarde en ligne de commande. | `45961f0` |
+| v2.2.0 | — | Connexion par email ; référentiels consultables, filtrables et triables ; pagination homogène. | `4ce8782` |
+| v2.1.0 | — | Listes déroulantes par ordre alphabétique ; mail de bienvenue. | `da3b818` |
+| v2.0.0 | — | Demandes de modification (tickets) ; libellé modifiable par un administrateur. | `85680b8` |
+| v1.10.1 | — | Dissocier et regrouper accessibles depuis la roue dentée. | `fd6ac18` |
+| v1.10.0 | — | Correction de la référence et de la date d'une acquisition ; regroupement d'équipements identiques en lot. | `d15c059` |
+| v1.9.1 | — | Dissociation d'un lot ouverte aux administrateurs. | `d6e5da0` |
+| v1.9.0 | — | Dissociation d'un lot en plusieurs lots ou en équipements individuels. | `d0d75d9` |
+| v1.8.2 | — | Lot et nombre initial modifiables par un super-administrateur. | `cd3da93` |
+| v1.8.1 | — | Référence et catégorie verrouillées par défaut dans le formulaire de modification. | `880b6e3` |
+| v1.8.0 | — | Catégorie d'un équipement modifiable par un super-administrateur. | `7b394a0` |
+| v1.7.5 | — | Tri, filtres et navigation dans la liste des acquisitions. | `caa35f0` |
+| v1.7.4 | — | Export CSV des équipements conforme à la RFC 4180. | `b357ffa` |
+| v1.7.3 | — | Emplacement et référence modifiables dans le formulaire de modification (et non plus sur la fiche détail, comme en v1.7.0). | `907cbc8` |
+| v1.7.2 | — | PDF de liste avec le filtre « Emplacement : Non défini ». | `58a3de6` |
+| v1.7.1 | — | Échappement HTML dans les PDF d'équipements. | `4f96d43` |
+| v1.7.0 | — | Emplacement et référence modifiables depuis la fiche équipement. | `3c13ddc` |
+| v1.6.3 | — | En-têtes de sécurité HTTP. | `318ee39` |
+| v1.6.2 | — | Mise à jour intégrée : ménagement de la limite de l'API GitHub. | `a820719` |
+| v1.6.1 | — | Correctifs issus d'un audit : sauvegarde SQL et chiffrement des remarques. | `43468f0` |
+| v1.6.0 | — | Prêts en retard sur le tableau de bord, suppression des équipements égarés. | `e31a59f` |
+| v1.5.1 | — | Correctif de la mise à jour intégrée. | `05625dc` |
+| v1.5.0 | — | Gestionnaire de prêt de matériel (module facultatif). | `0652c99` |
+| v1.4.0 | — | Sauvegarde automatique de la base avant les migrations. | `720eaf1` |
+| v1.3.0 | — | Remplacement de l'élément textile des équipements (ex. sangles de dégaines) suivi par le contrôle, avec report de la date de fin d'utilisation. | `2f2ab90` |
+| v1.2.0 | — | Version stable : sauvegarde / restauration complètes, statut « Hors service » réservé au contrôle, date limite d'utilisation automatique, photos de téléphone remises à l'endroit, images AVIF, et tests complets en CI. Reprend les n | `36017e9` |
+| v1.2.0-beta.2 | — | Correctif de la mise à jour intégrée (incident v1.2.0-beta.1 : page « Sauvegarde / restauration » en erreur après la mise à jour). | `00accd4` |
+| v1.2.0-beta.1 | — | Sauvegarde et restauration complètes depuis l'application ; statut « Hors service » réservé au contrôle et garde-fou de suppression. | `f856fcc` |
+| v1.1.2 | — | Correctif de sécurité mineur (journaux) et correction de la CI. | `50fb1b7` |
+| v1.1.1 | — | Correction de la liste des utilisateurs (bouton « Supprimer » et badge du compte protégé). | `4d78f92` |
+| v1.1.0 | — | Compte super-administrateur protégé. Migration : `013_utilisateur_protege.sql` (appliquée automatiquement par la mise à jour intégrée). | `b3079de` |
+| v1.0.0 | — | Première version stable d'EPIClub : gestion des équipements de protection individuelle d'un club (acquisitions, import Excel/CSV, référencement automatique, QR codes, contrôles et journaux, tableau de bord, modification groupée, m | `aef7529` |
+| v1.0.0-beta.12 | — | Scan avec un contrôle ouvert : l'équipement est ajouté et sa fiche contrôle s'ouvre, retour au scanner après enregistrement. | `3a08153` |
+| v1.0.0-beta.11 | — | Liste des équipements plus lisible : statut en couleur, « État » retiré. | `0ba69eb` |
+| v1.0.0-beta.10 | — | Modification groupée des équipements sélectionnés dans la liste (administrateurs), photo comprise. | `6447e0f` |
+| v1.0.0-beta.9 | — | Acquisitions : référence proposée selon le modèle, date de mise en service issue de la facture ; libellé et date modifiables par un super-administrateur ; code technique masqué. | `768a687` |
+| v1.0.0-beta.8 | — | Photo groupée : une même photo pour plusieurs équipements identiques, et recherche dans la liste des équipements. | `8e007d6` |
+| v1.0.0-beta.7 | — | Tableau de bord personnalisable : bandeau du club, notification des EPI à renouveler et accès direct au scan de QR codes. | `49ecd06` |
+| v1.0.0-beta.6 | — | Import Excel/CSV : lignes cochables (non conformes décochées) ; catégories à créer avec nom/code/durée de vie limitée, regroupement, catégorie imposée par ligne ; stock max / stock actuel des lots modifiables (migration 011) ; EPI à durée de vie limitée : date d'achat obligatoire, fin de vie par défaut 31/12 achat + 10 ans, dates modifiables + 20 tests | `37bb320` |
 | v1.0.0-beta.5 | audit S1 S2 S4 S5 S7 F1 F2 | Upload image catégorie sûr (ImageUploader + .htaccess images) ; limitation des tentatives (migration 010) ; message reset unique ; redirection post-login stricte ; session resynchronisée à chaque requête + cookie durci ; archive de release complète (vendor/) + SHA-256 vérifié par l'updater ; updater met à jour public/ | `d82c891` |
 | v1.0.0-beta.4 | audit C1 C1bis C3 C5 C12 P1 P2 P34 | Correctifs du premier rapport d'audit (bloquants + élevés) | `1e1ef8a` |
 | v1.0.0-beta.3 | — | Canal de mise à jour paramétrable dans Paramètres système (sélecteur Stable/Bêta → UPDATE_CHANNEL, valeur invalide conservée) + factory environmentFilePath + 2 tests | `1945be5` |
@@ -41,7 +90,7 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 | v0.31.1 | — | Import : détection auto de la ligne d'en-tête (fichier réel : en-tête ligne 4) + alias (EPI, stock théorique, HA- Périme) + sniffing délimiteur CSV + 4 tests | `792a37d` |
 | v0.31.0 | — | Import v2 (analyse + mapping colonnes, lignes non conformes prévenantes, dates année seule, lot auto si nombre>1, groupement par date sans facture, mise en service) + case « Durée maximum d'utilisation » (catégorie/équipement) + 16 tests | `7b505bd` |
 | v0.30.0 | — | Référencement automatique (modèle global YY/CAT/N, code catégorie) + import/export Excel/CSV d'acquisitions (groupes par facture auto-validées) + facture après coup + 43 tests | `ef5ec52` |
-| v0.29.20 | — | Scan QR non connecté : vérification utilisateur avant deniAccess (?redirect= réellement émis) ; fixture deleteAcquisition robuste (FK controle_ligne) + 1 test Unit | `<hash>` |
+| v0.29.20 | — | Scan QR non connecté : vérification utilisateur avant deniAccess (?redirect= réellement émis) ; fixture deleteAcquisition robuste (FK controle_ligne) + 1 test Unit | `c5e10ae` |
 | v0.29.19 | — | Login : ?redirect= honoré (retour sur le QR scanné après connexion) + garde anti open redirect + 3 tests Unit | `762aadb` |
 | v0.29.18 | — | Ajout équipement → fiche contrôle directe (liste + scan QR) ; scan QR : branche contrôle réservée à ROLE_CONTROLLEUR + 2 tests Unit + 1 test Integration | `0918407` |
 | v0.29.17 | #113+#114 | hasPending + idsDejaAjoutes calculés avant filtrage dans edit() (décision produit option A) + 3 tests Integration | `f00957f` |
@@ -97,9 +146,12 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 | v0.18.1 | #52 | Fix déchiffrement hash_remarques | `10e3744` |
 | v0.18.0 | #50a-bis | getBaseUrl strict (ROOT_URL obligatoire) | — |
 
-**Règle hash** : la ligne de la version courante porte `<hash>` (rempli
-lors du ticket suivant, ou immédiatement si le hash est connu au moment
-de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
+**Commit** : depuis la v1.0.0-beta.7, la colonne donne le commit du tag
+(`git rev-list -n1 vX.Y.Z`) : le commit de fusion de la PR quand le tag
+a été posé après la fusion (cas de toutes les versions depuis la v2.7.1),
+sinon le commit de version. Résumés repris de la première ligne de
+chaque version du CHANGELOG, qui fait foi pour le détail. Colonne
+« Ticket » : seules les PR vérifiées sont indiquées.
 
 ### Chantiers soldés
 
@@ -316,25 +368,28 @@ de la mise à jour de REPRISE). Évite un commit cosmétique par ticket.
 - **#61, #62** : refactors ControleController (injection managers, test Integration edit view).
 
 ### État des tests
-- **496 tests** Unit/Domain verts, **1233 assertions**.
-- **113 tests** Integration verts, **273 assertions** :
-  - 11 Integration Domain (MySQL requis, dont `ForeignKeysIntegrationTest`
-    et les 4 caractérisations `findIds()` #112).
-  - 37 Integration Controller (serveur HTTP auto-démarré, dont les 3
-    caractérisations #113/#114) — **plus de failures**.
-  - 65 Security (`AccessControlTest`).
-- Commande Unit : `php vendor/bin/phpunit`
-  (`defaultTestSuite="Unit"` dans `phpunit.xml`).
-- Commande Integration : `php vendor/bin/phpunit --testsuite Integration`.
-- Le serveur HTTP est désormais **démarré automatiquement** par les
-  tests (classe `Epiclub\Tests\Support\WebServer`, cf. commit
-  `d1e0bfa`) : inutile de lancer `php -S` dans un autre terminal.
-  Un serveur déjà en écoute est réutilisé, jamais arrêté par les tests.
-- **Total avec MySQL actif** : 458 + 105 = **563 tests**.
 
-✅ ~~7 tests Integration Controller en échec préexistant :
-`IndexControllerRootUrlTest`~~ → **résolu en #81** (promotion
-`admin` → `ROLE_SUPER_ADMIN` dans `AbstractControllerTestCase`).
+**Au 2026-11-08 (v2.9.0)** :
+
+- **1 550 tests Unit** verts, 4 090 assertions (`vendor/bin/phpunit`,
+  suite par défaut). Ils tournent sans MySQL ni `.env.local.php` (fixture
+  de config depuis v0.29.13).
+- **PHPStan** : aucune erreur (`vendor/bin/phpstan analyse
+  --memory-limit=1G` ; sans la limite mémoire, PHPStan peut s'arrêter sur
+  « severe errors »).
+- **Integration** (`--testsuite Integration`, MySQL + serveur auto-démarré) :
+  175 tests ; **3 échecs préexistants**, identiques sur `main` avant la
+  session (état de la base de dev, sans lien avec le code) :
+  `AcquisitionImportTest::testImportCompletReglesMetier` (doublon
+  `categorie.code` « TCI »), `ControleControllerAddEquipementTest` et
+  `ControleControllerEditPendingTest` (équipement libre attendu dans la
+  liste). À traiter en réinitialisant les données de dev concernées.
+- **CI GitHub** : phpunit, phpstan et build sur chaque PR ; la release
+  (archive + SHA-256) est construite à la publication.
+- **Garde CSP** : `tests/Unit/TemplatesCspTest.php` échoue si un gabarit
+  contient un `on…=` ou un `<script>` inline sans `nonce="{{ csp_nonce }}"`.
+
+Historique (avant v1.0.0) : 496 Unit et 113 Integration au 2026-10-17.
 
 ---
 
@@ -825,22 +880,41 @@ croisées avec `app/bootstrap.php` et `app/Engine/EnvironmentFileParser`.
   (vert avant, vert après) — cf. #71, #72 et #79. Pour les fixes
   comportementaux : tests rouges prouvant les bugs — cf. #83
   (9 failures + 1 error, dont `DivisionByZeroError` réel).
-- **Commit unique par ticket** : un commit = un ticket = une version.
-- **Tag annoté** : `git tag -a vX.Y.Z -m "..."`.
-- **Release GitHub** + **clôture issue** après chaque tag.
+- **Depuis la v2.x — branche + PR + release GitHub** (pratique de toutes
+  les versions récentes) :
+  1. branche `feat/…`, `fix/…`, `chore/…` ou `docs/…` depuis `main` ;
+  2. un ou plusieurs commits de changement, puis un commit de version
+     `vX.Y.Z : résumé` (CHANGELOG + `version.txt` seulement) ;
+  3. push, `gh pr create`, attente de la CI verte (phpunit, phpstan,
+     build) ;
+  4. fusion `gh pr merge N --merge --delete-branch` (commit de fusion,
+     jamais de squash) ;
+  5. `gh release create vX.Y.Z --target main --title vX.Y.Z
+     --notes-file <section du CHANGELOG>` : crée le tag, et la CI
+     `release.yml` attache `epiclub-vX.Y.Z.zip` et son `.sha256` ;
+  6. contrôle de l'archive : `gh release download`, `shasum -a 256 -c`,
+     `version.txt` dans le zip.
+  Push, PR, fusion et release se font **sur accord explicite** de
+  l'utilisateur, à chaque fois.
+- *(avant v2.x)* **Commit unique par ticket** : un commit = un ticket =
+  une version.
+- *(avant v2.x)* **Tag annoté** : `git tag -a vX.Y.Z -m "..."`.
+- *(avant v2.x)* **Release GitHub** + **clôture issue** après chaque tag.
 - **Mot-clé de clôture dans le commit** : ajouter `Closes #XX`
   (ou `Fixes #XX` / `Resolves #XX`) dans le corps du message de
   commit pour que GitHub ferme automatiquement l'issue au push
   sur `main`. Évite l'étape manuelle.
-- **Travail direct sur `main`** : pas de branche feature pour les petits
+- *(avant v2.x)* **Travail direct sur `main`** : pas de branche feature pour les petits
   tickets. Branche feature (`feat/XX-...`) pour les tickets plus gros
   (comme #59 et #83) — merge via `--no-ff` sur main.
 - **CHANGELOG + version.txt** mis à jour à chaque release.
-- **`version.txt` sans newline final** (iso-comportement).
-- **Hash dans `docs/REPRISE.md`** : la ligne de la **version courante**
-  porte `<hash>`. Le hash réel est rempli **au ticket suivant**, au
-  moment où l'on connaît la version figée. Évite un commit cosmétique
-  par ticket.
+- **`version.txt`** : `echo X.Y.Z > version.txt` (avec newline final,
+  pratique actuelle ; `trim()` à la lecture, sans effet).
+- **Hash dans `docs/REPRISE.md`** : commit du tag, connu dès la release
+  (plus de `<hash>` provisoire).
+- **Messages et documentation en français**, CHANGELOG au format Keep a
+  Changelog (`Security`, `Added`, `Changed`, `Fixed`, `Removed`,
+  `Upgrade notes`).
 
 ---
 
@@ -848,11 +922,14 @@ croisées avec `app/bootstrap.php` et `app/Engine/EnvironmentFileParser`.
 
 Tests (depuis la racine du projet) :
 
-- `php vendor/bin/phpunit` — suite Unit/Domain (458 tests, cf.
+- `php vendor/bin/phpunit` — suite Unit (1 550 tests au 2026-11-08, cf.
   `defaultTestSuite="Unit"` dans `phpunit.xml`).
 - `php vendor/bin/phpunit --testsuite Integration` — suite Integration
-  (104 tests : 4 Integration Domain + 10 Integration Controller —
+  (175 tests, dont 3 échecs préexistants liés aux données de dev —
   le serveur HTTP est auto-démarré par WebServer, cf. commit `d1e0bfa`).
+- `vendor/bin/phpstan analyse --no-progress --memory-limit=1G`.
+- `composer audit` — alertes de sécurité des dépendances ;
+  `composer update "symfony/*"` reste dans les contraintes `^7.3`.
 - `php vendor/bin/phpunit tests/Unit/Engine/FooTest.php` — un fichier.
 - `php vendor/bin/phpunit --filter testMethodName` — une méthode.
 - `php vendor/bin/phpunit --display-deprecations` — affiche le détail
@@ -878,7 +955,10 @@ Base de données de test :
   le client interactif pour le format vertical.)
 - `mysql -u root epiclub -e "DESCRIBE categorie"`
 
-Pattern release Git :
+Pattern release actuel (v2.x) : voir « Règles de travail » ci-dessus
+(branche, PR, `gh pr merge --merge`, `gh release create`).
+
+Pattern release Git *(historique, avant v2.x)* :
 
 - `git add <fichiers>`
 - `git commit -m "type(#ticket): description" -m "Closes #XX"`
@@ -911,12 +991,79 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 
 ## Points de vigilance
 
+### Ajoutés le 2026-11-08 (audit de sécurité et incidents de la session)
+
+- **CSP stricte (v2.8.0)** : `script-src 'self' 'nonce-…'
+  https://cdn.jsdelivr.net`, sans `'unsafe-inline'`. Tout `<script>`
+  inline porte `nonce="{{ csp_nonce }}"` (`Epiclub\Engine\Csp`) ; aucun
+  `onclick=`/`onsubmit=`/`onchange=` : utiliser `data-confirm`,
+  `data-auto-submit`, `data-print`, `data-alert`, `data-fallback-src`
+  (`public/assets/js/app.js`) ou un `addEventListener`. Garde :
+  `TemplatesCspTest`. Règle détaillée dans le README (« JavaScript et
+  CSP »).
+- **Tester la CSP dans un navigateur** : l'extension Chrome
+  d'automatisation **désactive la CSP** de ses onglets (un script injecté
+  s'y exécute) — un test fait avec elle ne prouve rien. Utiliser Brave
+  headless piloté en CDP (Node 24, WebSocket intégré) : parcours des
+  pages avec un compte de test local, relevé des événements
+  `securitypolicyviolation` et des erreurs JS. Script de la session :
+  `csp-tour.mjs` (scratchpad, à recréer au besoin). Penser à supprimer
+  le compte de test, les données créées et à arrêter `php -S` ensuite.
+- **Sauvegardes signées (v2.7.1)** : `manifest.sig` = HMAC-SHA256 du
+  manifeste, clé dérivée de `SECRET_KEY`. Une archive non signée
+  (antérieure à v2.7.1) n'est restaurable qu'en CLI avec
+  `bin/restaurer.php --nom=… --accepter-non-signee` ; une signature
+  fausse est toujours refusée. L'import SQL n'accepte que les
+  instructions produites par l'export (`MySqlDatabaseDumper::instructionAutorisee()`).
+  Changer `SECRET_KEY` rend toutes les sauvegardes existantes
+  irrestaurables (en plus des données chiffrées).
+- **Droits des fichiers (v2.7.2)** : en CLI (SSH, console Virtualmin),
+  l'umask vaut souvent 077. Avant v2.7.2, `bin/restaurer.php` recréait
+  photos et factures en 0600 → **Apache 403** « file permissions deny
+  server access » (incident réel en prod le 2026-11-07, photos cassées
+  depuis une restauration du 3/11). Restauration et mise à jour passent
+  désormais par `DroitsFichiers` (fichiers ≥ 0644, dossiers ≥ 0755).
+  Réparation d'une instance touchée, depuis la racine du projet :
+  `find public/images -type d -exec chmod 755 {} +` puis
+  `find public/images -type f -exec chmod 644 {} +`.
+- **Jetons de réinitialisation (v2.7.3)** : seule leur empreinte SHA-256
+  est en base (`UtilisateurManager::empreinteJetonReset()`) ; passer
+  par `setResetToken()` / `findByResetToken()`, jamais par
+  `findOneByCriteria(['reset_token' => …])`.
+- **2FA** : réinitialisation par un tiers réservée au
+  **super-administrateur** (décision produit du 2026-11-07). Le limiteur
+  du second facteur et de la confirmation du mot de passe refuse en cas
+  de panne (la connexion par mot de passe, elle, reste ouverte).
+- **Journal d'activité** : types `connexion`, `controle`, `pret`,
+  `acquisition`, `equipement`, `journal` (`VARCHAR(16)` : un nouveau type
+  ne demande pas de migration). Un échec de connexion n'inscrit jamais le
+  texte saisi (compte visé ou « identifiant inconnu »). Libellés
+  communs : `JournalActiviteManager::libelleAcquisition()` /
+  `libelleEquipement()`. Tests : `InMemoryJournalActiviteManager` +
+  `journalOverride` sur les contrôleurs de test.
+- **`public/images/` n'est pas versionné** (hors `.htaccess`) : depuis
+  v2.7.2, les photos de dev ne partent plus dans l'archive de release
+  (`git archive`). Sur la prod, les anciennes (`6a60….webp`,
+  `Harnais-6a411e6642b19.webp`) restent : suppression manuelle possible si
+  aucun équipement ne les utilise.
+- **Prod** (`epiclub.perigord-escalade.club`, Virtualmin, utilisateur
+  `epiclub.pe`) : racine du projet `~/public_html`, docroot `public/` ;
+  un dossier `tests/` y est présent, daté de la mise à jour du 2026-11-07
+  à 21:37, alors que l'archive de release n'en contient pas (vérifié sur
+  la v2.9.0) : origine à éclaircir. `setup.zip` et `index.html.bak`
+  traînent à la racine (non servis : `.htaccess` racine en refus).
+- **Twig** : `debug => true` dans `TwigRenderer` (aussi en prod) — à
+  revoir à l'occasion.
+
+### Antérieurs
+
 - **`.env.local.php`** : non tracké par git (gitignore). Contient les
   secrets (`SECRET_KEY`, `DB_PASS`, `MAILER_DSN`, `ROOT_URL`).
   ⚠️ **La SUITE DE TESTS en dépend** : ~68 tests Unit (tout manager
   touchant `ConfigProvider` via `AbstractManager`) plantent si le
   fichier est absent (« Fichier de configuration .env.local.php non
-  trouvé »). Ne JAMAIS le supprimer — en particulier lors de smoke
+  trouvé »). *(Résolu en v0.29.13 pour les tests Unit : fixture de
+  config ; le fichier reste indispensable à l'application.)* Ne JAMAIS le supprimer — en particulier lors de smoke
   tests de `setup/` : step_1 le CRÉÉ si absent (risque de le détruire
   ensuite en « nettoyant »). Incident réel du 2026-10-17 (#107) :
   suppression accidentelle → 68 erreurs + re-création manuelle
@@ -1086,7 +1233,47 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
 
 ---
 
-## Contexte de la session précédente
+## Contexte de la dernière session (2026-11-07 → 2026-11-08)
+
+Point de départ : v2.7.0 (`a0a2b84`). Sept releases publiées, toutes
+stables, toutes via PR et CI verte.
+
+- **Audit de sécurité du code v1.0.0-beta.5 → v2.7.0** (demande
+  « audit »). Aucun point bloquant ; deux moyens, cinq faibles, trois
+  points à clarifier, tous traités :
+  - **v2.7.1 (PR #109)** : sauvegardes signées + liste blanche SQL
+    (moyen) ; Symfony 7.4.22/7.4.23, 6 alertes `composer audit` (moyen) ;
+    journal sans texte saisi à l'échec de connexion ; limiteur 2FA qui
+    refuse en cas de panne ; CSP HTML complétée (`object-src`,
+    `base-uri`, `form-action`) + HSTS ; formules neutralisées dans les
+    exports CSV/Excel ; garde CLI dans `bin/migrate.php` ;
+    réinitialisation de la 2FA réservée au super-admin.
+  - **v2.7.3 (PR #111 + #112)** : `AcquisitionController::serveFile()`
+    supprimé (code mort) ; jetons de réinitialisation hachés.
+  - **v2.8.0 (PR #113)** : CSP `script-src` stricte avec nonce, 43
+    attributs `on…=` convertis en `data-*` ; testée sur 49 pages en
+    navigateur headless avec la CSP appliquée.
+- **Incident prod** : photos d'équipement en 403 → fichiers en 0600 après
+  une restauration CLI. Réparé à la main (`chmod`), corrigé dans le code
+  en **v2.7.2 (PR #110)**, avec le retrait des photos de dev du dépôt.
+- **v2.9.0 (PR #114)** : journal d'activité étendu aux acquisitions
+  (création → validation, lignes, facture, correction, suppression,
+  import) et aux équipements (dissociation, regroupement, nombre d'un
+  lot, suppression). Vérifié en prod par l'utilisateur.
+
+Rien en attente à la fin de la session : `main` propre en v2.9.0, aucune
+branche ni PR ouverte (hors cette mise à jour de REPRISE).
+
+Pistes possibles (non demandées) : tests du contrôleur d'import ;
+test navigateur de la fiche ticket et de l'écran du second facteur
+(non couverts lors de la vérification CSP) ; données de dev à
+réinitialiser pour les 3 tests Integration en échec ; `debug` Twig en
+prod ; contrôle de préfixe de `UploadController::serve()` sans
+séparateur final (sans risque identifié).
+
+---
+
+## Contexte des sessions précédentes (jusqu'au 2026-10-20)
 
 - **Scan QR dans la page** (2026-10-19, décision produit) : page
   `/controles/scanner` (menu Contrôles → « Scanner un équipement ») +
