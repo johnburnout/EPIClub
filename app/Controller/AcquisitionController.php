@@ -8,6 +8,7 @@ use Epiclub\Domain\AcquisitionLigneManager;
 use Epiclub\Domain\AcquisitionManager;
 use Epiclub\Domain\AcquisitionValidator;
 use Epiclub\Domain\CorrectionAcquisition;
+use Epiclub\Domain\JournalActiviteManager;
 use Epiclub\Domain\FournisseurManager;
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\CategorieManager;
@@ -153,15 +154,59 @@ class AcquisitionController extends AbstractController
      *
      * @param array $acquisition Acquisition complète (avec 'id').
      */
-    private function performValidation(array $acquisition): Response
+    private function performValidation(array $acquisition, ?Request $request = null): Response
     {
-        return $this->redirectFromValidationResult(
-            $this->validator()->performValidation(
-                $acquisition,
-                successRoute: "/admin/acquisitions/acquisition-{$acquisition['id']}",
-                failureRoute: "/admin/acquisitions/acquisition_modification-{$acquisition['id']}",
-            )
+        $resultat = $this->validator()->performValidation(
+            $acquisition,
+            successRoute: "/admin/acquisitions/acquisition-{$acquisition['id']}",
+            failureRoute: "/admin/acquisitions/acquisition_modification-{$acquisition['id']}",
         );
+        if ($resultat['type'] === 'success') {
+            $this->journaliser(JournalActiviteManager::TYPE_ACQUISITION, sprintf(
+                'Validation de l\'%s : %s',
+                JournalActiviteManager::libelleAcquisition($acquisition),
+                $this->resumeEquipementsGeneres((int) $acquisition['id'])
+            ), $request);
+        }
+        return $this->redirectFromValidationResult($resultat);
+    }
+
+    /** « 4 équipements générés (26/BAU/1, …) », au mieux (jamais d'échec). */
+    private function resumeEquipementsGeneres(int $acquisitionId): string
+    {
+        try {
+            $references = array_map(
+                static fn (array $e) => (string) ($e['reference'] ?? ''),
+                $this->equipementManager()->findByAcquisition($acquisitionId)
+            );
+        } catch (\Throwable) {
+            return 'équipements générés';
+        }
+        $n = count($references);
+        if ($n === 0) {
+            return 'aucun équipement généré';
+        }
+        sort($references, SORT_NATURAL);
+        return sprintf(
+            '%d équipement%s généré%s (%s)',
+            $n, $n > 1 ? 's' : '', $n > 1 ? 's' : '',
+            $n > 6 ? $references[0] . ' … ' . $references[$n - 1] : implode(', ', $references)
+        );
+    }
+
+    /**
+     * « REF – désignation × 3 (lot) » : ligne d'acquisition pour le
+     * journal d'activité.
+     *
+     * @param array<string, mixed> $ligne
+     */
+    public static function libelleLigne(array $ligne): string
+    {
+        $designation = trim((string) ($ligne['designation'] ?? ''));
+        $nombre = (int) ($ligne['nombre'] ?? 1);
+        return trim((string) ($ligne['reference'] ?? ''))
+            . ($designation !== '' ? ' – ' . $designation : '')
+            . ($nombre > 1 ? ' × ' . $nombre . (!empty($ligne['regrouper_en_lot']) ? ' (lot)' : '') : '');
     }
 
     /**
@@ -443,6 +488,11 @@ class AcquisitionController extends AbstractController
         try {
             if ($id = $acquisitionProcess->acquisition_process($acquisition)) {
                 $acquisition['id'] = $id;
+                $this->journaliser(
+                    JournalActiviteManager::TYPE_ACQUISITION,
+                    'Création de l\'' . JournalActiviteManager::libelleAcquisition($acquisition),
+                    $request
+                );
                 $this->session->getFlashBag()->add(
                     'success',
                     '✅ Acquisition créée avec succès. Vous pouvez maintenant ajouter des lignes.'
@@ -630,6 +680,11 @@ class AcquisitionController extends AbstractController
         
         try {
             $acquisitionManager->save($acquisition);
+            $this->journaliser(
+                JournalActiviteManager::TYPE_ACQUISITION,
+                'Modification de l\'' . JournalActiviteManager::libelleAcquisition($acquisition),
+                $request
+            );
             $this->session->getFlashBag()->add('success', '✅ Acquisition mise à jour avec succès.');
             return new HandlerResult(
                 $this->redirectTo("/admin/acquisitions/acquisition_modification-{$acquisition['id']}")
@@ -713,6 +768,11 @@ class AcquisitionController extends AbstractController
             $ligne['equipements_generes'] = 0;
             
             $acquisitionLigneManager->save($ligne);
+            $this->journaliser(JournalActiviteManager::TYPE_ACQUISITION, sprintf(
+                'Ajout d\'une ligne à l\'%s : %s',
+                JournalActiviteManager::libelleAcquisition($acquisition),
+                self::libelleLigne($ligne)
+            ), $request);
             $this->session->getFlashBag()->add('success', '✅ Ligne ajoutée avec succès.');
             return new HandlerResult(
                 $this->redirectTo("/admin/acquisitions/acquisition_modification-{$acquisition['id']}")
@@ -785,6 +845,11 @@ class AcquisitionController extends AbstractController
                 'facture_document' => $newFacture,
             ]);
 
+            $this->journaliser(
+                JournalActiviteManager::TYPE_ACQUISITION,
+                'Facture téléversée pour l\'' . JournalActiviteManager::libelleAcquisition($acquisition),
+                $request
+            );
             $this->session->getFlashBag()->add('success', '✅ La facture a été téléversée.');
             return new HandlerResult($redirect());
         } catch (FactureUploadException $e) {
@@ -832,7 +897,7 @@ class AcquisitionController extends AbstractController
         // [REFACTOR VAGUE 7] Le handler retourne un HandlerResult.
         // Par contrat, response est TOUJOURS non-null : on retourne
         // directement la Response.
-        $result = $this->handleDeleteAction($acquisition);
+        $result = $this->handleDeleteAction($acquisition, $request);
         return $result->response;
     }
     
@@ -853,7 +918,7 @@ class AcquisitionController extends AbstractController
     * @param array $acquisition  Acquisition chargée (avec 'id',
     *                            'est_validee', 'facture_document').
     */
-    protected function handleDeleteAction(array $acquisition): HandlerResult
+    protected function handleDeleteAction(array $acquisition, ?Request $request = null): HandlerResult
     {
         $id = (int) $acquisition['id'];
         
@@ -897,7 +962,13 @@ class AcquisitionController extends AbstractController
             // Puis l'acquisition
             $acquisitionManager = $this->acquisitionManager();
             $acquisitionManager->delete($id);
-            
+
+            $this->journaliser(JournalActiviteManager::TYPE_ACQUISITION, sprintf(
+                'Suppression de l\'%s (non validée, %d ligne%s)',
+                JournalActiviteManager::libelleAcquisition($acquisition),
+                count($lignes),
+                count($lignes) > 1 ? 's' : ''
+            ), $request);
             $this->session->getFlashBag()->add('success', "L'acquisition #{$id} a été supprimée.");
             return new HandlerResult($this->redirectTo('/admin/acquisitions'));
         } catch (\Throwable $e) {
@@ -1085,6 +1156,12 @@ class AcquisitionController extends AbstractController
         if ($dateChangee) {
             $details[] = sprintf('date %s → %s', date('d/m/Y', (int) strtotime($ancienneDate)), date('d/m/Y', (int) strtotime($date)));
         }
+        $this->journaliser(JournalActiviteManager::TYPE_ACQUISITION, sprintf(
+            'Correction de l\'%s : %s%s',
+            JournalActiviteManager::libelleAcquisition($acquisition),
+            implode(', ', $details),
+            $modifs ? sprintf(' ; dates de %d équipement(s) mises à jour', count($modifs)) : ''
+        ), $request);
         $flash->add('success', 'Acquisition modifiée : ' . implode(', ', $details)
             . ($modifs ? sprintf(' ; dates de %d équipement(s) mises à jour.', count($modifs)) : '.'));
         return $this->redirectTo($fiche);
@@ -1112,7 +1189,7 @@ class AcquisitionController extends AbstractController
         }
 
         // [REFACTOR #34] Bloc extrait vers AcquisitionValidator::performValidation()
-        return $this->performValidation($acquisition);
+        return $this->performValidation($acquisition, $request);
     }
 
     /**

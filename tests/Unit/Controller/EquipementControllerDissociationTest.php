@@ -31,6 +31,7 @@ final class EquipementControllerDissociationTest extends TestCase
     private array $sauves = [];
     /** @var string[] Références déjà prises */
     private array $prises = ['24COR003', '24COR011'];
+    private ?\Epiclub\Tests\Unit\Domain\Support\InMemoryJournalActiviteManager $journal = null;
     private array $equipement = [
         'id' => 4, 'acquisition_id' => 9, 'categorie_id' => 2, 'reference' => '24COR003', 'libelle' => 'Mousqueton',
         'code' => 'C-4', 'statut' => 0, 'controle_en_cours' => 0, 'emplacement_id' => null,
@@ -71,6 +72,8 @@ final class EquipementControllerDissociationTest extends TestCase
             fn (int $cat, int $annee, int $n) => sprintf('%sCOR%03d', substr((string) $annee, -2), $n)
         );
         $controller->referenceGeneratorOverride = $generateur;
+        $this->journal = new \Epiclub\Tests\Unit\Domain\Support\InMemoryJournalActiviteManager();
+        $controller->journalOverride = $this->journal;
 
         return $controller;
     }
@@ -156,6 +159,10 @@ final class EquipementControllerDissociationTest extends TestCase
         self::assertSame(['24COR010', 3], [$this->sauves[1]['reference'], $this->sauves[1]['nombre']]);
         self::assertSame(['24COR012', 1], [$this->sauves[2]['reference'], $this->sauves[2]['nombre']]);
         self::assertStringContainsString('24COR010, 24COR012', $this->flash('success'));
+        self::assertSame(
+            ['Dissociation du lot « 24COR003 » (Mousqueton) (10 éléments) : 6 restent sur « 24COR003 », nouveaux équipements 24COR010 (3), 24COR012'],
+            $this->journal?->actions('equipement')
+        );
     }
 
     public function testRefus(): void

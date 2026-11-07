@@ -65,6 +65,8 @@ final class AcquisitionLineControllerTest extends TestCase
         $process->method('categorie_process')->willReturn(9);
 
         $controller = $this->makeController($ligneManager, $categorieManager, $acquisitionManager, $process);
+        $journal = new \Epiclub\Tests\Unit\Domain\Support\InMemoryJournalActiviteManager();
+        $controller->journalOverride = $journal;
 
         $response = $controller->modifyLine($this->postRequest([
             'id'                => 5,
@@ -76,6 +78,11 @@ final class AcquisitionLineControllerTest extends TestCase
 
         self::assertInstanceOf(RedirectResponse::class, $response);
         self::assertSame('/admin/acquisitions/acquisition_modification-7', $response->getTargetUrl());
+        // [2026-11-07] Journal d'activité
+        self::assertSame(
+            ["Modification d'une ligne de l'acquisition n° 7 : REF-1 – Casque Black Diamond × 3"],
+            $journal->actions('acquisition')
+        );
     }
 
     public function testModifyLineRefusedWhenAcquisitionValidated(): void
@@ -132,11 +139,18 @@ final class AcquisitionLineControllerTest extends TestCase
         $acquisitionManager->method('findId')->with(7)->willReturn(['id' => 7, 'est_validee' => 0]);
 
         $controller = $this->makeController($ligneManager, null, $acquisitionManager);
+        $journal = new \Epiclub\Tests\Unit\Domain\Support\InMemoryJournalActiviteManager();
+        $controller->journalOverride = $journal;
 
         $response = $controller->deleteLine($this->postRequest(['id' => 5]));
 
         self::assertInstanceOf(RedirectResponse::class, $response);
         self::assertSame('/admin/acquisitions/acquisition_modification-7', $response->getTargetUrl());
+        // [2026-11-07] Journal d'activité
+        self::assertSame(
+            ["Suppression d'une ligne de l'acquisition n° 7 : REF-1 – Casque Black Diamond × 3"],
+            $journal->actions('acquisition')
+        );
     }
 
     public function testDeleteLineRefusedWhenEquipementsGeneres(): void

@@ -30,6 +30,7 @@ final class EquipementControllerRegroupementTest extends TestCase
     private array $archives = [];
     /** @var int[] Équipements inscrits sur un prêt ouvert */
     private array $enPret = [];
+    private ?\Epiclub\Tests\Unit\Domain\Support\InMemoryJournalActiviteManager $journal = null;
     /** @var array<int, array> */
     private array $equipements;
 
@@ -75,6 +76,8 @@ final class EquipementControllerRegroupementTest extends TestCase
         $prets = $this->createMock(PretLigneManager::class);
         $prets->method('equipementsDansUnPretOuvert')->willReturnCallback(fn () => $this->enPret);
         $controller->pretLigneManagerOverride = $prets;
+        $this->journal = new \Epiclub\Tests\Unit\Domain\Support\InMemoryJournalActiviteManager();
+        $controller->journalOverride = $this->journal;
 
         return $controller;
     }
@@ -158,6 +161,10 @@ final class EquipementControllerRegroupementTest extends TestCase
         self::assertSame(['id' => 4, 'nombre' => 4, 'nombre_initial' => 5], $this->sauve);
         self::assertSame([5, 6], $this->archives);
         self::assertStringContainsString('24MOU002, 24MOU003', $this->flash('success'));
+        self::assertSame(
+            ['Regroupement dans le lot « 24MOU001 » (Mousqueton) : 24MOU002, 24MOU003 archivés, lot de 4 éléments'],
+            $this->journal?->actions('equipement')
+        );
     }
 
     public function testRefus(): void

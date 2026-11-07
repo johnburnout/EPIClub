@@ -32,6 +32,7 @@ final class EquipementControllerHorsServiceTest extends TestCase
     /** @var list<array<string, mixed>> */
     private array $enregistres = [];
     private bool $supprime = false;
+    private ?\Epiclub\Tests\Unit\Domain\Support\InMemoryJournalActiviteManager $journal = null;
 
     protected function setUp(): void
     {
@@ -208,6 +209,40 @@ final class EquipementControllerHorsServiceTest extends TestCase
         self::assertSame('/equipements', $reponse->headers->get('Location'));
     }
 
+    /** [2026-11-07] Suppression inscrite au journal d'activité, avec son motif. */
+    public function testSuppressionJournalisee(): void
+    {
+        $this->equipement(['statut' => 2, 'nombre' => 3]);
+        $this->historique(['hors_service']);
+
+        $this->controleur()->delete($this->suppression());
+
+        self::assertSame(
+            ['Suppression de l\'équipement « R7 » (Casque), lot de 3 éléments (hors service au dernier contrôle)'],
+            $this->journal?->actions('equipement')
+        );
+    }
+
+    public function testSuppressionDUnEquipementEgareJournalisee(): void
+    {
+        $this->equipement(['statut' => 4, 'date_egare' => date('Y-m-d', strtotime('-13 months'))]);
+        $this->historique(['egare']);
+
+        $this->controleur()->delete($this->suppression());
+
+        self::assertSame(['Suppression de l\'équipement « R7 » (Casque) (égaré)'], $this->journal?->actions('equipement'));
+    }
+
+    public function testSuppressionRefuseeNonJournalisee(): void
+    {
+        $this->equipement(['statut' => 1]);
+        $this->historique(['hors_service']);
+
+        $this->controleur()->delete($this->suppression());
+
+        self::assertSame([], $this->journal?->entrees);
+    }
+
     /** [migration 017] Égaré depuis plus que le délai (12 mois par défaut) : supprimable. */
     public function testSuppressionDUnEquipementEgareDepuisLeDelai(): void
     {
@@ -283,13 +318,16 @@ final class EquipementControllerHorsServiceTest extends TestCase
         $emplacements = $this->createMock(EmplacementManager::class);
         $emplacements->method('findAll')->willReturn([]);
 
-        return new TestableEquipementController(
+        $c = new TestableEquipementController(
             $this->session,
             $this->equipements,
             $categories,
             $emplacements,
             $this->createMock(AcquisitionManager::class),
         );
+        $this->journal ??= new \Epiclub\Tests\Unit\Domain\Support\InMemoryJournalActiviteManager();
+        $c->journalOverride = $this->journal;
+        return $c;
     }
 
     private function get(): Request

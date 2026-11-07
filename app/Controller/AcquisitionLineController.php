@@ -12,6 +12,7 @@ use Epiclub\Domain\ReferenceGenerator;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Exception\DuplicateReferenceException;
 use Epiclub\Process\AcquisitionProcess;
+use Epiclub\Domain\JournalActiviteManager;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
@@ -160,6 +161,11 @@ class AcquisitionLineController extends AbstractController
 
             // Redirection uniquement si aucune erreur n'a été levée
             if (empty($form_errors)) {
+                $this->journaliser(JournalActiviteManager::TYPE_ACQUISITION, sprintf(
+                    'Modification d\'une ligne de l\'%s : %s',
+                    JournalActiviteManager::libelleAcquisition($acquisition ?: ['id' => $ligne['acquisition_id']]),
+                    AcquisitionController::libelleLigne($ligne)
+                ), $request);
                 $this->session->getFlashBag()->add('success', 'Ligne modifiée avec succès.');
                 return new RedirectResponse("/admin/acquisitions/acquisition_modification-{$ligne['acquisition_id']}");
             }
@@ -222,6 +228,11 @@ class AcquisitionLineController extends AbstractController
             return new RedirectResponse("/admin/acquisitions/acquisition_modification-{$ligne['acquisition_id']}");
         }
 
+        $this->journaliser(JournalActiviteManager::TYPE_ACQUISITION, sprintf(
+            'Suppression d\'une ligne de l\'%s : %s',
+            JournalActiviteManager::libelleAcquisition($acquisition ?: ['id' => $ligne['acquisition_id']]),
+            AcquisitionController::libelleLigne($ligne)
+        ), $request);
         $this->session->getFlashBag()->add('success', 'Ligne supprimée avec succès.');
         return new RedirectResponse("/admin/acquisitions/acquisition_modification-{$ligne['acquisition_id']}");
     }
