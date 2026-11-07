@@ -127,7 +127,7 @@
             {% if pagination.total > 10 %}
             <div class="col-md-2">
                 <label for="limit" class="form-label">Lignes par page</label>
-                <select name="limit" id="limit" class="form-select" onchange="this.form.submit()">
+                <select name="limit" id="limit" class="form-select" data-auto-submit>
                     <option value="10" {% if filtres.limit == 10 %}selected{% endif %}>10</option>
                     <option value="25" {% if filtres.limit == 25 %}selected{% endif %}>25</option>
                     <option value="50" {% if filtres.limit == 50 %}selected{% endif %}>50</option>
@@ -259,7 +259,7 @@
                     <td>
                         {% if not equipement.date_fin_utilisation or equipement.date_fin_utilisation > "now"|date("Y-m-d") %}
                         <a href="#" 
-                            onclick="alert('Date de fin d\'utilisation : {% if equipement.date_fin_utilisation %}{{ equipement.date_fin_utilisation|date('d/m/Y') }}{% else %}Non définie{% endif %}'); return false;" 
+                            data-alert="Date de fin d'utilisation : {% if equipement.date_fin_utilisation %}{{ equipement.date_fin_utilisation|date('d/m/Y') }}{% else %}Non définie{% endif %}" 
                             style="text-decoration: none; color: inherit;">
                             Toujours en service
                         </a>
@@ -287,7 +287,7 @@
                         <form method="post" action="/equipements/equipement_supprimer-{{ equipement.id }}" style="display:inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                             <button type="submit" class="btn btn-sm btn-danger"
-                                onclick="return confirm('Confirmer la suppression de « {{ equipement.reference }} » ?');">
+                                data-confirm="Confirmer la suppression de « {{ equipement.reference }} » ?">
                                 Supprimer
                             </button>
                         </form>
@@ -331,7 +331,7 @@
 
 {% block javascripts %}
     {{ parent() }}
-    <script>
+    <script nonce="{{ csp_nonce }}">
         // [Modification groupée] compteur + « tout cocher »
         document.addEventListener('DOMContentLoaded', function () {
             const toutCocher = document.getElementById('tout-cocher');

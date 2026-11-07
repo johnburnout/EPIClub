@@ -66,7 +66,7 @@
             {% if pagination.total > 10 %}
             <div class="col-md-2">
                 <label for="limit" class="form-label">Lignes par page</label>
-                <select name="limit" id="limit" class="form-select" onchange="this.form.submit()">
+                <select name="limit" id="limit" class="form-select" data-auto-submit>
                     <option value="10" {% if filtres.limit == 10 %}selected{% endif %}>10</option>
                     <option value="25" {% if filtres.limit == 25 %}selected{% endif %}>25</option>
                     <option value="50" {% if filtres.limit == 50 %}selected{% endif %}>50</option>
@@ -138,7 +138,7 @@
                                 <form method="post" action="/admin/controles/cloturer/{{ controle.id }}" style="display:inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                     <button type="submit" class="btn btn-sm btn-success"
-                                            onclick="return confirm('Clôturer ce contrôle ?')">
+                                            data-confirm="Clôturer ce contrôle ?">
                                         Clôturer
                                     </button>
                                 </form>
@@ -151,7 +151,7 @@
                             <form method="post" action="/admin/controles/supprimer/{{ controle.id }}" style="display:inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                                 <button type="submit" class="btn btn-sm btn-danger"
-                                        onclick="return confirm('⚠️ Supprimer le contrôle « {{ controle.libelle }} » ?\n\nToutes les lignes saisies seront perdues. Cette action est irréversible.');">
+                                        data-confirm="⚠️ Supprimer le contrôle « {{ controle.libelle }} » ?&#10;&#10;Toutes les lignes saisies seront perdues. Cette action est irréversible.">
                                     🗑️
                                 </button>
                             </form>

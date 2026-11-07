@@ -42,7 +42,7 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 							<input type="hidden" name="id" value="{{ emplacement.id }}">
 							<button type="submit" class="btn btn-sm btn-danger"
-							        onclick="return confirm('Supprimer cet emplacement ?')">
+							        data-confirm="Supprimer cet emplacement ?">
 								Supprimer
 							</button>
 						</form>

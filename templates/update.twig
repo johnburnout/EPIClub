@@ -38,7 +38,7 @@
                     <form method="post" action="/admin/update/cleanup" style="display:inline;">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-sm btn-secondary"
-                                onclick="return confirm('Nettoyer le dossier temporaire de mise à jour ?')">
+                                data-confirm="Nettoyer le dossier temporaire de mise à jour ?">
                             Nettoyer
                         </button>
                     </form>
@@ -56,7 +56,7 @@
                         (quelques minutes après la publication). Rechargez cette page dans quelques minutes pour l'installer.
                     </div>
                 {% elseif can_update %}
-                    <form method="post" action="/admin/update/perform" onsubmit="return confirm('Confirmer la mise à jour vers la version {{ latest_version }} ?')">
+                    <form method="post" action="/admin/update/perform" data-confirm="Confirmer la mise à jour vers la version {{ latest_version }} ?">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-warning">
                             <i class="fas fa-download"></i> Télécharger et installer

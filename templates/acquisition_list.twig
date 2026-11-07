@@ -76,7 +76,7 @@
 			{% if pagination.total > 10 %}
 			<div class="col-md-2">
 				<label for="limit" class="form-label">Lignes par page</label>
-				<select name="limit" id="limit" class="form-select" onchange="this.form.submit()">
+				<select name="limit" id="limit" class="form-select" data-auto-submit>
 					{% for n in [10, 25, 50, 100] %}
 					<option value="{{ n }}" {% if filtres.limit == n %}selected{% endif %}>{{ n }}</option>
 					{% endfor %}
@@ -140,7 +140,7 @@
 						<form method="post" action="/admin/acquisitions/acquisition_supprimer-{{ acquisition.id }}" style="display:inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 							<button type="submit" class="btn btn-sm btn-danger"
-								onclick="return confirm('⚠️ Supprimer définitivement l\'acquisition #{{ acquisition.id }} ({{ acquisition.facture_reference }}) ?\n\nCette action est irréversible.');">
+								data-confirm="⚠️ Supprimer définitivement l'acquisition #{{ acquisition.id }} ({{ acquisition.facture_reference }}) ?&#10;&#10;Cette action est irréversible.">
 								🗑️ Supprimer
 							</button>
 						</form>

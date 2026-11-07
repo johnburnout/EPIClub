@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Epiclub\Tests\Unit\Engine;
 
+use Epiclub\Engine\Csp;
 use Epiclub\Engine\SecurityHeaders;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -16,14 +17,29 @@ final class SecurityHeadersTest extends TestCase
         $r = SecurityHeaders::apply(new Response('ok'));
 
         self::assertSame(
-            "frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self'",
+            "frame-ancestors 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; "
+            . "script-src 'self' 'nonce-" . Csp::nonce() . "' https://cdn.jsdelivr.net",
             $r->headers->get('Content-Security-Policy')
         );
+        self::assertStringNotContainsString('unsafe-inline', (string) $r->headers->get('Content-Security-Policy'));
+        self::assertStringNotContainsString('unsafe-eval', (string) $r->headers->get('Content-Security-Policy'));
         self::assertFalse($r->headers->has('Strict-Transport-Security'), 'pas de HSTS en HTTP');
         self::assertSame('SAMEORIGIN', $r->headers->get('X-Frame-Options'));
         self::assertSame('nosniff', $r->headers->get('X-Content-Type-Options'));
         self::assertSame('strict-origin-when-cross-origin', $r->headers->get('Referrer-Policy'));
         self::assertStringContainsString('camera=(self)', (string) $r->headers->get('Permissions-Policy'));
+    }
+
+    /** [audit 2026-11-07] Nonce imprévisible, stable pendant la requête, renouvelé ensuite. */
+    public function testNonceParRequete(): void
+    {
+        Csp::reinitialiser();
+        $premier = Csp::nonce();
+        self::assertSame($premier, Csp::nonce(), 'même nonce pour le rendu et l\'en-tête');
+        self::assertMatchesRegularExpression('#^[A-Za-z0-9+/]{24}$#', $premier);
+
+        Csp::reinitialiser();
+        self::assertNotSame($premier, Csp::nonce());
     }
 
     /** Un PDF garde la CSP minimale (visionneuse intégrée du navigateur). */

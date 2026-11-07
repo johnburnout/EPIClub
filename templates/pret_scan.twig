@@ -34,7 +34,7 @@
 {% block javascripts %}
 	{{ parent() }}
 	<script src="/assets/js/html5-qrcode.min.js"></script>
-	<script>
+	<script nonce="{{ csp_nonce }}">
 	(function () {
 		const pretId = {{ pret.id|json_encode|raw }};
 		const csrfToken = {{ csrf_token|json_encode|raw }};

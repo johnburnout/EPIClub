@@ -76,7 +76,7 @@
                 </form>
             </div>
         </div>
-        <script>
+        <script nonce="{{ csp_nonce }}">
             document.getElementById('formRestaurer').addEventListener('submit', function () {
                 var b = document.getElementById('btnRestaurer');
                 b.disabled = true;

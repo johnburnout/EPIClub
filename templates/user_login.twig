@@ -70,7 +70,7 @@
 				<div class="text-danger mt-2" id="passkey-erreur" role="alert"></div>
 			</div>
 			<script src="/assets/js/passkey.js"></script>
-			<script>
+			<script nonce="{{ csp_nonce }}">
 				EpiclubPasskey.initConnexion(document.getElementById('passkey-connexion'));
 			</script>
 		</main>

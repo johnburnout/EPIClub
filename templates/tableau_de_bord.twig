@@ -124,7 +124,7 @@
 
 {% block javascripts %}
 	{{ parent() }}
-	<script>
+	<script nonce="{{ csp_nonce }}">
 		// Fermeture de la notification sans rechargement de page (le
 		// formulaire reste fonctionnel si JavaScript est désactivé).
 		document.addEventListener('DOMContentLoaded', function () {

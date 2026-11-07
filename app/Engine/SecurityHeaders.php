@@ -31,10 +31,9 @@ use Symfony\Component\HttpFoundation\Response;
  *   Pages HTML seulement : un PDF ou une image servis avec object-src
  *   'none' peuvent être bloqués par la visionneuse intégrée du navigateur ;
  *   ces réponses gardent la CSP frame-ancestors seule.
- *   Pas de script-src : les gabarits contiennent de nombreux scripts
- *   inline ; une politique avec 'unsafe-inline' n'apporterait presque rien,
- *   une politique stricte demande d'abord de les sortir des gabarits
- *   (nonces ou fichiers .js).
+ *   script-src : scripts du site, de cdn.jsdelivr.net (Bootstrap) et
+ *   scripts inline portant le nonce de la requête (Csp), sans
+ *   'unsafe-inline' ni 'unsafe-eval'.
  * - [audit 2026-11-07] HSTS, en HTTPS seulement : le navigateur refuse
  *   ensuite le HTTP pendant un an (pas de includeSubDomains : d'autres
  *   sites du club peuvent vivre sur des sous-domaines).
@@ -62,6 +61,8 @@ final class SecurityHeaders
         $type = (string) $response->headers->get('Content-Type', '');
         if ($type !== '' && !str_starts_with(strtolower($type), 'text/html')) {
             $entetes['Content-Security-Policy'] = self::CSP_FICHIER;
+        } else {
+            $entetes['Content-Security-Policy'] .= '; ' . Csp::scriptSrc();
         }
         if ($https) {
             $entetes['Strict-Transport-Security'] = self::HSTS;

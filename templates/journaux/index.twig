@@ -53,7 +53,7 @@
             {% if pagination.total > 10 %}
             <div class="col-md-2">
                 <label for="limit" class="form-label">Lignes par page</label>
-                <select name="limit" id="limit" class="form-select" onchange="this.form.submit()">
+                <select name="limit" id="limit" class="form-select" data-auto-submit>
                     <option value="10" {% if filtres.limit == 10 %}selected{% endif %}>10</option>
                     <option value="25" {% if filtres.limit == 25 %}selected{% endif %}>25</option>
                     <option value="50" {% if filtres.limit == 50 %}selected{% endif %}>50</option>

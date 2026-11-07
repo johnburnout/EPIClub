@@ -153,7 +153,7 @@
 {% block javascripts %}
     {{ parent() }} {# Conserve les scripts existants de _layout.twig #}
     
-    <script>
+    <script nonce="{{ csp_nonce }}">
         document.addEventListener('DOMContentLoaded', function() {
             const testBtn = document.getElementById('testMailBtn');
             if (testBtn) {

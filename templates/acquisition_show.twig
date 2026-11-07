@@ -225,7 +225,7 @@
 									<form method="post" action="/admin/acquisitions/ligne_supprimer-{{ ligne.id }}" style="display:inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 										<button type="submit" class="btn btn-sm btn-danger"
-											onclick="return confirm('Supprimer cette ligne ?')">
+											data-confirm="Supprimer cette ligne ?">
 											Supprimer
 										</button>
 									</form>
@@ -262,7 +262,7 @@
 				<form method="post" action="/admin/acquisitions/valider/{{ acquisition.id }}" style="display: inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 					<button type="submit" name="action" value="valider" class="btn btn-success" 
-						onclick="return confirm('⚠️ Valider cette acquisition ? Les équipements seront générés définitivement et vous ne pourrez plus modifier les lignes.')">
+						data-confirm="⚠️ Valider cette acquisition ? Les équipements seront générés définitivement et vous ne pourrez plus modifier les lignes.">
 						✅ Valider l'acquisition
 					</button>
 				</form>
@@ -291,7 +291,7 @@
 		<form method="post" action="/admin/acquisitions/acquisition_supprimer-{{ acquisition.id }}" style="display:inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 			<button type="submit" class="btn btn-danger"
-				onclick="return confirm('⚠️ Supprimer définitivement cette acquisition ({{ acquisition.facture_reference }}) ?\n\nCette action est irréversible.');">
+				data-confirm="⚠️ Supprimer définitivement cette acquisition ({{ acquisition.facture_reference }}) ?&#10;&#10;Cette action est irréversible.">
 				🗑️ Supprimer le brouillon
 			</button>
 		</form>
@@ -302,7 +302,7 @@
 
 {% block javascripts %}
 	{% if correction_possible %}
-	<script>
+	<script nonce="{{ csp_nonce }}">
 		/**
 		 * [2026-10-24] Correction de la référence et de la date (super-
 		 * administrateur). La roue dentée affiche le formulaire (un nouveau

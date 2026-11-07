@@ -50,6 +50,9 @@ class TwigRenderer extends Environment
             $this->addGlobal('_user', $this->session->get('user'));
         }
         $this->addGlobal('session', $this->session);
+
+        // [audit 2026-11-07] <script nonce="{{ csp_nonce }}"> (cf. Csp).
+        $this->addGlobal('csp_nonce', Csp::nonce());
         
         // ⬇️ CORRECTION : s'assurer que le token existe AVANT de l'exposer
         if (!$this->session->has('csrf_token')) {

@@ -225,7 +225,7 @@
 										<form method="post" action="/admin/acquisitions/ligne_supprimer-{{ ligne.id }}" style="display:inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 											<button type="submit" class="btn btn-sm btn-danger"
-											        onclick="return confirm('Supprimer cette ligne ?')">
+											        data-confirm="Supprimer cette ligne ?">
 												Supprimer
 											</button>
 										</form>
@@ -263,7 +263,7 @@
 {% block javascripts %}
 	{{ parent() }}
 	{% if acquisition.id and not acquisition.est_validee %}
-	<script>
+	<script nonce="{{ csp_nonce }}">
 		// [Référencement — 2026-10-20] Dès que la catégorie est choisie,
 		// la référence est proposée selon le modèle (Administration ›
 		// Référence) avec le n° de suivi suivant. Une référence saisie à
