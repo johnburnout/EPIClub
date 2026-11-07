@@ -82,6 +82,7 @@ final class SauvegardeServiceTest extends TestCase
             'fichiers/images/equipements/photo-1.webp',
             'fichiers/uploads/factures/facture_1.pdf',
             'manifest.json',
+            'manifest.sig',
         ], $noms, 'ni .htaccess, ni .DS_Store, ni type non autorisé');
 
         $m = json_decode((string) $zip->getFromName('manifest.json'), true);
@@ -144,6 +145,89 @@ final class SauvegardeServiceTest extends TestCase
         $chemin = $this->service(cle: 'ancienne')->creer();
         $this->attendreRefus('SECRET_KEY');
         $this->service(cle: 'nouvelle')->analyser($chemin);
+    }
+
+    // ------------------------------------------------------------------
+    // Signature du manifeste (audit 2026-11-07)
+    // ------------------------------------------------------------------
+
+    public function testUneArchiveFraicheEstSignee(): void
+    {
+        $chemin = $this->service()->creer();
+        self::assertTrue($this->service()->analyser($chemin)['signee']);
+    }
+
+    /**
+     * Scénario de l'audit : SQL remplacé ET manifeste recalculé (sommes
+     * cohérentes, empreinte de clé recopiée), sans connaître SECRET_KEY.
+     */
+    public function testAnalyserRefuseUnManifesteRecalculeSansLaCle(): void
+    {
+        $chemin = $this->service()->creer();
+        $this->forgerBase($chemin, "-- EPIClub sauvegarde base v1\nSELECT 'piège' INTO OUTFILE '/tmp/x.php';\n");
+
+        $this->attendreRefus('Signature de l\'archive invalide');
+        $this->service()->analyser($chemin);
+    }
+
+    public function testUneSignatureFausseEstRefuseeMemeEnAcceptantLesNonSignees(): void
+    {
+        $chemin = $this->service()->creer();
+        $this->forgerBase($chemin, "-- piège\n");
+
+        $this->attendreRefus('Signature de l\'archive invalide');
+        $this->service()->analyser($chemin, accepterNonSignee: true);
+    }
+
+    public function testUneArchiveNonSigneeEstRefuseeParDefaut(): void
+    {
+        $chemin = $this->service()->creer();
+        $this->retirerSignature($chemin);
+
+        $this->attendreRefus('--accepter-non-signee');
+        $this->service()->analyser($chemin);
+    }
+
+    public function testUneArchiveNonSigneeEstAccepteeSurDemandeExplicite(): void
+    {
+        $service = $this->service();
+        $chemin = $service->creer();
+        $this->retirerSignature($chemin);
+
+        self::assertFalse($service->analyser($chemin, accepterNonSignee: true)['signee']);
+        $resultat = $service->restaurer($chemin, null, accepterNonSignee: true);
+        self::assertFalse($resultat['manifeste']['signee']);
+        // Le filet créé avant restauration est, lui, signé.
+        self::assertTrue($service->analyser($service->chemin($resultat['filet']))['signee']);
+    }
+
+    public function testRestaurerRefuseUneArchiveNonSigneeSansRienToucher(): void
+    {
+        $service = $this->service();
+        $chemin = $service->creer();
+        $this->retirerSignature($chemin);
+        $this->base->tables['club_equipement'][] = ['id' => 2];
+
+        try {
+            $service->restaurer($chemin);
+            self::fail('archive non signée restaurée');
+        } catch (SauvegardeException $e) {
+            self::assertStringContainsString('pas signée', $e->getMessage());
+        }
+        self::assertCount(2, $this->base->tables['club_equipement']);
+    }
+
+    public function testSansSecretKeyAucuneArchiveSigneeNEstAcceptee(): void
+    {
+        $chemin = $this->service(cle: '')->creer();
+        $zip = new ZipArchive();
+        $zip->open($chemin);
+        self::assertFalse($zip->locateName('manifest.sig'), 'pas de signature avec une clé vide');
+        $zip->addFromString('manifest.sig', hash_hmac('sha256', (string) $zip->getFromName('manifest.json'), '') . "\n");
+        $zip->close();
+
+        $this->attendreRefus('SECRET_KEY est absente');
+        $this->service(cle: '')->analyser($chemin);
     }
 
     public function testAnalyserRefuseUnFichierAltere(): void
@@ -475,9 +559,30 @@ final class SauvegardeServiceTest extends TestCase
             ['images' => $this->images, 'uploads' => $this->uploads],
             $this->sauvegardes,
             $version,
-            SauvegardeService::empreinte($cle),
+            $cle,
             ['001_initial', '002_x', '013_utilisateur_protege'],
         );
+    }
+
+    /** Remplace la base et recalcule le manifeste (sommes cohérentes), signature inchangée. */
+    private function forgerBase(string $chemin, string $sql): void
+    {
+        $zip = new ZipArchive();
+        $zip->open($chemin);
+        $m = json_decode((string) $zip->getFromName('manifest.json'), true);
+        $m['base']['sha256'] = hash('sha256', $sql);
+        $m['base']['taille'] = strlen($sql);
+        $zip->addFromString('base/epiclub.sql', $sql);
+        $zip->addFromString('manifest.json', (string) json_encode($m, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+        $zip->close();
+    }
+
+    private function retirerSignature(string $chemin): void
+    {
+        $zip = new ZipArchive();
+        $zip->open($chemin);
+        $zip->deleteName('manifest.sig');
+        $zip->close();
     }
 
     private function attendreRefus(string $fragment): void

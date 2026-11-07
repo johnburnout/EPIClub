@@ -42,6 +42,16 @@ final class SauvegardeService
     public const APPLICATION = 'EPIClub';
     public const MANIFESTE = 'manifest.json';
     public const FICHIER_SQL = 'base/epiclub.sql';
+
+    /**
+     * [SÉCURITÉ — audit 2026-11-07] Signature du manifeste : HMAC-SHA256
+     * (hexadécimal) des octets exacts de manifest.json, avec une clé
+     * dérivée de SECRET_KEY. Le manifeste contenant les SHA-256 de la base
+     * et de chaque fichier, c'est toute l'archive qui est authentifiée :
+     * une archive fabriquée ou modifiée hors d'une installation qui
+     * possède SECRET_KEY est refusée avant toute exécution de son SQL.
+     */
+    public const SIGNATURE = 'manifest.sig';
     public const PREFIXE_FICHIERS = 'fichiers/';
 
     /** Seuls types de fichiers téléversables dans EPIClub (images, factures). */
@@ -61,8 +71,16 @@ final class SauvegardeService
 
     private VerrouInstance $verrou;
 
+    private string $empreinteCle;
+
+    /** Clé HMAC dérivée de SECRET_KEY ; null si SECRET_KEY est vide. */
+    private ?string $cleSignature;
+
     /**
      * @param array<string, string> $dossiers             Dossier logique => chemin absolu.
+     * @param string                $secretKey             SECRET_KEY de l'installation (jamais
+     *                                                     écrite : seules son empreinte et une
+     *                                                     signature en dérivent).
      * @param string[]              $migrationsDisponibles Migrations présentes sur le disque.
      * @param VerrouInstance|null   $verrou                Verrou de l'instance ; par défaut
      *                                                     var/epiclub.lock, à côté de var/backups.
@@ -72,10 +90,14 @@ final class SauvegardeService
         private array $dossiers,
         private string $dossierSauvegardes,
         private string $version,
-        private string $empreinteCle,
+        string $secretKey,
         private array $migrationsDisponibles,
         ?VerrouInstance $verrou = null,
     ) {
+        $this->empreinteCle = self::empreinte($secretKey);
+        $this->cleSignature = $secretKey === ''
+            ? null
+            : hash_hmac('sha256', 'epiclub-sauvegarde-signature', $secretKey, true);
         foreach (array_keys($this->dossiers) as $prefixe) {
             if (!preg_match('/^[a-z]+$/', $prefixe)) {
                 throw new \InvalidArgumentException('Nom de dossier logique invalide : ' . $prefixe);
@@ -115,7 +137,7 @@ final class SauvegardeService
             ],
             $dossierSauvegardes ?? $racine . '/var/backups',
             trim((string) @file_get_contents($racine . '/version.txt')) ?: '0.0.0',
-            self::empreinte($secretKey),
+            $secretKey,
             $migrations,
             VerrouInstance::pourRacine($racine),
         );
@@ -207,10 +229,11 @@ final class SauvegardeService
             if ($zip->open($partiel, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
                 throw new \RuntimeException('Impossible de créer l\'archive ' . $partiel);
             }
-            $zip->addFromString(
-                self::MANIFESTE,
-                json_encode($manifeste, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)
-            );
+            $json = json_encode($manifeste, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+            $zip->addFromString(self::MANIFESTE, $json);
+            if ($this->cleSignature !== null) {
+                $zip->addFromString(self::SIGNATURE, $this->signer($json) . "\n");
+            }
             $zip->addFile($sql, self::FICHIER_SQL);
             foreach ($fichiers as $entree => $absolu) {
                 $zip->addFile($absolu, $entree);
@@ -341,10 +364,16 @@ final class SauvegardeService
     /**
      * Vérifie entièrement une archive SANS rien modifier.
      *
-     * @return array<string, mixed> Le manifeste, complété de 'nb_fichiers'.
+     * @param bool $accepterNonSignee Accepter une archive SANS signature (créée
+     *                                avant la v2.7.1). Réservé à la ligne de
+     *                                commande (--accepter-non-signee), jamais à
+     *                                une archive téléversée par le web. Une
+     *                                signature présente mais fausse est
+     *                                toujours refusée.
+     * @return array<string, mixed> Le manifeste, complété de 'nb_fichiers' et 'signee'.
      * @throws SauvegardeException  au premier défaut, avec un message lisible.
      */
-    public function analyser(string $chemin): array
+    public function analyser(string $chemin, bool $accepterNonSignee = false): array
     {
         $zip = new ZipArchive();
         if ($zip->open($chemin, ZipArchive::RDONLY) !== true) {
@@ -357,7 +386,8 @@ final class SauvegardeService
             if (!isset($entrees[self::MANIFESTE])) {
                 throw new SauvegardeException('Cette archive n\'est pas une sauvegarde EPIClub (manifeste absent).');
             }
-            $manifeste = json_decode((string) $zip->getFromName(self::MANIFESTE), true);
+            $json = (string) $zip->getFromName(self::MANIFESTE);
+            $manifeste = json_decode($json, true);
             if (!is_array($manifeste)
                 || ($manifeste['application'] ?? null) !== self::APPLICATION
                 || !isset($manifeste['format'], $manifeste['version'], $manifeste['base']['sha256'])
@@ -368,10 +398,14 @@ final class SauvegardeService
                 throw new SauvegardeException('Format de sauvegarde non pris en charge par cette version d\'EPIClub.');
             }
 
+            // Compatibilité d'abord (message explicite si SECRET_KEY
+            // diffère), puis signature, puis contenu.
             $this->verifierCompatibilite($manifeste);
+            $signee = $this->verifierSignature($zip, $entrees, $json, $accepterNonSignee);
             $this->verifierContenu($zip, $entrees, $manifeste);
 
             $manifeste['nb_fichiers'] = count((array) ($manifeste['fichiers'] ?? []));
+            $manifeste['signee'] = $signee;
             return $manifeste;
         } finally {
             $zip->close();
@@ -394,7 +428,9 @@ final class SauvegardeService
             }
             $this->assertCheminSur($nom);
 
-            if ($nom !== self::MANIFESTE && $nom !== self::FICHIER_SQL && !$this->estFichierUtilisateurValide($nom)) {
+            if ($nom !== self::MANIFESTE && $nom !== self::SIGNATURE && $nom !== self::FICHIER_SQL
+                && !$this->estFichierUtilisateurValide($nom)
+            ) {
                 throw new SauvegardeException('L\'archive contient un fichier non autorisé : ' . $nom);
             }
             $entrees[$nom] = true;
@@ -484,7 +520,7 @@ final class SauvegardeService
         }
 
         $presents = $entrees;
-        unset($presents[self::MANIFESTE]);
+        unset($presents[self::MANIFESTE], $presents[self::SIGNATURE]);
 
         $manquants = array_diff_key($attendus, $presents);
         if ($manquants !== []) {
@@ -509,6 +545,44 @@ final class SauvegardeService
         }
     }
 
+    /**
+     * [SÉCURITÉ — audit 2026-11-07] Vérifie la signature du manifeste.
+     *
+     * @param array<string, true> $entrees
+     * @return bool true si l'archive est signée (et la signature valide)
+     * @throws SauvegardeException
+     */
+    private function verifierSignature(ZipArchive $zip, array $entrees, string $json, bool $accepterNonSignee): bool
+    {
+        if (!isset($entrees[self::SIGNATURE])) {
+            if ($accepterNonSignee) {
+                return false;
+            }
+            throw new SauvegardeException(
+                'Cette archive n\'est pas signée : elle a été créée avant la version 2.7.1 d\'EPIClub, ou modifiée. '
+                . 'Par sécurité, elle ne peut pas être restaurée depuis cette page. Si vous êtes certain de sa '
+                . 'provenance, restaurez-la depuis le serveur : php bin/restaurer.php --nom=… --accepter-non-signee'
+            );
+        }
+        if ($this->cleSignature === null) {
+            throw new SauvegardeException(
+                'SECRET_KEY est absente de .env.local.php : la signature de l\'archive ne peut pas être vérifiée.'
+            );
+        }
+        if (!hash_equals($this->signer($json), trim((string) $zip->getFromName(self::SIGNATURE)))) {
+            throw new SauvegardeException(
+                'Signature de l\'archive invalide : elle a été modifiée, ou ne provient pas d\'une installation '
+                . 'EPIClub utilisant cette SECRET_KEY. Restauration refusée.'
+            );
+        }
+        return true;
+    }
+
+    private function signer(string $json): string
+    {
+        return hash_hmac('sha256', $json, (string) $this->cleSignature);
+    }
+
     // ==================================================================
     // RESTAURATION
     // ==================================================================
@@ -516,6 +590,7 @@ final class SauvegardeService
     /**
      * Restaure une archive : base ET fichiers remplacent l'existant.
      *
+     * @param bool          $accepterNonSignee voir analyser()
      * @param callable|null $migrer Appelé après une restauration réussie pour
      *                              appliquer les migrations manquantes
      *                              (archive d'une version antérieure) ;
@@ -523,11 +598,11 @@ final class SauvegardeService
      * @return array{filet: string, manifeste: array<string, mixed>, migrations: string[]}
      * @throws SauvegardeException
      */
-    public function restaurer(string $chemin, ?callable $migrer = null): array
+    public function restaurer(string $chemin, ?callable $migrer = null, bool $accepterNonSignee = false): array
     {
         $this->verrouiller('restauration');
         try {
-            $manifeste = $this->analyser($chemin);
+            $manifeste = $this->analyser($chemin, $accepterNonSignee);
 
             // Filet de sécurité : état courant, AVANT toute modification.
             // (Rotation différée : l'archive à restaurer peut elle-même être

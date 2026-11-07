@@ -614,8 +614,15 @@ php8.4 bin/sauvegarder.php [--garder=7] [--sql-seul] [--quiet] [--json]
 ### 6.5 bis `bin/restaurer.php`
 
 ```bash
-php8.4 bin/restaurer.php --nom=epiclub-sauvegarde-AAAAMMJJ-HHMMSS.zip [--json]
+php8.4 bin/restaurer.php --nom=epiclub-sauvegarde-AAAAMMJJ-HHMMSS.zip [--accepter-non-signee] [--json]
 ```
+
+L'archive doit être signée avec la `SECRET_KEY` de l'instance (archives
+créées depuis la v2.7.1). `--accepter-non-signee` accepte une archive sans
+signature, créée par une version antérieure : son SQL est exécuté tel quel,
+à réserver à une archive dont la provenance est sûre. La console ne doit
+jamais passer ce drapeau d'elle-même. Une signature fausse est toujours
+refusée (code 7).
 
 Restaure une archive de `var/backups` (nom seul), comme le bouton de la page
 *Sauvegarde / restauration* : sauvegarde « avant restauration » d'abord,
