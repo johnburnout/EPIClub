@@ -194,13 +194,14 @@ class AppUserRegisterController extends AbstractController
     {
         $token = $request->query->get('token') ?: $request->request->get('token');
 
-        if (!$token) {
+        if (!is_string($token) || $token === '') {
             $this->session->getFlashBag()->add('error', 'Token manquant.');
             return new RedirectResponse('/');
         }
 
         $utilisateurManager = $this->utilisateurManager();
-        $utilisateur = $utilisateurManager->findOneByCriteria(['reset_token' => $token]);
+        // [SÉCURITÉ — audit 2026-11-07] Comparaison à l'empreinte en base.
+        $utilisateur = $utilisateurManager->findByResetToken($token);
 
         if (!$utilisateur) {
             $this->session->getFlashBag()->add('error', 'Lien de réinitialisation invalide ou expiré.');

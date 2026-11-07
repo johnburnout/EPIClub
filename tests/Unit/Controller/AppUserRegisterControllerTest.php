@@ -80,7 +80,7 @@ final class AppUserRegisterControllerTest extends TestCase
         $utilisateurManager = $this->getMockBuilder(UtilisateurManager::class)
             ->disableOriginalConstructor()
             ->getMock();
-        $utilisateurManager->method('findOneByCriteria')->willReturn($user);
+        $utilisateurManager->method('findByResetToken')->willReturn($user);
 
         $session = $this->makeSession(role: null);
         $controller = $this->makeControllerWith(

@@ -265,7 +265,7 @@ final class AppUserRegisterControllerHandlersTest extends TestCase
         $utilisateurManager = $this->getMockBuilder(UtilisateurManager::class)
             ->disableOriginalConstructor()
             ->getMock();
-        $utilisateurManager->method('findOneByCriteria')->willReturn(null);
+        $utilisateurManager->method('findByResetToken')->willReturn(null);
 
         $controller = $this->makeControllerWith(utilisateurManager: $utilisateurManager);
 
@@ -289,7 +289,7 @@ final class AppUserRegisterControllerHandlersTest extends TestCase
         $utilisateurManager = $this->getMockBuilder(UtilisateurManager::class)
             ->disableOriginalConstructor()
             ->getMock();
-        $utilisateurManager->method('findOneByCriteria')->willReturn($user);
+        $utilisateurManager->method('findByResetToken')->willReturn($user);
         $utilisateurManager->expects(self::once())
             ->method('clearResetToken')
             ->with(42);
@@ -320,7 +320,7 @@ final class AppUserRegisterControllerHandlersTest extends TestCase
         $utilisateurManager = $this->getMockBuilder(UtilisateurManager::class)
             ->disableOriginalConstructor()
             ->getMock();
-        $utilisateurManager->method('findOneByCriteria')->willReturn($user);
+        $utilisateurManager->method('findByResetToken')->willReturn($user);
         $utilisateurManager->expects(self::never())->method('save');
 
         $controller = $this->makeControllerWith(utilisateurManager: $utilisateurManager);
@@ -349,7 +349,7 @@ final class AppUserRegisterControllerHandlersTest extends TestCase
         $utilisateurManager = $this->getMockBuilder(UtilisateurManager::class)
             ->disableOriginalConstructor()
             ->getMock();
-        $utilisateurManager->method('findOneByCriteria')->willReturn($user);
+        $utilisateurManager->method('findByResetToken')->willReturn($user);
         $utilisateurManager->expects(self::never())->method('save');
 
         $controller = $this->makeControllerWith(utilisateurManager: $utilisateurManager);
@@ -382,7 +382,7 @@ final class AppUserRegisterControllerHandlersTest extends TestCase
         $utilisateurManager = $this->getMockBuilder(UtilisateurManager::class)
             ->disableOriginalConstructor()
             ->getMock();
-        $utilisateurManager->method('findOneByCriteria')->willReturn($user);
+        $utilisateurManager->method('findByResetToken')->willReturn($user);
         // [SÉCURITÉ — audit C3] Le reset passe par changePassword()
         // (mise à jour ciblée), jamais par un save() complet qui
         // réécrirait le rôle et les autres colonnes.

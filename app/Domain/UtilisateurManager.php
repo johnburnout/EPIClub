@@ -205,13 +205,29 @@ class UtilisateurManager extends AbstractManager
     }
 
     /**
-     * Trouve un utilisateur par son token de réinitialisation
+     * [SÉCURITÉ — audit 2026-11-07] Empreinte stockée en base d'un jeton de
+     * réinitialisation : le jeton lui-même n'existe que dans le lien envoyé
+     * par email. Une fuite de la base (ou d'une sauvegarde) ne permet donc
+     * plus de réinitialiser un mot de passe. SHA-256 suffit : le jeton est
+     * aléatoire (256 bits), pas un mot de passe à protéger d'un dictionnaire.
+     */
+    public static function empreinteJetonReset(string $token): string
+    {
+        return hash('sha256', 'epiclub-reset|' . $token);
+    }
+
+    /**
+     * Trouve un utilisateur par son jeton de réinitialisation (jeton reçu
+     * par email, comparé à son empreinte en base).
      */
     public function findByResetToken(string $token): ?array
     {
+        if ($token === '') {
+            return null;
+        }
         $sql = "SELECT * FROM utilisateur WHERE reset_token = :token AND reset_token IS NOT NULL";
         $stmt = $this->db->prepare($sql);
-        $stmt->execute(['token' => $token]);
+        $stmt->execute(['token' => self::empreinteJetonReset($token)]);
         return $stmt->fetch() ?: null;
     }
     
@@ -271,7 +287,8 @@ class UtilisateurManager extends AbstractManager
     * AppUserRegisterController::forgotPassword().
     *
     * @param int    $userId  ID de l'utilisateur
-    * @param string $token   Token hex (32 bytes → 64 chars)
+    * @param string $token   Jeton hex (32 bytes → 64 chars), tel qu'envoyé par
+    *                        email ; seule son empreinte est enregistrée.
     * @param string $expires Date d'expiration (format Y-m-d H:i:s)
     * @param string $sentAt  Date d'envoi (format Y-m-d H:i:s)
     */
@@ -289,7 +306,7 @@ class UtilisateurManager extends AbstractManager
         $stmt = $this->db->prepare($sql);
         
         return $stmt->execute([
-            'token'   => $token,
+            'token'   => self::empreinteJetonReset($token),
             'expires' => $expires,
             'sent_at' => $sentAt,
             'id'      => $userId,

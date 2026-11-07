@@ -10,10 +10,27 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v2.7.3] — 2026-11-07
+
+Jetons de réinitialisation du mot de passe stockés sous forme d'empreinte ;
+code mort retiré.
+
+### Security
+
+- **Jetons de réinitialisation du mot de passe** : la base ne conserve plus
+  que leur empreinte SHA-256. Le jeton lui-même n'existe que dans le lien
+  envoyé par email. Une fuite de la base, ou d'une sauvegarde, ne permet donc
+  plus de réinitialiser le mot de passe d'un compte. + 4 tests.
+
 ### Removed
 
 - `AcquisitionController::serveFile()` : code mort, relié à aucune route
   (les factures sont servies par `UploadController`, route `/uploads/…`).
+
+### Upgrade notes
+
+- Les liens « mot de passe oublié » envoyés avant la mise à jour (valables
+  24 h) ne fonctionnent plus : il suffit d'en redemander un.
 
 ## [v2.7.2] — 2026-11-07
 
