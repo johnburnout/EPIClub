@@ -9,25 +9,33 @@ use Twig\TwigFunction;
 
 class TwigRenderer extends Environment
 {
-    protected array $options = ['debug' => true];
+    /**
+     * [2026-11-08] debug n'est plus forcé : il n'est actif qu'en dev
+     * (APP_ENV=dev), comme l'extension dump(). Ailleurs (prod), Twig
+     * reste en mode normal. config/twig.php peut toujours le surcharger.
+     */
+    protected array $options = [];
     private ?Session $session = null;
 
     public function __construct(?Session $session = null)
     {
+        // [#110] APP_ENV se lit via ConfigProvider (même fichier que celui
+        // dont le bootstrap alimentait la config) — fini l'accès direct
+        // à la superglobale d'environnement.
+        $config = new ConfigProvider(ConfigFile::defaultPath());
+        $enDev = $config->get('APP_ENV') === 'dev';
+        $this->options['debug'] = $enDev;
+
         if (file_exists(__DIR__ . '/../../config/twig.php')) {
-            $config = require(__DIR__ . '/../../config/twig.php');
-            $this->options = array_merge($this->options, $config['options']);
+            $twigConfig = require(__DIR__ . '/../../config/twig.php');
+            $this->options = array_merge($this->options, $twigConfig['options']);
         }
 
         $loader = new FilesystemLoader(__DIR__ . '/../../templates');
 
         parent::__construct($loader, $this->options);
 
-        // [#110] APP_ENV se lit via ConfigProvider (même fichier que celui
-        // dont le bootstrap alimentait la config) — fini l'accès direct
-        // à la superglobale d'environnement.
-        $config = new ConfigProvider(ConfigFile::defaultPath());
-        if ($config->get('APP_ENV') === 'dev') {
+        if ($enDev) {
             $this->addExtension(new \Twig\Extension\DebugExtension());
         }
 

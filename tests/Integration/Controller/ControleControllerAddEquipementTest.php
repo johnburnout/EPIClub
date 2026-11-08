@@ -33,10 +33,14 @@ final class ControleControllerAddEquipementTest extends AbstractControllerTestCa
             libelle: 'TEST-ADDEQ',
             statut: 'ouvert',
         );
-        $equipementId = $this->fixture->createEquipement($acqId, 1, 'TEST-ADDEQ-E1');
+        // Catégorie dédiée : le filtre « categorie » isole l'équipement de
+        // test (la pagination plafonne à 100 par page, une base de dev
+        // en contient davantage).
+        $categorieId = $this->fixture->createCategorie('TEST-ADDEQ');
+        $equipementId = $this->fixture->createEquipement($acqId, $categorieId, 'TEST-ADDEQ-E1');
 
         // 1. La page du contrôle propose l'équipement avec le bouton « Contrôler »
-        $page = $this->client->get("/admin/controles/edit/$controleId?limit=1000");
+        $page = $this->client->get("/admin/controles/edit/$controleId?categorie=$categorieId");
         self::assertSame(200, $page['status'], 'Body: ' . substr(strip_tags($page['body']), 0, 300));
         self::assertStringContainsString(
             "/admin/controles/add-equipement/$controleId",
@@ -76,7 +80,7 @@ final class ControleControllerAddEquipementTest extends AbstractControllerTestCa
 
         // 6. L'équipement apparaît dans « Équipements déjà dans le contrôle »
         //    et n'est plus proposé dans les disponibles.
-        $page = $this->client->get("/admin/controles/edit/$controleId?limit=1000");
+        $page = $this->client->get("/admin/controles/edit/$controleId?categorie=$categorieId");
         self::assertSame(200, $page['status']);
         self::assertStringContainsString(
             "/admin/controles/update-ligne/{$ligne['id']}",

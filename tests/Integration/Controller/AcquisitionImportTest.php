@@ -69,19 +69,21 @@ final class AcquisitionImportTest extends AbstractControllerTestCase
     {
         $this->exigerReferencesLibres('IMP-2020-01-01');
 
-        // Catégorie pré-existante identifiable par son CODE (TCI),
+        // Catégorie pré-existante identifiable par son CODE (libre en
+        // base : une base de dev peut déjà avoir une vraie « TCI »),
         // avec « durée max » cochée : l'équipement doit en hériter.
+        $code = $this->codeCategorieLibre();
         $pdo = $this->createPdo();
-        $pdo->prepare("INSERT INTO categorie (libelle, code, est_epi, duree_max_utilisation) VALUES (?, 'TCI', 1, 1)")
-            ->execute(['TEST-IMP2-CAT-' . bin2hex(random_bytes(3))]);
+        $pdo->prepare("INSERT INTO categorie (libelle, code, est_epi, duree_max_utilisation) VALUES (?, ?, 1, 1)")
+            ->execute(['TEST-IMP2-CAT-' . bin2hex(random_bytes(3)), $code]);
         $categorieId = (int) $pdo->lastInsertId();
 
         $csv = implode("\n", [
             'reference;designation;categorie;nombre;date_achat;date_peremption;facture_reference;fournisseur',
-            // Lot (nombre>1), année seule pour les 2 dates, catégorie par code TCI
-            ';Corde 10mm;TCI;2;2019;2031;TEST-IMP2-FA;TEST-Fournisseur',
+            // Lot (nombre>1), année seule pour les 2 dates, catégorie par code
+            ";Corde 10mm;$code;2;2019;2031;TEST-IMP2-FA;TEST-Fournisseur",
             // Référence forcée, péremption vide, même facture/même date
-            'REF-FORCEE-02;Mousqueton;TCI;1;2019;;TEST-IMP2-FA;TEST-Fournisseur',
+            "REF-FORCEE-02;Mousqueton;$code;1;2019;;TEST-IMP2-FA;TEST-Fournisseur",
             // Sans facture → groupement par date d'achat (année seule)
             ';Casque;TEST-IMP2-CASQ;1;2020;;;TEST-AutreFourn',
             '',
@@ -125,11 +127,11 @@ final class AcquisitionImportTest extends AbstractControllerTestCase
         // péremption 31/12, mise en service = date facture
         $lot = $equipementsA[0];
         self::assertSame('2', (string) $lot['nombre'], 'nombre > 1 → lot (un équipement, quantité 2)');
-        self::assertSame($categorieId, (int) $lot['categorie_id'], 'Catégorie résolue par son code TCI');
+        self::assertSame($categorieId, (int) $lot['categorie_id'], 'Catégorie résolue par son code');
         self::assertSame('1', (string) $lot['duree_max_utilisation'], 'Durée max héritée de la catégorie');
         self::assertSame('2031-12-31', $lot['date_fin_utilisation'], 'Péremption année seule → 31 décembre');
         self::assertSame('2019-01-01', $lot['date_mise_en_service'], 'Mise en service = date facture');
-        self::assertMatchesRegularExpression('/^19TCI[0-9]{3}$/', $lot['reference'], 'Référence auto (modèle, année 2019)');
+        self::assertMatchesRegularExpression('/^19' . $code . '[0-9]{3}$/', $lot['reference'], 'Référence auto (modèle, année 2019)');
         self::assertStringNotContainsString('LOT', $lot['code'], 'Pas de suffixe LOT dans le code (2026-10-19)');
         self::assertSame('2', (string) $lot['nombre_initial'], 'Nombre initial du lot conservé (plafond)');
         self::assertSame('1', (string) $equipementsA[1]['nombre_initial'], 'Unité : nombre initial = 1');
@@ -191,8 +193,8 @@ final class AcquisitionImportTest extends AbstractControllerTestCase
         // à l'analyse, une catégorie inconnue du fichier peut être
         // rattachée à une existante au lieu d'être créée).
         $pdo = $this->createPdo();
-        $pdo->prepare("INSERT INTO categorie (libelle, code, est_epi) VALUES (?, 'T5C', 1)")
-            ->execute(['TEST-IMP5-CIBLE-' . bin2hex(random_bytes(3))]);
+        $pdo->prepare("INSERT INTO categorie (libelle, code, est_epi) VALUES (?, ?, 1)")
+            ->execute(['TEST-IMP5-CIBLE-' . bin2hex(random_bytes(3)), $this->codeCategorieLibre()]);
         $cibleId = (int) $pdo->lastInsertId();
 
         $csv = implode("\n", [
@@ -455,6 +457,24 @@ final class AcquisitionImportTest extends AbstractControllerTestCase
                 self::markTestSkipped("La base contient déjà l'acquisition « $reference » (données réelles) : test ignoré.");
             }
         }
+    }
+
+    /**
+     * Code de catégorie (3 lettres, colonne UNIQUE) absent de la base :
+     * un code fixe entrerait en collision avec les vraies catégories
+     * d'une base de dev (ex. « TCI »).
+     */
+    private function codeCategorieLibre(): string
+    {
+        $stmt = $this->createPdo()->prepare('SELECT COUNT(*) FROM categorie WHERE code = ?');
+        for ($i = 0; $i < 100; $i++) {
+            $code = 'Q' . chr(random_int(65, 90)) . chr(random_int(65, 90));
+            $stmt->execute([$code]);
+            if ((int) $stmt->fetchColumn() === 0) {
+                return $code;
+            }
+        }
+        self::fail('Aucun code de catégorie libre trouvé.');
     }
 
     private function acquisitionParReference(string $factureReference): ?array

@@ -23,6 +23,8 @@ namespace Epiclub\Tests\Integration\Controller;
  */
 final class ControleControllerEditPendingTest extends AbstractControllerTestCase
 {
+    /** Catégorie de test des équipements créés (filtre « categorie »). */
+    private int $categorieId = 0;
 
     /**
      * #113 — Filtre actif masquant une ligne « a_controler » :
@@ -92,10 +94,11 @@ final class ControleControllerEditPendingTest extends AbstractControllerTestCase
 
         // Filtre : n'afficher que les lignes « a_controler » → la ligne
         // de l'équipement ajouté (controle_ok) est masquée de la vue.
-        // limit élevé : les assertions portent sur toute la liste des
-        // disponibles, indépendamment de la pagination.
+        // Filtre sur la catégorie de test : les assertions portent sur
+        // toute la liste des disponibles, indépendamment de la pagination
+        // (plafonnée à 100 par page) et des équipements de la base de dev.
         $response = $this->client->get(
-            "/admin/controles/edit/$controleId?lignes_statut=a_controler&limit=1000"
+            "/admin/controles/edit/$controleId?lignes_statut=a_controler&categorie={$this->categorieId}"
         );
 
         self::assertSame(200, $response['status'], 'Body: ' . substr(strip_tags($response['body']), 0, 300));
@@ -131,9 +134,10 @@ final class ControleControllerEditPendingTest extends AbstractControllerTestCase
             statut: 'ouvert',
         );
 
+        $this->categorieId = $this->fixture->createCategorie('TEST-113-PENDING');
         $premierEquipementId = null;
         foreach ($statuts as $i => $statut) {
-            $equipementId = $this->fixture->createEquipement($acqId, 1, 'TEST-113-E' . $i);
+            $equipementId = $this->fixture->createEquipement($acqId, $this->categorieId, 'TEST-113-E' . $i);
             $this->fixture->createControleLigne($controleId, $equipementId, $statut);
             if ($premierEquipementId === null) {
                 $premierEquipementId = $equipementId;
@@ -141,7 +145,7 @@ final class ControleControllerEditPendingTest extends AbstractControllerTestCase
         }
 
         $equipementLibreId = $avecEquipementLibre
-            ? $this->fixture->createEquipement($acqId, 1, 'TEST-113-LIBRE')
+            ? $this->fixture->createEquipement($acqId, $this->categorieId, 'TEST-113-LIBRE')
             : null;
 
         return [$controleId, $premierEquipementId, $equipementLibreId];
