@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-11-08 (session des 7 et 8 novembre — audit de sécurité complet v2.7.1 → v2.8.0, droits des fichiers restaurés v2.7.2, journal des acquisitions et des lots v2.9.0)
-**Version courante** : v2.9.0 (`48f59bb`)
+**Dernière mise à jour** : 2026-11-08 (session des 7 et 8 novembre — audit de sécurité complet v2.7.1 → v2.8.0, droits des fichiers restaurés v2.7.2, journal des acquisitions et des lots v2.9.0, points ouverts soldés v2.9.1)
+**Version courante** : v2.9.1
 **Branche** : `main` ; chaque changement passe par une branche et une PR (voir « Règles de travail »)
 
 > **Note canal bêta** : l'endpoint GitHub `/releases/latest` ignore les
@@ -32,6 +32,7 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
+| v2.9.1 | — | Twig `debug` réservé au dev ; tests d'intégration indépendants des données de dev. | — |
 | v2.9.0 | PR #114 | Journal d'activité : étapes des acquisitions, modifications de lots et suppressions d'équipements. | `48f59bb` |
 | v2.8.0 | PR #113 | CSP stricte pour les scripts : dernier point de l'audit de sécurité du 2026-11-07. | `f0037b0` |
 | v2.7.3 | PR #111 + #112 | Jetons de réinitialisation du mot de passe stockés sous forme d'empreinte ; code mort retiré. | `e641a3c` |
@@ -378,12 +379,13 @@ chaque version du CHANGELOG, qui fait foi pour le détail. Colonne
   --memory-limit=1G` ; sans la limite mémoire, PHPStan peut s'arrêter sur
   « severe errors »).
 - **Integration** (`--testsuite Integration`, MySQL + serveur auto-démarré) :
-  175 tests ; **3 échecs préexistants**, identiques sur `main` avant la
-  session (état de la base de dev, sans lien avec le code) :
-  `AcquisitionImportTest::testImportCompletReglesMetier` (doublon
-  `categorie.code` « TCI »), `ControleControllerAddEquipementTest` et
-  `ControleControllerEditPendingTest` (équipement libre attendu dans la
-  liste). À traiter en réinitialisant les données de dev concernées.
+  175 tests, **tous au vert** depuis la v2.9.1 (1 ignoré volontairement
+  quand la base de dev contient déjà la référence IMP- qu'il crée). Les
+  3 anciens échecs venaient des tests eux-mêmes : code de catégorie
+  « TCI » en dur (pris par une vraie catégorie) et `limit=1000`, ramené à
+  10 par `Pagination::limite()` (valeurs admises : 10, 25, 50, 100). Règle :
+  un test d'intégration ne suppose rien des données de dev (codes tirés
+  libres, filtre sur une catégorie de test créée par le test).
 - **CI GitHub** : phpunit, phpstan et build sur chaque PR ; la release
   (archive + SHA-256) est construite à la publication.
 - **Garde CSP** : `tests/Unit/TemplatesCspTest.php` échoue si un gabarit
@@ -925,7 +927,7 @@ Tests (depuis la racine du projet) :
 - `php vendor/bin/phpunit` — suite Unit (1 550 tests au 2026-11-08, cf.
   `defaultTestSuite="Unit"` dans `phpunit.xml`).
 - `php vendor/bin/phpunit --testsuite Integration` — suite Integration
-  (175 tests, dont 3 échecs préexistants liés aux données de dev —
+  (175 tests, tous au vert —
   le serveur HTTP est auto-démarré par WebServer, cf. commit `d1e0bfa`).
 - `vendor/bin/phpstan analyse --no-progress --memory-limit=1G`.
 - `composer audit` — alertes de sécurité des dépendances ;
@@ -1048,12 +1050,17 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
   aucun équipement ne les utilise.
 - **Prod** (`epiclub.perigord-escalade.club`, Virtualmin, utilisateur
   `epiclub.pe`) : racine du projet `~/public_html`, docroot `public/` ;
-  un dossier `tests/` y est présent, daté de la mise à jour du 2026-11-07
-  à 21:37, alors que l'archive de release n'en contient pas (vérifié sur
-  la v2.9.0) : origine à éclaircir. `setup.zip` et `index.html.bak`
-  traînent à la racine (non servis : `.htaccess` racine en refus).
-- **Twig** : `debug => true` dans `TwigRenderer` (aussi en prod) — à
-  revoir à l'occasion.
+  un dossier `tests/` et un `phpunit.xml` (daté du 2026-10-21) y sont
+  présents alors que l'archive de release n'en contient pas : **restes
+  d'une installation antérieure aux archives complètes** (avant v1.0.0,
+  `bin/build-release.sh` retire `tests` et `phpunit.xml`). La mise à jour
+  intégrée copie les fichiers de la release **sans jamais supprimer** ce
+  qui n'y figure plus : ces restes persistent tant qu'on ne les efface pas
+  à la main (`rm -rf ~/public_html/tests ~/public_html/phpunit.xml`).
+  Non servis (docroot `public/`, `.htaccess` racine en refus). Idem pour
+  `setup.zip` et `index.html.bak` à la racine.
+- **Twig** : `debug` suit `APP_ENV` depuis la v2.9.1 (actif seulement en
+  dev) ; il était forcé à `true` partout auparavant.
 
 ### Antérieurs
 
@@ -1261,14 +1268,14 @@ stables, toutes via PR et CI verte.
   import) et aux équipements (dissociation, regroupement, nombre d'un
   lot, suppression). Vérifié en prod par l'utilisateur.
 
-Rien en attente à la fin de la session : `main` propre en v2.9.0, aucune
-branche ni PR ouverte (hors cette mise à jour de REPRISE).
+Fin de session : `main` en v2.9.1 ; les 3 points ouverts (dossier
+`tests/` en prod, `debug` Twig, tests Integration en échec) sont soldés.
+Côté prod, il ne reste qu'un nettoyage manuel facultatif des restes
+d'anciennes installations (cf. « Points de vigilance »).
 
 Pistes possibles (non demandées) : tests du contrôleur d'import ;
 test navigateur de la fiche ticket et de l'écran du second facteur
-(non couverts lors de la vérification CSP) ; données de dev à
-réinitialiser pour les 3 tests Integration en échec ; `debug` Twig en
-prod ; contrôle de préfixe de `UploadController::serve()` sans
+(non couverts lors de la vérification CSP) ; contrôle de préfixe de `UploadController::serve()` sans
 séparateur final (sans risque identifié).
 
 ---

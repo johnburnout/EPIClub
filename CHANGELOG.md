@@ -10,6 +10,26 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v2.9.1] — 2026-11-08
+
+Points restés ouverts dans le fichier de reprise.
+
+### Changed
+
+- **Twig : mode `debug` réservé au développement.** Il était forcé partout,
+  prod comprise ; il suit désormais `APP_ENV` (actif seulement avec
+  `APP_ENV=dev`, comme l'extension `dump()`). `config/twig.php` peut
+  toujours le surcharger. Aucun changement visible pour les utilisateurs.
+
+### Fixed
+
+- **Tests d'intégration indépendants des données de la base de dev.**
+  Les 3 échecs connus ne venaient pas du code : un code de catégorie
+  « TCI » écrit en dur (déjà pris par une vraie catégorie) et des tests de
+  contrôle qui comptaient sur `limit=1000`, ramené à 10 par la pagination
+  depuis la v2.2. Les tests tirent maintenant un code de catégorie libre et
+  filtrent la liste sur une catégorie de test dédiée. 175 tests au vert.
+
 ## [v2.9.0] — 2026-11-07
 
 Journal d'activité : étapes des acquisitions, modifications de lots et
