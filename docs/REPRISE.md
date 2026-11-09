@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-11-09 (durcissements de l'audit du 2026-11-08 v2.9.2 ; restent ouverts R1 signature des releases, R2 reverse proxy, R4 surveillance du limiteur)
-**Version courante** : v2.9.2
+**Dernière mise à jour** : 2026-11-09 (audit du 2026-11-08 : durcissements v2.9.2, reverse proxy R2 v2.10.0 ; restent ouverts R1 signature des releases, R4 surveillance du limiteur)
+**Version courante** : v2.10.0
 **Branche** : `main` ; chaque changement passe par une branche et une PR (voir « Règles de travail »)
 
 > **Note canal bêta** : l'endpoint GitHub `/releases/latest` ignore les
@@ -32,7 +32,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v2.9.2 | — | Audit du 2026-11-08 : SRI sur Bootstrap, bcrypt coût 12 avec rehachage à la connexion, `gc_maxlifetime`, prérequis MySQL 8.0+. | — |
+| v2.10.0 | — | Audit du 2026-11-08, R2 : option `TRUSTED_PROXIES` (reverse proxy) pour l'IP client, HTTPS, cookie `Secure` et HSTS. | — |
+| v2.9.2 | PR #117 | Audit du 2026-11-08 : SRI sur Bootstrap, bcrypt coût 12 avec rehachage à la connexion, `gc_maxlifetime`, prérequis MySQL 8.0+. | — |
 | v2.9.1 | — | Twig `debug` réservé au dev ; tests d'intégration indépendants des données de dev. | — |
 | v2.9.0 | PR #114 | Journal d'activité : étapes des acquisitions, modifications de lots et suppressions d'équipements. | `48f59bb` |
 | v2.8.0 | PR #113 | CSP stricte pour les scripts : dernier point de l'audit de sécurité du 2026-11-07. | `f0037b0` |
@@ -1051,15 +1052,14 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
   aucun équipement ne les utilise.
 - **Prod** (`epiclub.perigord-escalade.club`, Virtualmin, utilisateur
   `epiclub.pe`) : racine du projet `~/public_html`, docroot `public/` ;
-  un dossier `tests/` et un `phpunit.xml` (daté du 2026-10-21) y sont
-  présents alors que l'archive de release n'en contient pas : **restes
-  d'une installation antérieure aux archives complètes** (avant v1.0.0,
-  `bin/build-release.sh` retire `tests` et `phpunit.xml`). La mise à jour
-  intégrée copie les fichiers de la release **sans jamais supprimer** ce
-  qui n'y figure plus : ces restes persistent tant qu'on ne les efface pas
-  à la main (`rm -rf ~/public_html/tests ~/public_html/phpunit.xml`).
-  Non servis (docroot `public/`, `.htaccess` racine en refus). Idem pour
-  `setup.zip` et `index.html.bak` à la racine.
+  les restes d'une installation antérieure aux archives complètes
+  (`tests/`, `phpunit.xml`, `setup.zip`, `index.html.bak`) ont été
+  supprimés à la main le 2026-11-08. À savoir : la mise à jour intégrée
+  copie les fichiers de la release **sans jamais supprimer** ce qui n'y
+  figure plus ; un fichier retiré d'une version reste donc en place tant
+  qu'on ne l'efface pas. Site servi directement par Apache
+  (Virtualmin) : `TRUSTED_PROXIES` (v2.10.0) reste vide, à renseigner
+  seulement si un proxy ou un CDN (Cloudflare…) est placé devant.
 - **Twig** : `debug` suit `APP_ENV` depuis la v2.9.1 (actif seulement en
   dev) ; il était forcé à `true` partout auparavant.
 
@@ -1271,8 +1271,8 @@ stables, toutes via PR et CI verte.
 
 Fin de session : `main` en v2.9.1 ; les 3 points ouverts (dossier
 `tests/` en prod, `debug` Twig, tests Integration en échec) sont soldés.
-Côté prod, il ne reste qu'un nettoyage manuel facultatif des restes
-d'anciennes installations (cf. « Points de vigilance »).
+Les restes d'anciennes installations ont été supprimés de la prod le
+2026-11-08.
 
 Pistes possibles (non demandées) : tests du contrôleur d'import ;
 test navigateur de la fiche ticket et de l'écran du second facteur

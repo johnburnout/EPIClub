@@ -1,5 +1,6 @@
 <?php
 
+use Epiclub\Engine\ProxyDeConfiance;
 use Epiclub\Engine\SecurityHeaders;
 use Epiclub\Engine\Session;
 use Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage;
@@ -20,8 +21,11 @@ require __DIR__ . '/../app/bootstrap.php';
 // non envoyé par les requêtes intersites (SameSite=Lax), réservé à HTTPS
 // quand le site est servi en HTTPS ; identifiants de session non
 // initialisés refusés (strict mode, anti-fixation).
-$enHttps = (!empty($_SERVER['HTTPS']) && strtolower((string) $_SERVER['HTTPS']) !== 'off')
-    || (int) ($_SERVER['SERVER_PORT'] ?? 0) === 443;
+// [audit 2026-11-08 R2] Derrière un reverse proxy déclaré dans
+// TRUSTED_PROXIES, HTTPS et IP client viennent des en-têtes X-Forwarded-*.
+ProxyDeConfiance::configurer($_ENV);
+$request = Request::createFromGlobals();
+$enHttps = ProxyDeConfiance::enHttps($request);
 $session = new Session(new NativeSessionStorage([
     'cookie_httponly'  => true,
     'cookie_samesite'  => 'lax',
@@ -50,7 +54,6 @@ if (time() - $session->getMetadataBag()->getLastUsed() > Session::SESSION_LIFETI
     exit();
 }
 
-$request = Request::createFromGlobals();
 $request->setDefaultLocale('fr');
 $request->setLocale('fr');
 

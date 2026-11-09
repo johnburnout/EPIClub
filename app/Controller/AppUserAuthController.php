@@ -149,7 +149,7 @@ class AppUserAuthController extends AbstractController
         if ($request->getMethod() === 'POST') {
             $token = $request->request->get('csrf_token');
             if ($token && !hash_equals((string) $this->session->get('csrf_token'), (string) $token)) {
-                $ip = $request->server->get('REMOTE_ADDR', 'inconnue');
+                $ip = $request->getClientIp() ?? 'inconnue';
                 error_log("⚠️ Déconnexion avec token CSRF invalide - IP: $ip");
             }
         }
