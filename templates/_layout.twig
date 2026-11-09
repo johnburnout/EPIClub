@@ -173,6 +173,29 @@
 				</div>
 				{% endfor %}
 			{% endfor %}
+			{# [audit 2026-11-08 R4] Limiteur de tentatives indisponible (super-admin) #}
+			{% set alerteLimiteur = alerte_limiteur() %}
+			{% if alerteLimiteur %}
+				<div class="alert alert-danger" role="alert">
+					<h2 class="h6 alert-heading mb-2">Limiteur de tentatives de connexion indisponible</h2>
+					<p class="mb-2">
+						Panne constatée depuis le {{ alerteLimiteur.debut|date('d/m/Y à H:i') }}
+						({{ alerteLimiteur.nombre }} fois, dernière le {{ alerteLimiteur.dernier|date('d/m/Y à H:i') }} ;
+						{{ alerteLimiteur.sources|join(', ') }}).
+						Pendant la panne, les tentatives de connexion et les demandes de mot de passe oublié
+						ne sont pas limitées (risque de force brute), et la vérification du second facteur est refusée.
+					</p>
+					<p class="mb-2">
+						Cause probable : base de données inaccessible ou migration non appliquée
+						(voir la page <a href="/admin/update" class="alert-link">Mise à jour</a>).
+						{% if alerteLimiteur.message %}<br><small class="font-monospace">{{ alerteLimiteur.message }}</small>{% endif %}
+					</p>
+					<form method="post" action="/admin/alerte-limiteur/acquitter" class="mb-0">
+						<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+						<button type="submit" class="btn btn-sm btn-outline-danger">Problème résolu, masquer l'alerte</button>
+					</form>
+				</div>
+			{% endif %}
 			{% block body %}{% endblock %}
 		</main>
 		<footer class="container">

@@ -57,6 +57,12 @@ class AppUserAuthenticator
         return new LoginThrottleManager();
     }
 
+    /** [audit 2026-11-08 R4] Factory — surchargeable en test Unit. */
+    protected function alerteLimiteur(): AlerteLimiteur
+    {
+        return AlerteLimiteur::parDefaut();
+    }
+
     /** Échecs tolérés par identifiant avant blocage progressif. */
     public const SEUIL_IDENTIFIANT = 5;
 
@@ -300,14 +306,15 @@ class AppUserAuthenticator
     /**
      * Exécute une opération du limiteur sans jamais bloquer la connexion
      * si celui-ci est indisponible (ex. migration 010 pas encore
-     * appliquée) : l'incident est journalisé, la connexion reste possible.
+     * appliquée) : la connexion reste possible, mais l'incident est
+     * signalé au super-admin (AlerteLimiteur, audit 2026-11-08 R4).
      */
     private function limiter(callable $operation): void
     {
         try {
             $operation($this->loginThrottle ??= $this->loginThrottle());
         } catch (\Throwable $e) {
-            error_log('[AppUserAuthenticator] Limiteur de tentatives indisponible : ' . $e->getMessage());
+            $this->alerteLimiteur()->signaler('connexion', $e);
         }
     }
 

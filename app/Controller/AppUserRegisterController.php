@@ -61,7 +61,7 @@ class AppUserRegisterController extends AbstractController
 
     /**
      * true si l'IP a dépassé son quota de demandes. Ne bloque jamais si
-     * le limiteur est indisponible (journalisé).
+     * le limiteur est indisponible (signalé au super-admin, R4).
      */
     private function demandeResetLimitee(?string $ip): bool
     {
@@ -76,7 +76,7 @@ class AppUserRegisterController extends AbstractController
             }
             $limiteur->enregistrerEchec($cle, self::SEUIL_RESET_IP);
         } catch (\Throwable $e) {
-            error_log('[forgotPassword] Limiteur indisponible : ' . $e->getMessage());
+            $this->alerteLimiteur()->signaler('mot de passe oublié', $e);
         }
         return false;
     }

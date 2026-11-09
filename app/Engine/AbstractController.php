@@ -54,6 +54,12 @@ abstract class AbstractController
                 : ['libelle' => $enum->label(), 'couleur' => $enum->couleur(), 'badge' => $enum->badge(), 'reserve' => $enum->estReserve()];
         }));
 
+        // [audit 2026-11-08 R4] Bandeau « limiteur indisponible », pour le
+        // seul super-admin (le message technique n'est montré qu'à lui).
+        $this->renderer->addFunction(new TwigFunction('alerte_limiteur', function () {
+            return $this->isGranted('ROLE_SUPER_ADMIN') ? $this->alerteLimiteur()->etat() : null;
+        }));
+
         $this->updateLastActivity();
     }
 
@@ -138,6 +144,15 @@ abstract class AbstractController
      * (suite de tests Unit, cf. tests/bootstrap.php : aucune écriture
      * dans la base de développement).
      */
+    /**
+     * [audit 2026-11-08 R4] Alerte « limiteur de tentatives indisponible »
+     * (bandeau du super-admin). Factory surchargeable en test Unit.
+     */
+    protected function alerteLimiteur(): AlerteLimiteur
+    {
+        return AlerteLimiteur::parDefaut();
+    }
+
     protected function journalActiviteManager(): ?JournalActiviteManager
     {
         if (defined('EPICLUB_JOURNAL_ACTIVITE_DESACTIVE')) {

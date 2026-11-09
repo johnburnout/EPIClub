@@ -2,6 +2,7 @@
 
 namespace Epiclub\Controller;
 
+use Epiclub\Domain\JournalActiviteManager;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\ConfigProvider;
 use Epiclub\Engine\EnvironmentFileParser;
@@ -208,6 +209,25 @@ class IndexController extends AbstractController
         
         $this->session->getFlashBag()->add('success', 'Configuration mise à jour avec succès.');
         return $this->redirectTo('/admin/system-settings');
+    }
+
+    /**
+     * [audit 2026-11-08 R4] Acquittement de l'alerte « limiteur de
+     * tentatives indisponible » (bandeau du super-admin).
+     */
+    public function acquitterAlerteLimiteur(Request $request): Response
+    {
+        $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
+        $this->validateCsrf($request);
+
+        $alerte = $this->alerteLimiteur();
+        if ($alerte->etat() !== null) {
+            $alerte->acquitter();
+            $this->journaliser(JournalActiviteManager::TYPE_SECURITE, 'Alerte du limiteur de tentatives acquittée', $request);
+            $this->session->getFlashBag()->add('success', 'Alerte acquittée. Elle réapparaîtra si le limiteur tombe de nouveau en panne.');
+        }
+
+        return $this->redirectTo('/');
     }
 
     public function testMail(Request $request): Response
