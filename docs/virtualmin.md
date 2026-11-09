@@ -661,7 +661,9 @@ Codes : 0 succès, 2 usage, 3 non installée ou SMTP non configuré,
 - `ressources/virtualmin/epiclub.pl`, à copier par l'hébergeur dans
   `/etc/webmin/virtual-server/scripts/`.
 - `_files` télécharge `epiclub-vX.Y.Z.zip` et `.sha256` depuis la
-  release GitHub.
+  release GitHub, ainsi que `.minisig` (depuis v2.12.0) : `_install` doit
+  vérifier la signature avec la clé publique d'EPIClub (minisign, ou
+  `php` + sodium comme `bin/signer-release.sh`) avant de décompresser.
 - `_install` décompresse dans `~/epiclub`, puis lance
   `bin/installer.php` **sous l'utilisateur du domaine** (avec le binaire
   PHP du domaine). Il règle le docroot sur `~/epiclub/public` et renvoie

@@ -146,9 +146,28 @@ php -S localhost:8000 -t public public/router.php
 
 La CI (`.github/workflows/release.yml`) construit alors l'archive complète
 avec `bin/build-release.sh` (vendor/ inclus, sans tests) et l'attache à la
-release avec sa somme SHA-256 ; l'updater intégré télécharge et vérifie ces
-deux fichiers. Ne cocher « pre-release » que pour une version bêta (voir ci-dessous).
-Pour tester la construction en local : `bin/build-release.sh v1.0.1`.
+release avec sa somme SHA-256. Ne cocher « pre-release » que pour une
+version bêta (voir ci-dessous). Pour tester la construction en local :
+`bin/build-release.sh v1.0.1`.
+
+3. Une fois l'archive attachée par la CI, la **signer** sur la machine du
+   mainteneur (jamais en CI : la clé privée ne doit pas être sur GitHub) :
+
+   ```bash
+   bin/signer-release.sh v1.0.1
+   ```
+
+   Le script contrôle l'archive, la signe avec [minisign](https://jedisct1.github.io/minisign/)
+   (clé `~/.minisign/epiclub.key`, mot de passe demandé) et attache
+   `epiclub-v1.0.1.zip.minisig` à la release. L'updater intégré refuse une
+   archive sans signature valide : tant qu'elle n'est pas signée, la
+   version reste « en préparation » sur les instances.
+
+Pour vérifier à la main une archive téléchargée (première installation) :
+
+```bash
+minisign -V -m epiclub-v1.0.1.zip -P RWS7IFVJZpdnhR9xY+Q9awMczhU106RdwsMWLKVAv27NlQD1947YNsX4
+```
 
 Depuis la v1.0.0, une version **bêta** (ex. `v1.1.0-beta.1`) se publie
 avec `--prerelease` : les instances en canal `stable` ne la voient pas,

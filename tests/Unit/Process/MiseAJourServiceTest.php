@@ -7,6 +7,7 @@ namespace Epiclub\Tests\Unit\Process;
 use Epiclub\Engine\GitHubReleaseProviderInterface;
 use Epiclub\Exception\MiseAJourException;
 use Epiclub\Process\MiseAJourService;
+use Epiclub\Tests\Unit\Support\SignataireMinisign;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -21,6 +22,8 @@ final class MiseAJourServiceTest extends TestCase
     /** @var string[] */
     private array $etapes = [];
 
+    private SignataireMinisign $signataire;
+
     protected function setUp(): void
     {
         $this->racine = sys_get_temp_dir() . '/epiclub_maj_' . bin2hex(random_bytes(4));
@@ -33,6 +36,7 @@ final class MiseAJourServiceTest extends TestCase
         file_put_contents($this->racine . '/public/images/equipements/photo.jpg', 'photo du club');
         file_put_contents($this->racine . '/.env.local.php', '<?php return [];');
         $this->etapes = [];
+        $this->signataire = new SignataireMinisign();
     }
 
     protected function tearDown(): void
@@ -70,13 +74,19 @@ final class MiseAJourServiceTest extends TestCase
         ]);
     }
 
-    private function fournisseur(?string $zip, string $tag = 'v2.4.0', ?string $sha = null): GitHubReleaseProviderInterface
+    /**
+     * @param ?string $sig  Contenu du .minisig (défaut : signature valide de
+     *                      l'archive pour epiclub-<tag>.zip) ; '' = release
+     *                      sans signature attachée (bundle faux).
+     */
+    private function fournisseur(?string $zip, string $tag = 'v2.4.0', ?string $sha = null, ?string $sig = null): GitHubReleaseProviderInterface
     {
         $sha ??= $zip !== null ? hash('sha256', $zip) . '  epiclub-' . $tag . '.zip' : '';
-        return new class($zip, $tag, $sha) implements GitHubReleaseProviderInterface {
+        $sig ??= $zip !== null ? $this->signataire->signer($zip, "timestamp:1\tfile:epiclub-$tag.zip\thashed") : '';
+        return new class($zip, $tag, $sha, $sig) implements GitHubReleaseProviderInterface {
             public int $telechargements = 0;
 
-            public function __construct(private ?string $zip, private string $tag, private string $sha)
+            public function __construct(private ?string $zip, private string $tag, private string $sha, private string $sig)
             {
             }
 
@@ -84,14 +94,19 @@ final class MiseAJourServiceTest extends TestCase
             {
                 return $this->zip === null ? null : [
                     'tag' => $this->tag, 'zip_url' => 'https://exemple/zip', 'body' => '',
-                    'bundle' => true, 'sha256_url' => 'https://exemple/sha',
+                    'bundle' => $this->sig !== '', 'sha256_url' => 'https://exemple/sha',
+                    'minisig_url' => $this->sig !== '' ? 'https://exemple/sig' : null,
                 ];
             }
 
             public function downloadUrl(string $url): string
             {
                 $this->telechargements++;
-                return $url === 'https://exemple/sha' ? $this->sha : (string) $this->zip;
+                return match ($url) {
+                    'https://exemple/sha' => $this->sha,
+                    'https://exemple/sig' => $this->sig,
+                    default               => (string) $this->zip,
+                };
             }
         };
     }
@@ -135,6 +150,7 @@ final class MiseAJourServiceTest extends TestCase
             $this->racine . '/var/tmp/update',
             static fn (): \PDO => $pdo,
             $sauvegarde ?? static fn (string $dossier): ?string => null,
+            $this->signataire->verificateur(),
         );
     }
 
@@ -220,6 +236,80 @@ final class MiseAJourServiceTest extends TestCase
         }
         self::assertSame('2.3.0', file_get_contents($this->racine . '/version.txt'));
         self::assertFileDoesNotExist($this->racine . '/app/Nouveau.php');
+    }
+
+    // ------------------------------------------------------------------
+    // [audit 2026-11-08 R1] Signature minisign de l'archive
+    // ------------------------------------------------------------------
+
+    private function assertRienModifie(\Closure $miseAJour, string $message): void
+    {
+        try {
+            $miseAJour();
+            self::fail('Exception attendue');
+        } catch (MiseAJourException $e) {
+            self::assertSame(MiseAJourException::ARCHIVE_REJETEE, $e->getCode());
+            self::assertFalse($e->modifie());
+            self::assertStringContainsString($message, $e->getMessage());
+        }
+        self::assertSame('2.3.0', file_get_contents($this->racine . '/version.txt'));
+        self::assertFileDoesNotExist($this->racine . '/app/Nouveau.php');
+        self::assertDirectoryDoesNotExist($this->racine . '/var/tmp/update/extracted');
+    }
+
+    /** Compte GitHub compromis : archive piégée avec sa somme SHA-256 correcte, signature impossible. */
+    public function testArchivePiegeeAvecSommeCorrecteRefusee(): void
+    {
+        $vraie = $this->releaseComplete();
+        $piegee = $this->zip(['epiclub-v2.4.0/version.txt' => '2.4.0', 'epiclub-v2.4.0/app/Nouveau.php' => '<?php // piège',
+            'epiclub-v2.4.0/vendor/autoload.php' => '<?php']);
+        $sig = $this->signataire->signer($vraie, "timestamp:1\tfile:epiclub-v2.4.0.zip\thashed");
+
+        $this->assertRienModifie(
+            fn () => $this->service($this->fournisseur($piegee, 'v2.4.0', null, $sig))->mettreAJour($this->etape()),
+            'signature invalide'
+        );
+    }
+
+    public function testSignatureDUnAttaquantRefusee(): void
+    {
+        $zip = $this->releaseComplete();
+        $sig = (new SignataireMinisign())->signer($zip, 'file:epiclub-v2.4.0.zip');
+
+        $this->assertRienModifie(
+            fn () => $this->service($this->fournisseur($zip, 'v2.4.0', null, $sig))->mettreAJour($this->etape()),
+            'clé inconnue'
+        );
+    }
+
+    /** Ancienne version signée resservie sous un tag plus récent (retour en arrière). */
+    public function testArchiveSigneePourUneAutreVersionRefusee(): void
+    {
+        $zip = $this->releaseComplete('v2.4.0');
+        $sig = $this->signataire->signer($zip, 'file:epiclub-v2.4.0.zip');
+
+        $this->assertRienModifie(
+            fn () => $this->service($this->fournisseur($zip, 'v2.5.0', null, $sig))->mettreAJour($this->etape()),
+            'autre fichier'
+        );
+    }
+
+    public function testReleaseNonSigneeRienNestTelecharge(): void
+    {
+        $fournisseur = $this->fournisseur($this->releaseComplete(), 'v2.4.0', null, '');
+
+        $this->assertRienModifie(
+            fn () => $this->service($fournisseur)->mettreAJour($this->etape()),
+            'pas encore disponible'
+        );
+        self::assertSame(0, $fournisseur->telechargements);
+    }
+
+    public function testSignatureAbsenteMalgreBundleRefusee(): void
+    {
+        $service = $this->service($this->fournisseur($this->releaseComplete()));
+        $this->expectExceptionMessage('signature absente');
+        $service->verifierSignature(['tag' => 'v2.4.0', 'bundle' => true], 'zip');
     }
 
     public function testSauvegardeImpossibleRienNestModifie(): void

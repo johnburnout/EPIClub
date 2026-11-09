@@ -8,6 +8,7 @@ use Epiclub\Engine\DatabaseBackup;
 use Epiclub\Engine\DroitsFichiers;
 use Epiclub\Engine\GitHubReleaseProviderInterface;
 use Epiclub\Engine\MigrationManager;
+use Epiclub\Engine\SignatureMinisign;
 use Epiclub\Exception\MiseAJourException;
 use ZipArchive;
 
@@ -19,7 +20,8 @@ use ZipArchive;
  * Le verrou de l'instance (var/epiclub.lock) est pris par l'appelant, avant
  * tout appel à GitHub.
  *
- * Déroulé : release distante → téléchargement → somme de contrôle → contrôle
+ * Déroulé : release distante → archive signée exigée → téléchargement →
+ * somme de contrôle → signature minisign (audit 2026-11-08 R1) → contrôle
  * du zip → extraction → archive complète exigée (vendor/) → sauvegarde SQL si
  * migrations en attente → copie des fichiers → migrations → version.txt →
  * remplacement de vendor/. Toute erreur avant la copie laisse l'instance
@@ -52,6 +54,7 @@ final class MiseAJourService
         private readonly string $dossierTemp,
         private readonly \Closure $connexion,
         private readonly \Closure $sauvegarde,
+        private readonly SignatureMinisign $signature = new SignatureMinisign(),
     ) {
     }
 
@@ -109,6 +112,12 @@ final class MiseAJourService
         }
         $extractPath = $this->dossierTemp . '/extracted';
 
+        // [audit 2026-11-08 R1] Seule une archive complète ET signée est
+        // installée : sans signature attachée, on ne télécharge rien.
+        if (empty($latest['bundle'])) {
+            throw self::archiveNonDisponible($version);
+        }
+
         try {
             $zipContent = $this->releases->downloadUrl($latest['zip_url']);
             if ($zipContent === '') {
@@ -122,7 +131,16 @@ final class MiseAJourService
                 error_log('[MiseAJour] Archive rejetée : ' . $e->getMessage());
                 throw new MiseAJourException('Archive invalide : le fichier téléchargé a été rejeté (somme de contrôle).', MiseAJourException::ARCHIVE_REJETEE, $e);
             }
-            $etape('Archive ' . $version . ' téléchargée et vérifiée.');
+
+            // [audit 2026-11-08 R1] Signature hors ligne du mainteneur.
+            try {
+                $this->verifierSignature($latest, $zipContent);
+            } catch (\RuntimeException $e) {
+                error_log('[MiseAJour] Archive rejetée (signature) : ' . $e->getMessage());
+                throw new MiseAJourException('Archive invalide : le fichier téléchargé a été rejeté (signature : '
+                    . $e->getMessage() . ').', MiseAJourException::ARCHIVE_REJETEE, $e);
+            }
+            $etape('Archive ' . $version . ' téléchargée, somme de contrôle et signature vérifiées.');
 
             $tempZip = $this->dossierTemp . '/release.zip';
             file_put_contents($tempZip, $zipContent);
@@ -168,9 +186,7 @@ final class MiseAJourService
             // « authoritative » en place : les nouvelles classes seraient ignorées).
             if (!is_file($sourceDir . '/vendor/autoload.php')) {
                 error_log('[MiseAJour] Archive sans vendor/ refusée pour ' . $version);
-                throw new MiseAJourException("L'archive complète de la version " . $version . ' n\'est pas encore disponible '
-                    . '(GitHub la prépare quelques minutes après la publication). Rien n\'a été modifié : '
-                    . 'réessayez dans quelques minutes.', MiseAJourException::ARCHIVE_REJETEE);
+                throw self::archiveNonDisponible($version);
             }
 
             // [v1.4.0] Sauvegarde SQL AVANT toute modification si la release
@@ -277,6 +293,35 @@ final class MiseAJourService
         if (!hash_equals(strtolower($m[1]), hash('sha256', $zipContent))) {
             throw new \RuntimeException('somme de contrôle différente');
         }
+    }
+
+    /**
+     * [audit 2026-11-08 R1] Vérifie la signature minisign de l'archive, faite
+     * hors ligne par le mainteneur (bin/signer-release.sh). Le commentaire de
+     * confiance doit désigner `epiclub-<tag>.zip` : une ancienne archive
+     * signée ne peut pas être resservie sous un tag plus récent.
+     *
+     * @param array<string, mixed> $release
+     * @throws \RuntimeException
+     */
+    public function verifierSignature(array $release, string $zipContent): void
+    {
+        $sigUrl = $release['minisig_url'] ?? null;
+        if (!is_string($sigUrl) || $sigUrl === '') {
+            throw new \RuntimeException('signature absente');
+        }
+        $this->signature->verifier(
+            $zipContent,
+            $this->releases->downloadUrl($sigUrl),
+            'epiclub-' . $release['tag'] . '.zip',
+        );
+    }
+
+    private static function archiveNonDisponible(string $version): MiseAJourException
+    {
+        return new MiseAJourException("L'archive complète de la version " . $version . ' n\'est pas encore disponible '
+            . '(elle est préparée puis signée peu après la publication). Rien n\'a été modifié : '
+            . 'réessayez plus tard.', MiseAJourException::ARCHIVE_REJETEE);
     }
 
     /**
