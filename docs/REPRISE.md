@@ -32,11 +32,11 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v2.12.0 | — | Audit du 2026-11-08, R1 : releases signées hors ligne avec minisign (`SignatureMinisign`, sodium), `.minisig` exigé par l'updater, `bin/signer-release.sh`. | — |
-| v2.11.0 | PR #119 | Audit du 2026-11-08, R4 : bandeau du super-admin et journal « Sécurité » quand le limiteur de tentatives est indisponible (`AlerteLimiteur`, `var/alertes/limiteur.json`). | — |
-| v2.10.0 | PR #118 | Audit du 2026-11-08, R2 : option `TRUSTED_PROXIES` (reverse proxy) pour l'IP client, HTTPS, cookie `Secure` et HSTS. | — |
-| v2.9.2 | PR #117 | Audit du 2026-11-08 : SRI sur Bootstrap, bcrypt coût 12 avec rehachage à la connexion, `gc_maxlifetime`, prérequis MySQL 8.0+. | — |
-| v2.9.1 | — | Twig `debug` réservé au dev ; tests d'intégration indépendants des données de dev. | — |
+| v2.12.0 | PR #120 | Audit du 2026-11-08, R1 : releases signées hors ligne avec minisign (`SignatureMinisign`, sodium), `.minisig` exigé par l'updater, `bin/signer-release.sh`. | `37531f3` |
+| v2.11.0 | PR #119 | Audit du 2026-11-08, R4 : bandeau du super-admin et journal « Sécurité » quand le limiteur de tentatives est indisponible (`AlerteLimiteur`, `var/alertes/limiteur.json`). | `2635322` |
+| v2.10.0 | PR #118 | Audit du 2026-11-08, R2 : option `TRUSTED_PROXIES` (reverse proxy) pour l'IP client, HTTPS, cookie `Secure` et HSTS. | `1d044a0` |
+| v2.9.2 | PR #117 | Audit du 2026-11-08 : SRI sur Bootstrap, bcrypt coût 12 avec rehachage à la connexion, `gc_maxlifetime`, prérequis MySQL 8.0+. | `f2df82e` |
+| v2.9.1 | PR #116 | Twig `debug` réservé au dev ; tests d'intégration indépendants des données de dev. | `7b28f43` |
 | v2.9.0 | PR #114 | Journal d'activité : étapes des acquisitions, modifications de lots et suppressions d'équipements. | `48f59bb` |
 | v2.8.0 | PR #113 | CSP stricte pour les scripts : dernier point de l'audit de sécurité du 2026-11-07. | `f0037b0` |
 | v2.7.3 | PR #111 + #112 | Jetons de réinitialisation du mot de passe stockés sous forme d'empreinte ; code mort retiré. | `e641a3c` |
