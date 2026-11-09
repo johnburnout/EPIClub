@@ -10,6 +10,27 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v2.10.0] — 2026-11-09
+
+Point R2 de l'audit du 2026-11-08 : déploiement derrière un reverse proxy.
+
+### Added
+
+- **Option `TRUSTED_PROXIES` dans `.env.local.php` (R2).** Elle déclare
+  le ou les reverse proxys placés devant EPIClub (IP ou plages CIDR). Pour
+  les requêtes qui en viennent, l'application lit l'adresse du visiteur et
+  le protocole dans `X-Forwarded-For` / `X-Forwarded-Proto` : le cookie de
+  session redevient `Secure`, HSTS est envoyé, et la limitation des
+  tentatives de connexion compte chaque visiteur séparément au lieu de
+  tous les regrouper sous l'adresse du proxy. Sans la clé, rien ne change
+  et ces en-têtes restent ignorés. Voir le README, « Derrière un reverse
+  proxy ».
+
+### Changed
+
+- Le journal d'une déconnexion avec jeton CSRF invalide note l'adresse du
+  visiteur (et non celle du proxy).
+
 ## [v2.9.2] — 2026-11-09
 
 Durcissements issus de l'audit du 2026-11-08 (`docs/audit-2026-11-08.md`,

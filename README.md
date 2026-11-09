@@ -43,6 +43,29 @@ argument : variables d'environnement ou fichiers. Codes de sortie : 0
 succès, 2 paramètres invalides, 3 prérequis, 4 autre opération en cours,
 8 installation interrompue, 9 déjà installé.
 
+### Derrière un reverse proxy
+
+Si un proxy (nginx, Apache, Traefik, Cloudflare Tunnel…) reçoit les
+connexions HTTPS et les transmet à EPIClub, déclarez son adresse dans
+`.env.local.php` :
+
+```php
+'TRUSTED_PROXIES' => '127.0.0.1',            // IP ou plages CIDR, séparées par des virgules
+```
+
+Sans cette clé, EPIClub voit toutes les requêtes venir du proxy en HTTP :
+cookie de session sans `Secure`, pas de HSTS, et limitation des tentatives
+de connexion commune à tous les utilisateurs. Seuls `X-Forwarded-For`,
+`X-Forwarded-Proto` et `X-Forwarded-Port` sont lus, et seulement quand la
+requête vient d'un proxy déclaré. Le proxy doit transmettre l'en-tête
+`Host` d'origine (Apache : `ProxyPreserveHost On` ; nginx :
+`proxy_set_header Host $host;`). Les mots-clés `PRIVATE_SUBNETS` (réseaux
+privés) et `REMOTE_ADDR` (toute adresse qui se connecte, à réserver au cas
+où PHP n'est joignable que par le proxy) sont acceptés.
+
+Installation directe sur le serveur web (cas de Virtualmin) : ne rien
+ajouter.
+
 ## Sauvegardes
 
 ### Sauvegardes automatiques avant migration
