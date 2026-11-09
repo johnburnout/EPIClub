@@ -10,6 +10,34 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v2.12.0] — 2026-11-09
+
+Point R1 de l'audit du 2026-11-08 : les mises à jour sont signées.
+
+### Security
+
+- **Signature des releases (R1).** Jusqu'ici, l'archive de mise à jour
+  n'était contrôlée que par sa somme SHA-256, publiée au même endroit
+  qu'elle : un compte GitHub compromis pouvait publier une archive piégée
+  avec la somme correspondante. Chaque archive est désormais signée hors
+  ligne avec minisign (Ed25519), par une clé privée qui ne quitte pas la
+  machine du mainteneur ; la clé publique est livrée dans l'application.
+  L'updater (page *Mise à jour* et `bin/mettre-a-jour.php`) refuse toute
+  archive sans signature valide, signée par une autre clé, ou signée pour
+  une autre version (pas de retour vers une version plus ancienne). La
+  vérification se fait en PHP via l'extension sodium, sans outil
+  supplémentaire sur le serveur.
+- **Version « en préparation » tant qu'elle n'est pas signée.** Entre la
+  publication d'une release et l'ajout de sa signature, les instances
+  l'affichent comme en préparation et ne téléchargent rien.
+
+### Added
+
+- **`bin/signer-release.sh <tag>`** (machine du mainteneur) : télécharge
+  l'archive construite par la CI, contrôle sa somme et son `version.txt`,
+  la signe avec minisign, vérifie la signature avec le code de l'updater
+  et attache `epiclub-<tag>.zip.minisig` à la release.
+
 ## [v2.11.0] — 2026-11-09
 
 Point R4 de l'audit du 2026-11-08 : une panne du limiteur de tentatives

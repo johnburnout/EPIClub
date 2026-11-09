@@ -6,6 +6,7 @@ use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\DatabaseBackup;
 use Epiclub\Engine\MySqlDatabaseDumper;
 use Epiclub\Engine\GitHubReleaseProvider;
+use Epiclub\Engine\SignatureMinisign;
 use Epiclub\Engine\GitHubReleaseProviderInterface;
 use Epiclub\Engine\VerrouInstance;
 use Epiclub\Exception\MiseAJourException;
@@ -284,7 +285,14 @@ class AppUpdateController extends AbstractController
             self::TEMP_DIR,
             fn (): \PDO => $this->databasePdo(),
             fn (string $migrationsLivrees): ?string => $this->sauvegarderAvantMigrations($migrationsLivrees),
+            $this->signatureReleases(),
         );
+    }
+
+    /** [audit 2026-11-08 R1] Vérificateur des signatures de release (surchargé en test). */
+    protected function signatureReleases(): SignatureMinisign
+    {
+        return new SignatureMinisign();
     }
 
     /**

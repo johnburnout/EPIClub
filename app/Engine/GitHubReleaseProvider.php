@@ -130,7 +130,11 @@ final class GitHubReleaseProvider implements GitHubReleaseProviderInterface
      * (`epiclub-<tag>.zip.sha256`). À défaut (anciennes releases), repli
      * sur le zipball des sources : composer devra alors être disponible.
      *
-     * @return array{tag:string,zip_url:string,body:string,bundle:bool,sha256_url:?string}|null
+     * [audit 2026-11-08 R1] L'archive n'est proposée (`bundle`) qu'une fois
+     * sa signature `epiclub-<tag>.zip.minisig` attachée : entre la fin de
+     * la CI et la signature hors ligne, la release reste « en préparation ».
+     *
+     * @return array{tag:string,zip_url:string,body:string,bundle:bool,sha256_url:?string,minisig_url:?string}|null
      */
     public static function construireResultat(array $release): ?array
     {
@@ -141,6 +145,7 @@ final class GitHubReleaseProvider implements GitHubReleaseProviderInterface
 
         $zipUrl = null;
         $shaUrl = null;
+        $sigUrl = null;
         foreach ($release['assets'] ?? [] as $asset) {
             if (!is_array($asset) || !isset($asset['name'], $asset['browser_download_url'])) {
                 continue;
@@ -149,16 +154,19 @@ final class GitHubReleaseProvider implements GitHubReleaseProviderInterface
                 $zipUrl = (string) $asset['browser_download_url'];
             } elseif ($asset['name'] === 'epiclub-' . $tag . '.zip.sha256') {
                 $shaUrl = (string) $asset['browser_download_url'];
+            } elseif ($asset['name'] === 'epiclub-' . $tag . '.zip.minisig') {
+                $sigUrl = (string) $asset['browser_download_url'];
             }
         }
 
-        $bundle = $zipUrl !== null;
+        $bundle = $zipUrl !== null && $sigUrl !== null;
         if (!$bundle) {
             if (empty($release['zipball_url'])) {
                 return null;
             }
             $zipUrl = (string) $release['zipball_url'];
             $shaUrl = null;
+            $sigUrl = null;
         }
 
         return [
@@ -167,7 +175,8 @@ final class GitHubReleaseProvider implements GitHubReleaseProviderInterface
             // ⚠️ FIX #45 : accepte body null (Release sans description)
             'body'       => (string) ($release['body'] ?? ''),
             'bundle'     => $bundle,
-            'sha256_url' => $shaUrl,
+            'sha256_url'  => $shaUrl,
+            'minisig_url' => $sigUrl,
         ];
     }
 
@@ -419,6 +428,8 @@ final class GitHubReleaseProvider implements GitHubReleaseProviderInterface
             'bundle'     => (bool) ($cached['bundle'] ?? false),
             'sha256_url' => isset($cached['sha256_url']) && is_string($cached['sha256_url'])
                 ? $cached['sha256_url'] : null,
+            'minisig_url' => isset($cached['minisig_url']) && is_string($cached['minisig_url'])
+                ? $cached['minisig_url'] : null,
         ];
     }
 

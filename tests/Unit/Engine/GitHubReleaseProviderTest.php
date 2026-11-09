@@ -247,6 +247,7 @@ final class GitHubReleaseProviderTest extends TestCase
                 ['name' => 'epiclub-v1.1.0.zip', 'browser_download_url' => 'https://github.com/o/r/releases/download/v1.1.0/epiclub-v1.1.0.zip'],
                 ['name' => 'epiclub-v1.2.0.zip.sha256', 'browser_download_url' => 'https://github.com/o/r/releases/download/v1.2.0/epiclub-v1.2.0.zip.sha256'],
                 ['name' => 'epiclub-v1.2.0.zip', 'browser_download_url' => 'https://github.com/o/r/releases/download/v1.2.0/epiclub-v1.2.0.zip'],
+                ['name' => 'epiclub-v1.2.0.zip.minisig', 'browser_download_url' => 'https://github.com/o/r/releases/download/v1.2.0/epiclub-v1.2.0.zip.minisig'],
             ],
         ]);
 
@@ -254,7 +255,28 @@ final class GitHubReleaseProviderTest extends TestCase
         self::assertTrue($r['bundle']);
         self::assertSame('https://github.com/o/r/releases/download/v1.2.0/epiclub-v1.2.0.zip', $r['zip_url']);
         self::assertSame('https://github.com/o/r/releases/download/v1.2.0/epiclub-v1.2.0.zip.sha256', $r['sha256_url']);
+        self::assertSame('https://github.com/o/r/releases/download/v1.2.0/epiclub-v1.2.0.zip.minisig', $r['minisig_url']);
         self::assertSame('', $r['body']);
+    }
+
+    /**
+     * [audit 2026-11-08 R1] Archive attachée par la CI mais pas encore
+     * signée : la release reste « en préparation » (cache bref, rien
+     * n'est proposé ni téléchargé).
+     */
+    public function testArchiveNonSigneeResteEnPreparation(): void
+    {
+        $r = GitHubReleaseProvider::construireResultat([
+            'tag_name'    => 'v1.2.0',
+            'zipball_url' => 'https://api.github.com/repos/o/r/zipball/v1.2.0',
+            'assets'      => [
+                ['name' => 'epiclub-v1.2.0.zip', 'browser_download_url' => 'https://github.com/o/r/releases/download/v1.2.0/epiclub-v1.2.0.zip'],
+                ['name' => 'epiclub-v1.2.0.zip.sha256', 'browser_download_url' => 'https://github.com/o/r/releases/download/v1.2.0/epiclub-v1.2.0.zip.sha256'],
+            ],
+        ]);
+
+        self::assertFalse($r['bundle']);
+        self::assertNull($r['minisig_url']);
     }
 
     public function testConstruireResultatReplieSurLeZipballSansAsset(): void
@@ -283,12 +305,14 @@ final class GitHubReleaseProviderTest extends TestCase
         file_put_contents($cacheFile, json_encode([
             'tag' => 'v1.2.0', 'zip_url' => 'https://github.com/a.zip', 'body' => '',
             'bundle' => true, 'sha256_url' => 'https://github.com/a.zip.sha256',
+            'minisig_url' => 'https://github.com/a.zip.minisig',
         ]));
 
         $r = (new GitHubReleaseProvider('fake/repo', $cacheFile, 3600))->getLatestRelease();
 
         self::assertTrue($r['bundle']);
         self::assertSame('https://github.com/a.zip.sha256', $r['sha256_url']);
+        self::assertSame('https://github.com/a.zip.minisig', $r['minisig_url']);
     }
 
     #[DataProvider('urlsDeConfianceProvider')]

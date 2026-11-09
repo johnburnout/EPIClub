@@ -10,6 +10,7 @@ use Epiclub\Engine\DatabaseBackup;
 use Epiclub\Engine\VerrouInstance;
 use Epiclub\Engine\GitHubReleaseProviderInterface;
 use Epiclub\Engine\Session;
+use Epiclub\Engine\SignatureMinisign;
 
 /**
  * [REFACTOR VAGUE 10] Sous-classe de test d'AppUpdateController.
@@ -38,6 +39,14 @@ final class TestableAppUpdateController extends AppUpdateController
     protected function githubReleaseProvider(): GitHubReleaseProviderInterface
     {
         return $this->provider;
+    }
+
+    /** [audit 2026-11-08 R1] Clé de test (SignataireMinisign) au lieu de la clé livrée. */
+    public ?SignatureMinisign $signature = null;
+
+    protected function signatureReleases(): SignatureMinisign
+    {
+        return $this->signature ?? parent::signatureReleases();
     }
 
     protected function configProvider(): ConfigProvider

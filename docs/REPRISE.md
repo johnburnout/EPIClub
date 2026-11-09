@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-11-09 (audit du 2026-11-08 : durcissements v2.9.2, reverse proxy R2 v2.10.0, alerte du limiteur R4 v2.11.0 ; reste ouvert R1 signature des releases)
-**Version courante** : v2.11.0
+**Dernière mise à jour** : 2026-11-09 (audit du 2026-11-08 : durcissements v2.9.2, reverse proxy R2 v2.10.0, alerte du limiteur R4 v2.11.0, releases signées R1 v2.12.0 : audit entièrement traité)
+**Version courante** : v2.12.0
 **Branche** : `main` ; chaque changement passe par une branche et une PR (voir « Règles de travail »)
 
 > **Note canal bêta** : l'endpoint GitHub `/releases/latest` ignore les
@@ -32,7 +32,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v2.11.0 | — | Audit du 2026-11-08, R4 : bandeau du super-admin et journal « Sécurité » quand le limiteur de tentatives est indisponible (`AlerteLimiteur`, `var/alertes/limiteur.json`). | — |
+| v2.12.0 | — | Audit du 2026-11-08, R1 : releases signées hors ligne avec minisign (`SignatureMinisign`, sodium), `.minisig` exigé par l'updater, `bin/signer-release.sh`. | — |
+| v2.11.0 | PR #119 | Audit du 2026-11-08, R4 : bandeau du super-admin et journal « Sécurité » quand le limiteur de tentatives est indisponible (`AlerteLimiteur`, `var/alertes/limiteur.json`). | — |
 | v2.10.0 | PR #118 | Audit du 2026-11-08, R2 : option `TRUSTED_PROXIES` (reverse proxy) pour l'IP client, HTTPS, cookie `Secure` et HSTS. | — |
 | v2.9.2 | PR #117 | Audit du 2026-11-08 : SRI sur Bootstrap, bcrypt coût 12 avec rehachage à la connexion, `gc_maxlifetime`, prérequis MySQL 8.0+. | — |
 | v2.9.1 | — | Twig `debug` réservé au dev ; tests d'intégration indépendants des données de dev. | — |
@@ -897,8 +898,12 @@ croisées avec `app/bootstrap.php` et `app/Engine/EnvironmentFileParser`.
   5. `gh release create vX.Y.Z --target main --title vX.Y.Z
      --notes-file <section du CHANGELOG>` : crée le tag, et la CI
      `release.yml` attache `epiclub-vX.Y.Z.zip` et son `.sha256` ;
-  6. contrôle de l'archive : `gh release download`, `shasum -a 256 -c`,
-     `version.txt` dans le zip.
+  6. **(depuis v2.12.0) signature hors ligne** par l'utilisateur, sur sa
+     machine : `bin/signer-release.sh vX.Y.Z` (contrôle somme +
+     `version.txt`, signe avec minisign, vérifie avec le code de
+     l'updater, attache le `.minisig`). Mot de passe de la clé demandé :
+     à lancer par l'utilisateur lui-même, jamais par Claude. Sans
+     `.minisig`, les instances voient la version « en préparation ».
   Push, PR, fusion et release se font **sur accord explicite** de
   l'utilisateur, à chaque fois.
 - *(avant v2.x)* **Commit unique par ticket** : un commit = un ticket =
@@ -1014,6 +1019,18 @@ nouveaux (non suivis exclus). Utiliser `cp` + `git checkout HEAD --
   `securitypolicyviolation` et des erreurs JS. Script de la session :
   `csp-tour.mjs` (scratchpad, à recréer au besoin). Penser à supprimer
   le compte de test, les données créées et à arrêter `php -S` ensuite.
+- **Releases signées (v2.12.0, audit R1)** : l'updater exige
+  `epiclub-<tag>.zip.minisig`, signature minisign (Ed25519, préhachage
+  BLAKE2b) vérifiée en PHP via sodium (`app/Engine/SignatureMinisign.php`),
+  commentaire de confiance `file:epiclub-<tag>.zip` obligatoire (anti
+  retour en arrière). Clé privée **hors ligne** chez l'utilisateur
+  (`~/.minisign/epiclub.key`, protégée par mot de passe) ; clé publique
+  dans `SignatureMinisign::CLES_PUBLIQUES`. **Perte de la clé = plus de
+  mise à jour automatique possible** : la sauvegarder (support hors
+  ligne). Rotation : ajouter la nouvelle clé publique, publier une
+  release signée par l'ancienne, puis retirer l'ancienne. Une release
+  publiée par la CI sans signature reste invisible des instances (bundle
+  faux) : ne pas oublier l'étape 6 de la procédure.
 - **Sauvegardes signées (v2.7.1)** : `manifest.sig` = HMAC-SHA256 du
   manifeste, clé dérivée de `SECRET_KEY`. Une archive non signée
   (antérieure à v2.7.1) n'est restaurable qu'en CLI avec

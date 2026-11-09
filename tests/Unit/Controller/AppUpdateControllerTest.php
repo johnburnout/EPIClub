@@ -8,6 +8,7 @@ use Epiclub\Engine\GitHubReleaseProviderInterface;
 use Epiclub\Engine\Session;
 use Epiclub\Engine\VerrouInstance;
 use Epiclub\Tests\Unit\Controller\Support\TestableAppUpdateController;
+use Epiclub\Tests\Unit\Support\SignataireMinisign;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\MockObject\MockBuilder;
 use PHPUnit\Framework\TestCase;
@@ -118,13 +119,9 @@ final class AppUpdateControllerTest extends TestCase
         $maliciousZip = file_get_contents($zipPath);
         unlink($zipPath);
 
-        $provider = $this->makeProviderMock();
-        $provider->method('getLatestRelease')->willReturn([
-            'tag'     => 'v9.9.9',
-            'zip_url' => 'https://example.com/malicious.zip',
-            'body'    => 'Malicious release',
-        ]);
-        $provider->method('downloadUrl')->willReturn($maliciousZip);
+        // Archive malveillante mais signée : le contrôle des entrées reste
+        // une défense en profondeur après la signature (audit R1).
+        $provider = $this->fournisseurSigne($maliciousZip);
 
         $controller = $this->makeControllerWith($provider);
 
@@ -206,12 +203,7 @@ final class AppUpdateControllerTest extends TestCase
         $contenu = file_get_contents($zipPath);
         unlink($zipPath);
 
-        $provider = $this->makeProviderMock();
-        $provider->method('getLatestRelease')->willReturn([
-            'tag' => 'v9.9.9', 'zip_url' => 'https://api.github.com/repos/o/r/zipball/v9.9.9',
-            'body' => '', 'bundle' => false, 'sha256_url' => null,
-        ]);
-        $provider->method('downloadUrl')->willReturn($contenu);
+        $provider = $this->fournisseurSigne($contenu);
         $versionAvant = file_get_contents(__DIR__ . '/../../../version.txt');
 
         $response = $this->makeControllerWith($provider)->perform(
@@ -270,12 +262,7 @@ final class AppUpdateControllerTest extends TestCase
         $contenu = file_get_contents($zipPath);
         unlink($zipPath);
 
-        $provider = $this->makeProviderMock();
-        $provider->method('getLatestRelease')->willReturn([
-            'tag' => 'v9.9.9', 'zip_url' => 'https://api.github.com/repos/o/r/zipball/v9.9.9',
-            'body' => '', 'bundle' => false, 'sha256_url' => null,
-        ]);
-        $provider->method('downloadUrl')->willReturn($contenu);
+        $provider = $this->fournisseurSigne($contenu);
 
         $enPanne = new class implements \Epiclub\Engine\DatabaseDumperInterface {
             public function exporter(string $fichierSql): array
@@ -347,13 +334,9 @@ final class AppUpdateControllerTest extends TestCase
         $maliciousZip = file_get_contents($zipPath);
         unlink($zipPath);
 
-        $provider = $this->makeProviderMock();
-        $provider->method('getLatestRelease')->willReturn([
-            'tag'     => 'v9.9.9',
-            'zip_url' => 'https://example.com/malicious.zip',
-            'body'    => 'Malicious release',
-        ]);
-        $provider->method('downloadUrl')->willReturn($maliciousZip);
+        // Archive malveillante mais signée : le contrôle des entrées reste
+        // une défense en profondeur après la signature (audit R1).
+        $provider = $this->fournisseurSigne($maliciousZip);
 
         $controller = $this->makeControllerWith($provider);
 
@@ -539,6 +522,43 @@ final class AppUpdateControllerTest extends TestCase
         self::assertDirectoryDoesNotExist(__DIR__ . '/../../../var/tmp/update/extracted');
     }
 
+    /** [audit 2026-11-08 R1] Signature valide mais faite par une autre clé. */
+    public function testPerformRejetteUneArchiveSigneeParUneAutreCle(): void
+    {
+        $provider = $this->fournisseurSigne($this->zipValide());
+        $controller = $this->makeControllerWith($provider);
+        $controller->signature = (new SignataireMinisign())->verificateur();
+
+        $errorLog = ini_set('error_log', '/dev/null');
+        try {
+            $html = (string) $controller->perform(
+                Request::create('/admin/update/perform', 'POST', ['csrf_token' => 'token_test'])
+            )->getContent();
+        } finally {
+            ini_set('error_log', (string) $errorLog);
+        }
+
+        self::assertStringContainsString('signature', $html);
+        self::assertStringContainsString('rejeté', html_entity_decode($html, ENT_QUOTES));
+        self::assertDirectoryDoesNotExist(__DIR__ . '/../../../var/tmp/update/extracted');
+    }
+
+    public function testPerformNeTelechargePasUneReleaseNonSignee(): void
+    {
+        $provider = $this->makeProviderMock();
+        $provider->method('getLatestRelease')->willReturn([
+            'tag' => 'v9.9.9', 'zip_url' => 'https://api.github.com/repos/o/r/zipball/v9.9.9',
+            'body' => '', 'bundle' => false, 'sha256_url' => null, 'minisig_url' => null,
+        ]);
+        $provider->expects(self::never())->method('downloadUrl');
+
+        $response = $this->makeControllerWith($provider)->perform(
+            Request::create('/admin/update/perform', 'POST', ['csrf_token' => 'token_test'])
+        );
+
+        self::assertStringContainsString('pas encore disponible', (string) $response->getContent());
+    }
+
     public function testVerifierSommeDeControleAccepteLaBonneSomme(): void
     {
         $zip = $this->zipValide();
@@ -624,10 +644,39 @@ final class AppUpdateControllerTest extends TestCase
     private function makeControllerWith(
         GitHubReleaseProviderInterface $provider,
     ): TestableAppUpdateController {
-        return new TestableAppUpdateController(
+        $controller = new TestableAppUpdateController(
             $this->makeSession(),
             $provider,
         );
+        $controller->signature = $this->signataire()->verificateur();
+        return $controller;
+    }
+
+    private ?SignataireMinisign $signataire = null;
+
+    private function signataire(): SignataireMinisign
+    {
+        return $this->signataire ??= new SignataireMinisign();
+    }
+
+    /** [audit 2026-11-08 R1] Release v9.9.9 complète, somme et signature valides. */
+    private function fournisseurSigne(string $zip): GitHubReleaseProviderInterface
+    {
+        $base = 'https://github.com/x/y/releases/download/v9.9.9/epiclub-v9.9.9.zip';
+        $sha = hash('sha256', $zip) . '  epiclub-v9.9.9.zip';
+        $sig = $this->signataire()->signer($zip, "timestamp:1\tfile:epiclub-v9.9.9.zip\thashed");
+
+        $provider = $this->makeProviderMock();
+        $provider->method('getLatestRelease')->willReturn([
+            'tag' => 'v9.9.9', 'zip_url' => $base, 'body' => '', 'bundle' => true,
+            'sha256_url' => $base . '.sha256', 'minisig_url' => $base . '.minisig',
+        ]);
+        $provider->method('downloadUrl')->willReturnCallback(static fn (string $url): string => match ($url) {
+            $base . '.sha256'  => $sha,
+            $base . '.minisig' => $sig,
+            default            => $zip,
+        });
+        return $provider;
     }
 
     private function makeProviderMock(): GitHubReleaseProviderInterface
