@@ -10,6 +10,31 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v2.9.2] — 2026-11-09
+
+Durcissements issus de l'audit du 2026-11-08 (`docs/audit-2026-11-08.md`,
+points R3, R5, R6 et R7). Aucune faille corrigée : l'audit n'en a relevé
+aucune.
+
+### Security
+
+- **Bootstrap chargé avec contrôle d'intégrité (R3).** Le script servi par
+  `cdn.jsdelivr.net` porte désormais un attribut `integrity` (SHA-384) :
+  un fichier modifié sur le CDN est refusé par le navigateur.
+- **Mots de passe hachés en bcrypt coût 12 (R5)**, au lieu du coût 10 par
+  défaut, via une classe unique `MotDePasse`. Les mots de passe existants
+  restent valables et sont rehachés automatiquement à la prochaine
+  connexion réussie. Les codes de secours de la double authentification,
+  aléatoires et longs, gardent le coût par défaut.
+
+### Changed
+
+- **Durée de conservation des sessions côté serveur fixée (R7)** à
+  30 minutes (`gc_maxlifetime`), indépendamment du `php.ini` de l'hébergeur ;
+  l'expiration après 15 minutes d'inactivité est inchangée.
+- **README : MySQL 8.0+ ou MariaDB 10.6+ recommandés (R6)**, MySQL 5.7
+  n'étant plus maintenu.
+
 ## [v2.9.1] — 2026-11-08
 
 Points restés ouverts dans le fichier de reprise.

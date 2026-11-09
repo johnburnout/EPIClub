@@ -72,7 +72,7 @@ class AppUserAuthenticator
      * l'identifiant n'existe pas, pour que le temps de réponse ne révèle
      * pas l'existence du compte.
      */
-    private const HASH_FACTICE = '$2y$10$4GgDyXpIU4LNIXlR4Yu0deE9whW1fdLD6XDC8xrhDxTftu6HfR9dq';
+    private const HASH_FACTICE = '$2y$12$LeQvRCyXOdX6fr5oQhbn3un6Jf6H6xIXVTVXnB9ODXuCtsbUWFi3e';
 
     /**
      * [SÉCURITÉ — audit P34] Colonnes sensibles JAMAIS stockées en
@@ -133,6 +133,7 @@ class AppUserAuthenticator
 
         if ($user && $motDePasseValide) {
             $this->limiter(fn (LoginThrottleManager $t) => $t->reinitialiser(array_key_first($cles)));
+            $this->rehacherSiNecessaire($user, $plainTextPassword);
 
             // [migration 020] Second facteur configuré : la session
             // utilisateur n'est pas encore ouverte, seule la connexion en
@@ -277,6 +278,23 @@ class AppUserAuthenticator
             }
         });
         return $attente;
+    }
+
+    /**
+     * [SÉCURITÉ — audit 2026-11-08 R5] Hachage ancien (coût 10) : recalculé
+     * au coût courant, le mot de passe en clair n'étant disponible qu'ici.
+     * Un échec n'empêche jamais la connexion (nouvel essai la fois suivante).
+     */
+    private function rehacherSiNecessaire(array $user, string $plainTextPassword): void
+    {
+        if (!MotDePasse::doitEtreRehache((string) $user['password'])) {
+            return;
+        }
+        try {
+            $this->utilisateurManager->changePassword((int) $user['id'], MotDePasse::hacher($plainTextPassword));
+        } catch (\Throwable $e) {
+            error_log('[AppUserAuthenticator] Rehachage du mot de passe impossible : ' . $e->getMessage());
+        }
     }
 
     /**

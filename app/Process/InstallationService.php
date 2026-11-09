@@ -9,6 +9,7 @@ use Epiclub\Domain\ClubManager;
 use Epiclub\Domain\UtilisateurManager;
 use Epiclub\Engine\EnvironmentFileParser;
 use Epiclub\Engine\MigrationManager;
+use Epiclub\Engine\MotDePasse;
 use Epiclub\Exception\InstallationException;
 
 /**
@@ -458,7 +459,7 @@ final class InstallationService
             'prenom'               => $admin['prenom'],
             'username'             => $admin['username'],
             'email'                => $admin['email'],
-            'password'             => password_hash($admin['password'], PASSWORD_DEFAULT),
+            'password'             => MotDePasse::hacher($admin['password']),
             // Le tout premier compte de l'installation est SUPER_ADMIN :
             // seul accès aux réglages club, SMTP, mise à jour, sauvegarde.
             'role'                 => 'ROLE_SUPER_ADMIN',

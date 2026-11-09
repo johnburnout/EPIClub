@@ -8,6 +8,7 @@ use Epiclub\Domain\ClubManager;
 use Epiclub\Domain\LoginThrottleManager;
 use Epiclub\Domain\UtilisateurManager;
 use Epiclub\Engine\AbstractController;
+use Epiclub\Engine\MotDePasse;
 use Epiclub\Exception\MailDeliveryException;
 use Epiclub\Engine\MailerService;
 use Epiclub\Engine\MailerServiceInterface;
@@ -246,7 +247,7 @@ class AppUserRegisterController extends AbstractController
                 // rôle et les autres colonnes avec des données périmétrées).
                 $utilisateurManager->changePassword(
                     (int) $utilisateur['id'],
-                    password_hash($password, PASSWORD_DEFAULT)
+                    MotDePasse::hacher($password)
                 );
                 $utilisateurManager->clearResetToken((int) $utilisateur['id']);
 

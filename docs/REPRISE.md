@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-11-08 (session des 7 et 8 novembre — audit de sécurité complet v2.7.1 → v2.8.0, droits des fichiers restaurés v2.7.2, journal des acquisitions et des lots v2.9.0, points ouverts soldés v2.9.1)
-**Version courante** : v2.9.1
+**Dernière mise à jour** : 2026-11-09 (durcissements de l'audit du 2026-11-08 v2.9.2 ; restent ouverts R1 signature des releases, R2 reverse proxy, R4 surveillance du limiteur)
+**Version courante** : v2.9.2
 **Branche** : `main` ; chaque changement passe par une branche et une PR (voir « Règles de travail »)
 
 > **Note canal bêta** : l'endpoint GitHub `/releases/latest` ignore les
@@ -32,6 +32,7 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
+| v2.9.2 | — | Audit du 2026-11-08 : SRI sur Bootstrap, bcrypt coût 12 avec rehachage à la connexion, `gc_maxlifetime`, prérequis MySQL 8.0+. | — |
 | v2.9.1 | — | Twig `debug` réservé au dev ; tests d'intégration indépendants des données de dev. | — |
 | v2.9.0 | PR #114 | Journal d'activité : étapes des acquisitions, modifications de lots et suppressions d'équipements. | `48f59bb` |
 | v2.8.0 | PR #113 | CSP stricte pour les scripts : dernier point de l'audit de sécurité du 2026-11-07. | `f0037b0` |
