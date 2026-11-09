@@ -10,6 +10,13 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Changed
+
+- **Codes de secours hachés comme les mots de passe.** Ils passent eux
+  aussi par `MotDePasse` (bcrypt coût 12, fixé explicitement). Aucun effet
+  visible : avec PHP 8.4 et plus, le hachage par défaut utilisait déjà ce
+  coût, et les codes déjà émis restent valides.
+
 ## [v2.12.0] — 2026-11-09
 
 Point R1 de l'audit du 2026-11-08 : les mises à jour sont signées.

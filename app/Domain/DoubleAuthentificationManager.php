@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Epiclub\Domain;
 
 use Epiclub\Engine\AbstractManager;
+use Epiclub\Engine\MotDePasse;
 
 /**
  * [migration 020] Stockage de la double authentification : application
@@ -108,7 +109,7 @@ class DoubleAuthentificationManager extends AbstractManager
         for ($i = 0; $i < self::NOMBRE_CODES_SECOURS; $i++) {
             $code = self::nouveauCode();
             $codes[] = $code;
-            $hachages[] = password_hash(self::normaliserCode($code), PASSWORD_DEFAULT);
+            $hachages[] = MotDePasse::hacher(self::normaliserCode($code));
         }
         $this->ecrireCodes($utilisateurId, $hachages);
         return $codes;
