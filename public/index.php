@@ -28,6 +28,10 @@ $session = new Session(new NativeSessionStorage([
     'cookie_secure'    => $enHttps,
     'use_strict_mode'  => true,
     'use_only_cookies' => true,
+    // [audit 2026-11-08 R7] Purge des fichiers de session indépendante du
+    // php.ini de l'hébergeur : au-delà de l'expiration applicative
+    // (Session::SESSION_LIFETIME), jamais avant.
+    'gc_maxlifetime'   => 2 * Session::SESSION_LIFETIME,
 ]));
 $session->start();
 

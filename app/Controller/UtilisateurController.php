@@ -7,6 +7,7 @@ use Epiclub\Domain\DoubleAuthentificationManager;
 use Epiclub\Domain\JournalActiviteManager;
 use Epiclub\Domain\UtilisateurManager;
 use Epiclub\Engine\AbstractController;
+use Epiclub\Engine\MotDePasse;
 use Epiclub\Engine\MailerService;
 use Epiclub\Engine\MailerServiceInterface;
 use Epiclub\Engine\Pagination;
@@ -233,7 +234,7 @@ class UtilisateurController extends AbstractController
             }
 
             if (empty($form_errors)) {
-                $utilisateur['password'] = password_hash($password, PASSWORD_DEFAULT);
+                $utilisateur['password'] = MotDePasse::hacher($password);
                 $utilisateur['date_creation'] = date('Y-m-d H:i:s');
                 $utilisateur['derniere_connexion'] = null;
 
@@ -408,7 +409,7 @@ class UtilisateurController extends AbstractController
                 if ($error = UtilisateurManager::validatePassword($password)) {
                     $form_errors['password'] = $error;
                 } else {
-                    $newPasswordHash = password_hash($password, PASSWORD_DEFAULT);
+                    $newPasswordHash = MotDePasse::hacher($password);
                 }
             }
 
