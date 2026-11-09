@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-11-09 (audit du 2026-11-08 : durcissements v2.9.2, reverse proxy R2 v2.10.0 ; restent ouverts R1 signature des releases, R4 surveillance du limiteur)
-**Version courante** : v2.10.0
+**Dernière mise à jour** : 2026-11-09 (audit du 2026-11-08 : durcissements v2.9.2, reverse proxy R2 v2.10.0, alerte du limiteur R4 v2.11.0 ; reste ouvert R1 signature des releases)
+**Version courante** : v2.11.0
 **Branche** : `main` ; chaque changement passe par une branche et une PR (voir « Règles de travail »)
 
 > **Note canal bêta** : l'endpoint GitHub `/releases/latest` ignore les
@@ -32,7 +32,8 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v2.10.0 | — | Audit du 2026-11-08, R2 : option `TRUSTED_PROXIES` (reverse proxy) pour l'IP client, HTTPS, cookie `Secure` et HSTS. | — |
+| v2.11.0 | — | Audit du 2026-11-08, R4 : bandeau du super-admin et journal « Sécurité » quand le limiteur de tentatives est indisponible (`AlerteLimiteur`, `var/alertes/limiteur.json`). | — |
+| v2.10.0 | PR #118 | Audit du 2026-11-08, R2 : option `TRUSTED_PROXIES` (reverse proxy) pour l'IP client, HTTPS, cookie `Secure` et HSTS. | — |
 | v2.9.2 | PR #117 | Audit du 2026-11-08 : SRI sur Bootstrap, bcrypt coût 12 avec rehachage à la connexion, `gc_maxlifetime`, prérequis MySQL 8.0+. | — |
 | v2.9.1 | — | Twig `debug` réservé au dev ; tests d'intégration indépendants des données de dev. | — |
 | v2.9.0 | PR #114 | Journal d'activité : étapes des acquisitions, modifications de lots et suppressions d'équipements. | `48f59bb` |

@@ -80,6 +80,13 @@ $routes->add('update_smtp', new Route(
     [], [], '', [], ['POST']
 ));
 
+// [audit 2026-11-08 R4] Acquittement du bandeau « limiteur indisponible ».
+$routes->add('acquitter_alerte_limiteur', new Route(
+    '/admin/alerte-limiteur/acquitter',
+    ['_controller' => 'Epiclub\\Controller\\IndexController', 'action' => 'acquitterAlerteLimiteur'],
+    [], [], '', [], ['POST']
+));
+
 $routes->add('test_mail', new Route(
     '/test-mail',
     ['_controller' => 'Epiclub\\Controller\\IndexController', 'action' => 'testMail'],

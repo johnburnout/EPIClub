@@ -22,4 +22,7 @@ define('EPICLUB_CONFIG_FILE', __DIR__ . '/Fixtures/env.test.php');
 // d'intégration (processus séparé) n'est pas concerné.
 define('EPICLUB_JOURNAL_ACTIVITE_DESACTIVE', true);
 
+// [audit 2026-11-08 R4] Alertes du limiteur hors de var/ (AlerteLimiteur).
+define('EPICLUB_ALERTES_DIR', sys_get_temp_dir() . '/epiclub-tests-alertes');
+
 require dirname(__DIR__) . '/vendor/autoload.php';

@@ -688,7 +688,8 @@ class DoubleAuthentificationController extends AbstractController
         try {
             return $this->loginThrottle()->secondesRestantes($cle);
         } catch (\Throwable $e) {
-            error_log('[DoubleAuthentification] Limiteur indisponible, vérification refusée : ' . $e->getMessage());
+            // Vérification refusée ; panne signalée au super-admin (R4).
+            $this->alerteLimiteur()->signaler('double authentification', $e);
             return null;
         }
     }
@@ -703,7 +704,7 @@ class DoubleAuthentificationController extends AbstractController
         try {
             return $operation($this->loginThrottle());
         } catch (\Throwable $e) {
-            error_log('[DoubleAuthentification] Limiteur indisponible : ' . $e->getMessage());
+            $this->alerteLimiteur()->signaler('double authentification', $e);
             return null;
         }
     }

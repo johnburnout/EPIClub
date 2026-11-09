@@ -24,6 +24,8 @@ class JournalActiviteManager extends AbstractManager
     public const TYPE_ACQUISITION = 'acquisition';
     /** [2026-11-07] Lots (dissociation, regroupement, nombre) et suppressions d'équipements. */
     public const TYPE_EQUIPEMENT = 'equipement';
+    /** [audit 2026-11-08 R4] Incidents de sécurité (limiteur de tentatives indisponible). */
+    public const TYPE_SECURITE = 'securite';
 
     /** Libellés affichés (clé technique => libellé). */
     public const TYPES = [
@@ -32,6 +34,7 @@ class JournalActiviteManager extends AbstractManager
         self::TYPE_PRET => 'Prêt',
         self::TYPE_ACQUISITION => 'Acquisition',
         self::TYPE_EQUIPEMENT => 'Équipement',
+        self::TYPE_SECURITE => 'Sécurité',
         self::TYPE_JOURNAL => 'Journal',
     ];
 

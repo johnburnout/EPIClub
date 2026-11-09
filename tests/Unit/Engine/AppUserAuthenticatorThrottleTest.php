@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Epiclub\Tests\Unit\Engine;
 
 use Epiclub\Domain\LoginThrottleManager;
+use Epiclub\Engine\AlerteLimiteur;
 use Epiclub\Engine\AppUserAuthenticator;
 use Epiclub\Engine\Session;
 use Epiclub\Tests\Unit\Domain\Support\InMemoryLoginThrottleManager;
@@ -107,9 +108,22 @@ final class AppUserAuthenticatorThrottleTest extends TestCase
         $enPanne->method('enregistrerEchec')->willThrowException(new \PDOException('table absente'));
         $enPanne->method('reinitialiser')->willThrowException(new \PDOException('table absente'));
 
+        $alerte = AlerteLimiteur::parDefaut();
+        $alerte->acquitter();
+        $journal = ini_set('error_log', '/dev/null');
         $auth = $this->authentificateur($this->utilisateur(), $enPanne);
 
-        self::assertTrue($auth->authenticate('adurand', self::BON, self::IP));
+        try {
+            self::assertTrue($auth->authenticate('adurand', self::BON, self::IP));
+
+            // [audit 2026-11-08 R4] La panne est signalée au super-admin.
+            $etat = $alerte->etat();
+            self::assertNotNull($etat);
+            self::assertSame(['connexion'], $etat['sources']);
+        } finally {
+            ini_set('error_log', (string) $journal);
+            $alerte->acquitter();
+        }
     }
 
     // ------------------------------------------------------------------

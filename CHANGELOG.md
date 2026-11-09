@@ -10,6 +10,25 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v2.11.0] — 2026-11-09
+
+Point R4 de l'audit du 2026-11-08 : une panne du limiteur de tentatives
+ne passe plus inaperçue.
+
+### Added
+
+- **Alerte « limiteur de tentatives indisponible » pour le super-admin
+  (R4).** Si la table du limiteur devient inaccessible (base en panne,
+  migration non appliquée), la connexion reste possible mais sans
+  protection contre la force brute. Désormais, la panne est consignée
+  (`var/alertes/limiteur.json`) et un bandeau rouge s'affiche sur toutes
+  les pages du super-admin : date de début, nombre d'occurrences, pages
+  concernées et message d'erreur. Il reste affiché jusqu'à ce que le
+  super-admin clique sur « Problème résolu, masquer l'alerte », et
+  réapparaît à la panne suivante.
+- **Journal d'activité : type « Sécurité ».** Le début d'une panne du
+  limiteur et l'acquittement de l'alerte y sont inscrits.
+
 ## [v2.10.0] — 2026-11-09
 
 Point R2 de l'audit du 2026-11-08 : déploiement derrière un reverse proxy.
