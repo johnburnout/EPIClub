@@ -1,12 +1,12 @@
 {% extends "_layout.twig" %}
 
 {% block body %}
-	<h3>Acquisitions</h3>
+	<h3>{{ 'Acquisitions'|trans }}</h3>
 	<hr>
 	
 	{% if isGranted('ROLE_ADMIN') %}
-		<a href="/admin/acquisitions/nouvelle" class="btn btn-primary mb-3">Nouvelle acquisition</a>
-		<a href="/admin/acquisitions/import" class="btn btn-outline-primary mb-3">📥 Importer (Excel / CSV)</a>
+		<a href="/admin/acquisitions/nouvelle" class="btn btn-primary mb-3">{{ 'Nouvelle acquisition'|trans }}</a>
+		<a href="/admin/acquisitions/import" class="btn btn-outline-primary mb-3">📥 {{ 'Importer (Excel / CSV)'|trans }}</a>
 		<hr>
 	{% endif %}
 
@@ -15,9 +15,9 @@
 		<!-- LIGNE 1 : Filtres -->
 		<div class="row g-3">
 			<div class="col-md-3">
-				<label for="fournisseur" class="form-label">Fournisseur</label>
+				<label for="fournisseur" class="form-label">{{ 'Fournisseur'|trans }}</label>
 				<select name="fournisseur" id="fournisseur" class="form-select">
-					<option value="">Tous</option>
+					<option value="">{{ 'Tous'|trans }}</option>
 					{% for fournisseur in fournisseurs|tri_alpha('nom') %}
 					<option value="{{ fournisseur.id }}" {% if filtres.fournisseur == fournisseur.id %}selected{% endif %}>
 						{{ fournisseur.nom }}
@@ -27,55 +27,55 @@
 			</div>
 
 			<div class="col-md-2">
-				<label for="statut" class="form-label">Statut</label>
+				<label for="statut" class="form-label">{{ 'Statut'|trans }}</label>
 				<select name="statut" id="statut" class="form-select">
-					<option value="">Tous</option>
-					<option value="validee" {% if filtres.statut == 'validee' %}selected{% endif %}>Validée</option>
-					<option value="en_attente" {% if filtres.statut == 'en_attente' %}selected{% endif %}>En attente</option>
+					<option value="">{{ 'Tous'|trans }}</option>
+					<option value="validee" {% if filtres.statut == 'validee' %}selected{% endif %}>{{ 'Validée'|trans }}</option>
+					<option value="en_attente" {% if filtres.statut == 'en_attente' %}selected{% endif %}>{{ 'En attente'|trans }}</option>
 				</select>
 			</div>
 
 			<div class="col-md-2">
-				<label for="date_du" class="form-label">Date du</label>
+				<label for="date_du" class="form-label">{{ 'Date du'|trans }}</label>
 				<input type="date" name="date_du" id="date_du" value="{{ filtres.date_du }}" class="form-control">
 			</div>
 
 			<div class="col-md-2">
-				<label for="date_au" class="form-label">au</label>
+				<label for="date_au" class="form-label">{{ 'au'|trans }}</label>
 				<input type="date" name="date_au" id="date_au" value="{{ filtres.date_au }}" class="form-control">
 			</div>
 
 			<!-- Recherche (référence facture) -->
 			<div class="col-md-3">
-				<label for="q" class="form-label">Recherche</label>
+				<label for="q" class="form-label">{{ 'Recherche'|trans }}</label>
 				<input type="search" name="q" id="q" value="{{ filtres.q }}" maxlength="100"
-				       class="form-control" placeholder="Référence facture">
+				       class="form-control" placeholder="{{ 'Référence facture'|trans }}">
 			</div>
 		</div>
 
 		<!-- LIGNE 2 : Tri, limite et boutons -->
 		<div class="row g-3 mt-2">
 			<div class="col-md-2">
-				<label for="order_by" class="form-label">Trier par</label>
+				<label for="order_by" class="form-label">{{ 'Trier par'|trans }}</label>
 				<select name="order_by" id="order_by" class="form-select">
-					<option value="id" {% if filtres.order_by == 'id' %}selected{% endif %}>ID</option>
-					<option value="facture_reference" {% if filtres.order_by == 'facture_reference' %}selected{% endif %}>Référence facture</option>
-					<option value="facture_date" {% if filtres.order_by == 'facture_date' %}selected{% endif %}>Date</option>
-					<option value="fournisseur" {% if filtres.order_by == 'fournisseur' %}selected{% endif %}>Fournisseur</option>
+					<option value="id" {% if filtres.order_by == 'id' %}selected{% endif %}>{{ 'ID'|trans }}</option>
+					<option value="facture_reference" {% if filtres.order_by == 'facture_reference' %}selected{% endif %}>{{ 'Référence facture'|trans }}</option>
+					<option value="facture_date" {% if filtres.order_by == 'facture_date' %}selected{% endif %}>{{ 'Date'|trans }}</option>
+					<option value="fournisseur" {% if filtres.order_by == 'fournisseur' %}selected{% endif %}>{{ 'Fournisseur'|trans }}</option>
 				</select>
 			</div>
 
 			<div class="col-md-2">
-				<label for="order_dir" class="form-label">Ordre</label>
+				<label for="order_dir" class="form-label">{{ 'Ordre'|trans }}</label>
 				<select name="order_dir" id="order_dir" class="form-select">
-					<option value="asc" {% if filtres.order_dir == 'asc' %}selected{% endif %}>Croissant</option>
-					<option value="desc" {% if filtres.order_dir == 'desc' %}selected{% endif %}>Décroissant</option>
+					<option value="asc" {% if filtres.order_dir == 'asc' %}selected{% endif %}>{{ 'Croissant'|trans }}</option>
+					<option value="desc" {% if filtres.order_dir == 'desc' %}selected{% endif %}>{{ 'Décroissant'|trans }}</option>
 				</select>
 			</div>
 
 			{% if pagination.total > 10 %}
 			<div class="col-md-2">
-				<label for="limit" class="form-label">Lignes par page</label>
+				<label for="limit" class="form-label">{{ 'Lignes par page'|trans }}</label>
 				<select name="limit" id="limit" class="form-select" data-auto-submit>
 					{% for n in [10, 25, 50, 100] %}
 					<option value="{{ n }}" {% if filtres.limit == n %}selected{% endif %}>{{ n }}</option>
@@ -85,8 +85,8 @@
 			{% endif %}
 
 			<div class="col-md-4 d-flex align-items-end gap-2">
-				<button type="submit" class="btn btn-secondary">Appliquer</button>
-				<a href="/admin/acquisitions" class="btn btn-outline-secondary">Réinitialiser</a>
+				<button type="submit" class="btn btn-secondary">{{ 'Appliquer'|trans }}</button>
+				<a href="/admin/acquisitions" class="btn btn-outline-secondary">{{ 'Réinitialiser'|trans }}</a>
 			</div>
 		</div>
 	</form>
@@ -96,13 +96,13 @@
 	<table class="table table-striped">
 		<thead>
 			<tr>
-				<th>ID</th>
-				<th>Fournisseur</th>
-				<th>Référence facture</th>
-				<th>Date</th>
-				<th>Statut</th>
-				<th>Facture</th>
-				<th>Actions</th>
+				<th>{{ 'ID'|trans }}</th>
+				<th>{{ 'Fournisseur'|trans }}</th>
+				<th>{{ 'Référence facture'|trans }}</th>
+				<th>{{ 'Date'|trans }}</th>
+				<th>{{ 'Statut'|trans }}</th>
+				<th>{{ 'Facture'|trans }}</th>
+				<th>{{ 'Actions'|trans }}</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -114,17 +114,17 @@
 					<td>{{ acquisition.facture_date|date("d/m/Y") }}</td>
 					<td>
 						{% if acquisition.est_validee %}
-							<span class="badge bg-success">✅ Validée</span>
+							<span class="badge bg-success">✅ {{ 'Validée'|trans }}</span>
 						{% else %}
-							<span class="badge bg-warning">⏳ En attente</span>
+							<span class="badge bg-warning">⏳ {{ 'En attente'|trans }}</span>
 						{% endif %}
 					</td>
 					<td>
 						{# « facture à importer » = AcquisitionManager::FACTURE_A_IMPORTER (placeholder posé par l'import) #}
 						{% if acquisition.facture_document == 'facture à importer' %}
-							<span class="badge bg-secondary" title="La facture pourra être téléversée ultérieurement">📄 facture à importer</span>
+							<span class="badge bg-secondary" title="{{ 'La facture pourra être téléversée ultérieurement'|trans }}">📄 {{ 'facture à importer'|trans }}</span>
 						{% elseif acquisition.facture_document %}
-							<a href="/uploads/{{ acquisition.facture_document }}" target="_blank" class="btn btn-sm btn-outline-primary" title="Voir la facture">
+							<a href="/uploads/{{ acquisition.facture_document }}" target="_blank" class="btn btn-sm btn-outline-primary" title="{{ 'Voir la facture'|trans }}">
 								📄
 							</a>
 						{% else %}
@@ -132,20 +132,20 @@
 						{% endif %}
 					</td>
 					<td>
-						<a href="/admin/acquisitions/acquisition-{{ acquisition.id }}" class="btn btn-sm btn-primary">Voir</a>
+						<a href="/admin/acquisitions/acquisition-{{ acquisition.id }}" class="btn btn-sm btn-primary">{{ 'Voir'|trans }}</a>
 						
 						{% if isGranted('ROLE_ADMIN') %}
 						{% if not acquisition.est_validee %}
-						<a href="/admin/acquisitions/acquisition_modification-{{ acquisition.id }}" class="btn btn-sm btn-warning">Modifier</a>
+						<a href="/admin/acquisitions/acquisition_modification-{{ acquisition.id }}" class="btn btn-sm btn-warning">{{ 'Modifier'|trans }}</a>
 						<form method="post" action="/admin/acquisitions/acquisition_supprimer-{{ acquisition.id }}" style="display:inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 							<button type="submit" class="btn btn-sm btn-danger"
-								data-confirm="⚠️ Supprimer définitivement l'acquisition #{{ acquisition.id }} ({{ acquisition.facture_reference }}) ?&#10;&#10;Cette action est irréversible.">
-								🗑️ Supprimer
+								data-confirm="⚠️ {{ 'Supprimer définitivement l\'acquisition #{id} ({facture_reference}) ?&#10;&#10;Cette action est irréversible.'|trans({id: (acquisition.id)|e, facture_reference: (acquisition.facture_reference)|e})|raw }}">
+								🗑️ {{ 'Supprimer'|trans }}
 							</button>
 						</form>
 						{% else %}
-						<span class="text-muted">🔒 Verrouillée</span>
+						<span class="text-muted">🔒 {{ 'Verrouillée'|trans }}</span>
 						{% endif %}
 						{% endif %}
 					</td>
@@ -153,7 +153,7 @@
 			{% else %}
 				<tr>
 					<td colspan="7" class="text-center text-muted py-4">
-						<i>{{ filtre_actif ? 'Aucune acquisition ne correspond aux filtres.' : 'Aucune acquisition pour le moment.' }}</i>
+						<i>{{ filtre_actif ? 'Aucune acquisition ne correspond aux filtres.'|trans : 'Aucune acquisition pour le moment.'|trans }}</i>
 					</td>
 				</tr>
 			{% endfor %}
@@ -164,28 +164,28 @@
 	{% if pagination.total > 10 %}
 	<div class="row mt-3">
 		<div class="col-md-12">
-			<nav aria-label="Pagination">
+			<nav aria-label="{{ 'Pagination'|trans }}">
 				<ul class="pagination">
 					{% if pagination.hasPrevious %}
-					<li class="page-item"><a class="page-link" href="{{ paginationUrls.first }}">Premier</a></li>
-					<li class="page-item"><a class="page-link" href="{{ paginationUrls.previous }}">Précédent</a></li>
+					<li class="page-item"><a class="page-link" href="{{ paginationUrls.first }}">{{ 'Premier'|trans }}</a></li>
+					<li class="page-item"><a class="page-link" href="{{ paginationUrls.previous }}">{{ 'Précédent'|trans }}</a></li>
 					{% else %}
-					<li class="page-item disabled"><span class="page-link">Premier</span></li>
-					<li class="page-item disabled"><span class="page-link">Précédent</span></li>
+					<li class="page-item disabled"><span class="page-link">{{ 'Premier'|trans }}</span></li>
+					<li class="page-item disabled"><span class="page-link">{{ 'Précédent'|trans }}</span></li>
 					{% endif %}
 
-					<li class="page-item disabled"><span class="page-link">Page {{ pagination.page }} sur {{ pagination.totalPages }}</span></li>
+					<li class="page-item disabled"><span class="page-link">{{ 'Page {page} sur {totalPages}'|trans({page: pagination.page, totalPages: pagination.totalPages}) }}</span></li>
 
 					{% if pagination.hasNext %}
-					<li class="page-item"><a class="page-link" href="{{ paginationUrls.next }}">Suivant</a></li>
-					<li class="page-item"><a class="page-link" href="{{ paginationUrls.last }}">Dernier</a></li>
+					<li class="page-item"><a class="page-link" href="{{ paginationUrls.next }}">{{ 'Suivant'|trans }}</a></li>
+					<li class="page-item"><a class="page-link" href="{{ paginationUrls.last }}">{{ 'Dernier'|trans }}</a></li>
 					{% else %}
-					<li class="page-item disabled"><span class="page-link">Suivant</span></li>
-					<li class="page-item disabled"><span class="page-link">Dernier</span></li>
+					<li class="page-item disabled"><span class="page-link">{{ 'Suivant'|trans }}</span></li>
+					<li class="page-item disabled"><span class="page-link">{{ 'Dernier'|trans }}</span></li>
 					{% endif %}
 				</ul>
 			</nav>
-			<p class="text-muted">Affichage de {{ acquisitions|length }} acquisitions sur {{ pagination.total }} (page {{ pagination.page }}/{{ pagination.totalPages }})</p>
+			<p class="text-muted">{{ 'Affichage de {acquisitions} acquisitions sur {total} (page {page}/{totalPages})'|trans({acquisitions: (acquisitions|length), total: pagination.total, page: pagination.page, totalPages: pagination.totalPages}) }}</p>
 		</div>
 	</div>
 	{% endif %}

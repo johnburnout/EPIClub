@@ -1260,4 +1260,444 @@ return [
         => 'You do not have the rights to edit this inspection.',
     'Vous n\'avez pas les droits pour supprimer ce contrôle.'
         => 'You do not have the rights to delete this inspection.',
+
+    // --- Acquisitions ---
+    '✅ Acquisition créée avec succès. Vous pouvez maintenant ajouter des lignes.'
+        => '✅ Purchase created successfully. You can now add rows.',
+    '✅ Acquisition mise à jour avec succès.'
+        => '✅ Purchase updated successfully.',
+    '✅ Acquisition validée ! Les équipements ont été générés.'
+        => '✅ Purchase validated! The items have been generated.',
+    '❌ Impossible de valider : veuillez d\'abord télécharger la facture.'
+        => '❌ Cannot validate: please upload the invoice first.',
+    '✅ La facture a été téléversée.'
+        => '✅ The invoice has been uploaded.',
+    '✅ Ligne ajoutée avec succès.'
+        => '✅ Row added successfully.',
+    '(colonne {numero})'
+        => '(column {numero})',
+    '(ignorer cette colonne)'
+        => '(ignore this column)',
+    '(les lignes au-dessus ont été ignorées)'
+        => '(the rows above were ignored)',
+    '{equipements_dates} équipement(s) issu(s) de cette acquisition : la date de mise en service égale à la date de facture et la date de fin d\'utilisation calculée (achat + 10 ans) suivront la nouvelle date. Les références des équipements ne changent pas.'
+        => '{equipements_dates} item(s) from this purchase: a commissioning date equal to the invoice date and a calculated end-of-use date (purchase + 10 years) will follow the new date. The item references do not change.',
+    '{lignes_exclues} ligne(s) non sélectionnée(s) : non importée(s).'
+        => '{lignes_exclues} unselected row(s): not imported.',
+    '{lignes} ligne(s)'
+        => '{lignes} row(s)',
+    '{nb_lignes} ligne(s) de données détectée(s). Vérifiez que chaque colonne correspond au bon champ, puis lancez l\'import.'
+        => '{nb_lignes} data row(s) detected. Check that each column matches the right field, then start the import.',
+    '{nom} (à créer)'
+        => '{nom} (to be created)',
+    '<strong>⚠️ {lignes_non_conformes} ligne(s) non conforme(s) — décochées, seront ignorées</strong> (cases fusionnées, données incompatibles avec le champ de la colonne, champs obligatoires manquants…) :'
+        => '<strong>⚠️ {lignes_non_conformes} non-compliant row(s) — unticked, will be ignored</strong> (merged cells, data incompatible with the column\'s field, missing required fields…):',
+    '<strong>{acquisitions} acquisition(s) créée(s) et validée(s)</strong> ({lignes_lues} ligne(s) lue(s)).'
+        => '<strong>{acquisitions} purchase(s) created and validated</strong> ({lignes_lues} row(s) read).',
+    '<strong>Date d\'achat :</strong> {facture_date}'
+        => '<strong>Purchase date:</strong> {facture_date}',
+    '<strong>Dates saisies à la main : à confirmer ou corriger</strong> (la mise en service ne peut pas précéder la nouvelle date de facture).'
+        => '<strong>Manually entered dates: confirm or correct them</strong> (commissioning cannot precede the new invoice date).',
+    '<strong>Fournisseur :</strong> {nom}'
+        => '<strong>Supplier:</strong> {nom}',
+    '<strong>Référence facture :</strong> {facture_reference}'
+        => '<strong>Invoice reference:</strong> {facture_reference}',
+    '<strong>Saisie par :</strong> {prenom} {nom}'
+        => '<strong>Entered by:</strong> {prenom} {nom}',
+    'Nombre d\'éléments à l\'achat (> 1 → lot)'
+        => 'Number of units at purchase (> 1 → batch)',
+    'Stock max'
+        => 'Max stock',
+    '2 à 8 lettres sans accent ou chiffres (vide = automatique)'
+        => '2 to 8 unaccented letters or digits (empty = automatic)',
+    'Acquisition'
+        => 'Purchase',
+    'Acquisition #{id}'
+        => 'Purchase #{id}',
+    'Acquisition invalide.'
+        => 'Invalid purchase.',
+    'Acquisition modifiée : {details} ; dates de {nombre} équipement(s) mises à jour.'
+        => 'Purchase changed: {details}; dates of {nombre} item(s) updated.',
+    'Acquisition modifiée : {details}.'
+        => 'Purchase changed: {details}.',
+    'Acquisition non trouvée.'
+        => 'Purchase not found.',
+    'Acquisition verrouillée'
+        => 'Purchase locked',
+    'Affichage de {acquisitions} acquisitions sur {total} (page {page}/{totalPages})'
+        => 'Showing {acquisitions} purchases out of {total} (page {page}/{totalPages})',
+    'Ajouter'
+        => 'Add',
+    'Analyser le fichier'
+        => 'Analyse the file',
+    'Annuler la modification de la référence et de la date'
+        => 'Cancel changing the reference and date',
+    'après le téléversement, vous pourrez <strong>vérifier la correspondance des colonnes</strong> avec les champs attendus avant de lancer l\'import ;'
+        => 'after uploading, you can <strong>check how columns map</strong> to the expected fields before starting the import;',
+    'au'
+        => 'to',
+    'Aucun document'
+        => 'No document',
+    'Aucun fichier valide n\'a été téléversé.'
+        => 'No valid file was uploaded.',
+    'Aucune acquisition n\'a été créée.'
+        => 'No purchase was created.',
+    'Aucune acquisition ne correspond aux filtres.'
+        => 'No purchase matches the filters.',
+    'Aucune acquisition pour le moment.'
+        => 'No purchases yet.',
+    'Aucune ligne d\'acquisition.'
+        => 'No purchase rows.',
+    'Aucune ligne n\'a été sélectionnée pour l\'import.'
+        => 'No row was selected for import.',
+    'Aucune ligne saisie.'
+        => 'No rows entered.',
+    'Aucune ligne sélectionnée.'
+        => 'No row selected.',
+    'Aucune modification : la référence et la date sont inchangées.'
+        => 'No change: the reference and date are unchanged.',
+    'Catégorie « {categorie} » : code « {code} » invalide (2 à 8 lettres ou chiffres), code attribué automatiquement.'
+        => 'Category “{categorie}”: invalid code “{code}” (2 to 8 letters or digits), code assigned automatically.',
+    'Catégorie « {categorie} » : le code « {code} » est déjà utilisé, code attribué automatiquement.'
+        => 'Category “{categorie}”: code “{code}” is already used, code assigned automatically.',
+    'Catégorie « {categorie} » : une catégorie de ce nom existe déjà, elle a été utilisée.'
+        => 'Category “{categorie}”: a category with this name already exists and was used.',
+    'Catégorie (code ou libellé) *'
+        => 'Category (code or name) *',
+    'Catégorie *'
+        => 'Category *',
+    'catégorie existante : « {libelle} »'
+        => 'existing category: “{libelle}”',
+    'Catégories du fichier'
+        => 'Categories in the file',
+    'Catégories existantes'
+        => 'Existing categories',
+    'Cette acquisition est déjà validée.'
+        => 'This purchase is already validated.',
+    'Cette acquisition est validée, les lignes ne peuvent plus être modifiées.'
+        => 'This purchase is validated, its rows can no longer be changed.',
+    'Cette acquisition est validée, les lignes ne peuvent plus être supprimées.'
+        => 'This purchase is validated, its rows can no longer be deleted.',
+    'Cette ligne a déjà généré des équipements, elle ne peut pas être supprimée.'
+        => 'This row has already generated items, it cannot be deleted.',
+    'Cette référence de facture est déjà utilisée par une autre acquisition.'
+        => 'This invoice reference is already used by another purchase.',
+    'Cette référence de facture existe déjà. Merci d\'en choisir une autre.'
+        => 'This invoice reference already exists. Please choose another one.',
+    'Cette référence existe déjà.'
+        => 'This reference already exists.',
+    'Cette référence existe déjà. Veuillez en saisir une autre.'
+        => 'This reference already exists. Please enter another one.',
+    'Champ correspondant'
+        => 'Matching field',
+    'chaque ligne peut être <strong>cochée ou décochée</strong> avant l\'import, et affectée à une autre catégorie ;'
+        => 'each row can be <strong>ticked or unticked</strong> before the import, and assigned to another category;',
+    'Code'
+        => 'Code',
+    'Colonne du fichier'
+        => 'File column',
+    'Correspondance incomplète : le champ « {champ} » doit être associé à une colonne.'
+        => 'Incomplete mapping: the field “{champ}” must be matched to a column.',
+    'Correspondance invalide : un même champ est associé à plusieurs colonnes.'
+        => 'Invalid mapping: the same field is matched to several columns.',
+    'Créer la catégorie (nom et code ci-dessous)'
+        => 'Create the category (name and code below)',
+    'Date'
+        => 'Date',
+    'date {ancienne} → {nouvelle}'
+        => 'date {ancienne} → {nouvelle}',
+    'Date achat'
+        => 'Purchase date',
+    'Date d\'achat (date de facture)'
+        => 'Purchase date (invoice date)',
+    'Date d\'achat obligatoire pour un EPI à durée de vie limitée.'
+        => 'A purchase date is required for PPE with a limited lifespan.',
+    'Date d\'achat ou fournisseur incohérent avec les autres lignes de la facture « {facture} ».'
+        => 'Purchase date or supplier inconsistent with the other rows of invoice “{facture}”.',
+    'Date de facture invalide.'
+        => 'Invalid invoice date.',
+    'Date de péremption'
+        => 'Expiry date',
+    'Date du'
+        => 'Date from',
+    'dates : année seule → 1er janvier (achat) ou 31 décembre (péremption) ; date d\'achat vide → date du jour ;'
+        => 'dates: year only → 1 January (purchase) or 31 December (expiry); empty purchase date → today\'s date;',
+    'Décochez les lignes à ne pas importer. « Stock max » et « Stock actuel » sont modifiables (un stock max supérieur à 1 crée un lot ; le stock actuel ne peut pas le dépasser). Les dates sont modifiables : pour un EPI à durée de vie limitée (⏳), la date d\'achat est obligatoire et la fin de vie est proposée au 31 décembre, 10 ans après l\'achat. La colonne « Catégorie » permet d\'affecter une ligne à une autre catégorie (du fichier, y compris une catégorie à créer, ou existante).'
+        => 'Untick the rows not to import. “Max stock” and “Current stock” can be edited (a max stock above 1 creates a batch; the current stock cannot exceed it). Dates can be edited: for PPE with a limited lifespan (⏳), the purchase date is required and the end of life is suggested as 31 December, 10 years after purchase. The “Category” column lets you assign a row to another category (from the file, including one to be created, or an existing one).',
+    'Désignation *'
+        => 'Description *',
+    'Document :'
+        => 'Document:',
+    'durée de vie limitée'
+        => 'limited lifespan',
+    'Durée de vie limitée'
+        => 'Limited lifespan',
+    'Durée de vie limitée (date d\'achat obligatoire, fin de vie par défaut à 10 ans)'
+        => 'Limited lifespan (purchase date required, end of life defaults to 10 years)',
+    'Éléments encore présents (≤ stock max)'
+        => 'Units still present (≤ max stock)',
+    'En attente'
+        => 'Pending',
+    'En attente de validation'
+        => 'Awaiting validation',
+    'Enregistrer et saisir les lignes'
+        => 'Save and enter the rows',
+    'Enregistrer la correction'
+        => 'Save the correction',
+    'Enregistrer les modifications'
+        => 'Save changes',
+    'EPI à <strong>durée de vie limitée</strong> : date d\'achat obligatoire (modifiable dans le tableau d\'import) ; fin de vie vide → 31 décembre, 10 ans après l\'achat (modifiable) ;'
+        => 'PPE with a <strong>limited lifespan</strong>: purchase date required (editable in the import table); empty end of life → 31 December, 10 years after purchase (editable);',
+    'Équipement {reference} : date de fin d\'utilisation à confirmer.'
+        => 'Item {reference}: end-of-use date to be confirmed.',
+    'Équipement {reference} : date de mise en service à confirmer.'
+        => 'Item {reference}: commissioning date to be confirmed.',
+    'Équipement {reference} : la mise en service ne peut pas précéder la date de facture ({date}).'
+        => 'Item {reference}: commissioning cannot precede the invoice date ({date}).',
+    'Équipements générés'
+        => 'Generated items',
+    'Erreur lors de l\'analyse du fichier (détail en journal serveur).'
+        => 'Error while analysing the file (details in the server log).',
+    'Erreur lors de l\'import (détail en journal serveur).'
+        => 'Error during the import (details in the server log).',
+    'Erreur lors de l\'import du groupe (détail en journal serveur).'
+        => 'Error while importing the group (details in the server log).',
+    'Erreur lors de la création de l\'acquisition.'
+        => 'Error while creating the purchase.',
+    'Étape 2 : vérifier la correspondance des colonnes'
+        => 'Step 2: check the column mapping',
+    'Exemples de valeurs'
+        => 'Sample values',
+    'Facture'
+        => 'Invoice',
+    'Facture (PDF, JPG, PNG)'
+        => 'Invoice (PDF, JPG, PNG)',
+    'Facture requise avant validation'
+        => 'Invoice required before validation',
+    'Fichier à importer * :'
+        => 'File to import *:',
+    'Fichier actuel :'
+        => 'Current file:',
+    'Fichier Excel (<code>.xlsx</code>, <code>.xls</code>) ou CSV ; la <strong>ligne d\'en-tête est détectée automatiquement</strong> (dans les 10 premières lignes) ;'
+        => 'Excel file (<code>.xlsx</code>, <code>.xls</code>) or CSV; the <strong>header row is detected automatically</strong> (within the first 10 rows);',
+    'Fin de vie'
+        => 'End of life',
+    'Format non accepté : {formats} uniquement.'
+        => 'Format not accepted: {formats} only.',
+    'Fournisseur'
+        => 'Supplier',
+    'Générés'
+        => 'Generated',
+    'Groupe « {groupe} » : plusieurs fournisseurs détectés, « {fournisseur} » retenu.'
+        => 'Group “{groupe}”: several suppliers detected, “{fournisseur}” kept.',
+    'Groupes ignorés'
+        => 'Skipped groups',
+    'Importer (Excel / CSV)'
+        => 'Import (Excel / CSV)',
+    'Importer des acquisitions (Excel / CSV)'
+        => 'Import purchases (Excel / CSV)',
+    'Importer la facture'
+        => 'Upload the invoice',
+    'Impossible de supprimer cette acquisition : certaines lignes ont généré des équipements.'
+        => 'This purchase cannot be deleted: some rows have generated items.',
+    'Impossible de supprimer une acquisition validée. Elle contient des équipements générés.'
+        => 'A validated purchase cannot be deleted. It contains generated items.',
+    'Individuel'
+        => 'Individual',
+    'Informations générales'
+        => 'General information',
+    'la catégorie est recherchée par <strong>code</strong> (ex. <code>COR</code>), puis par libellé ; les catégories inconnues peuvent être créées (nom et code au choix), regroupées ou rattachées à une catégorie existante ;'
+        => 'the category is looked up by <strong>code</strong> (e.g. <code>COR</code>), then by name; unknown categories can be created (name and code of your choice), grouped, or linked to an existing category;',
+    'La date d\'achat est invalide (formats acceptés : AAAA-MM-JJ, JJ/MM/AAAA, ou année seule).'
+        => 'The purchase date is invalid (accepted formats: YYYY-MM-DD, DD/MM/YYYY, or year only).',
+    'La date de péremption est invalide (formats acceptés : AAAA-MM-JJ, JJ/MM/AAAA, ou année seule).'
+        => 'The expiry date is invalid (accepted formats: YYYY-MM-DD, DD/MM/YYYY, or year only).',
+    'La désignation est obligatoire.'
+        => 'The description is required.',
+    'La facture pourra être téléversée ultérieurement'
+        => 'The invoice can be uploaded later',
+    'La référence de facture « {reference} » est déjà utilisée par une autre acquisition.'
+        => 'Invoice reference “{reference}” is already used by another purchase.',
+    'La référence de facture « {reference} » vient d\'être utilisée par une autre acquisition : rien n\'a été modifié.'
+        => 'Invoice reference “{reference}” has just been used by another purchase: nothing was changed.',
+    'La référence de facture contient des caractères non autorisés.'
+        => 'The invoice reference contains forbidden characters.',
+    'La référence de facture est obligatoire.'
+        => 'The invoice reference is required.',
+    'La référence de facture ne doit pas dépasser {max} caractères.'
+        => 'The invoice reference must not exceed {max} characters.',
+    'La référence dépasse 32 caractères.'
+        => 'The reference exceeds 32 characters.',
+    'Lancer l\'import ('
+        => 'Start the import (',
+    'Lancer l\'import de {n} ligne(s) ?'
+        => 'Import {n} row(s)?',
+    'Le fichier analysé n\'est plus disponible. Merci de le téléverser à nouveau.'
+        => 'The analysed file is no longer available. Please upload it again.',
+    'Le fichier est trop volumineux pour être traité par le serveur (limite PHP : {limite}). Réduisez la taille du fichier ou augmentez post_max_size.'
+        => 'The file is too large for the server to process (PHP limit: {limite}). Reduce the file size or increase post_max_size.',
+    'Le fichier est vide ou sa ligne d\'en-tête est inexploitable.'
+        => 'The file is empty or its header row cannot be used.',
+    'Le fichier est vide.'
+        => 'The file is empty.',
+    'Le fichier n\'a pas pu être lu (format Excel ou CSV attendu).'
+        => 'The file could not be read (Excel or CSV format expected).',
+    'Le nombre doit être supérieur à 0.'
+        => 'The number must be greater than 0.',
+    'Le nombre doit être un entier supérieur ou égal à 1.'
+        => 'The number must be an integer of at least 1.',
+    'Le stock actuel doit être un entier supérieur ou égal à 1.'
+        => 'The current stock must be an integer of at least 1.',
+    'Le stock actuel ne peut pas dépasser le nombre (stock max).'
+        => 'The current stock cannot exceed the number (max stock).',
+    'les lignes d\'une même facture — ou, à défaut de n° de facture, d\'une même date d\'achat — sont groupées dans <strong>une même acquisition automatiquement validée</strong>, dont le document sera marqué « facture à importer » (téléversé plus tard) ;'
+        => 'rows of the same invoice — or, without an invoice number, of the same purchase date — are grouped into <strong>a single automatically validated purchase</strong>, whose document will be marked “invoice to be uploaded” (uploaded later);',
+    'Libellé *'
+        => 'Name *',
+    'Ligne'
+        => 'Row',
+    'Ligne {ligne}'
+        => 'Row {ligne}',
+    'Ligne {ligne} : {raison}'
+        => 'Row {ligne}: {raison}',
+    'Ligne d\'en-tête détectée : <strong>ligne {ligne_entete}</strong>'
+        => 'Header row detected: <strong>row {ligne_entete}</strong>',
+    'Ligne modifiée avec succès.'
+        => 'Row updated successfully.',
+    'Ligne non trouvée.'
+        => 'Row not found.',
+    'Ligne supprimée avec succès.'
+        => 'Row deleted successfully.',
+    'ligne(s))'
+        => 'row(s))',
+    'Lignes'
+        => 'Rows',
+    'Lignes à importer'
+        => 'Rows to import',
+    'Lignes d\'acquisition'
+        => 'Purchase rows',
+    'Lignes ignorées'
+        => 'Ignored rows',
+    'Lignes saisies'
+        => 'Entered rows',
+    'Même catégorie que « {nom} »'
+        => 'Same category as “{nom}”',
+    'Modification de la référence et de la date'
+        => 'Changing the reference and date',
+    'Modification verrouillée'
+        => 'Editing locked',
+    'Modifier la ligne d\'acquisition'
+        => 'Edit the purchase row',
+    'Modifier la référence et la date'
+        => 'Change the reference and date',
+    'Nombre'
+        => 'Number',
+    'Nombre *'
+        => 'Number *',
+    'Nombre / stock max (> 1 → lot)'
+        => 'Number / max stock (> 1 → batch)',
+    'Nouvel import'
+        => 'New import',
+    'Nouvelle acquisition'
+        => 'New purchase',
+    'Pour changer la date, saisissez le mot {mot} (en majuscules).'
+        => 'To change the date, type the word {mot} (in capitals).',
+    'Pour chaque catégorie inconnue : créez-la en choisissant son <strong>nom</strong> et son <strong>code</strong> (utilisé dans les références, ex. <code>COR</code>), regroupez-la avec une autre catégorie à créer, ou rattachez-la à une catégorie existante.'
+        => 'For each unknown category: create it by choosing its <strong>name</strong> and <strong>code</strong> (used in references, e.g. <code>COR</code>), group it with another category to be created, or link it to an existing category.',
+    'Pour confirmer le changement de date, saisissez <code>{mot_confirmation_date}</code>'
+        => 'To confirm the date change, type <code>{mot_confirmation_date}</code>',
+    'Pour confirmer le changement de référence, saisissez <code>{mot_confirmation_reference}</code>'
+        => 'To confirm the reference change, type <code>{mot_confirmation_reference}</code>',
+    'Principe'
+        => 'How it works',
+    'Proposée automatiquement selon le modèle de référence dès que la catégorie est choisie'
+        => 'Suggested automatically from the reference pattern as soon as the category is chosen',
+    'Rapport d\'import'
+        => 'Import report',
+    'Rattacher à : {libelle}'
+        => 'Link to: {libelle}',
+    'Rattacher à une catégorie existante'
+        => 'Link to an existing category',
+    'recalculée'
+        => 'recalculated',
+    'référence « {ancienne} » → « {nouvelle} »'
+        => 'reference “{ancienne}” → “{nouvelle}”',
+    'référence automatique'
+        => 'automatic reference',
+    'Référence équipement (vide → auto)'
+        => 'Item reference (empty → auto)',
+    'Référence équipement *'
+        => 'Item reference *',
+    'Référence facture'
+        => 'Invoice reference',
+    'référence vide →'
+        => 'empty reference →',
+    'Regrouper avec une autre catégorie à créer'
+        => 'Group with another category to be created',
+    'Remplacer la facture'
+        => 'Replace the invoice',
+    'Requise pour valider'
+        => 'Required to validate',
+    'Retour aux acquisitions'
+        => 'Back to purchases',
+    'Selon le fichier'
+        => 'As in the file',
+    'Stock actuel'
+        => 'Current stock',
+    'Stock actuel (≤ stock max)'
+        => 'Current stock (≤ max stock)',
+    'suit la date de facture'
+        => 'follows the invoice date',
+    'Supprimer cette ligne ?'
+        => 'Delete this row?',
+    'Supprimer définitivement cette acquisition ({facture_reference}) ?&#10;&#10;Cette action est irréversible.'
+        => 'Permanently delete this purchase ({facture_reference})?&#10;&#10;This cannot be undone.',
+    'Supprimer définitivement l\'acquisition #{id} ({facture_reference}) ?&#10;&#10;Cette action est irréversible.'
+        => 'Permanently delete purchase #{id} ({facture_reference})?&#10;&#10;This cannot be undone.',
+    'Supprimer le brouillon'
+        => 'Delete the draft',
+    'Taille maximum : 10 Mo. Formats acceptés : PDF, JPG, PNG.'
+        => 'Maximum size: 10 MB. Accepted formats: PDF, JPG, PNG.',
+    'Téléchargée'
+        => 'Uploaded',
+    'Total équipements :'
+        => 'Total items:',
+    'un <code>nombre</code> supérieur à 1 indique un <strong>lot</strong> (un seul équipement) ; le <strong>stock actuel</strong> d\'un lot (colonne « stock réel », ≤ nombre) peut être importé — si un seul des deux est fourni, l\'autre prend la même valeur, et à défaut les deux valent 1 (modifiables avant l\'import) ;'
+        => 'a <code>number</code> above 1 means a <strong>batch</strong> (a single item); the <strong>current stock</strong> of a batch (“actual stock” column, ≤ number) can be imported — if only one of the two is given, the other takes the same value, and otherwise both are 1 (editable before the import);',
+    'Une acquisition avec cette référence de facture existe déjà.'
+        => 'A purchase with this invoice reference already exists.',
+    'Une erreur est survenue lors de l\'ajout de la ligne.'
+        => 'An error occurred while adding the row.',
+    'Une erreur est survenue lors de la création. Merci de réessayer.'
+        => 'An error occurred while creating. Please try again.',
+    'Une erreur est survenue lors de la mise à jour. Merci de réessayer.'
+        => 'An error occurred while updating. Please try again.',
+    'Une erreur est survenue lors de la modification. Merci de réessayer.'
+        => 'An error occurred while saving the change. Please try again.',
+    'Une erreur est survenue lors de la validation. Merci de réessayer ou de contacter un administrateur.'
+        => 'An error occurred during validation. Please try again or contact an administrator.',
+    'Une erreur est survenue lors du téléversement. Merci de réessayer.'
+        => 'An error occurred while uploading. Please try again.',
+    'Une facture est obligatoire pour valider l\'acquisition.'
+        => 'An invoice is required to validate the purchase.',
+    'Validée'
+        => 'Validated',
+    'Valider cette acquisition ? Les équipements seront générés définitivement et vous ne pourrez plus modifier les lignes.'
+        => 'Validate this purchase? The items will be generated permanently and you will no longer be able to edit the rows.',
+    'Valider l\'acquisition'
+        => 'Validate the purchase',
+    'Verrouillée'
+        => 'Locked',
+    'Veuillez choisir un fichier de facture.'
+        => 'Please choose an invoice file.',
+    'Veuillez d\'abord télécharger la facture'
+        => 'Please upload the invoice first',
+    'Veuillez remplir les champs de la ligne.'
+        => 'Please fill in the row\'s fields.',
+    'Voir la fiche'
+        => 'View the record',
+    'Voir les acquisitions'
+        => 'View purchases',
+    'Voir les équipements'
+        => 'View items',
 ];

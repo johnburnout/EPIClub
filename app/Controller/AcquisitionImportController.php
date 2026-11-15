@@ -2,6 +2,7 @@
 
 namespace Epiclub\Controller;
 
+use Epiclub\Engine\Traducteur;
 use Epiclub\Process\AcquisitionImportService;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Domain\JournalActiviteManager;
@@ -52,7 +53,7 @@ class AcquisitionImportController extends AbstractController
                 $this->session->remove(self::SESSION_CLE);
 
                 if (!is_string($chemin) || !file_exists($chemin)) {
-                    $erreur = "Le fichier analysé n'est plus disponible. Merci de le téléverser à nouveau.";
+                    $erreur = Traducteur::t("Le fichier analysé n'est plus disponible. Merci de le téléverser à nouveau.");
                 } else {
                     $mapping = $this->nettoyerMapping($request->request->all('mapping'));
                     $choixCategories = $this->nettoyerChoixCategories($request->request->all('categories'));
@@ -91,7 +92,7 @@ class AcquisitionImportController extends AbstractController
                         }
                     } catch (\Throwable $e) {
                         error_log('[AcquisitionImportController] Import failed: ' . $e->getMessage());
-                        $erreur = "Erreur lors de l'import (détail en journal serveur).";
+                        $erreur = Traducteur::t("Erreur lors de l'import (détail en journal serveur).");
                     } finally {
                         @unlink($chemin);
                     }
@@ -101,11 +102,11 @@ class AcquisitionImportController extends AbstractController
                 $fichier = $request->files->get('fichier');
 
                 if (!$fichier || !$fichier->isValid()) {
-                    $erreur = "Aucun fichier valide n'a été téléversé.";
+                    $erreur = Traducteur::t("Aucun fichier valide n'a été téléversé.");
                 } else {
                     $extension = strtolower((string) $fichier->getClientOriginalExtension());
                     if (!in_array($extension, self::EXTENSIONS_ACCEPTEES, true)) {
-                        $erreur = 'Format non accepté : ' . implode(', ', self::EXTENSIONS_ACCEPTEES) . ' uniquement.';
+                        $erreur = Traducteur::t('Format non accepté : {formats} uniquement.', ['formats' => implode(', ', self::EXTENSIONS_ACCEPTEES)]);
                     } else {
                         // Le service choisit le reader selon l'extension →
                         // on la conserve dans le nom temporaire.
@@ -134,7 +135,7 @@ class AcquisitionImportController extends AbstractController
                             }
                         } catch (\Throwable $e) {
                             error_log('[AcquisitionImportController] Analyse failed: ' . $e->getMessage());
-                            $erreur = "Erreur lors de l'analyse du fichier (détail en journal serveur).";
+                            $erreur = Traducteur::t("Erreur lors de l'analyse du fichier (détail en journal serveur).");
                             if (file_exists($chemin)) {
                                 @unlink($chemin);
                             }
@@ -148,7 +149,7 @@ class AcquisitionImportController extends AbstractController
             'analyse' => $analyse,
             'rapport' => $rapport,
             'erreur' => $erreur,
-            'champs' => AcquisitionImportService::CHAMPS,
+            'champs' => AcquisitionImportService::libellesChamps(),
         ]);
     }
 

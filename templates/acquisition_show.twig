@@ -2,49 +2,45 @@
 
 {% block body %}
 
-	<h3>Acquisition #{{ acquisition.id }}</h3>
+	<h3>{{ 'Acquisition #{id}'|trans({id: acquisition.id}) }}</h3>
 	<hr>
 
 	<!-- INFORMATIONS GÉNÉRALES -->
 	<div class="card">
 		<div class="card-header">
-			Informations générales
+			{{ 'Informations générales'|trans }}
 			{% if acquisition.est_validee %}
-				<span class="badge bg-success float-end">✅ Validée</span>
+				<span class="badge bg-success float-end">✅ {{ 'Validée'|trans }}</span>
 			{% else %}
-				<span class="badge bg-warning float-end">⏳ En attente de validation</span>
+				<span class="badge bg-warning float-end">⏳ {{ 'En attente de validation'|trans }}</span>
 			{% endif %}
 		</div>
 		<div class="card-body">
 			<div class="row">
 				<div class="col-md-6">
 					<div class="mb-2">
-						<strong>Fournisseur :</strong> 
-						{{ acquisition.fournisseur.nom }}
+						{{ '<strong>Fournisseur :</strong> {nom}'|trans({nom: (acquisition.fournisseur.nom)|e})|raw }}
 					</div>
 					<div class="mb-2">
-						<strong>Référence facture :</strong> 
-						{{ acquisition.facture_reference }}
+						{{ '<strong>Référence facture :</strong> {facture_reference}'|trans({facture_reference: (acquisition.facture_reference)|e})|raw }}
 					</div>
 					<div class="mb-2">
-						<strong>Date d'achat :</strong> 
-						{{ acquisition.facture_date|date("d/m/Y") }}
+						{{ "<strong>Date d'achat :</strong> {facture_date}"|trans({facture_date: (acquisition.facture_date|date("d/m/Y"))|e})|raw }}
 					</div>
 				</div>
 				<div class="col-md-6">
 					<div class="mb-2">
-						<strong>Saisie par :</strong> 
-						{{ acquisition.redacteur.prenom }} {{ acquisition.redacteur.nom }}
+						{{ '<strong>Saisie par :</strong> {prenom} {nom}'|trans({prenom: (acquisition.redacteur.prenom)|e, nom: (acquisition.redacteur.nom)|e})|raw }}
 					</div>
 					<div class="mb-2">
-						<strong>Document :</strong> 
+						<strong>{{ 'Document :'|trans }}</strong> 
 						{# « facture à importer » = AcquisitionManager::FACTURE_A_IMPORTER (placeholder posé par l'import Excel/CSV) #}
 						{% if acquisition.facture_document == 'facture à importer' %}
-							<span class="badge bg-secondary">📄 facture à importer</span>
+							<span class="badge bg-secondary">📄 {{ 'facture à importer'|trans }}</span>
 						{% elseif acquisition.facture_document %}
-							<a href="/uploads/{{ acquisition.facture_document }}" target="_blank">📄 Voir la facture</a>
+							<a href="/uploads/{{ acquisition.facture_document }}" target="_blank">📄 {{ 'Voir la facture'|trans }}</a>
 						{% else %}
-							<span class="text-muted">Aucun document</span>
+							<span class="text-muted">{{ 'Aucun document'|trans }}</span>
 						{% endif %}
 						{# Sur une acquisition validée, seul le document de facture
 						   peut encore être remplacé (action update_facture). #}
@@ -56,9 +52,9 @@
 									<input type="file" name="facture_document" class="form-control" required>
 									<button type="submit" class="btn btn-outline-primary">
 										{% if acquisition.facture_document == 'facture à importer' %}
-											📤 Importer la facture
+											📤 {{ 'Importer la facture'|trans }}
 										{% else %}
-											📤 Remplacer la facture
+											📤 {{ 'Remplacer la facture'|trans }}
 										{% endif %}
 									</button>
 								</div>
@@ -66,11 +62,11 @@
 						{% endif %}
 					</div>
 					<div class="mb-2">
-						<strong>Statut :</strong>
+						<strong>{{ 'Statut :'|trans }}</strong>
 						{% if acquisition.est_validee %}
-							<span class="badge bg-success">Validée</span>
+							<span class="badge bg-success">{{ 'Validée'|trans }}</span>
 						{% else %}
-							<span class="badge bg-warning">En attente</span>
+							<span class="badge bg-warning">{{ 'En attente'|trans }}</span>
 						{% endif %}
 					</div>
 				</div>
@@ -86,8 +82,8 @@
 		{% set dates_manuelles = equipements_dates|filter(e => e.mes_manuelle or e.fin_manuelle) %}
 		<div class="mt-2 text-end">
 			<button type="button" class="btn btn-outline-secondary btn-sm" id="afficher-correction"
-			        aria-pressed="false" aria-controls="carte-correction" title="Modification de la référence et de la date">
-				<i class="fas fa-cog"></i> <span>Modifier la référence et la date</span>
+			        aria-pressed="false" aria-controls="carte-correction" title="{{ 'Modification de la référence et de la date'|trans }}">
+				<i class="fas fa-cog"></i> <span>{{ 'Modifier la référence et la date'|trans }}</span>
 			</button>
 		</div>
 		<div class="card mt-2 border-warning d-none" id="carte-correction">
@@ -97,14 +93,14 @@
 					<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
 					<div class="mb-3">
-						<label for="facture_reference" class="form-label">Référence facture</label>
+						<label for="facture_reference" class="form-label">{{ 'Référence facture'|trans }}</label>
 						<input type="text" class="form-control" name="facture_reference" id="facture_reference"
 						       value="{{ acquisition.facture_reference }}" data-actuelle="{{ acquisition.facture_reference }}"
 						       maxlength="{{ reference_facture_max }}" required autocomplete="off">
 						<div class="form-text" id="facture-reference-statut" aria-live="polite"></div>
 						<div class="mt-2 p-2 border border-warning rounded d-none" id="bloc-confirmation-reference">
 							<label for="confirmation_reference" class="form-label">
-								Pour confirmer le changement de référence, saisissez <code>{{ mot_confirmation_reference }}</code>
+								{{ 'Pour confirmer le changement de référence, saisissez <code>{mot_confirmation_reference}</code>'|trans({mot_confirmation_reference: (mot_confirmation_reference)|e})|raw }}
 							</label>
 							<input type="text" class="form-control" name="confirmation_reference" id="confirmation_reference"
 							       autocomplete="off" spellcheck="false" data-mot="{{ mot_confirmation_reference }}">
@@ -112,25 +108,22 @@
 					</div>
 
 					<div class="mb-3">
-						<label for="facture_date" class="form-label">Date d'achat (date de facture)</label>
+						<label for="facture_date" class="form-label">{{ "Date d'achat (date de facture)"|trans }}</label>
 						<input type="date" class="form-control" name="facture_date" id="facture_date"
 						       value="{{ date_actuelle }}" data-actuelle="{{ date_actuelle }}" required>
 						<div class="mt-2 p-2 border border-warning rounded d-none" id="bloc-confirmation-date">
 							{% if equipements_dates %}
 								<p class="small mb-2">
 									<i class="fas fa-exclamation-triangle text-warning"></i>
-									{{ equipements_dates|length }} équipement(s) issu(s) de cette acquisition : la date de mise en service
-									égale à la date de facture et la date de fin d'utilisation calculée (achat + 10 ans) suivront la
-									nouvelle date. Les références des équipements ne changent pas.
+									{{ "{equipements_dates} équipement(s) issu(s) de cette acquisition : la date de mise en service égale à la date de facture et la date de fin d'utilisation calculée (achat + 10 ans) suivront la nouvelle date. Les références des équipements ne changent pas."|trans({equipements_dates: (equipements_dates|length)}) }}
 								</p>
 							{% endif %}
 							{% if dates_manuelles %}
-								<p class="small mb-1"><strong>Dates saisies à la main : à confirmer ou corriger</strong>
-									(la mise en service ne peut pas précéder la nouvelle date de facture).</p>
+								<p class="small mb-1">{{ '<strong>Dates saisies à la main : à confirmer ou corriger</strong> (la mise en service ne peut pas précéder la nouvelle date de facture).'|trans|raw }}</p>
 								<div class="table-responsive">
 									<table class="table table-sm align-middle" id="dates-manuelles">
 										<thead>
-											<tr><th>Équipement</th><th>Mise en service</th><th>Fin d'utilisation</th></tr>
+											<tr><th>{{ 'Équipement'|trans }}</th><th>{{ 'Mise en service'|trans }}</th><th>{{ "Fin d'utilisation"|trans }}</th></tr>
 										</thead>
 										<tbody>
 											{% for e in dates_manuelles %}
@@ -141,7 +134,7 @@
 															<input type="date" class="form-control form-control-sm date-mes" required
 															       name="date_mise_en_service[{{ e.id }}]" value="{{ e.date_mise_en_service }}">
 														{% else %}
-															<span class="text-muted small">suit la date de facture</span>
+															<span class="text-muted small">{{ 'suit la date de facture'|trans }}</span>
 														{% endif %}
 													</td>
 													<td>
@@ -149,7 +142,7 @@
 															<input type="date" class="form-control form-control-sm" required
 															       name="date_fin_utilisation[{{ e.id }}]" value="{{ e.date_fin_utilisation }}">
 														{% elseif e.date_fin_utilisation %}
-															<span class="text-muted small">recalculée</span>
+															<span class="text-muted small">{{ 'recalculée'|trans }}</span>
 														{% else %}
 															<span class="text-muted small">—</span>
 														{% endif %}
@@ -161,14 +154,14 @@
 								</div>
 							{% endif %}
 							<label for="confirmation_date" class="form-label">
-								Pour confirmer le changement de date, saisissez <code>{{ mot_confirmation_date }}</code>
+								{{ 'Pour confirmer le changement de date, saisissez <code>{mot_confirmation_date}</code>'|trans({mot_confirmation_date: (mot_confirmation_date)|e})|raw }}
 							</label>
 							<input type="text" class="form-control" name="confirmation_date" id="confirmation_date"
 							       autocomplete="off" spellcheck="false" data-mot="{{ mot_confirmation_date }}">
 						</div>
 					</div>
 
-					<button type="submit" class="btn btn-warning">Enregistrer la correction</button>
+					<button type="submit" class="btn btn-warning">{{ 'Enregistrer la correction'|trans }}</button>
 				</form>
 			</div>
 		</div>
@@ -179,21 +172,21 @@
 	<!-- LIGNES D'ACQUISITION -->
 	<div class="card">
 		<div class="card-header">
-			Lignes d'acquisition
-			<span class="badge bg-secondary float-end">{{ acquisition.lignes|length }} ligne(s)</span>
+			{{ "Lignes d'acquisition"|trans }}
+			<span class="badge bg-secondary float-end">{{ '{lignes} ligne(s)'|trans({lignes: (acquisition.lignes|length)}) }}</span>
 		</div>
 		<div class="card-body">
 			{% if acquisition.lignes %}
 				<table class="table table-striped">
 					<thead>
 						<tr>
-							<th>Référence</th>
-							<th>Désignation</th>
-							<th>Catégorie</th>
-							<th>EPI</th>
-							<th>Nombre</th>
-							<th>Générés</th>
-							<th>Actions</th>
+							<th>{{ 'Référence'|trans }}</th>
+							<th>{{ 'Désignation'|trans }}</th>
+							<th>{{ 'Catégorie'|trans }}</th>
+							<th>{{ 'EPI'|trans }}</th>
+							<th>{{ 'Nombre'|trans }}</th>
+							<th>{{ 'Générés'|trans }}</th>
+							<th>{{ 'Actions'|trans }}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -206,31 +199,31 @@
 								<td>{{ ligne.categorie.libelle }}</td>
 								<td>
 									{% if ligne.categorie and ligne.categorie.est_epi %}
-									<span class="badge bg-success">EPI</span>
+									<span class="badge bg-success">{{ 'EPI'|trans }}</span>
 									{% else %}
-									<span class="badge bg-secondary">Non EPI</span>
+									<span class="badge bg-secondary">{{ 'Non EPI'|trans }}</span>
 									{% endif %}
 								</td>
 								<td>{{ ligne.nombre }}</td>
 								<td>
 									{% if ligne.equipements_generes %}
-									<span class="badge bg-success">✅ Générés</span>
+									<span class="badge bg-success">✅ {{ 'Générés'|trans }}</span>
 									{% else %}
-									<span class="badge bg-warning">⏳ En attente</span>
+									<span class="badge bg-warning">⏳ {{ 'En attente'|trans }}</span>
 									{% endif %}
 								</td>
 								<td>
 									{% if ligne.equipements_generes == 0 %}
-									<a href="/admin/acquisitions/ligne_modification-{{ ligne.id }}" class="btn btn-sm btn-warning">Modifier</a>
+									<a href="/admin/acquisitions/ligne_modification-{{ ligne.id }}" class="btn btn-sm btn-warning">{{ 'Modifier'|trans }}</a>
 									<form method="post" action="/admin/acquisitions/ligne_supprimer-{{ ligne.id }}" style="display:inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 										<button type="submit" class="btn btn-sm btn-danger"
-											data-confirm="Supprimer cette ligne ?">
-											Supprimer
+											data-confirm="{{ 'Supprimer cette ligne ?'|trans }}">
+											{{ 'Supprimer'|trans }}
 										</button>
 									</form>
 									{% else %}
-									<span class="text-muted">Verrouillée</span>
+									<span class="text-muted">{{ 'Verrouillée'|trans }}</span>
 									{% endif %}
 								</td>
 							</tr>
@@ -238,14 +231,14 @@
 					</tbody>
 					<tfoot>
 						<tr class="table-info">
-							<td colspan="3" class="text-end"><strong>Total équipements :</strong></td>
+							<td colspan="3" class="text-end"><strong>{{ 'Total équipements :'|trans }}</strong></td>
 							<td><strong>{{ total_equipements }}</strong></td>
 							<td colspan="2"></td>
 						</tr>
 					</tfoot>
 				</table>
 			{% else %}
-				<p class="text-muted">Aucune ligne d'acquisition.</p>
+				<p class="text-muted">{{ "Aucune ligne d'acquisition."|trans }}</p>
 			{% endif %}
 		</div>
 	</div>
@@ -254,7 +247,7 @@
 
 	<!-- BOUTONS D'ACTION -->
 	<div class="mt-3">
-		<a href="/admin/acquisitions" class="btn btn-secondary">Retour à la liste</a>
+		<a href="/admin/acquisitions" class="btn btn-secondary">{{ 'Retour à la liste'|trans }}</a>
 		
 		<!-- BOUTON VALIDER -->
 		{% if not acquisition.est_validee and acquisition.lignes and acquisition.lignes|length > 0 %}
@@ -262,28 +255,28 @@
 				<form method="post" action="/admin/acquisitions/valider/{{ acquisition.id }}" style="display: inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 					<button type="submit" name="action" value="valider" class="btn btn-success" 
-						data-confirm="⚠️ Valider cette acquisition ? Les équipements seront générés définitivement et vous ne pourrez plus modifier les lignes.">
-						✅ Valider l'acquisition
+						data-confirm="⚠️ {{ 'Valider cette acquisition ? Les équipements seront générés définitivement et vous ne pourrez plus modifier les lignes.'|trans }}">
+						✅ {{ "Valider l'acquisition"|trans }}
 					</button>
 				</form>
 			{% else %}
-				<button class="btn btn-success" disabled title="Veuillez d'abord télécharger la facture">
-					✅ Valider l'acquisition
+				<button class="btn btn-success" disabled title="{{ "Veuillez d'abord télécharger la facture"|trans }}">
+					✅ {{ "Valider l'acquisition"|trans }}
 				</button>
-				<span class="text-muted ms-2">📄 Facture requise avant validation</span>
+				<span class="text-muted ms-2">📄 {{ 'Facture requise avant validation'|trans }}</span>
 			{% endif %}
 		{% endif %}
 		
 		<!-- BOUTON MODIFIER -->
 		{% if not acquisition.est_validee %}
-			<a href="/admin/acquisitions/acquisition_modification-{{ acquisition.id }}" class="btn btn-primary">✏️ Modifier</a>
+			<a href="/admin/acquisitions/acquisition_modification-{{ acquisition.id }}" class="btn btn-primary">✏️ {{ 'Modifier'|trans }}</a>
 		{% else %}
-			<span class="text-muted">🔒 Modification verrouillée</span>
+			<span class="text-muted">🔒 {{ 'Modification verrouillée'|trans }}</span>
 		{% endif %}
 		
 		<!-- BOUTON VOIR LES ÉQUIPEMENTS - CORRIGÉ -->
 		{% if acquisition.est_validee %}
-			<a href="/equipements?acquisition={{ acquisition.id }}" class="btn btn-success">📋 Voir les équipements</a>
+			<a href="/equipements?acquisition={{ acquisition.id }}" class="btn btn-success">📋 {{ 'Voir les équipements'|trans }}</a>
 		{% endif %}
 		
 		<!-- BOUTON SUPPRIMER LE BROUILLON -->
@@ -291,8 +284,8 @@
 		<form method="post" action="/admin/acquisitions/acquisition_supprimer-{{ acquisition.id }}" style="display:inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 			<button type="submit" class="btn btn-danger"
-				data-confirm="⚠️ Supprimer définitivement cette acquisition ({{ acquisition.facture_reference }}) ?&#10;&#10;Cette action est irréversible.">
-				🗑️ Supprimer le brouillon
+				data-confirm="⚠️ {{ 'Supprimer définitivement cette acquisition ({facture_reference}) ?&#10;&#10;Cette action est irréversible.'|trans({facture_reference: (acquisition.facture_reference)|e})|raw }}">
+				🗑️ {{ 'Supprimer le brouillon'|trans }}
 			</button>
 		</form>
 		{% endif %}
@@ -351,7 +344,7 @@
 					.catch(() => {
 						if (numero !== requete) return;
 						disponible = null;
-						afficher('text-danger', 'Vérification impossible, réessayez.');
+						afficher('text-danger', {{ 'Vérification impossible, réessayez.'|trans|json_encode|raw }});
 					});
 			}
 			function surReference() {
@@ -389,8 +382,8 @@
 				carte.classList.toggle('d-none', !ouvrir);
 				bouton.setAttribute('aria-pressed', ouvrir ? 'true' : 'false');
 				bouton.querySelector('span').textContent = ouvrir
-					? 'Annuler la modification de la référence et de la date'
-					: 'Modifier la référence et la date';
+					? {{ 'Annuler la modification de la référence et de la date'|trans|json_encode|raw }}
+					: {{ 'Modifier la référence et la date'|trans|json_encode|raw }};
 				if (ouvrir) reference.focus();
 			});
 			reference.addEventListener('input', surReference);
@@ -409,8 +402,8 @@
 				if (referenceChangee()) {
 					if (disponible !== true) {
 						return bloquer(reference, disponible === false
-							? '✖ Choisissez une référence disponible.'
-							: 'Vérification de la référence en cours, réessayez dans un instant.');
+							? '✖ ' + {{ 'Choisissez une référence disponible.'|trans|json_encode|raw }}
+							: {{ 'Vérification de la référence en cours, réessayez dans un instant.'|trans|json_encode|raw }});
 					}
 					if (confReference.value.trim() !== confReference.dataset.mot) return bloquer(confReference);
 				}

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Epiclub\Domain;
 
+use Epiclub\Engine\Traducteur;
 use Epiclub\Process\AcquisitionProcess;
 
 /**
@@ -41,21 +42,21 @@ final class AcquisitionValidator implements AcquisitionValidatorInterface
 
         $reference = trim((string) ($ligne['reference'] ?? ''));
         if ($reference === '') {
-            $errors['reference'] = 'La référence est obligatoire.';
+            $errors['reference'] = Traducteur::t('La référence est obligatoire.');
         } elseif ($this->ligneManager->findByReference($reference, $excludeId)) {
-            $errors['reference'] = 'Cette référence existe déjà.';
+            $errors['reference'] = Traducteur::t('Cette référence existe déjà.');
         }
 
         if (trim((string) ($ligne['designation'] ?? '')) === '') {
-            $errors['designation'] = 'Le libellé est obligatoire.';
+            $errors['designation'] = Traducteur::t('Le libellé est obligatoire.');
         }
 
         if (trim((string) ($ligne['categorie_libelle'] ?? '')) === '') {
-            $errors['categorie_libelle'] = 'La catégorie est obligatoire.';
+            $errors['categorie_libelle'] = Traducteur::t('La catégorie est obligatoire.');
         }
 
         if ((int) ($ligne['nombre'] ?? 0) < 1) {
-            $errors['nombre'] = 'Le nombre doit être supérieur à 0.';
+            $errors['nombre'] = Traducteur::t('Le nombre doit être supérieur à 0.');
         }
 
         return $errors;
@@ -85,7 +86,7 @@ final class AcquisitionValidator implements AcquisitionValidatorInterface
             return [
                 'route'    => $failureRoute,
                 'type'     => 'error',
-                'message'  => '❌ Impossible de valider : veuillez d\'abord télécharger la facture.',
+                'message'  => Traducteur::t('❌ Impossible de valider : veuillez d\'abord télécharger la facture.'),
                 'critical' => true,
             ];
         }
@@ -100,7 +101,7 @@ final class AcquisitionValidator implements AcquisitionValidatorInterface
             return [
                 'route'    => $successRoute,
                 'type'     => 'success',
-                'message'  => '✅ Acquisition validée ! Les équipements ont été générés.',
+                'message'  => Traducteur::t('✅ Acquisition validée ! Les équipements ont été générés.'),
                 'critical' => false,
             ];
         } catch (\Throwable $e) {
@@ -116,8 +117,7 @@ final class AcquisitionValidator implements AcquisitionValidatorInterface
             return [
                 'route'    => $failureRoute,
                 'type'     => 'error',
-                'message'  => 'Une erreur est survenue lors de la validation. '
-                            . 'Merci de réessayer ou de contacter un administrateur.',
+                'message'  => Traducteur::t('Une erreur est survenue lors de la validation. Merci de réessayer ou de contacter un administrateur.'),
                 'critical' => true,
             ];
         }
