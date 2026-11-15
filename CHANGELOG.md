@@ -12,15 +12,13 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ### Added
 
-- **Interface en anglais, espagnol et italien (1re étape).** Un
-  sélecteur 🌐 dans le bandeau change la langue d'affichage, y compris
-  sur la page de connexion. Pour un utilisateur connecté, le choix est
-  enregistré et retrouvé à chaque connexion ; sinon, la langue du
-  navigateur s'applique, puis le français. Cette étape traduit le bandeau,
-  les menus et l'alerte du limiteur de connexion ; les écrans suivent dans
-  les prochaines versions (un texte pas encore traduit reste en français).
-  Migration : `022_langue_utilisateur.sql` (appliquée automatiquement par
-  la mise à jour intégrée).
+- **Interface en anglais, espagnol et italien.** La langue se règle pour
+  tout le club dans **Administration → Tableau de bord → Personnaliser le
+  tableau de bord** (« Langue de l'interface ») : pages, page de connexion,
+  e-mails, PDF et exports. Le mode **Automatique** (par défaut) suit la
+  langue du navigateur de chacun, puis le français. Un texte pas encore
+  traduit reste en français. Migration : `022_langue_club.sql` (appliquée
+  automatiquement par la mise à jour intégrée).
 - **Connexion et compte traduits (2e étape).** Pages de connexion, double
   authentification, mot de passe oublié et réinitialisation, sécurité du
   compte (application d'authentification, passkeys, codes de secours),
@@ -50,13 +48,11 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 - **Documents traduits (8e étape).** E-mails (mot de passe oublié, compte
   créé, demande de modification, test SMTP), PDF (fiche et liste des
   équipements, étiquettes, fiche de prêt, journal de contrôle), exports
-  CSV et Excel, en-tête de l'export du journal d'activité. Chaque e-mail
-  part dans la langue choisie par son destinataire ; à défaut (nouveau
-  compte, préférence non choisie), dans celle de la personne qui le
-  déclenche.
+  CSV et Excel, en-tête de l'export du journal d'activité, dans la langue
+  de l'interface.
 - **Installeur et guide traduits (9e et dernière étape).** L'assistant
   d'installation suit la langue du navigateur et propose un sélecteur de
-  langue ; le guide utilisateur existe en anglais, espagnol et italien
+  langue (la langue choisie devient celle du club) ; le guide utilisateur existe en anglais, espagnol et italien
   (`docs/guide_utilisateur.<langue>.md`, le français servant à défaut).
   La ligne de commande et le journal d'activité restent en français.
 

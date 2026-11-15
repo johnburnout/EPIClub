@@ -272,7 +272,6 @@ I prestiti **in ritardo** (data di restituzione prevista superata) sono segnalat
 - Si accede a scelta con il **nome utente** o l'**indirizzo email**, e la password.
 - Dalla pagina di accesso, clicca su **Password dimenticata?**.
 - Viene inviata un'email con un link di reimpostazione (valido 24 ore).
-- Il selettore **🌐** dell'intestazione cambia la lingua di visualizzazione (francese, inglese, spagnolo, italiano). Per un utente connesso, la scelta viene salvata e ritrovata a ogni accesso; altrimenti si applica la lingua del browser.
 
 ### Autenticazione a due fattori e passkey (facoltative)
 
@@ -287,6 +286,11 @@ Ogni utente, qualunque sia il suo ruolo, può rafforzare la sicurezza del propri
 ---
 
 ## 6. Amministrazione
+
+### Lingua dell'interfaccia
+- **Amministrazione → 🏠 Pannello di controllo → ⚙️ Personalizza il pannello**, elenco **«🌐 Lingua dell'interfaccia»**: francese, inglese, spagnolo o italiano, per **tutto il club** (pagine, pagina di accesso, email, PDF ed esportazioni).
+- **Automatica (lingua del browser)**: ognuno vede l'applicazione nella lingua del proprio browser, o in francese se non è disponibile.
+- La lingua scelta nella procedura di installazione diventa la lingua del club. La riga di comando e il registro attività restano in francese.
 
 ### Categorie
 - Definire categorie di attrezzature (con la possibilità di contrassegnare un'attrezzatura come DPI).

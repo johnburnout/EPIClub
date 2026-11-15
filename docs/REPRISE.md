@@ -882,9 +882,12 @@ installeur et guide utilisateur ; la CLI reste en français).
   marquée doit y figurer dans les trois langues, avec les mêmes
   paramètres : `tests/Unit/CataloguesTraductionTest.php` échoue sinon.
 - **Langue de la requête** (`public/index.php`, `Langue::resoudre`) :
-  `utilisateur.langue` (migration 022, lue dans la session à la
-  connexion), puis choix de session (`POST /langue`, `LangueController`),
-  puis `Accept-Language`, puis `fr`. En CLI et en test : `fr`.
+  `club.langue` (migration 022, `ClubManager::langue()`, réglée dans la
+  personnalisation du tableau de bord ; null = automatique), sinon
+  `Accept-Language`, sinon `fr`. En CLI et en test : `fr`. Pas de choix
+  par utilisateur ni de sélecteur dans le bandeau (décision du 2026-11-15).
+  L'installeur garde son propre sélecteur (`?lang=`) ; ce choix devient
+  la langue du club à l'étape « Club ».
 - Dans un `<script>` : `{{ 'Texte'|trans|json_encode|raw }}`.
 - Formats de date : clé dédiée (`'d/m/Y à H:i'|trans`).
 - Constantes de message : `Traducteur::t(self::MESSAGE_…)` est reconnu
@@ -895,9 +898,8 @@ installeur et guide utilisateur ; la CLI reste en français).
   (texte du catalogue avec balises, paramètres échappés) ; reconnus par le
   garde-fou, qui parcourt aussi `setup/`.
 - Guide : modifier les quatre fichiers `docs/guide_utilisateur*.md` ensemble.
-- E-mails : `Traducteur::dans($langueDuDestinataire, fn () => $this->createEmail(…))`
-  (objet compris) ; préférences lues par `UtilisateurManager::languesPreferees()`,
-  vide si la migration 022 n'est pas passée.
+- E-mails : dans la langue de l'interface (objet compris). `Traducteur::dans()`
+  reste disponible pour écrire dans une autre langue si besoin.
 - Documents HTML écrits en PHP (heredoc) : libellés traduits et échappés
   dans un tableau `$L`, puis `{$L['cle']}` dans le heredoc.
 - Pluriels : jamais de paramètre « s » (`équipement{s}`) ; deux clés et un
@@ -926,10 +928,11 @@ installeur et guide utilisateur ; la CLI reste en français).
 | 5 | Acquisitions (liste, saisie, fiche, lignes, import Excel / CSV) | PR #127 |
 | 6 | Prêts (liste, fiche, scanner, validation, retour), `PretStatut`, `PretEtatRetour`, `PretRegles` | PR #128 |
 | 7 | Administration : tableau de bord, club, utilisateurs, référentiels, tickets, journal d'activité, système, mise à jour, sauvegarde, page QR ; `UserRole`, `DemandeModification`, `JournalActiviteManager::libellesTypes()` | PR #129 |
-| 8 | Documents : e-mails (langue du destinataire), PDF, CSV/Excel, étiquettes, en-tête de l'export du journal | PR #130 |
-| 9 | Installeur (`setup/` : `setup_t`, `setup_html`, `setup_langue`), guide (`docs/guide_utilisateur.<langue>.md`) | PR en cours |
+| 8 | Documents : e-mails, PDF, CSV/Excel, étiquettes, en-tête de l'export du journal | PR #130 |
+| 9 | Installeur (`setup/` : `setup_t`, `setup_html`, `setup_langue`), guide (`docs/guide_utilisateur.<langue>.md`) | PR #131 |
+| 10 | Langue réglée pour le club (personnalisation du tableau de bord, `club.langue`) au lieu du sélecteur du bandeau et de la préférence par utilisateur | PR en cours |
 
-Chantier complet une fois la PR de l'étape 9 fusionnée : release **v3.0.0**
+Chantier complet une fois la PR de l'étape 10 fusionnée : release **v3.0.0**
 (les entrées « [Unreleased] » du CHANGELOG passent sous [v3.0.0]).
 
 Restent volontairement en français : la ligne de commande (`bin/`), le

@@ -72,7 +72,7 @@ function setup_langue(): string
     }
     $navigateur = \Symfony\Component\HttpFoundation\Request::createFromGlobals()
         ->getPreferredLanguage(array_keys(\Epiclub\Engine\Langue::DISPONIBLES));
-    return \Epiclub\Engine\Langue::resoudre(null, $_SESSION['setup_langue'] ?? null, $navigateur);
+    return \Epiclub\Engine\Langue::resoudre($_SESSION['setup_langue'] ?? null, $navigateur);
 }
 
 /**

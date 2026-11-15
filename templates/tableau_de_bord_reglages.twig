@@ -84,6 +84,20 @@
 			</div>
 		</div>
 
+		{# [Localisation — migration 022] Langue de l'interface, pour tout le club #}
+		<div class="row g-4 mt-1">
+			<div class="col-md-6">
+				<label for="langue" class="form-label fw-bold">🌐 {{ "Langue de l'interface"|trans }}</label>
+				<select id="langue" name="langue" class="form-select {% if form_errors.langue is defined %}is-invalid{% endif %}">
+					<option value="" {% if club.langue|default(null) is empty %}selected{% endif %}>{{ 'Automatique (langue du navigateur)'|trans }}</option>
+					{% for code, nom in langues_disponibles %}
+						<option value="{{ code }}" lang="{{ code }}" {% if club.langue|default(null) == code %}selected{% endif %}>{{ nom }}</option>
+					{% endfor %}
+				</select>
+				<div class="form-text">{{ "S'applique à tous les utilisateurs, à la page de connexion et aux e-mails. En mode automatique, chacun voit l'application dans la langue de son navigateur (français si elle n'est pas proposée)."|trans }}</div>
+			</div>
+		</div>
+
 		<div class="mt-4">
 			<button type="submit" class="btn btn-primary">{{ 'Enregistrer'|trans }}</button>
 			<a href="/tableau_de_bord" class="btn btn-secondary">{{ 'Retour au tableau de bord'|trans }}</a>

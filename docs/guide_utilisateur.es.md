@@ -272,7 +272,6 @@ Los préstamos **con retraso** (fecha de devolución prevista superada) se seña
 - Se inicia sesión con el **nombre de usuario** o el **correo electrónico**, y la contraseña.
 - Desde la página de inicio de sesión, haga clic en **¿Ha olvidado su contraseña?**.
 - Se envía un correo con un enlace de restablecimiento (válido 24 horas).
-- El selector **🌐** del encabezado cambia el idioma de visualización (francés, inglés, español, italiano). Para un usuario conectado, la elección se guarda y se recupera en cada inicio de sesión; si no, se aplica el idioma del navegador.
 
 ### Autenticación en dos pasos y llaves de acceso (opcional)
 
@@ -287,6 +286,11 @@ Cada usuario, sea cual sea su rol, puede reforzar la seguridad de su cuenta desd
 ---
 
 ## 6. Administración
+
+### Idioma de la interfaz
+- **Administración → 🏠 Panel de control → ⚙️ Personalizar el panel**, lista **«🌐 Idioma de la interfaz»**: francés, inglés, español o italiano, para **todo el club** (páginas, página de inicio de sesión, correos, PDF y exportaciones).
+- **Automático (idioma del navegador)**: cada persona ve la aplicación en el idioma de su navegador, o en francés si no está disponible.
+- El idioma elegido en el asistente de instalación pasa a ser el idioma del club. La línea de comandos y el registro de actividad siguen en francés.
 
 ### Categorías
 - Definir categorías de equipos (con la posibilidad de marcar un equipo como EPI).

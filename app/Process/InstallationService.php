@@ -467,7 +467,10 @@ final class InstallationService
     /**
      * Fiche club (singleton id = 1), créée ou mise à jour.
      *
-     * @param array{nom: string, activite?: string, description?: string, email: string, phone?: string} $club
+     * [Localisation — migration 022] « langue » : langue choisie dans
+     * l'installeur, enregistrée comme langue du club (absente : automatique).
+     *
+     * @param array{nom: string, activite?: string, description?: string, email: string, phone?: string, langue?: string} $club
      */
     public function enregistrerClub(\PDO $pdo, array $club): void
     {
@@ -478,6 +481,9 @@ final class InstallationService
             'email'       => $club['email'],
             'phone'       => $club['phone'] ?? '',
         ];
+        if (\Epiclub\Engine\Langue::estDisponible($club['langue'] ?? null)) {
+            $donnees['langue'] = $club['langue'];
+        }
         $manager = new ClubManager($pdo);
         $existant = $manager->findParameters();
         if ($existant && isset($existant['id'])) {

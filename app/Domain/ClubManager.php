@@ -16,6 +16,8 @@ class ClubManager extends AbstractManager
         'delai_suppression_egare_mois',
         // [migration 019]
         'alerte_controle_actif', 'alerte_controle_mois',
+        // [Localisation — migration 022] null = automatique (navigateur)
+        'langue',
     ];
 
     public function findParameters()
@@ -27,6 +29,23 @@ class ClubManager extends AbstractManager
             return $parameters;
         }
         return null;
+    }
+
+    /**
+     * [Localisation — migration 022] Langue de l'interface réglée pour le
+     * club, ou null (automatique : langue du navigateur). Null aussi si la
+     * base ou la colonne est indisponible (installation, mise à jour en
+     * cours) : l'interface ne doit jamais tomber pour une langue.
+     */
+    public function langue(): ?string
+    {
+        try {
+            $langue = $this->db->query('SELECT langue FROM club WHERE id = 1')->fetchColumn();
+            return is_string($langue) && $langue !== '' ? $langue : null;
+        } catch (\Throwable $e) {
+            error_log('[ClubManager] Langue du club indisponible : ' . $e->getMessage());
+            return null;
+        }
     }
 
     public function save(array $club)
