@@ -20,31 +20,29 @@
     require __DIR__ . '/../includes/header.php';
 ?>
 
-<h1>🎉 Installation terminée !</h1>
+<h1>🎉 <?= setup_t('Installation terminée !') ?></h1>
 <hr>
 
 <div class="alert alert-success">
-    <h4>✅ L'application est installée avec succès !</h4>
-    <p>Vous pouvez maintenant accéder à votre site.</p>
+    <h4>✅ <?= setup_t('L\'application est installée avec succès !') ?></h4>
+    <p><?= setup_t('Vous pouvez maintenant accéder à votre site.') ?></p>
 </div>
 
 <div class="alert alert-danger">
-    <h4>⚠️ Action obligatoire</h4>
+    <h4>⚠️ <?= setup_t('Action obligatoire') ?></h4>
     <p>
-        <strong>Supprimez immédiatement le dossier <code>setup/</code></strong>
-        de votre serveur (via FTP, SSH, ou votre panneau d'administration).
+        <?= setup_html('<strong>Supprimez immédiatement le dossier <code>setup/</code></strong> de votre serveur (via FTP, SSH, ou votre panneau d\'administration).') ?>
     </p>
     <p>
-        Tant que ce dossier existe, EPIClub est vulnérable.
+        <?= setup_t('Tant que ce dossier existe, EPIClub est vulnérable.') ?>
     </p>
     <p>
-        En cas d'oubli, l'application affichera une erreur 503 sur les pages
-        non installées.
+        <?= setup_t('En cas d\'oubli, l\'application affichera une erreur 503 sur les pages non installées.') ?>
     </p>
 </div>
 
 <div class="mt-4">
-    <a href="/" class="btn btn-primary btn-lg">🚀 Accéder au site</a>
+    <a href="/" class="btn btn-primary btn-lg">🚀 <?= setup_t('Accéder au site') ?></a>
 </div>
 
 <?php require __DIR__ . '/../includes/footer.php'; ?>

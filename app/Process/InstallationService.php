@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Epiclub\Process;
 
+use Epiclub\Engine\Traducteur;
 use Epiclub\Domain\CategorieManager;
 use Epiclub\Domain\ClubManager;
 use Epiclub\Domain\UtilisateurManager;
@@ -71,20 +72,17 @@ final class InstallationService
 
         $phpRequis = ltrim((string) $exigences['php_version'], '>=');
         if (version_compare($versionPhp, $phpRequis, '<')) {
-            $erreurs[] = sprintf(
-                "PHP %s ou supérieur est requis (version actuelle : %s).",
-                $phpRequis,
-                $versionPhp
+            $erreurs[] = Traducteur::t(
+                'PHP {requis} ou supérieur est requis (version actuelle : {actuelle}).',
+                ['requis' => $phpRequis, 'actuelle' => $versionPhp]
             );
         }
 
         foreach ((array) ($exigences['php_extensions'] ?? []) as $ext) {
             if (!$extension($ext)) {
-                $erreurs[] = sprintf(
-                    "L'extension PHP « %s » est requise mais non installée. "
-                    . "Sur Debian/Ubuntu : sudo apt install php-%s",
-                    $ext,
-                    str_replace('_', '-', $ext)
+                $erreurs[] = Traducteur::t(
+                    "L'extension PHP « {extension} » est requise mais non installée. Sur Debian/Ubuntu : sudo apt install php-{paquet}",
+                    ['extension' => $ext, 'paquet' => str_replace('_', '-', $ext)]
                 );
             }
         }
@@ -92,13 +90,9 @@ final class InstallationService
         foreach ((array) ($exigences['upload_limits'] ?? []) as $cle => $requis) {
             $actuel = (string) $ini($cle);
             if (self::tailleIni($actuel) < self::tailleIni((string) $requis)) {
-                $avertissements[] = sprintf(
-                    "La limite PHP « %s » est à %s alors que %s est recommandé. "
-                    . "Les uploads de factures jusqu'à 10 Mo pourraient échouer. "
-                    . "Ajustez-la dans php.ini, .user.ini, ou depuis votre panneau d'hébergement.",
-                    $cle,
-                    $actuel !== '' ? $actuel : 'non définie',
-                    $requis
+                $avertissements[] = Traducteur::t(
+                    "La limite PHP « {cle} » est à {actuel} alors que {requis} est recommandé. Les uploads de factures jusqu'à 10 Mo pourraient échouer. Ajustez-la dans php.ini, .user.ini, ou depuis votre panneau d'hébergement.",
+                    ['cle' => $cle, 'actuel' => $actuel !== '' ? $actuel : Traducteur::t('non définie'), 'requis' => $requis]
                 );
             }
         }
@@ -134,12 +128,12 @@ final class InstallationService
     {
         $erreurs = [];
         if (trim($nom) === '') {
-            $erreurs[] = "Le nom du site est requis.";
+            $erreurs[] = Traducteur::t("Le nom du site est requis.");
         }
         if (trim($url) === '') {
-            $erreurs[] = "L'URL racine du site est requise.";
+            $erreurs[] = Traducteur::t("L'URL racine du site est requise.");
         } elseif (!filter_var(trim($url), FILTER_VALIDATE_URL)) {
-            $erreurs[] = "L'URL racine doit être une URL valide (ex: https://mon-site.com).";
+            $erreurs[] = Traducteur::t("L'URL racine doit être une URL valide (ex: https://mon-site.com).");
         }
         return $erreurs;
     }
@@ -149,23 +143,23 @@ final class InstallationService
     {
         $erreurs = [];
         if ($hote === '') {
-            $erreurs[] = "L'adresse du serveur est requise.";
+            $erreurs[] = Traducteur::t("L'adresse du serveur est requise.");
         } elseif (!preg_match('/^[a-zA-Z0-9\.\:\-\_]+$/', $hote)) {
-            $erreurs[] = "L'adresse du serveur contient des caractères invalides.";
+            $erreurs[] = Traducteur::t("L'adresse du serveur contient des caractères invalides.");
         }
 
         if ($base === '') {
-            $erreurs[] = "Le nom de la base est requis.";
+            $erreurs[] = Traducteur::t("Le nom de la base est requis.");
         } elseif (!preg_match('/^[a-zA-Z0-9\_]+$/', $base)) {
-            $erreurs[] = "Le nom de la base ne peut contenir que des lettres, chiffres et underscores.";
+            $erreurs[] = Traducteur::t("Le nom de la base ne peut contenir que des lettres, chiffres et underscores.");
         } elseif (strlen($base) > 64) {
-            $erreurs[] = "Le nom de la base est trop long (64 caractères max).";
+            $erreurs[] = Traducteur::t("Le nom de la base est trop long (64 caractères max).");
         }
 
         if ($utilisateur === '') {
-            $erreurs[] = "Le nom d'utilisateur est requis.";
+            $erreurs[] = Traducteur::t("Le nom d'utilisateur est requis.");
         } elseif (!preg_match('/^[a-zA-Z0-9\.\-\_\@]+$/', $utilisateur)) {
-            $erreurs[] = "Le nom d'utilisateur contient des caractères invalides.";
+            $erreurs[] = Traducteur::t("Le nom d'utilisateur contient des caractères invalides.");
         }
         return $erreurs;
     }
@@ -180,24 +174,24 @@ final class InstallationService
     {
         $erreurs = [];
         if (empty($admin['nom'])) {
-            $erreurs[] = 'Le nom est requis.';
+            $erreurs[] = Traducteur::t('Le nom est requis.');
         }
         if (empty($admin['prenom'])) {
-            $erreurs[] = 'Le prénom est requis.';
+            $erreurs[] = Traducteur::t('Le prénom est requis.');
         }
         if (empty($admin['username'])) {
-            $erreurs[] = 'Le nom d\'utilisateur est requis.';
+            $erreurs[] = Traducteur::t('Le nom d\'utilisateur est requis.');
         } elseif (strlen((string) $admin['username']) > 32) {
-            $erreurs[] = 'Le nom d\'utilisateur est trop long (32 caractères max).';
+            $erreurs[] = Traducteur::t('Le nom d\'utilisateur est trop long (32 caractères max).');
         }
         if (empty($admin['email']) || !filter_var($admin['email'], FILTER_VALIDATE_EMAIL)) {
-            $erreurs[] = 'Une adresse email valide est requise.';
+            $erreurs[] = Traducteur::t('Une adresse email valide est requise.');
         }
         if (empty($admin['password']) || strlen((string) $admin['password']) < self::LONGUEUR_MIN_MOT_DE_PASSE) {
-            $erreurs[] = 'Le mot de passe doit contenir au moins 12 caractères.';
+            $erreurs[] = Traducteur::t('Le mot de passe doit contenir au moins 12 caractères.');
         }
         if ($confirmation !== null && ($admin['password'] ?? '') !== $confirmation) {
-            $erreurs[] = 'Les deux mots de passe ne correspondent pas.';
+            $erreurs[] = Traducteur::t('Les deux mots de passe ne correspondent pas.');
         }
         return $erreurs;
     }
@@ -210,13 +204,13 @@ final class InstallationService
     {
         $erreurs = [];
         if (empty($club['nom'])) {
-            $erreurs[] = 'Le nom du club est requis.';
+            $erreurs[] = Traducteur::t('Le nom du club est requis.');
         }
         if (empty($club['email']) || !filter_var($club['email'], FILTER_VALIDATE_EMAIL)) {
-            $erreurs[] = 'L\'adresse email du club est requise et doit être valide.';
+            $erreurs[] = Traducteur::t('L\'adresse email du club est requise et doit être valide.');
         }
         if (isset($club['activite']) && $club['activite'] !== '' && !in_array($club['activite'], self::ACTIVITES, true)) {
-            $erreurs[] = 'Activité inconnue : ' . $club['activite'] . ' (attendu : ' . implode(', ', self::ACTIVITES) . ').';
+            $erreurs[] = Traducteur::t('Activité inconnue : {activite} (attendu : {liste}).', ['activite' => $club['activite'], 'liste' => implode(', ', self::ACTIVITES)]);
         }
         return $erreurs;
     }
@@ -233,10 +227,10 @@ final class InstallationService
         }
         $erreurs = [];
         if ($port === '' || !ctype_digit($port)) {
-            $erreurs[] = 'Le port SMTP doit être un nombre.';
+            $erreurs[] = Traducteur::t('Le port SMTP doit être un nombre.');
         }
         if ($utilisateur === '') {
-            $erreurs[] = 'Le nom d\'utilisateur SMTP est requis.';
+            $erreurs[] = Traducteur::t('Le nom d\'utilisateur SMTP est requis.');
         }
         return $erreurs;
     }
@@ -332,13 +326,9 @@ final class InstallationService
 
         $tables = $serveur->query('SHOW TABLES')->fetchAll(\PDO::FETCH_COLUMN);
         if (count($tables) > 0) {
-            throw new InstallationException(sprintf(
-                "La base « %s » contient déjà %d table(s). " .
-                "L'installation ne peut pas continuer. " .
-                "Pour réinstaller, supprimez la base manuellement " .
-                "et relancez l'installateur.",
-                $base,
-                count($tables)
+            throw new InstallationException(Traducteur::t(
+                "La base « {base} » contient déjà {tables} table(s). L'installation ne peut pas continuer. Pour réinstaller, supprimez la base manuellement et relancez l'installateur.",
+                ['base' => $base, 'tables' => count($tables)]
             ), InstallationException::DEJA_INSTALLE);
         }
 
@@ -448,8 +438,7 @@ final class InstallationService
         $manager = new UtilisateurManager($pdo);
         if (!empty($manager->findAll())) {
             throw new InstallationException(
-                'Un compte administrateur existe déjà. '
-                . 'Pour modifier le compte principal, connectez-vous à l\'application.',
+                Traducteur::t("Un compte administrateur existe déjà. Pour modifier le compte principal, connectez-vous à l'application."),
                 InstallationException::DEJA_INSTALLE
             );
         }

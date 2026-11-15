@@ -3020,4 +3020,158 @@ Date: {date}',
         => 'Your password is given to you by the administrator who created the account. You can also choose one yourself with <a href="{lien}">“Forgot your password?”</a>.',
     'Vous avez demandé la réinitialisation de votre mot de passe.'
         => 'You asked to reset your password.',
+
+    // --- Installeur ---
+    '<strong>Supprimez immédiatement le dossier <code>setup/</code></strong> de votre serveur (via FTP, SSH, ou votre panneau d\'administration).'
+        => '<strong>Delete the <code>setup/</code> folder immediately</strong> from your server (via FTP, SSH or your control panel).',
+    '12 caractères minimum.'
+        => '12 characters minimum.',
+    'Accéder au site'
+        => 'Go to the site',
+    'Action obligatoire'
+        => 'Required action',
+    'Activité inconnue : {activite} (attendu : {liste}).'
+        => 'Unknown activity: {activite} (expected: {liste}).',
+    'Activité principale'
+        => 'Main activity',
+    'Adresse mail du club *'
+        => 'Club email address *',
+    'Adresse serveur *'
+        => 'Server address *',
+    'Après correction,'
+        => 'Once corrected,',
+    'Avertissements'
+        => 'Warnings',
+    'Catégories d\'équipements'
+        => 'Equipment categories',
+    'Cette étape est <strong>facultative</strong>. Si vous laissez le domaine vide, les envois de mail seront désactivés. Vous pourrez configurer SMTP plus tard dans l\'administration.'
+        => 'This step is <strong>optional</strong>. If you leave the domain empty, sending emails will be disabled. You can configure SMTP later in the administration.',
+    'Configuration initiale'
+        => 'Initial configuration',
+    'Configuration SMTP'
+        => 'SMTP configuration',
+    'Connexion impossible à la base de données. Vérifiez l\'hôte, le nom d\'utilisateur et le mot de passe.'
+        => 'Cannot connect to the database. Check the host, username and password.',
+    'Corrigez les prérequis ci-dessus, puis rechargez cette page pour continuer.'
+        => 'Fix the requirements above, then reload this page to continue.',
+    'Créer les catégories sélectionnées'
+        => 'Create the selected categories',
+    'Créez le compte super administrateur. Ce compte aura tous les droits. Choisissez un mot de passe robuste et unique.'
+        => 'Create the super administrator account. This account will have all rights. Choose a strong, unique password.',
+    'Domaine SMTP'
+        => 'SMTP domain',
+    'En cas d\'oubli, l\'application affichera une erreur 503 sur les pages non installées.'
+        => 'If you forget, the application will show a 503 error on pages that are not installed.',
+    'EPI ?'
+        => 'PPE?',
+    'Epiclub - Installation'
+        => 'Epiclub - Installation',
+    'Erreur de sécurité : jeton CSRF invalide ou expiré. Rechargez la page et réessayez.'
+        => 'Security error: invalid or expired CSRF token. Reload the page and try again.',
+    'Erreur lors de l\'installation : {erreur}'
+        => 'Error during installation: {erreur}',
+    'Ex: smtp.free.fr, smtp.gmail.com. Laissez vide pour désactiver.'
+        => 'E.g. smtp.free.fr, smtp.gmail.com. Leave empty to disable.',
+    'Hôte MySQL. Peut inclure un port (ex: localhost:3306).'
+        => 'MySQL host. May include a port (e.g. localhost:3306).',
+    'Installation en cours'
+        => 'Installation in progress',
+    'Installation terminée !'
+        => 'Installation complete!',
+    'L\'adresse complète à partir de laquelle votre site sera accessible.'
+        => 'The full address at which your site will be reachable.',
+    'L\'adresse du serveur contient des caractères invalides.'
+        => 'The server address contains invalid characters.',
+    'L\'adresse du serveur est requise.'
+        => 'The server address is required.',
+    'L\'adresse email du club est requise et doit être valide.'
+        => 'The club email address is required and must be valid.',
+    'L\'application est installée avec succès !'
+        => 'The application has been installed successfully!',
+    'L\'extension PHP « {extension} » est requise mais non installée. Sur Debian/Ubuntu : sudo apt install php-{paquet}'
+        => 'The PHP extension “{extension}” is required but not installed. On Debian/Ubuntu: sudo apt install php-{paquet}',
+    'L\'installation ne peut pas continuer tant que ces problèmes ne sont pas résolus :'
+        => 'The installation cannot continue until these problems are solved:',
+    'L\'URL racine doit être une URL valide (ex: https://mon-site.com).'
+        => 'The root URL must be a valid URL (e.g. https://my-site.com).',
+    'L\'URL racine du site est requise.'
+        => 'The site\'s root URL is required.',
+    'La base « {base} » contient déjà {tables} table(s). L\'installation ne peut pas continuer. Pour réinstaller, supprimez la base manuellement et relancez l\'installateur.'
+        => 'The database “{base}” already contains {tables} table(s). The installation cannot continue. To reinstall, delete the database manually and run the installer again.',
+    'La limite PHP « {cle} » est à {actuel} alors que {requis} est recommandé. Les uploads de factures jusqu\'à 10 Mo pourraient échouer. Ajustez-la dans php.ini, .user.ini, ou depuis votre panneau d\'hébergement.'
+        => 'The PHP limit “{cle}” is set to {actuel} whereas {requis} is recommended. Invoice uploads of up to 10 MB could fail. Adjust it in php.ini, .user.ini or from your hosting control panel.',
+    'Laissez vide si l\'utilisateur n\'a pas de mot de passe.'
+        => 'Leave empty if the user has no password.',
+    'Le mot de passe doit contenir au moins 12 caractères.'
+        => 'The password must contain at least 12 characters.',
+    'Le nom d\'utilisateur contient des caractères invalides.'
+        => 'The username contains invalid characters.',
+    'Le nom d\'utilisateur est requis.'
+        => 'The username is required.',
+    'Le nom d\'utilisateur est trop long (32 caractères max).'
+        => 'The username is too long (32 characters max).',
+    'Le nom d\'utilisateur SMTP est requis.'
+        => 'The SMTP username is required.',
+    'Le nom de la base est requis.'
+        => 'The database name is required.',
+    'Le nom de la base est trop long (64 caractères max).'
+        => 'The database name is too long (64 characters max).',
+    'Le nom de la base ne peut contenir que des lettres, chiffres et underscores.'
+        => 'The database name can only contain letters, digits and underscores.',
+    'Le nom du club est requis.'
+        => 'The club name is required.',
+    'Le nom du site est requis.'
+        => 'The site name is required.',
+    'Le nom est requis.'
+        => 'The last name is required.',
+    'Le port SMTP doit être un nombre.'
+        => 'The SMTP port must be a number.',
+    'Le prénom est requis.'
+        => 'The first name is required.',
+    'Les deux mots de passe ne correspondent pas.'
+        => 'The two passwords do not match.',
+    'Lettres, chiffres et underscores uniquement.'
+        => 'Letters, digits and underscores only.',
+    'localhost ou 127.0.0.1:3306'
+        => 'localhost or 127.0.0.1:3306',
+    'Logo EPIClub'
+        => 'EPIClub logo',
+    'N° téléphone'
+        => 'Phone no.',
+    'Nom d\'utilisateur'
+        => 'Username',
+    'Nom de la base *'
+        => 'Database name *',
+    'Nom du club *'
+        => 'Club name *',
+    'Nom du site *'
+        => 'Site name *',
+    'non définie'
+        => 'not set',
+    'Passer cette étape'
+        => 'Skip this step',
+    'PHP {requis} ou supérieur est requis (version actuelle : {actuelle}).'
+        => 'PHP {requis} or higher is required (current version: {actuelle}).',
+    'Port'
+        => 'Port',
+    'Prérequis système non satisfaits'
+        => 'System requirements not met',
+    'rechargez cette page'
+        => 'reload this page',
+    'Tant que ce dossier existe, EPIClub est vulnérable.'
+        => 'As long as this folder exists, EPIClub is vulnerable.',
+    'Un compte administrateur existe déjà. Pour modifier le compte principal, connectez-vous à l\'application.'
+        => 'An administrator account already exists. To change the main account, log in to the application.',
+    'Une adresse email valide est requise.'
+        => 'A valid email address is required.',
+    'URL racine du site *'
+        => 'Site root URL *',
+    'Voici une liste de catégories préparée pour l\'activité <strong>{activite}</strong>. Décochez celles dont vous n\'avez pas besoin — vous pourrez toutes les modifier ou en ajouter ensuite dans <em>Administration → Catégories</em>.'
+        => 'Here is a list of categories prepared for the <strong>{activite}</strong> activity. Untick the ones you do not need — you can edit them all or add more later in <em>Administration → Categories</em>.',
+    'Vous pouvez maintenant accéder à votre site.'
+        => 'You can now go to your site.',
+
+    // --- Guide ---
+    'Guide non trouvé'
+        => 'Guide not found',
 ];

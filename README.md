@@ -6,6 +6,8 @@
 
 EpiClub est une application de gestion et de journalisation des contrôles des Equipements de Protection Individuelle.
 
+Interface disponible en français, anglais, espagnol et italien (sélecteur 🌐 du bandeau ; voir « Localisation » dans `docs/REPRISE.md`).
+
 ## Prérequis
 
 * php >= 8.4

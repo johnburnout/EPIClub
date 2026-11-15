@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // [#107] CSRF : rejette les POST forgés cross-site pendant la
     // fenêtre d'installation (credentials BDD écrits dans .env.local.php).
     if (!setup_csrf_is_valid($_POST['csrf_token'] ?? null)) {
-        $errors[] = 'Erreur de sécurité : jeton CSRF invalide ou expiré. Rechargez la page et réessayez.';
+        $errors[] = \Epiclub\Engine\Traducteur::t('Erreur de sécurité : jeton CSRF invalide ou expiré. Rechargez la page et réessayez.');
     }
 
     $db_host = trim($_POST['db_host'] ?? '');
@@ -82,14 +82,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } catch (InstallationException $e) {
             // Base non vide, nom invalide : message prévu pour l'utilisateur.
             error_log('[setup/dbms] Installation refusée : ' . $e->getMessage());
-            $errors[] = htmlspecialchars($e->getMessage());
+            $errors[] = $e->getMessage();
         } catch (\PDOException $e) {
             error_log('[setup/dbms] PDO error: ' . $e->getMessage());
-            $errors[] = "Connexion impossible à la base de données. " .
-                        "Vérifiez l'hôte, le nom d'utilisateur et le mot de passe.";
+            $errors[] = \Epiclub\Engine\Traducteur::t("Connexion impossible à la base de données. Vérifiez l'hôte, le nom d'utilisateur et le mot de passe.");
         } catch (\Throwable $e) {
             error_log('[setup/dbms] Error: ' . $e->getMessage());
-            $errors[] = "Erreur lors de l'installation : " . htmlspecialchars($e->getMessage());
+            $errors[] = \Epiclub\Engine\Traducteur::t("Erreur lors de l'installation : {erreur}", ['erreur' => $e->getMessage()]);
         }
     }
 
@@ -105,14 +104,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 require __DIR__ . '/../includes/header.php';
 ?>
 
-<h1>Base de données</h1>
+<h1><?= setup_t('Base de données') ?></h1>
 <hr>
 
 <?php if (!empty($errors)): ?>
     <div class="alert alert-danger">
         <ul>
             <?php foreach ($errors as $error): ?>
-                <li><?= $error ?></li>
+                <li><?= htmlspecialchars($error) ?></li>
             <?php endforeach; ?>
         </ul>
     </div>
@@ -120,34 +119,34 @@ require __DIR__ . '/../includes/header.php';
 
 <form method="post" autocomplete="off">
     <div class="mb-3">
-        <label for="db_host" class="form-label">Adresse serveur *</label>
+        <label for="db_host" class="form-label"><?= setup_t('Adresse serveur *') ?></label>
         <input type="text" class="form-control" name="db_host" id="db_host"
                value="<?= htmlspecialchars($db_params['db_host']); ?>"
-               placeholder="localhost ou 127.0.0.1:3306" required>
-        <small class="text-muted">Hôte MySQL. Peut inclure un port (ex: localhost:3306).</small>
+               placeholder="<?= setup_t('localhost ou 127.0.0.1:3306') ?>" required>
+        <small class="text-muted"><?= setup_t('Hôte MySQL. Peut inclure un port (ex: localhost:3306).') ?></small>
     </div>
 
     <div class="mb-3">
-        <label for="db_name" class="form-label">Nom de la base *</label>
+        <label for="db_name" class="form-label"><?= setup_t('Nom de la base *') ?></label>
         <input type="text" class="form-control" name="db_name" id="db_name"
                value="<?= htmlspecialchars($db_params['db_name']); ?>"
                pattern="[a-zA-Z0-9_]+" maxlength="64" required>
-        <small class="text-muted">Lettres, chiffres et underscores uniquement.</small>
+        <small class="text-muted"><?= setup_t('Lettres, chiffres et underscores uniquement.') ?></small>
     </div>
 
     <div class="mb-3">
-        <label for="db_user" class="form-label">Nom d'utilisateur *</label>
+        <label for="db_user" class="form-label"><?= setup_t('Nom d\'utilisateur *') ?></label>
         <input type="text" class="form-control" name="db_user" id="db_user"
                value="<?= htmlspecialchars($db_params['db_user']); ?>" required>
     </div>
 
     <div class="mb-3">
-        <label for="db_pass" class="form-label">Mot de passe</label>
+        <label for="db_pass" class="form-label"><?= setup_t('Mot de passe') ?></label>
         <input type="password" class="form-control" name="db_pass" id="db_pass" value="">
-        <small class="text-muted">Laissez vide si l'utilisateur n'a pas de mot de passe.</small>
+        <small class="text-muted"><?= setup_t('Laissez vide si l\'utilisateur n\'a pas de mot de passe.') ?></small>
     </div>
 
-    <button type="submit" class="btn btn-primary">Valider</button>
+    <button type="submit" class="btn btn-primary"><?= setup_t('Valider') ?></button>
     <?= setup_csrf_field() ?>
 </form>
 

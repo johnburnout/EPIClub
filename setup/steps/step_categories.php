@@ -25,7 +25,7 @@ $form_errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // [#107] CSRF : rejette les POST forgés cross-site.
     if (!setup_csrf_is_valid($_POST['csrf_token'] ?? null)) {
-        $form_errors[] = 'Erreur de sécurité : jeton CSRF invalide ou expiré. Rechargez la page et réessayez.';
+        $form_errors[] = \Epiclub\Engine\Traducteur::t('Erreur de sécurité : jeton CSRF invalide ou expiré. Rechargez la page et réessayez.');
     }
 
     if (empty($form_errors)) {
@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 require __DIR__ . '/../includes/header.php';
 ?>
 
-<h1>Catégories d'équipements</h1>
+<h1><?= setup_t('Catégories d\'équipements') ?></h1>
 <hr>
 
 <?php if (!empty($form_errors)): ?>
@@ -61,10 +61,7 @@ require __DIR__ . '/../includes/header.php';
 <?php endif; ?>
 
 <p>
-    Voici une liste de catégories préparée pour l'activité
-    <strong><?= htmlspecialchars($activite !== '' ? $activite : 'Escalade') ?></strong>.
-    Décochez celles dont vous n'avez pas besoin — vous pourrez toutes les modifier
-    ou en ajouter ensuite dans <em>Administration → Catégories</em>.
+    <?= setup_html('Voici une liste de catégories préparée pour l\'activité <strong>{activite}</strong>. Décochez celles dont vous n\'avez pas besoin — vous pourrez toutes les modifier ou en ajouter ensuite dans <em>Administration → Catégories</em>.', ['activite' => $activite !== '' ? $activite : 'Escalade']) ?>
 </p>
 
 <form method="post">
@@ -72,10 +69,10 @@ require __DIR__ . '/../includes/header.php';
         <thead>
             <tr>
                 <th></th>
-                <th>Libellé</th>
-                <th>Code</th>
-                <th>EPI ?</th>
-                <th>Durée max ?</th>
+                <th><?= setup_t('Libellé') ?></th>
+                <th><?= setup_t('Code') ?></th>
+                <th><?= setup_t('EPI ?') ?></th>
+                <th><?= setup_t('Durée max ?') ?></th>
             </tr>
         </thead>
         <tbody>
@@ -94,8 +91,8 @@ require __DIR__ . '/../includes/header.php';
         </tbody>
     </table>
 
-    <button type="submit" class="btn btn-primary">Créer les catégories sélectionnées</button>
-    <a href="?step=final" class="btn btn-secondary">Passer cette étape</a>
+    <button type="submit" class="btn btn-primary"><?= setup_t('Créer les catégories sélectionnées') ?></button>
+    <a href="?step=final" class="btn btn-secondary"><?= setup_t('Passer cette étape') ?></a>
     <?= setup_csrf_field() ?>
 </form>
 

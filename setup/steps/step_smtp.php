@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // [#107] CSRF : rejette les POST forgés cross-site (credentials
     // SMTP écrits dans .env.local.php).
     if (!setup_csrf_is_valid($_POST['csrf_token'] ?? null)) {
-        $errors[] = 'Erreur de sécurité : jeton CSRF invalide ou expiré. Rechargez la page et réessayez.';
+        $errors[] = \Epiclub\Engine\Traducteur::t('Erreur de sécurité : jeton CSRF invalide ou expiré. Rechargez la page et réessayez.');
     }
 
     // Domaine vide : envoi désactivé (règles partagées avec bin/installer.php).
@@ -44,13 +44,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 require __DIR__ . '/../includes/header.php';
 ?>
 
-<h1>Configuration SMTP</h1>
+<h1><?= setup_t('Configuration SMTP') ?></h1>
 <hr>
 
 <p class="text-muted">
-    Cette étape est <strong>facultative</strong>. Si vous laissez le domaine vide,
-    les envois de mail seront désactivés. Vous pourrez configurer SMTP plus tard
-    dans l'administration.
+    <?= setup_html('Cette étape est <strong>facultative</strong>. Si vous laissez le domaine vide, les envois de mail seront désactivés. Vous pourrez configurer SMTP plus tard dans l\'administration.') ?>
 </p>
 
 <?php if (!empty($errors)): ?>
@@ -65,26 +63,26 @@ require __DIR__ . '/../includes/header.php';
 
 <form method="post">
     <div class="mb-3">
-        <label for="domain" class="form-label">Domaine SMTP</label>
+        <label for="domain" class="form-label"><?= setup_t('Domaine SMTP') ?></label>
         <input type="text" class="form-control" name="domain" id="domain" value="<?= htmlspecialchars($smtp['domain']); ?>">
-        <small class="text-muted">Ex: smtp.free.fr, smtp.gmail.com. Laissez vide pour désactiver.</small>
+        <small class="text-muted"><?= setup_t('Ex: smtp.free.fr, smtp.gmail.com. Laissez vide pour désactiver.') ?></small>
     </div>
     <div class="mb-3">
-        <label for="port" class="form-label">Port</label>
+        <label for="port" class="form-label"><?= setup_t('Port') ?></label>
         <input type="number" class="form-control" name="port" id="port" value="<?= htmlspecialchars((string)$smtp['port']); ?>">
     </div>
     <div class="mb-3">
-        <label for="user" class="form-label">Nom d'utilisateur</label>
+        <label for="user" class="form-label"><?= setup_t('Nom d\'utilisateur') ?></label>
         <input type="text" class="form-control" name="user" id="user" value="<?= htmlspecialchars($smtp['user']); ?>">
     </div>
     <div class="mb-3">
-        <label for="password" class="form-label">Mot de passe</label>
+        <label for="password" class="form-label"><?= setup_t('Mot de passe') ?></label>
         <!-- [#108 - Dette 28] Jamais ré-affiché : cohérent avec step_dbms et la politique « pas de mot de passe en clair ». -->
         <input type="password" class="form-control" name="password" id="password" value="">
     </div>
-    <button type="submit" class="btn btn-primary">Valider</button>
+    <button type="submit" class="btn btn-primary"><?= setup_t('Valider') ?></button>
     <?= setup_csrf_field() ?>
-    <a href="?step=club" class="btn btn-link">Passer cette étape</a>
+    <a href="?step=club" class="btn btn-link"><?= setup_t('Passer cette étape') ?></a>
 </form>
 
 <?php require __DIR__ . '/../includes/footer.php'; ?>

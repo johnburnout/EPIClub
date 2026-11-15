@@ -3,6 +3,8 @@
 namespace Epiclub\Controller;
 
 use Epiclub\Engine\AbstractController;
+use Epiclub\Engine\Langue;
+use Epiclub\Engine\Traducteur;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
 
@@ -18,7 +20,7 @@ class GuideController extends AbstractController
         $mdFile = $this->guideFilePath();
 
         if (!file_exists($mdFile)) {
-            $content = '# Guide non trouvé';
+            $content = '# ' . Traducteur::t('Guide non trouvé');
         } else {
             // Lire le fichier
             $content = file_get_contents($mdFile);
@@ -45,6 +47,13 @@ class GuideController extends AbstractController
      */
     protected function guideFilePath(): string
     {
+        // [Localisation] Guide dans la langue de l'utilisateur
+        // (docs/guide_utilisateur.<langue>.md), sinon en français.
+        $langue = Traducteur::langue();
+        $traduit = __DIR__ . '/../../docs/guide_utilisateur.' . $langue . '.md';
+        if ($langue !== Langue::DEFAUT && is_file($traduit)) {
+            return $traduit;
+        }
         return __DIR__ . '/../../docs/guide_utilisateur.md';
     }
 }

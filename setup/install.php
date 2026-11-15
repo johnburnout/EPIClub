@@ -33,4 +33,7 @@ if (!in_array($step, $allowedSteps)) {
 // pas conservé et le POST suivant est refusé (« jeton CSRF invalide »).
 setup_csrf_token();
 
+// [Localisation] Langue de l'assistant (sélecteur de l'en-tête).
+\Epiclub\Engine\Traducteur::definirLangue(setup_langue());
+
 require __DIR__ . "/steps/step_$step.php";

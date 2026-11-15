@@ -17,7 +17,7 @@ $form_errors = [];
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // [#107] CSRF : rejette les POST forgés cross-site.
     if (!setup_csrf_is_valid($_POST['csrf_token'] ?? null)) {
-        $form_errors[] = 'Erreur de sécurité : jeton CSRF invalide ou expiré. Rechargez la page et réessayez.';
+        $form_errors[] = \Epiclub\Engine\Traducteur::t('Erreur de sécurité : jeton CSRF invalide ou expiré. Rechargez la page et réessayez.');
     }
 
     $saisie = [
@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 require __DIR__ . '/../includes/header.php';
 ?>
 
-<h1>Club</h1>
+<h1><?= setup_t('Club') ?></h1>
 <hr>
 
 <?php if (!empty($form_errors)): ?>
@@ -62,11 +62,11 @@ require __DIR__ . '/../includes/header.php';
 
 <form method="post">
     <div class="mb-3">
-        <label for="nom" class="form-label">Nom du club *</label>
+        <label for="nom" class="form-label"><?= setup_t('Nom du club *') ?></label>
         <input type="text" class="form-control" name="nom" id="nom" value="<?= htmlspecialchars($club['nom']); ?>" required>
     </div>
     <div class="mb-3">
-        <label for="activite" class="form-label">Activité principale</label>
+        <label for="activite" class="form-label"><?= setup_t('Activité principale') ?></label>
         <select class="form-select" name="activite" id="activite">
             <?php foreach ($activites as $activite) { ?>
                 <option value="<?= $activite; ?>" <?= ($club['activite'] === $activite) ? 'selected' : '' ?>><?= $activite; ?></option>
@@ -74,18 +74,18 @@ require __DIR__ . '/../includes/header.php';
         </select>
     </div>
     <div class="mb-3">
-        <label for="description" class="form-label">Description</label>
+        <label for="description" class="form-label"><?= setup_t('Description') ?></label>
         <textarea class="form-control" name="description" id="description" rows="3"><?= htmlspecialchars($club['description']); ?></textarea>
     </div>
     <div class="mb-3">
-        <label for="email" class="form-label">Adresse mail du club *</label>
+        <label for="email" class="form-label"><?= setup_t('Adresse mail du club *') ?></label>
         <input type="email" class="form-control" name="email" id="email" value="<?= htmlspecialchars($club['email']); ?>" required>
     </div>
     <div class="mb-3">
-        <label for="phone" class="form-label">N° téléphone</label>
+        <label for="phone" class="form-label"><?= setup_t('N° téléphone') ?></label>
         <input type="text" class="form-control" name="phone" id="phone" value="<?= htmlspecialchars($club['phone']); ?>">
     </div>
-    <button type="submit" class="btn btn-primary">Valider</button>
+    <button type="submit" class="btn btn-primary"><?= setup_t('Valider') ?></button>
     <?= setup_csrf_field() ?>
 </form>
 

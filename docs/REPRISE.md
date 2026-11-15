@@ -891,6 +891,10 @@ installeur et guide utilisateur ; la CLI reste en français).
   par le garde-fou (classe déduite du chemin PSR-4).
 - Pluriels : deux clés et un `if` (« 1 minute » / « {minutes} minutes »).
 - Le journal d'activité (texte stocké en base) reste en français.
+- Installeur (PHP pur) : `setup_t('…')` (tout échappé) ou `setup_html('…')`
+  (texte du catalogue avec balises, paramètres échappés) ; reconnus par le
+  garde-fou, qui parcourt aussi `setup/`.
+- Guide : modifier les quatre fichiers `docs/guide_utilisateur*.md` ensemble.
 - E-mails : `Traducteur::dans($langueDuDestinataire, fn () => $this->createEmail(…))`
   (objet compris) ; préférences lues par `UtilisateurManager::languesPreferees()`,
   vide si la migration 022 n'est pas passée.
@@ -922,8 +926,16 @@ installeur et guide utilisateur ; la CLI reste en français).
 | 5 | Acquisitions (liste, saisie, fiche, lignes, import Excel / CSV) | PR #127 |
 | 6 | Prêts (liste, fiche, scanner, validation, retour), `PretStatut`, `PretEtatRetour`, `PretRegles` | PR #128 |
 | 7 | Administration : tableau de bord, club, utilisateurs, référentiels, tickets, journal d'activité, système, mise à jour, sauvegarde, page QR ; `UserRole`, `DemandeModification`, `JournalActiviteManager::libellesTypes()` | PR #129 |
-| 8 | Documents : e-mails (langue du destinataire), PDF, CSV/Excel, étiquettes, en-tête de l'export du journal | PR en cours |
-| 9 | Installeur (`setup/`), guide utilisateur | à faire |
+| 8 | Documents : e-mails (langue du destinataire), PDF, CSV/Excel, étiquettes, en-tête de l'export du journal | PR #130 |
+| 9 | Installeur (`setup/` : `setup_t`, `setup_html`, `setup_langue`), guide (`docs/guide_utilisateur.<langue>.md`) | PR en cours |
+
+Chantier complet une fois la PR de l'étape 9 fusionnée : release **v3.0.0**
+(les entrées « [Unreleased] » du CHANGELOG passent sous [v3.0.0]).
+
+Restent volontairement en français : la ligne de commande (`bin/`), le
+journal d'activité, les messages d'exception des services partagés avec
+la CLI (sauvegarde, mise à jour), les catégories proposées à
+l'installation (données).
 | — | Installeur (`setup/`), guide (`docs/guide_utilisateur.md`) | à faire |
 
 ## Règles de travail établies

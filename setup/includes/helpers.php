@@ -53,3 +53,46 @@ function setup_csrf_is_valid(?string $postedToken): bool
     return is_string($postedToken) && $postedToken !== ''
         && hash_equals($expected, $postedToken);
 }
+
+// ==================================================================
+// [Localisation] Langue de l'installeur : choix fait dans le sélecteur
+// (?lang=xx, mémorisé en session), sinon langue du navigateur, sinon
+// français. Textes : setup_t() (texte échappé) ou setup_html() (texte
+// de confiance du catalogue, paramètres échappés).
+// ==================================================================
+
+function setup_langue(): string
+{
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    $choix = $_GET['lang'] ?? null;
+    if (is_string($choix) && \Epiclub\Engine\Langue::estDisponible($choix)) {
+        $_SESSION['setup_langue'] = $choix;
+    }
+    $navigateur = \Symfony\Component\HttpFoundation\Request::createFromGlobals()
+        ->getPreferredLanguage(array_keys(\Epiclub\Engine\Langue::DISPONIBLES));
+    return \Epiclub\Engine\Langue::resoudre(null, $_SESSION['setup_langue'] ?? null, $navigateur);
+}
+
+/**
+ * @param array<string, scalar|null> $parametres
+ */
+function setup_t(string $texte, array $parametres = []): string
+{
+    return htmlspecialchars(\Epiclub\Engine\Traducteur::t($texte, $parametres), ENT_QUOTES);
+}
+
+/**
+ * Texte contenant des balises (<strong>, <code>…) : le texte vient du
+ * catalogue (de confiance), seuls les paramètres sont échappés.
+ *
+ * @param array<string, scalar|null> $parametres
+ */
+function setup_html(string $texte, array $parametres = []): string
+{
+    return \Epiclub\Engine\Traducteur::t(
+        $texte,
+        array_map(static fn ($v) => htmlspecialchars((string) $v, ENT_QUOTES), $parametres)
+    );
+}
