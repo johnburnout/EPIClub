@@ -10,6 +10,32 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+Suites de l'audit du 2026-11-10 (`docs/audit-2026-11-10.md`), consacré
+à la sauvegarde, à la restauration et au nettoyage. L'audit n'a relevé
+aucune vulnérabilité : ce sont des durcissements et des notes
+d'exploitation.
+
+### Changed
+
+- **Rétention des sauvegardes selon le nom (R2).** Les archives sont
+  classées par l'horodatage de leur nom (puis le suffixe `-2`, `-3`…), et
+  non plus par leur date de fichier : un dépôt FTP ou un `touch` ne change
+  plus l'archive supprimée par la rétention ni la date affichée. Une
+  archive au nom libre, déposée par FTP, garde sa date de fichier.
+- **Sauvegarde planifiée sous un seul verrou (R1, R5).**
+  `bin/sauvegarder.php` crée l'archive, applique la rétention et supprime
+  les archives téléversées jamais restaurées depuis plus de 24 h, sans
+  relâcher le verrou de l'instance (la purge ne dépendait que de la visite
+  de la page Sauvegarde).
+- **Contrôle d'accès de toutes les routes POST (R4).** La liste des routes
+  qui doivent refuser un GET (405) est construite depuis `routes.php` :
+  44 routes vérifiées au lieu de 20 (sauvegarde, prêts, double
+  authentification…).
+- **Documentation (R3, R6, R7)** : base de données dédiée à EPIClub (une
+  restauration vide toute la base), docroot `public/` indispensable sous
+  Nginx (les `.htaccess` y sont ignorés), surveillance de `var/backups/`
+  (archives manuelles et dépôts FTP sans rétention).
+
 ## [v3.0.0] — 2026-11-15
 
 EPIClub parle désormais anglais, espagnol et italien.
