@@ -1,18 +1,16 @@
 {% extends "email/email_layout.twig" %}
 
 {% block body %}
-<h1>Votre compte a été créé</h1>
-<p>Bonjour {{ utilisateur.prenom }},</p>
-<p>Un compte vient d'être créé pour vous sur l'application de gestion des équipements de {{ club.nom }}.</p>
+<h1>{{ 'Votre compte a été créé'|trans }}</h1>
+<p>{{ 'Bonjour {prenom},'|trans({prenom: utilisateur.prenom}) }}</p>
+<p>{{ "Un compte vient d'être créé pour vous sur l'application de gestion des équipements de {nom}."|trans({nom: club.nom}) }}</p>
 <ul>
-    <li>Identifiant : <strong>{{ utilisateur.username }}</strong></li>
-    <li>Rôle : {{ role }}</li>
+    <li>{{ 'Identifiant : <strong>{username}</strong>'|trans({username: (utilisateur.username)|e})|raw }}</li>
+    <li>{{ 'Rôle : {role}'|trans({role: role}) }}</li>
 </ul>
 <p>
-    Votre mot de passe vous est communiqué par l'administrateur qui a créé le compte.
-    Vous pouvez aussi en choisir un vous-même avec
-    <a href="{{ lien_mot_de_passe }}">« Mot de passe oublié »</a>.
+    {{ "Votre mot de passe vous est communiqué par l'administrateur qui a créé le compte. Vous pouvez aussi en choisir un vous-même avec <a href=\"{lien}\">« Mot de passe oublié »</a>."|trans({lien: lien_mot_de_passe|e})|raw }}
 </p>
-<p><a href="{{ lien_connexion }}">Se connecter</a></p>
-<p>L'équipe {{ club.nom }}</p>
+<p><a href="{{ lien_connexion }}">{{ 'Se connecter'|trans }}</a></p>
+<p>{{ "L'équipe {nom}"|trans({nom: club.nom}) }}</p>
 {% endblock %}

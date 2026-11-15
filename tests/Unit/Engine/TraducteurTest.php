@@ -90,6 +90,16 @@ final class TraducteurTest extends TestCase
         self::assertSame('it', Traducteur::langue());
     }
 
+    public function testDansUneAutreLangue(): void
+    {
+        Traducteur::definirLangue('en');
+        self::assertSame('Pannello di controllo', Traducteur::dans('it', fn () => Traducteur::t('Tableau de bord')));
+        self::assertSame('en', Traducteur::langue());
+        // Langue absente ou inconnue : celle de la requête.
+        self::assertSame('Dashboard', Traducteur::dans(null, fn () => Traducteur::t('Tableau de bord')));
+        self::assertSame('Dashboard', Traducteur::dans('de', fn () => Traducteur::t('Tableau de bord')));
+    }
+
     public function testFiltreTwig(): void
     {
         Traducteur::definirLangue('it');

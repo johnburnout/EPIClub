@@ -70,12 +70,28 @@ final class Traducteur
      */
     public static function enFrancais(callable $calcul): mixed
     {
-        $langue = self::$langue;
-        self::$langue = Langue::DEFAUT;
+        return self::dans(Langue::DEFAUT, $calcul);
+    }
+
+    /**
+     * Exécute $calcul dans la langue donnée (langue de la requête si elle
+     * est vide ou inconnue), puis rétablit la langue de la requête. Pour
+     * les e-mails, écrits dans la langue préférée de leur destinataire.
+     *
+     * @template T
+     * @param callable(): T $calcul
+     * @return T
+     */
+    public static function dans(?string $langue, callable $calcul): mixed
+    {
+        $precedente = self::$langue;
+        if (Langue::estDisponible($langue)) {
+            self::$langue = $langue;
+        }
         try {
             return $calcul();
         } finally {
-            self::$langue = $langue;
+            self::$langue = $precedente;
         }
     }
 

@@ -263,8 +263,8 @@ class IndexController extends AbstractController
             $email = new \Symfony\Component\Mime\Email();
             $email->from($fromName . ' <' . $from . '>')
                 ->to($from)
-                ->subject('[TEST] Configuration SMTP EPIClub')
-                ->text("Ceci est un email de test.\n\nSi vous recevez ce message, votre configuration SMTP est correcte.\n\nDate : " . date('d/m/Y H:i:s'));
+                ->subject(Traducteur::t('[TEST] Configuration SMTP EPIClub'))
+                ->text(Traducteur::t("Ceci est un email de test.\n\nSi vous recevez ce message, votre configuration SMTP est correcte.\n\nDate : {date}", ['date' => date('d/m/Y H:i:s')]));
 
             $mailer->sendEmail($email);
 

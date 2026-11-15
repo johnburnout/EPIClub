@@ -178,6 +178,7 @@ class TicketController extends AbstractController
             }
             $base = $this->getBaseUrl();
             $demandeur = $this->session->get('user');
+            $langues = $this->utilisateurManager()->languesPreferees();
         } catch (\Throwable $e) {
             error_log('[TicketController] Notification par mail impossible : ' . $e->getMessage());
             return;
@@ -185,10 +186,11 @@ class TicketController extends AbstractController
 
         foreach ($parPersonne as $id => ['personne' => $personne, 'tickets' => $ids]) {
             try {
-                $email = $this->createEmail(
+                // [Localisation] Dans la langue préférée du destinataire.
+                $email = Traducteur::dans($langues[$id] ?? null, fn () => $this->createEmail(
                     $club['email'],
                     $personne['email'],
-                    sprintf('Demande de modification : %s', $equipement['reference']),
+                    Traducteur::t('Demande de modification : {reference}', ['reference' => $equipement['reference']]),
                     'email/ticket_nouveau.twig',
                     [
                         'club' => $club,
@@ -198,7 +200,7 @@ class TicketController extends AbstractController
                         'liens' => array_map(static fn (int $t) => $base . '/tickets/ticket-' . $t, $ids),
                         'lien_tableau_de_bord' => $base . '/tableau_de_bord',
                     ]
-                );
+                ));
                 $this->mailerService()->sendEmail($email);
                 $this->utilisateurManager()->marquerMailTicket($id, $this->maintenant());
             } catch (\Throwable $e) {

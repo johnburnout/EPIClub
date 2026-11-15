@@ -2858,4 +2858,166 @@ return [
     // --- Complément (etape7a) ---
     'emplacement'
         => 'ubicazione',
+
+    // --- Documents (e-mails, PDF, exports) ---
+    '📝 Remarques générales'
+        => '📝 Osservazioni generali',
+    '(signé le {date_signature})'
+        => '(firmato il {date_signature})',
+    '[TEST] Configuration SMTP EPIClub'
+        => '[TEST] Configurazione SMTP di EPIClub',
+    '{lignes} matériel(s).'
+        => '{lignes} materiale/i.',
+    '{nombre} entrée'
+        => '{nombre} voce',
+    '{nombre} entrées'
+        => '{nombre} voci',
+    '{nombre} équipements'
+        => '{nombre} attrezzature',
+    '{prenom} {nom} demande une modification de l\'équipement <strong>{reference}</strong> ({libelle}).'
+        => '{prenom} {nom} richiede una modifica dell\'attrezzatura <strong>{reference}</strong> ({libelle}).',
+    'au {date}'
+        => 'al {date}',
+    'Aucun équipement à étiqueter.'
+        => 'Nessuna attrezzatura da etichettare.',
+    'Aucun équipement contrôlé dans ce journal.'
+        => 'Nessuna attrezzatura ispezionata in questo registro.',
+    'Aucun filtre'
+        => 'Nessun filtro',
+    'Aucune'
+        => 'Nessuna',
+    'Aucune photo'
+        => 'Nessuna foto',
+    'Bonjour {prenom},'
+        => 'Ciao {prenom},',
+    'Catégorie : {valeur}'
+        => 'Categoria: {valeur}',
+    'Ce document est la propriété de EPIClub et ne peut être reproduit sans autorisation.'
+        => 'Questo documento è di proprietà di EPIClub e non può essere riprodotto senza autorizzazione.',
+    'Ce lien est valable jusqu\'au {expiration_date}.'
+        => 'Questo link è valido fino al {expiration_date}.',
+    'Ceci est un email de test.
+
+Si vous recevez ce message, votre configuration SMTP est correcte.
+
+Date : {date}'
+        => 'Questa è un\'email di prova.
+
+Se ricevi questo messaggio, la tua configurazione SMTP è corretta.
+
+Data: {date}',
+    'Changement de mot de passe'
+        => 'Cambio della password',
+    'Cliquez ici pour réinitialiser votre mot de passe'
+        => 'Clicca qui per reimpostare la password',
+    'Créé par'
+        => 'Creato da',
+    'd/m/Y à H:i:s'
+        => 'd/m/Y \\a\\l\\l\\e H:i:s',
+    'date :'
+        => 'data:',
+    'Date de retour prévue'
+        => 'Data di restituzione prevista',
+    'Date du prêt'
+        => 'Data del prestito',
+    'Date facture'
+        => 'Data fattura',
+    'Date fin d\'utilisation :'
+        => 'Data di fine utilizzo:',
+    'Date mise en service :'
+        => 'Data di messa in servizio:',
+    'Demande de modification'
+        => 'Richiesta di modifica',
+    'Demande de modification : {reference}'
+        => 'Richiesta di modifica: {reference}',
+    'Dernier contrôle : {valeur}'
+        => 'Ultima ispezione: {valeur}',
+    'Document généré automatiquement par EPIClub le {generated_at}'
+        => 'Documento generato automaticamente da EPIClub il {generated_at}',
+    'du {date}'
+        => 'dal {date}',
+    'Emplacement : {valeur}'
+        => 'Ubicazione: {valeur}',
+    'EPI : {valeur}'
+        => 'DPI: {valeur}',
+    'État d\'usure :'
+        => 'Stato di usura:',
+    'Étiquettes Avery 5160'
+        => 'Etichette Avery 5160',
+    'Exporté le {date}'
+        => 'Esportato il {date}',
+    'Fiche de prêt de matériel n° {id}'
+        => 'Scheda di prestito di materiale n. {id}',
+    'Fiche de prêt n° {id}'
+        => 'Scheda di prestito n. {id}',
+    'Fiche équipement'
+        => 'Scheda attrezzatura',
+    'Fiche générée le {date_generation} — EPIClub {app_version}'
+        => 'Scheda generata il {date_generation} — EPIClub {app_version}',
+    'Filtres :'
+        => 'Filtri:',
+    'Filtres : {liste}'
+        => 'Filtri: {liste}',
+    'Fournisseur : {valeur}'
+        => 'Fornitore: {valeur}',
+    'Généré le {date}'
+        => 'Generato il {date}',
+    'Généré le {generated_at}'
+        => 'Generato il {generated_at}',
+    'Identifiant : <strong>{username}</strong>'
+        => 'Nome utente: <strong>{username}</strong>',
+    'Je soussigné(e) {emprunteur_prenom} {emprunteur_nom} reconnais avoir reçu le matériel ci-dessus en bon état et m\'engage à l\'utiliser conformément aux consignes du club et à le restituer au plus tard le {date_retour_prevue}. Toute perte ou détérioration doit être signalée au club.'
+        => 'Il/La sottoscritto/a {emprunteur_prenom} {emprunteur_nom} dichiara di aver ricevuto il materiale sopra indicato in buono stato e si impegna a usarlo secondo le istruzioni del club e a restituirlo entro il {date_retour_prevue}. Ogni perdita o danno deve essere segnalato al club.',
+    'Journal d\'activité EPIClub'
+        => 'Registro attività di EPIClub',
+    'L\'équipe {nom}'
+        => 'Il team di {nom}',
+    'Les demandes en attente sont aussi listées sur votre <a href="{lien}">tableau de bord</a>. Vous ne recevrez pas d\'autre mail de demande avant votre prochaine connexion.'
+        => 'Le richieste in attesa sono elencate anche nel tuo <a href="{lien}">pannello di controllo</a>. Non riceverai altre email di richiesta prima del tuo prossimo accesso.',
+    'Liste des équipements'
+        => 'Elenco delle attrezzature',
+    'n° {index}'
+        => 'n. {index}',
+    'N° facture'
+        => 'N. fattura',
+    'Numéro de licence'
+        => 'Numero di tessera',
+    'Pour le club'
+        => 'Per il club',
+    'QR indisponible'
+        => 'QR non disponibile',
+    'recherche : « {texte} »'
+        => 'ricerca: «{texte}»',
+    'Référence :'
+        => 'Riferimento:',
+    'Réinitialisation de votre mot de passe'
+        => 'Reimpostazione della password',
+    'Rôle : {role}'
+        => 'Ruolo: {role}',
+    'Scannez pour accéder à la fiche'
+        => 'Scansiona per accedere alla scheda',
+    'Se connecter'
+        => 'Accedi',
+    'Signature'
+        => 'Firma',
+    'Statut : {valeur}'
+        => 'Stato: {valeur}',
+    'Total :'
+        => 'Totale:',
+    'type : {valeur}'
+        => 'tipo: {valeur}',
+    'Un compte vient d\'être créé pour vous sur l\'application de gestion des équipements de {nom}.'
+        => 'È appena stato creato un account per te nell\'applicazione di gestione delle attrezzature di {nom}.',
+    'validé le {date_validation}'
+        => 'convalidato il {date_validation}',
+    'Voir la demande'
+        => 'Vedi la richiesta',
+    'Votre compte {club}'
+        => 'Il tuo account {club}',
+    'Votre compte a été créé'
+        => 'Il tuo account è stato creato',
+    'Votre mot de passe vous est communiqué par l\'administrateur qui a créé le compte. Vous pouvez aussi en choisir un vous-même avec <a href="{lien}">« Mot de passe oublié »</a>.'
+        => 'La password ti viene comunicata dall\'amministratore che ha creato l\'account. Puoi anche sceglierne una tu stesso con <a href="{lien}">«Password dimenticata?»</a>.',
+    'Vous avez demandé la réinitialisation de votre mot de passe.'
+        => 'Hai richiesto la reimpostazione della password.',
 ];

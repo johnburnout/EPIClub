@@ -2858,4 +2858,166 @@ return [
     // --- Complément (etape7a) ---
     'emplacement'
         => 'location',
+
+    // --- Documents (e-mails, PDF, exports) ---
+    '📝 Remarques générales'
+        => '📝 General remarks',
+    '(signé le {date_signature})'
+        => '(signed on {date_signature})',
+    '[TEST] Configuration SMTP EPIClub'
+        => '[TEST] EPIClub SMTP configuration',
+    '{lignes} matériel(s).'
+        => '{lignes} item(s).',
+    '{nombre} entrée'
+        => '{nombre} entry',
+    '{nombre} entrées'
+        => '{nombre} entries',
+    '{nombre} équipements'
+        => '{nombre} items',
+    '{prenom} {nom} demande une modification de l\'équipement <strong>{reference}</strong> ({libelle}).'
+        => '{prenom} {nom} is requesting a change to item <strong>{reference}</strong> ({libelle}).',
+    'au {date}'
+        => 'to {date}',
+    'Aucun équipement à étiqueter.'
+        => 'No items to label.',
+    'Aucun équipement contrôlé dans ce journal.'
+        => 'No item inspected in this log.',
+    'Aucun filtre'
+        => 'No filter',
+    'Aucune'
+        => 'None',
+    'Aucune photo'
+        => 'No photo',
+    'Bonjour {prenom},'
+        => 'Hello {prenom},',
+    'Catégorie : {valeur}'
+        => 'Category: {valeur}',
+    'Ce document est la propriété de EPIClub et ne peut être reproduit sans autorisation.'
+        => 'This document is the property of EPIClub and may not be reproduced without permission.',
+    'Ce lien est valable jusqu\'au {expiration_date}.'
+        => 'This link is valid until {expiration_date}.',
+    'Ceci est un email de test.
+
+Si vous recevez ce message, votre configuration SMTP est correcte.
+
+Date : {date}'
+        => 'This is a test email.
+
+If you receive this message, your SMTP configuration is correct.
+
+Date: {date}',
+    'Changement de mot de passe'
+        => 'Password change',
+    'Cliquez ici pour réinitialiser votre mot de passe'
+        => 'Click here to reset your password',
+    'Créé par'
+        => 'Created by',
+    'd/m/Y à H:i:s'
+        => 'm/d/Y \\a\\t g:i:s A',
+    'date :'
+        => 'date:',
+    'Date de retour prévue'
+        => 'Due date',
+    'Date du prêt'
+        => 'Loan date',
+    'Date facture'
+        => 'Invoice date',
+    'Date fin d\'utilisation :'
+        => 'End-of-use date:',
+    'Date mise en service :'
+        => 'Commissioning date:',
+    'Demande de modification'
+        => 'Change request',
+    'Demande de modification : {reference}'
+        => 'Change request: {reference}',
+    'Dernier contrôle : {valeur}'
+        => 'Last inspection: {valeur}',
+    'Document généré automatiquement par EPIClub le {generated_at}'
+        => 'Document generated automatically by EPIClub on {generated_at}',
+    'du {date}'
+        => 'from {date}',
+    'Emplacement : {valeur}'
+        => 'Location: {valeur}',
+    'EPI : {valeur}'
+        => 'PPE: {valeur}',
+    'État d\'usure :'
+        => 'Wear condition:',
+    'Étiquettes Avery 5160'
+        => 'Avery 5160 labels',
+    'Exporté le {date}'
+        => 'Exported on {date}',
+    'Fiche de prêt de matériel n° {id}'
+        => 'Equipment loan form no. {id}',
+    'Fiche de prêt n° {id}'
+        => 'Loan form no. {id}',
+    'Fiche équipement'
+        => 'Item record',
+    'Fiche générée le {date_generation} — EPIClub {app_version}'
+        => 'Form generated on {date_generation} — EPIClub {app_version}',
+    'Filtres :'
+        => 'Filters:',
+    'Filtres : {liste}'
+        => 'Filters: {liste}',
+    'Fournisseur : {valeur}'
+        => 'Supplier: {valeur}',
+    'Généré le {date}'
+        => 'Generated on {date}',
+    'Généré le {generated_at}'
+        => 'Generated on {generated_at}',
+    'Identifiant : <strong>{username}</strong>'
+        => 'Username: <strong>{username}</strong>',
+    'Je soussigné(e) {emprunteur_prenom} {emprunteur_nom} reconnais avoir reçu le matériel ci-dessus en bon état et m\'engage à l\'utiliser conformément aux consignes du club et à le restituer au plus tard le {date_retour_prevue}. Toute perte ou détérioration doit être signalée au club.'
+        => 'I, the undersigned {emprunteur_prenom} {emprunteur_nom}, acknowledge receiving the equipment above in good condition and undertake to use it in accordance with the club\'s instructions and to return it no later than {date_retour_prevue}. Any loss or damage must be reported to the club.',
+    'Journal d\'activité EPIClub'
+        => 'EPIClub activity log',
+    'L\'équipe {nom}'
+        => 'The {nom} team',
+    'Les demandes en attente sont aussi listées sur votre <a href="{lien}">tableau de bord</a>. Vous ne recevrez pas d\'autre mail de demande avant votre prochaine connexion.'
+        => 'Pending requests are also listed on your <a href="{lien}">dashboard</a>. You will not receive another request email before your next login.',
+    'Liste des équipements'
+        => 'Item list',
+    'n° {index}'
+        => 'no. {index}',
+    'N° facture'
+        => 'Invoice no.',
+    'Numéro de licence'
+        => 'Licence number',
+    'Pour le club'
+        => 'For the club',
+    'QR indisponible'
+        => 'QR unavailable',
+    'recherche : « {texte} »'
+        => 'search: “{texte}”',
+    'Référence :'
+        => 'Reference:',
+    'Réinitialisation de votre mot de passe'
+        => 'Resetting your password',
+    'Rôle : {role}'
+        => 'Role: {role}',
+    'Scannez pour accéder à la fiche'
+        => 'Scan to open the record',
+    'Se connecter'
+        => 'Log in',
+    'Signature'
+        => 'Signature',
+    'Statut : {valeur}'
+        => 'Status: {valeur}',
+    'Total :'
+        => 'Total:',
+    'type : {valeur}'
+        => 'type: {valeur}',
+    'Un compte vient d\'être créé pour vous sur l\'application de gestion des équipements de {nom}.'
+        => 'An account has just been created for you in {nom}\'s equipment management application.',
+    'validé le {date_validation}'
+        => 'validated on {date_validation}',
+    'Voir la demande'
+        => 'View the request',
+    'Votre compte {club}'
+        => 'Your {club} account',
+    'Votre compte a été créé'
+        => 'Your account has been created',
+    'Votre mot de passe vous est communiqué par l\'administrateur qui a créé le compte. Vous pouvez aussi en choisir un vous-même avec <a href="{lien}">« Mot de passe oublié »</a>.'
+        => 'Your password is given to you by the administrator who created the account. You can also choose one yourself with <a href="{lien}">“Forgot your password?”</a>.',
+    'Vous avez demandé la réinitialisation de votre mot de passe.'
+        => 'You asked to reset your password.',
 ];

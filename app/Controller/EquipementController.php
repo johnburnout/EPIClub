@@ -1571,47 +1571,64 @@ class EquipementController extends AbstractController
     private function renderPdfHtml(array $equipement, string $qrBase64, ?string $photoBase64): string
     {
         // --- Extraction sécurisée des valeurs (échappées pour le HTML) ---
+        // [Localisation] Libellés traduits, échappés pour le HTML.
+        $L = array_map([self::class, 'html'], [
+            'titre' => Traducteur::t('Fiche équipement'),
+            'reference' => Traducteur::t('Référence :'),
+            'categorie' => Traducteur::t('Catégorie :'),
+            'epi' => Traducteur::t('EPI :'),
+            'emplacement' => Traducteur::t('Emplacement :'),
+            'mise' => Traducteur::t('Date mise en service :'),
+            'fin' => Traducteur::t("Date fin d'utilisation :"),
+            'statut' => Traducteur::t('Statut :'),
+            'usure' => Traducteur::t("État d'usure :"),
+            'remarques' => Traducteur::t('Remarques :'),
+            'notice' => Traducteur::t('Notice :'),
+            'photo' => Traducteur::t('Photo'),
+            'qr' => Traducteur::t('QR Code'),
+            'scanner' => Traducteur::t('Scannez pour accéder à la fiche'),
+            'genere' => Traducteur::t('Généré le {date}', ['date' => date('d/m/Y H:i')]),
+        ]);
+
         $reference = self::html($equipement['reference'] ?? '');
-        $categorieLibelle = self::html($equipement['categorie']['libelle'] ?? 'Non définie');
-        $estEpi = (!empty($equipement['categorie']['est_epi'])) ? 'Oui' : 'Non';
-        $emplacementLibelle = self::html($equipement['emplacement']['libelle'] ?? 'Non défini');
-        
-        $dateMise = $equipement['date_mise_en_service'] ?? 'Non renseignée';
-        if ($dateMise !== 'Non renseignée') {
-            $dateMise = (new \DateTime($dateMise))->format('d/m/Y');
-        }
-        
-        $dateFin = $equipement['date_fin_utilisation'] ?? 'Toujours en service';
-        if ($dateFin !== 'Toujours en service') {
-            $dateFin = (new \DateTime($dateFin))->format('d/m/Y');
-        }
+        $categorieLibelle = self::html($equipement['categorie']['libelle'] ?? Traducteur::t('Non définie'));
+        $estEpi = self::html((!empty($equipement['categorie']['est_epi'])) ? Traducteur::t('Oui') : Traducteur::t('Non'));
+        $emplacementLibelle = self::html($equipement['emplacement']['libelle'] ?? Traducteur::t('Non défini'));
+
+        $dateMise = $equipement['date_mise_en_service'] ?? null;
+        $dateMise = $dateMise === null
+            ? self::html(Traducteur::t('Non renseignée'))
+            : (new \DateTime($dateMise))->format('d/m/Y');
+
+        $dateFin = $equipement['date_fin_utilisation'] ?? null;
+        $dateFin = $dateFin === null
+            ? self::html(Traducteur::t('Toujours en service'))
+            : (new \DateTime($dateFin))->format('d/m/Y');
         
         $statut = $equipement['statut'] ?? null;
         $controleEnCours = $equipement['controle_en_cours'] ?? false;
         $statutHtml = $this->renderStatutBadge($statut, $controleEnCours);
         
-        $etatUsure = self::html($equipement['etat_usure_id'] ?? 'Non défini');
-        $remarques = self::html($equipement['remarques'] ?? 'Aucune');
+        $etatUsure = self::html($equipement['etat_usure_id'] ?? Traducteur::t('Non défini'));
+        $remarques = self::html($equipement['remarques'] ?? Traducteur::t('Aucune'));
         $notice = !empty($equipement['notice_url'])
             ? '<a href="' . self::html($equipement['notice_url']) . '">' . self::html($equipement['notice_url']) . '</a>'
-            : 'Non renseignée';
+            : self::html(Traducteur::t('Non renseignée'));
         
         // --- Photo (4 cm max, proportions conservées) ---
         $photoHtml = $photoBase64
         ? '<img src="' . $photoBase64 . '" style="height:4cm; width:auto; max-width:4cm; border:1px solid #ccc; padding:3px;">'
-        : '<span style="color:#999;">Aucune photo</span>';
+        : '<span style="color:#999;">' . self::html(Traducteur::t('Aucune photo')) . '</span>';
         
         // --- QR Code (4 cm carré) ---
         $qrHtml = '<img src="' . $qrBase64 . '" style="width:4cm; height:4cm;">';
-        
-        $dateGeneration = date('d/m/Y H:i');
         
         return <<<HTML
         <!DOCTYPE html>
         <html>
             <head>
                 <meta charset="UTF-8">
-                <title>Fiche équipement</title>
+                <title>{$L['titre']}</title>
                 <style>
                     body { font-family: DejaVu Sans, sans-serif; padding: 20px; }
                     h1 { color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
@@ -1652,18 +1669,18 @@ class EquipementController extends AbstractController
                 </style>
             </head>
             <body>
-                <h1>Fiche équipement</h1>
+                <h1>{$L['titre']}</h1>
                 <div class="info">
-                    <div class="row"><span class="label">Référence :</span> {$reference}</div>
-                    <div class="row"><span class="label">Catégorie :</span> {$categorieLibelle}</div>
-                    <div class="row"><span class="label">EPI :</span> {$estEpi}</div>
-                    <div class="row"><span class="label">Emplacement :</span> {$emplacementLibelle}</div>
-                    <div class="row"><span class="label">Date mise en service :</span> {$dateMise}</div>
-                    <div class="row"><span class="label">Date fin d'utilisation :</span> {$dateFin}</div>
-                    <div class="row"><span class="label">Statut :</span> {$statutHtml}</div>
-                    <div class="row"><span class="label">État d'usure :</span> {$etatUsure}</div>
-                    <div class="row"><span class="label">Remarques :</span> {$remarques}</div>
-                    <div class="row"><span class="label">Notice :</span> {$notice}</div>
+                    <div class="row"><span class="label">{$L['reference']}</span> {$reference}</div>
+                    <div class="row"><span class="label">{$L['categorie']}</span> {$categorieLibelle}</div>
+                    <div class="row"><span class="label">{$L['epi']}</span> {$estEpi}</div>
+                    <div class="row"><span class="label">{$L['emplacement']}</span> {$emplacementLibelle}</div>
+                    <div class="row"><span class="label">{$L['mise']}</span> {$dateMise}</div>
+                    <div class="row"><span class="label">{$L['fin']}</span> {$dateFin}</div>
+                    <div class="row"><span class="label">{$L['statut']}</span> {$statutHtml}</div>
+                    <div class="row"><span class="label">{$L['usure']}</span> {$etatUsure}</div>
+                    <div class="row"><span class="label">{$L['remarques']}</span> {$remarques}</div>
+                    <div class="row"><span class="label">{$L['notice']}</span> {$notice}</div>
                 </div>
                 
                 <!-- Photo + QR côte à côte -->
@@ -1671,19 +1688,19 @@ class EquipementController extends AbstractController
                     <table>
                         <tr>
                             <td>
-                                <div style="font-weight:bold; margin-bottom:5px;">Photo</div>
+                                <div style="font-weight:bold; margin-bottom:5px;">{$L['photo']}</div>
                                 {$photoHtml}
                             </td>
                             <td>
-                                <div style="font-weight:bold; margin-bottom:5px;">QR Code</div>
+                                <div style="font-weight:bold; margin-bottom:5px;">{$L['qr']}</div>
                                 {$qrHtml}
-                                <div style="margin-top:5px; font-size:11px; color:#555;">Scannez pour accéder à la fiche</div>
+                                <div style="margin-top:5px; font-size:11px; color:#555;">{$L['scanner']}</div>
                             </td>
                         </tr>
                     </table>
                 </div>
                 
-                <div class="footer">Généré le {$dateGeneration} – Epiclub</div>
+                <div class="footer">{$L['genere']} – Epiclub</div>
             </body>
         </html>
 HTML;
@@ -1695,11 +1712,11 @@ HTML;
     private function renderStatutBadge($statut, bool $controleEnCours): string
     {
         if ($controleEnCours) {
-            return '<span class="badge badge-info">En contrôle</span>';
+            return '<span class="badge badge-info">' . self::html(Traducteur::t('En contrôle')) . '</span>';
         }
         $enum = is_numeric($statut) ? EquipementStatut::tryFrom((int) $statut) : null;
         if ($enum === null) {
-            return '<span class="badge badge-secondary">Inconnu</span>';
+            return '<span class="badge badge-secondary">' . self::html(Traducteur::t('Inconnu')) . '</span>';
         }
         // Classes du PDF (badge-success…) ; « primary » / « dark » pour Prêté / Égaré.
         return sprintf('<span class="badge badge-%s">%s</span>', $enum->badge(), self::html($enum->label()));
@@ -1750,34 +1767,34 @@ HTML;
             $cat = ctype_digit((string) $filtres['categorie'])
                 ? $this->categorieManager()->findId((int) $filtres['categorie'])
                 : null;
-            $filtresLabels[] = 'Catégorie : ' . ($cat['libelle'] ?? $filtres['categorie']);
+            $filtresLabels[] = Traducteur::t('Catégorie : {valeur}', ['valeur' => $cat['libelle'] ?? $filtres['categorie']]);
         }
         if ($filtres['epi'] !== null && $filtres['epi'] !== '') {
-            $filtresLabels[] = 'EPI : ' . ($filtres['epi'] ? 'Oui' : 'Non');
+            $filtresLabels[] = Traducteur::t('EPI : {valeur}', ['valeur' => $filtres['epi'] ? Traducteur::t('Oui') : Traducteur::t('Non')]);
         }
         if ($filtres['en_service'] !== null && $filtres['en_service'] !== '') {
-            $filtresLabels[] = 'Statut : ' . ($filtres['en_service'] === 'oui' ? 'En service' : 'Hors service');
+            $filtresLabels[] = Traducteur::t('Statut : {valeur}', ['valeur' => $filtres['en_service'] === 'oui' ? Traducteur::t('En service') : Traducteur::t('Hors service')]);
         }
         if ($filtres['emplacement'] === 'null') {
             // Option « Non défini » du filtre de la liste
-            $filtresLabels[] = 'Emplacement : Non défini';
+            $filtresLabels[] = Traducteur::t('Emplacement : {valeur}', ['valeur' => Traducteur::t('Non défini')]);
         } elseif (!empty($filtres['emplacement'])) {
             $emp = ctype_digit((string) $filtres['emplacement'])
                 ? $this->emplacementManager()->findId((int) $filtres['emplacement'])
                 : null;
-            $filtresLabels[] = 'Emplacement : ' . ($emp['libelle'] ?? $filtres['emplacement']);
+            $filtresLabels[] = Traducteur::t('Emplacement : {valeur}', ['valeur' => $emp['libelle'] ?? $filtres['emplacement']]);
         }
         if ($filtres['dernier_controle'] !== null && $filtres['dernier_controle'] !== '') {
-            $filtresLabels[] = 'Dernier contrôle : ' . ($filtres['dernier_controle'] === 'plus_1_an' ? 'Plus d\'un an' : 'Moins d\'un an');
+            $filtresLabels[] = Traducteur::t('Dernier contrôle : {valeur}', ['valeur' => $filtres['dernier_controle'] === 'plus_1_an' ? Traducteur::t("Plus d'un an") : Traducteur::t("Moins d'un an")]);
         }
         if (!empty($filtres['acquisition'])) { // AJOUT
-            $filtresLabels[] = 'Acquisition #' . $filtres['acquisition'];
+            $filtresLabels[] = Traducteur::t('Acquisition #{id}', ['id' => $filtres['acquisition']]);
         }
         if (!empty($filtres['fournisseur'])) {
             $fournisseur = $this->fournisseurManager()->findId((int) $filtres['fournisseur']);
-            $filtresLabels[] = 'Fournisseur : ' . ($fournisseur['nom'] ?? '#' . $filtres['fournisseur']);
+            $filtresLabels[] = Traducteur::t('Fournisseur : {valeur}', ['valeur' => $fournisseur['nom'] ?? '#' . $filtres['fournisseur']]);
         }
-        $filtresStr = self::html(empty($filtresLabels) ? 'Aucun filtre' : implode(' | ', $filtresLabels));
+        $filtresStr = self::html(empty($filtresLabels) ? Traducteur::t('Aucun filtre') : implode(' | ', $filtresLabels));
         
         // --- Générateur de QR code ---
         $qrGenerator = new QrCodeGenerator();
@@ -1796,7 +1813,7 @@ HTML;
                 $qrBase64 = $this->qrDataUri($qrGenerator, (int) $e['id'], 300);
                 $qrHtml = '<img src="' . $qrBase64 . '" style="width:3cm; height:3cm;">';
             } catch (\Exception $ex) {
-                $qrHtml = '<span style="color:#999; font-size:9px;">QR indisponible</span>';
+                $qrHtml = '<span style="color:#999; font-size:9px;">' . self::html(Traducteur::t('QR indisponible')) . '</span>';
             }
             
             $reference = self::html($e['reference'] ?? '');
@@ -1811,15 +1828,25 @@ HTML;
 ROW;
         }
         
-        $dateGeneration = date('d/m/Y H:i');
         $total = count($equipements);
+        $L = array_map([self::class, 'html'], [
+            'titre' => Traducteur::t('Liste des équipements'),
+            'filtres' => Traducteur::t('Filtres :'),
+            'total' => Traducteur::t('Total :'),
+            'nombre' => Traducteur::t('{nombre} équipements', ['nombre' => $total]),
+            'reference' => Traducteur::t('Référence'),
+            'nom' => Traducteur::t('Nom'),
+            'photo' => Traducteur::t('Photo'),
+            'qr' => Traducteur::t('QR Code'),
+            'genere' => Traducteur::t('Généré le {date}', ['date' => date('d/m/Y H:i')]),
+        ]);
         
         return <<<HTML
         <!DOCTYPE html>
         <html>
             <head>
                 <meta charset="UTF-8">
-                <title>Liste des équipements</title>
+                <title>{$L['titre']}</title>
                 <style>
                     body { font-family: DejaVu Sans, sans-serif; padding: 15px; }
                     h1 { font-size: 18px; color: #2c3e50; border-bottom: 2px solid #3498db; padding-bottom: 8px; }
@@ -1835,19 +1862,19 @@ ROW;
                 </style>
             </head>
             <body>
-                <h1>{$clubName} – Liste des équipements</h1>
+                <h1>{$clubName} – {$L['titre']}</h1>
                 <div class="header-info">
-                    <div><strong>Filtres :</strong> {$filtresStr}</div>
-                    <div><strong>Total :</strong> {$total} équipements</div>
+                    <div><strong>{$L['filtres']}</strong> {$filtresStr}</div>
+                    <div><strong>{$L['total']}</strong> {$L['nombre']}</div>
                 </div>
                 
                 <table>
                     <thead>
                         <tr>
-                            <th>Référence</th>
-                            <th>Nom</th>
-                            <th style="text-align:center;">Photo</th>
-                            <th style="text-align:center;">QR Code</th>
+                            <th>{$L['reference']}</th>
+                            <th>{$L['nom']}</th>
+                            <th style="text-align:center;">{$L['photo']}</th>
+                            <th style="text-align:center;">{$L['qr']}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -1855,7 +1882,7 @@ ROW;
                     </tbody>
                 </table>
                 
-                <div class="footer">Généré le {$dateGeneration} – {$clubName}</div>
+                <div class="footer">{$L['genere']} – {$clubName}</div>
             </body>
         </html>
 HTML;
@@ -1877,7 +1904,7 @@ HTML;
         $sheet = $spreadsheet->getActiveSheet();
         
         // En-têtes
-        $headers = ['Référence', 'Nom', 'Photo', 'QR Code'];
+        $headers = [Traducteur::t('Référence'), Traducteur::t('Nom'), Traducteur::t('Photo'), Traducteur::t('QR Code')];
         $col = 'A';
         foreach ($headers as $header) {
             $sheet->setCellValue($col . '1', $header);
@@ -1968,11 +1995,15 @@ HTML;
      * ⚠️ Format de consultation riche : NON destiné au réimport (le
      * fichier d'import a sa propre structure — voir le guide).
      */
-    private const EXPORT_DATA_HEADERS = [
-        'Référence', 'Nom', 'Catégorie', 'Emplacement', 'EPI',
-        'Statut', 'Nombre', 'Mise en service', 'Dernier contrôle',
-        'Fin d\'utilisation', 'N° facture', 'Date facture',
-    ];
+    private static function enTetesExport(): array
+    {
+        // [Localisation] Dans la langue de l'utilisateur.
+        return [
+            Traducteur::t('Référence'), Traducteur::t('Nom'), Traducteur::t('Catégorie'), Traducteur::t('Emplacement'), Traducteur::t('EPI'),
+            Traducteur::t('Statut'), Traducteur::t('Nombre'), Traducteur::t('Mise en service'), Traducteur::t('Dernier contrôle'),
+            Traducteur::t("Fin d'utilisation"), Traducteur::t('N° facture'), Traducteur::t('Date facture'),
+        ];
+    }
 
     /**
      * Construit les lignes plates de l'export données à partir des
@@ -2004,7 +2035,7 @@ HTML;
                 $e['libelle'] ?? '',
                 $e['categorie']['libelle'] ?? '',
                 $e['emplacement']['libelle'] ?? '',
-                !empty($e['est_epi']) ? 'Oui' : 'Non',
+                !empty($e['est_epi']) ? Traducteur::t('Oui') : Traducteur::t('Non'),
                 $statut?->label() ?? '',
                 (int) ($e['nombre'] ?? 1),
                 $e['date_mise_en_service'] ?? '',
@@ -2032,12 +2063,12 @@ HTML;
         $sheet = $spreadsheet->getActiveSheet();
 
         $col = 'A';
-        foreach (self::EXPORT_DATA_HEADERS as $header) {
+        foreach (self::enTetesExport() as $header) {
             $sheet->setCellValue($col . '1', $header);
             $sheet->getColumnDimension($col)->setAutoSize(true);
             $col = chr(ord($col) + 1);
         }
-        $sheet->getStyle('A1:' . chr(ord('A') + count(self::EXPORT_DATA_HEADERS) - 1) . '1')
+        $sheet->getStyle('A1:' . chr(ord('A') + count(self::enTetesExport()) - 1) . '1')
             ->getFont()->setBold(true);
 
         $rowNum = 2;
@@ -2094,7 +2125,7 @@ HTML;
         // escape: '' : guillemets doublés seulement (RFC 4180), sans
         // caractère d'échappement « \ » propre à PHP — et sans la
         // dépréciation PHP 8.4+ quand $escape est omis.
-        fputcsv($fp, self::EXPORT_DATA_HEADERS, ';', escape: '');
+        fputcsv($fp, self::enTetesExport(), ';', escape: '');
         foreach ($rows as $row) {
             fputcsv($fp, array_map([self::class, 'celluleCsvSure'], $row), ';', escape: '');
         }
@@ -2156,15 +2187,17 @@ LABEL;
         }
 
         if (empty($etiquettesHtml)) {
-            $etiquettesHtml = '<div class="empty-message">Aucun équipement à étiqueter.</div>';
+            $etiquettesHtml = '<div class="empty-message">' . self::html(Traducteur::t('Aucun équipement à étiqueter.')) . '</div>';
         }
+
+        $titreEtiquettes = self::html(Traducteur::t('Étiquettes Avery 5160'));
 
         return <<<HTML
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Étiquettes Avery 5160</title>
+    <title>{$titreEtiquettes}</title>
     <style>
         @page { margin: 1.8cm 0.5cm 1.8cm 0.5cm; }
         body { font-family: DejaVu Sans, sans-serif; margin: 0; padding: 0; background: #fff; }
