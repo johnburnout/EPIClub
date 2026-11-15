@@ -4,45 +4,45 @@
 	{% set s = statut.value %}
 	<div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
 		<h3 class="mb-0">
-			🤝 Prêt n° {{ pret.id }}
+			🤝 {{ 'Prêt n° {id}'|trans({id: pret.id}) }}
 			<span class="badge bg-{{ statut.badge }} align-middle fs-6">{{ statut.label }}</span>
-			{% if en_retard %}<span class="badge bg-danger align-middle fs-6">En retard</span>{% endif %}
+			{% if en_retard %}<span class="badge bg-danger align-middle fs-6">{{ 'En retard'|trans }}</span>{% endif %}
 		</h3>
 		<div class="d-flex flex-wrap gap-2">
 			{% if statut.exportable %}
-				<a href="/prets/pret-{{ pret.id }}/pdf" class="btn btn-outline-danger" target="_blank">📄 Fiche PDF</a>
+				<a href="/prets/pret-{{ pret.id }}/pdf" class="btn btn-outline-danger" target="_blank">📄 {{ 'Fiche PDF'|trans }}</a>
 			{% endif %}
 			{% if s == 'en_cours' and not pret.signature %}
-				<a href="/prets/pret-{{ pret.id }}/valider" class="btn btn-outline-primary">✍️ Faire signer</a>
+				<a href="/prets/pret-{{ pret.id }}/valider" class="btn btn-outline-primary">✍️ {{ 'Faire signer'|trans }}</a>
 			{% endif %}
-			<a href="/prets" class="btn btn-secondary">Retour à la liste</a>
+			<a href="/prets" class="btn btn-secondary">{{ 'Retour à la liste'|trans }}</a>
 		</div>
 	</div>
 	<hr>
 
 	{# ---------------- Emprunteur ---------------- #}
 	<div class="card mb-4">
-		<div class="card-header"><h5 class="mb-0">Emprunteur</h5></div>
+		<div class="card-header"><h5 class="mb-0">{{ 'Emprunteur'|trans }}</h5></div>
 		<div class="card-body">
 			<form method="post">
 				<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 				{% include 'prets/_emprunteur.twig' with {mode: s == 'saisie' ? 'tout' : (s == 'en_cours' ? 'telephone' : 'lecture')} %}
 				{% if s == 'saisie' %}
-					<button type="submit" class="btn btn-primary">Enregistrer</button>
+					<button type="submit" class="btn btn-primary">{{ 'Enregistrer'|trans }}</button>
 				{% elseif s == 'en_cours' %}
-					<button type="submit" class="btn btn-primary">Mettre à jour le téléphone</button>
-					<small class="text-muted ms-2">Prêt en cours : seules les coordonnées de l'emprunteur restent modifiables.</small>
+					<button type="submit" class="btn btn-primary">{{ 'Mettre à jour le téléphone'|trans }}</button>
+					<small class="text-muted ms-2">{{ "Prêt en cours : seules les coordonnées de l'emprunteur restent modifiables."|trans }}</small>
 				{% endif %}
 			</form>
 			<p class="small text-muted mt-3 mb-0">
-				Fiche créée le {{ pret.created_at|date('d/m/Y à H:i') }}{% if pret.cree_par_nom %} par {{ pret.cree_par_prenom }} {{ pret.cree_par_nom }}{% endif %}.
-				{% if pret.date_validation %}Prêt validé le {{ pret.date_validation|date('d/m/Y à H:i') }}{% if pret.valide_par_nom %} par {{ pret.valide_par_prenom }} {{ pret.valide_par_nom }}{% endif %}.{% endif %}
-				{% if pret.date_retour %}Matériel rendu le {{ pret.date_retour|date('d/m/Y') }}{% if pret.termine_par_nom %} (fin enregistrée par {{ pret.termine_par_prenom }} {{ pret.termine_par_nom }}){% endif %}.{% endif %}
+				{{ 'Fiche créée le {created_at}'|trans({created_at: (pret.created_at|date('d/m/Y à H:i'))}) }}{% if pret.cree_par_nom %} {{ 'par {cree_par_prenom} {cree_par_nom}'|trans({cree_par_prenom: pret.cree_par_prenom, cree_par_nom: pret.cree_par_nom}) }}{% endif %}.
+				{% if pret.date_validation %}{{ 'Prêt validé le {date_validation}'|trans({date_validation: (pret.date_validation|date('d/m/Y à H:i'))}) }}{% if pret.valide_par_nom %} {{ 'par {valide_par_prenom} {valide_par_nom}'|trans({valide_par_prenom: pret.valide_par_prenom, valide_par_nom: pret.valide_par_nom}) }}{% endif %}.{% endif %}
+				{% if pret.date_retour %}{{ 'Matériel rendu le {date_retour}'|trans({date_retour: (pret.date_retour|date('d/m/Y'))}) }}{% if pret.termine_par_nom %} {{ '(fin enregistrée par {termine_par_prenom} {termine_par_nom})'|trans({termine_par_prenom: pret.termine_par_prenom, termine_par_nom: pret.termine_par_nom}) }}{% endif %}.{% endif %}
 			</p>
 			{% if pret.signature %}
 				<div class="mt-2">
-					<span class="small text-muted">Signature de l'emprunteur ({{ pret.date_signature|date('d/m/Y H:i') }}) :</span><br>
-					<img src="{{ pret.signature }}" alt="Signature de l'emprunteur" class="border rounded bg-white" style="max-width: 18rem; max-height: 7rem;">
+					<span class="small text-muted">{{ "Signature de l'emprunteur ({date_signature}) :"|trans({date_signature: (pret.date_signature|date('d/m/Y H:i'))}) }}</span><br>
+					<img src="{{ pret.signature }}" alt="{{ "Signature de l'emprunteur"|trans }}" class="border rounded bg-white" style="max-width: 18rem; max-height: 7rem;">
 				</div>
 			{% endif %}
 		</div>
@@ -51,18 +51,18 @@
 	{# ---------------- Matériel ---------------- #}
 	<div class="card mb-4" id="retour">
 		<div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
-			<h5 class="mb-0">Matériel prêté ({{ nb_lignes }})</h5>
+			<h5 class="mb-0">{{ 'Matériel prêté ({nb_lignes})'|trans({nb_lignes: nb_lignes}) }}</h5>
 			{% if s == 'termine' %}
 				{% if nb_a_verifier > 0 %}
-					<span class="badge bg-warning text-dark">{{ nb_a_verifier }} à vérifier</span>
+					<span class="badge bg-warning text-dark">{{ '{nb_a_verifier} à vérifier'|trans({nb_a_verifier: nb_a_verifier}) }}</span>
 				{% else %}
-					<span class="badge bg-success">Retour vérifié</span>
+					<span class="badge bg-success">{{ 'Retour vérifié'|trans }}</span>
 				{% endif %}
 			{% endif %}
 		</div>
 		<div class="card-body p-0">
 			{% if lignes is empty %}
-				<p class="text-muted p-3 mb-0">Aucun matériel pour l'instant.</p>
+				<p class="text-muted p-3 mb-0">{{ "Aucun matériel pour l'instant."|trans }}</p>
 			{% else %}
 				{% if s == 'termine' and nb_a_verifier > 0 %}
 					<form method="post" action="/prets/pret-{{ pret.id }}/retour" id="form-retour">
@@ -72,9 +72,9 @@
 					<table class="table table-striped align-middle mb-0">
 						<thead>
 							<tr>
-								<th>Référence</th>
-								<th>Désignation</th>
-								<th class="d-none d-md-table-cell">Catégorie</th>
+								<th>{{ 'Référence'|trans }}</th>
+								<th>{{ 'Désignation'|trans }}</th>
+								<th class="d-none d-md-table-cell">{{ 'Catégorie'|trans }}</th>
 								<th>{{ s == 'termine' ? 'Retour' : 'Statut' }}</th>
 								{% if s == 'saisie' %}<th></th>{% endif %}
 							</tr>
@@ -112,7 +112,7 @@
 										<td class="text-end">
 											<form method="post" action="/prets/ligne-{{ l.id }}/retirer" class="d-inline">
 												<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-												<button type="submit" class="btn btn-sm btn-outline-danger">Retirer</button>
+												<button type="submit" class="btn btn-sm btn-outline-danger">{{ 'Retirer'|trans }}</button>
 											</form>
 										</td>
 									{% endif %}
@@ -123,12 +123,12 @@
 				</div>
 				{% if s == 'termine' and nb_a_verifier > 0 %}
 						<div class="p-3 d-flex flex-wrap gap-2 align-items-center">
-							<button type="button" class="btn btn-outline-success btn-sm" id="tout-disponible">Tout le reste : rendu — disponible</button>
+							<button type="button" class="btn btn-outline-success btn-sm" id="tout-disponible">{{ 'Tout le reste : rendu — disponible'|trans }}</button>
 							<button type="submit" class="btn btn-primary"
-								data-confirm="Enregistrer l'état des matériels cochés ? Ce choix est définitif.">
-								Enregistrer la vérification
+								data-confirm="{{ "Enregistrer l'état des matériels cochés ? Ce choix est définitif."|trans }}">
+								{{ 'Enregistrer la vérification'|trans }}
 							</button>
-							<small class="text-muted">Le matériel sans état coché reste « Prêté » jusqu'à sa vérification.{% if pagination_lignes.totalPages > 1 %} La vérification porte sur la page affichée.{% endif %}</small>
+							<small class="text-muted">{{ "Le matériel sans état coché reste « Prêté » jusqu'à sa vérification."|trans }}{% if pagination_lignes.totalPages > 1 %} {{ 'La vérification porte sur la page affichée.'|trans }}{% endif %}</small>
 						</div>
 					</form>
 				{% endif %}
@@ -143,49 +143,49 @@
 	{% if s == 'saisie' %}
 		<div class="card mb-4 border-primary">
 			<div class="card-body">
-				<h5>Valider le prêt</h5>
+				<h5>{{ 'Valider le prêt'|trans }}</h5>
 				{% if erreurs_validation is empty %}
-					<p>Le matériel passera au statut « Prêté ». L'emprunteur pourra signer sur l'écran (téléphone) ; sinon, imprimez la fiche PDF pour la faire signer.</p>
-					<a href="/prets/pret-{{ pret.id }}/valider" class="btn btn-primary">✅ Valider le prêt</a>
+					<p>{{ "Le matériel passera au statut « Prêté ». L'emprunteur pourra signer sur l'écran (téléphone) ; sinon, imprimez la fiche PDF pour la faire signer."|trans }}</p>
+					<a href="/prets/pret-{{ pret.id }}/valider" class="btn btn-primary">✅ {{ 'Valider le prêt'|trans }}</a>
 				{% else %}
 					<ul class="mb-2">
 						{% for e in erreurs_validation %}<li>{{ e }}</li>{% endfor %}
 					</ul>
-					<button class="btn btn-primary" disabled>✅ Valider le prêt</button>
+					<button class="btn btn-primary" disabled>✅ {{ 'Valider le prêt'|trans }}</button>
 				{% endif %}
 				<form method="post" action="/prets/pret-{{ pret.id }}/supprimer" class="d-inline">
 					<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 					<button type="submit" class="btn btn-outline-danger"
-						data-confirm="Supprimer cette fiche de prêt en saisie ?">Supprimer la fiche</button>
+						data-confirm="{{ 'Supprimer cette fiche de prêt en saisie ?'|trans }}">{{ 'Supprimer la fiche'|trans }}</button>
 				</form>
 			</div>
 		</div>
 
 		<div class="card mb-4" id="ajout">
 			<div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
-				<h5 class="mb-0">Ajouter du matériel</h5>
-				<a href="/prets/pret-{{ pret.id }}/scanner" class="btn btn-success">📷 Scanner des QR codes</a>
+				<h5 class="mb-0">{{ 'Ajouter du matériel'|trans }}</h5>
+				<a href="/prets/pret-{{ pret.id }}/scanner" class="btn btn-success">📷 {{ 'Scanner des QR codes'|trans }}</a>
 			</div>
 			<div class="card-body">
 				<form method="get" action="/prets/pret-{{ pret.id }}#ajout" class="d-flex flex-wrap gap-2 align-items-end mb-3">
 					<div>
-						<label for="q" class="form-label">Recherche</label>
-						<input type="search" id="q" name="q" value="{{ recherche }}" class="form-control" placeholder="Référence ou désignation">
+						<label for="q" class="form-label">{{ 'Recherche'|trans }}</label>
+						<input type="search" id="q" name="q" value="{{ recherche }}" class="form-control" placeholder="{{ 'Référence ou désignation'|trans }}">
 					</div>
 					<div>
-						<label for="categorie" class="form-label">Catégorie</label>
+						<label for="categorie" class="form-label">{{ 'Catégorie'|trans }}</label>
 						<select id="categorie" name="categorie" class="form-select">
-							<option value="">Toutes</option>
+							<option value="">{{ 'Toutes'|trans }}</option>
 							{% for c in categories|tri_alpha('libelle') %}
 								<option value="{{ c.id }}" {% if categorie_id == c.id %}selected{% endif %}>{{ c.libelle }}</option>
 							{% endfor %}
 						</select>
 					</div>
-					<button type="submit" class="btn btn-secondary">Filtrer</button>
+					<button type="submit" class="btn btn-secondary">{{ 'Filtrer'|trans }}</button>
 				</form>
 
 				{% if disponibles is empty %}
-					<p class="text-muted mb-0">Aucun matériel disponible ne correspond.</p>
+					<p class="text-muted mb-0">{{ 'Aucun matériel disponible ne correspond.'|trans }}</p>
 				{% else %}
 					<form method="post" action="/prets/ajouter">
 						<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -196,28 +196,28 @@
 								<thead>
 									<tr>
 										<th style="width: 2rem;"></th>
-										<th>Référence</th>
-										<th>Désignation</th>
-										<th class="d-none d-md-table-cell">Catégorie</th>
+										<th>{{ 'Référence'|trans }}</th>
+										<th>{{ 'Désignation'|trans }}</th>
+										<th class="d-none d-md-table-cell">{{ 'Catégorie'|trans }}</th>
 										<th></th>
 									</tr>
 								</thead>
 								<tbody>
 									{% for e in disponibles %}
 										<tr>
-											<td><input type="checkbox" class="form-check-input" name="ids[]" value="{{ e.id }}" aria-label="Sélectionner {{ e.reference }}"></td>
+											<td><input type="checkbox" class="form-check-input" name="ids[]" value="{{ e.id }}" aria-label="{{ 'Sélectionner {reference}'|trans({reference: e.reference}) }}"></td>
 											<td>{{ e.reference }}</td>
 											<td>{{ e.libelle }}</td>
 											<td class="d-none d-md-table-cell">{{ e.categorie_libelle|default('-') }}</td>
 											<td class="text-end">
-												<button type="submit" name="equipement_id" value="{{ e.id }}" class="btn btn-sm btn-outline-primary">Ajouter</button>
+												<button type="submit" name="equipement_id" value="{{ e.id }}" class="btn btn-sm btn-outline-primary">{{ 'Ajouter'|trans }}</button>
 											</td>
 										</tr>
 									{% endfor %}
 								</tbody>
 							</table>
 						</div>
-						<button type="submit" class="btn btn-primary">➕ Ajouter la sélection</button>
+						<button type="submit" class="btn btn-primary">➕ {{ 'Ajouter la sélection'|trans }}</button>
 					</form>
 					{% include '_pagination.twig' with {p: pagination, affiches: disponibles|length, elements: 'matériels'} %}
 				{% endif %}
@@ -226,20 +226,20 @@
 	{% elseif s == 'en_cours' %}
 		<div class="card mb-4 border-primary">
 			<div class="card-body">
-				<h5>Retour du matériel</h5>
+				<h5>{{ 'Retour du matériel'|trans }}</h5>
 				<form method="post" action="/prets/pret-{{ pret.id }}/terminer" class="d-flex flex-wrap gap-2 align-items-end">
 					<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 					<div>
-						<label for="date_retour" class="form-label">Date de retour</label>
+						<label for="date_retour" class="form-label">{{ 'Date de retour'|trans }}</label>
 						<input type="date" id="date_retour" name="date_retour" value="{{ aujourdhui }}" class="form-control"
 							min="{{ pret.date_pret|date('Y-m-d') }}">
 					</div>
 					<button type="submit" class="btn btn-primary"
-						data-confirm="Terminer le prêt ? Vous vérifierez ensuite chaque matériel rendu.">
-						🏁 Terminer le prêt
+						data-confirm="{{ 'Terminer le prêt ? Vous vérifierez ensuite chaque matériel rendu.'|trans }}">
+						🏁 {{ 'Terminer le prêt'|trans }}
 					</button>
 				</form>
-				<small class="text-muted">Après la fin du prêt, chaque matériel est vérifié et repasse Disponible, En maintenance ou Égaré.</small>
+				<small class="text-muted">{{ 'Après la fin du prêt, chaque matériel est vérifié et repasse Disponible, En maintenance ou Égaré.'|trans }}</small>
 			</div>
 		</div>
 	{% endif %}

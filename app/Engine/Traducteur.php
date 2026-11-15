@@ -60,6 +60,26 @@ final class Traducteur
     }
 
     /**
+     * Exécute $calcul en français, puis rétablit la langue de la requête.
+     * Pour les textes enregistrés (journal d'activité) qui réutilisent des
+     * libellés traduits, comme EquipementStatut::label().
+     *
+     * @template T
+     * @param callable(): T $calcul
+     * @return T
+     */
+    public static function enFrancais(callable $calcul): mixed
+    {
+        $langue = self::$langue;
+        self::$langue = Langue::DEFAUT;
+        try {
+            return $calcul();
+        } finally {
+            self::$langue = $langue;
+        }
+    }
+
+    /**
      * Catalogue d'une langue (vide pour le français ou une langue inconnue).
      *
      * @return array<string, string>

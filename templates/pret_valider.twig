@@ -1,16 +1,16 @@
 {% extends "_layout.twig" %}
 
 {% block body %}
-	<h3>{{ signature_seule ? '✍️ Signature' : '✅ Validation' }} — prêt n° {{ pret.id }}</h3>
+	<h3>{% if signature_seule %}✍️ {{ 'Signature — prêt n° {id}'|trans({id: pret.id}) }}{% else %}✅ {{ 'Validation — prêt n° {id}'|trans({id: pret.id}) }}{% endif %}</h3>
 	<hr>
 
 	<div style="max-width: 40rem;">
-		<p class="mb-1"><strong>Emprunteur :</strong> {{ pret.emprunteur_prenom }} {{ pret.emprunteur_nom }}
-			{% if pret.emprunteur_licence %}— licence {{ pret.emprunteur_licence }}{% endif %}</p>
-		<p class="mb-1"><strong>Téléphone :</strong> {{ pret.emprunteur_telephone }}</p>
-		<p><strong>Du</strong> {{ pret.date_pret|date('d/m/Y') }} <strong>au</strong> {{ pret.date_retour_prevue|date('d/m/Y') }} (retour prévu)</p>
+		<p class="mb-1">{{ '<strong>Emprunteur :</strong> {emprunteur_prenom} {emprunteur_nom}'|trans({emprunteur_prenom: (pret.emprunteur_prenom)|e, emprunteur_nom: (pret.emprunteur_nom)|e})|raw }}
+			{% if pret.emprunteur_licence %}— {{ 'licence {emprunteur_licence}'|trans({emprunteur_licence: pret.emprunteur_licence}) }}{% endif %}</p>
+		<p class="mb-1">{{ '<strong>Téléphone :</strong> {emprunteur_telephone}'|trans({emprunteur_telephone: (pret.emprunteur_telephone)|e})|raw }}</p>
+		<p>{{ '<strong>Du</strong> {date_pret} <strong>au</strong> {date_retour_prevue} (retour prévu)'|trans({date_pret: (pret.date_pret|date('d/m/Y'))|e, date_retour_prevue: (pret.date_retour_prevue|date('d/m/Y'))|e})|raw }}</p>
 
-		<h6>Matériel ({{ lignes|length }})</h6>
+		<h6>{{ 'Matériel ({lignes})'|trans({lignes: (lignes|length)}) }}</h6>
 		<ul class="list-group mb-3">
 			{% for l in lignes %}
 				<li class="list-group-item py-1">{{ l.reference }} — {{ l.libelle }}</li>
@@ -21,30 +21,28 @@
 			<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 			<input type="hidden" name="signature" id="signature">
 
-			<label class="form-label"><strong>Signature de l'emprunteur</strong>{% if not signature_seule %} (facultative){% endif %}</label>
+			<label class="form-label"><strong>{{ "Signature de l'emprunteur"|trans }}</strong>{% if not signature_seule %} {{ '(facultative)'|trans }}{% endif %}</label>
 			<p class="small text-muted mb-1">
-				« Je reconnais avoir reçu le matériel ci-dessus en bon état et m'engage à le restituer
-				au plus tard le {{ pret.date_retour_prevue|date('d/m/Y') }}. »
-				Signez avec le doigt ou la souris dans le cadre.
+				{{ "« Je reconnais avoir reçu le matériel ci-dessus en bon état et m'engage à le restituer au plus tard le {date_retour_prevue}. » Signez avec le doigt ou la souris dans le cadre."|trans({date_retour_prevue: (pret.date_retour_prevue|date('d/m/Y'))}) }}
 			</p>
 			<canvas id="pad" class="border rounded bg-white w-100" style="height: 12rem; touch-action: none; cursor: crosshair;"></canvas>
 			<div class="d-flex flex-wrap gap-2 mt-2">
-				<button type="button" id="effacer" class="btn btn-sm btn-outline-secondary">Effacer</button>
+				<button type="button" id="effacer" class="btn btn-sm btn-outline-secondary">{{ 'Effacer'|trans }}</button>
 			</div>
 
 			<div class="d-flex flex-wrap gap-2 mt-3">
 				{% if signature_seule %}
-					<button type="submit" class="btn btn-primary">Enregistrer la signature</button>
+					<button type="submit" class="btn btn-primary">{{ 'Enregistrer la signature'|trans }}</button>
 				{% else %}
 					<button type="submit" class="btn btn-primary"
-						data-confirm="Valider le prêt ? Le matériel passera au statut « Prêté ».">
-						✅ Valider le prêt
+						data-confirm="{{ 'Valider le prêt ? Le matériel passera au statut « Prêté ».'|trans }}">
+						✅ {{ 'Valider le prêt'|trans }}
 					</button>
 				{% endif %}
-				<a href="/prets/pret-{{ pret.id }}" class="btn btn-secondary">Annuler</a>
+				<a href="/prets/pret-{{ pret.id }}" class="btn btn-secondary">{{ 'Annuler'|trans }}</a>
 			</div>
 			{% if not signature_seule %}
-				<p class="small text-muted mt-2">Sans signature à l'écran, la fiche PDF comporte un cadre à faire signer sur papier.</p>
+				<p class="small text-muted mt-2">{{ "Sans signature à l'écran, la fiche PDF comporte un cadre à faire signer sur papier."|trans }}</p>
 			{% endif %}
 		</form>
 	</div>

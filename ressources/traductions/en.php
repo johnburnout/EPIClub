@@ -1700,4 +1700,286 @@ return [
         => 'View purchases',
     'Voir les équipements'
         => 'View items',
+
+    // --- Prêts ---
+    ' : ajouté au prêt.'
+        => ': added to the loan.',
+    ' : déjà sur ce prêt.'
+        => ': already on this loan.',
+    '« Je reconnais avoir reçu le matériel ci-dessus en bon état et m\'engage à le restituer au plus tard le {date_retour_prevue}. » Signez avec le doigt ou la souris dans le cadre.'
+        => '“I acknowledge receiving the equipment above in good condition and undertake to return it no later than {date_retour_prevue}.” Sign with your finger or the mouse in the box.',
+    '(facultative)'
+        => '(optional)',
+    '(fin enregistrée par {termine_par_prenom} {termine_par_nom})'
+        => '(end recorded by {termine_par_prenom} {termine_par_nom})',
+    '{nb_a_verifier} à vérifier'
+        => '{nb_a_verifier} to check',
+    '{nombre} matériel(s) vérifié(s). Reste {restants} matériel(s) à vérifier.'
+        => '{nombre} item(s) checked. {restants} item(s) left to check.',
+    '{nombre} matériel(s) vérifié(s). Retour complet.'
+        => '{nombre} item(s) checked. Return complete.',
+    '{reference} : date limite d\'utilisation atteinte.'
+        => '{reference}: end-of-use date reached.',
+    '{reference} : déjà inscrit sur le prêt n° {id} ({prenom} {nom}).'
+        => '{reference}: already on loan no. {id} ({prenom} {nom}).',
+    '{reference} : déjà sur ce prêt.'
+        => '{reference}: already on this loan.',
+    '{reference} : équipement en cours de contrôle.'
+        => '{reference}: item under inspection.',
+    '{reference} : équipement supprimé.'
+        => '{reference}: item deleted.',
+    '{reference} : statut « {statut} », seul un matériel disponible peut être prêté.'
+        => '{reference}: status “{statut}”, only available equipment can be loaned.',
+    'Signature — prêt n° {id}'
+        => 'Signature — loan no. {id}',
+    'Validation — prêt n° {id}'
+        => 'Validation — loan no. {id}',
+    '<strong>Caméra indisponible :</strong> le navigateur n\'autorise la caméra que sur une page servie en <strong>HTTPS</strong> (ou en localhost). Ajoutez le matériel depuis la fiche du prêt.'
+        => '<strong>Camera unavailable:</strong> the browser only allows the camera on a page served over <strong>HTTPS</strong> (or on localhost). Add the equipment from the loan form.',
+    '<strong>Du</strong> {date_pret} <strong>au</strong> {date_retour_prevue} (retour prévu)'
+        => '<strong>From</strong> {date_pret} <strong>to</strong> {date_retour_prevue} (due back)',
+    '<strong>Emprunteur :</strong> {emprunteur_prenom} {emprunteur_nom}'
+        => '<strong>Borrower:</strong> {emprunteur_prenom} {emprunteur_nom}',
+    '<strong>Téléphone :</strong> {emprunteur_telephone}'
+        => '<strong>Phone:</strong> {emprunteur_telephone}',
+    'Ajout impossible.'
+        => 'Cannot add.',
+    'Ajouté au prêt n° {id} ({prenom} {nom}) : {references}.'
+        => 'Added to loan no. {id} ({prenom} {nom}): {references}.',
+    'Ajouter du matériel'
+        => 'Add equipment',
+    'Ajouter la sélection'
+        => 'Add selection',
+    'Ajoutez au moins un matériel au prêt.'
+        => 'Add at least one item to the loan.',
+    'Après la fin du prêt, chaque matériel est vérifié et repasse Disponible, En maintenance ou Égaré.'
+        => 'After the loan ends, each item is checked and goes back to Available, Under maintenance or Lost.',
+    'Aucun matériel disponible ne correspond.'
+        => 'No available equipment matches.',
+    'Aucun matériel pour l\'instant.'
+        => 'No equipment yet.',
+    'Aucune fiche de prêt.'
+        => 'No loan forms.',
+    'Ce prêt n\'est plus en saisie : le matériel ne peut plus être retiré.'
+        => 'This loan is no longer being entered: equipment can no longer be removed.',
+    'Ce prêt n\'est plus en saisie : plus d\'ajout de matériel possible.'
+        => 'This loan is no longer being entered: no more equipment can be added.',
+    'Ce prêt n\'est plus en saisie.'
+        => 'This loan is no longer being entered.',
+    'Chaque matériel scanné est ajouté au prêt (s\'il est disponible) ; enchaînez les scans, puis revenez à la fiche du prêt.'
+        => 'Each scanned item is added to the loan (if available); keep scanning, then go back to the loan form.',
+    'Choisissez un état pour au moins un matériel.'
+        => 'Choose a condition for at least one item.',
+    'Créer la fiche'
+        => 'Create the form',
+    'Date de retour'
+        => 'Return date',
+    'Date de retour invalide (elle ne peut précéder la date du prêt).'
+        => 'Invalid return date (it cannot precede the loan date).',
+    'Date de retour prévue *'
+        => 'Due date *',
+    'Date du prêt *'
+        => 'Loan date *',
+    'Effacer'
+        => 'Clear',
+    'En retard seulement'
+        => 'Overdue only',
+    'Enregistrer l\'état des matériels cochés ? Ce choix est définitif.'
+        => 'Save the condition of the ticked items? This choice is final.',
+    'Enregistrer la signature'
+        => 'Save the signature',
+    'Enregistrer la vérification'
+        => 'Save the check',
+    'Équipement #{id} introuvable.'
+        => 'Item #{id} not found.',
+    'Faire signer'
+        => 'Get it signed',
+    'Faites signer l\'emprunteur dans le cadre avant d\'enregistrer.'
+        => 'Have the borrower sign in the box before saving.',
+    'Fiche créée le {created_at}'
+        => 'Form created on {created_at}',
+    'Fiche de prêt créée : ajoutez maintenant le matériel.'
+        => 'Loan form created: now add the equipment.',
+    'Fiche de prêt introuvable.'
+        => 'Loan form not found.',
+    'Fiche de prêt supprimée.'
+        => 'Loan form deleted.',
+    'Fiche PDF'
+        => 'PDF form',
+    'inconnu'
+        => 'unknown',
+    'Informations de l\'emprunteur enregistrées.'
+        => 'Borrower details saved.',
+    'La date de retour prévue doit être postérieure ou égale à la date du prêt.'
+        => 'The due date must be on or after the loan date.',
+    'La date de retour prévue est obligatoire (date valide).'
+        => 'The due date is required (valid date).',
+    'La date du prêt est obligatoire (date valide).'
+        => 'The loan date is required (valid date).',
+    'La fiche est exportable en PDF une fois le prêt validé.'
+        => 'The form can be exported to PDF once the loan is validated.',
+    'La vérification porte sur la page affichée.'
+        => 'The check applies to the page shown.',
+    'Le gestionnaire de prêt n\'est pas activé (Administration › Club).'
+        => 'The loan manager is not enabled (Administration › Club).',
+    'Le gestionnaire de prêt n\'est pas activé.'
+        => 'The loan manager is not enabled.',
+    'Le matériel passera au statut « Prêté ». L\'emprunteur pourra signer sur l\'écran (téléphone) ; sinon, imprimez la fiche PDF pour la faire signer.'
+        => 'The equipment will get the “On loan” status. The borrower can sign on the screen (phone); otherwise, print the PDF form to have it signed.',
+    'Le matériel sans état coché reste « Prêté » jusqu\'à sa vérification.'
+        => 'Equipment with no condition ticked stays “On loan” until it is checked.',
+    'le nom'
+        => 'the last name',
+    'Le nom est obligatoire.'
+        => 'The last name is required.',
+    'Le nom ne doit pas dépasser 64 caractères.'
+        => 'The last name must not exceed 64 characters.',
+    'le numéro de licence'
+        => 'the licence number',
+    'Le numéro de licence ne doit pas dépasser 32 caractères.'
+        => 'The licence number must not exceed 32 characters.',
+    'le prénom'
+        => 'the first name',
+    'Le prénom est obligatoire.'
+        => 'The first name is required.',
+    'Le prénom ne doit pas dépasser 64 caractères.'
+        => 'The first name must not exceed 64 characters.',
+    'Le prêt n\'a pas été validé : retirez ou remplacez le matériel concerné.'
+        => 'The loan was not validated: remove or replace the equipment concerned.',
+    'le téléphone'
+        => 'the phone number',
+    'Le téléphone est obligatoire.'
+        => 'The phone number is required.',
+    'Le téléphone ne doit pas dépasser 20 caractères.'
+        => 'The phone number must not exceed 20 characters.',
+    'Licence'
+        => 'Licence',
+    'licence {emprunteur_licence}'
+        => 'licence {emprunteur_licence}',
+    'Matériel'
+        => 'Equipment',
+    'Matériel ({lignes})'
+        => 'Equipment ({lignes})',
+    'Matériel du prêt :'
+        => 'Loaned equipment:',
+    'Matériel prêté ({nb_lignes})'
+        => 'Loaned equipment ({nb_lignes})',
+    'Matériel rendu à vérifier'
+        => 'Returned equipment to check',
+    'Matériel rendu le {date_retour}'
+        => 'Equipment returned on {date_retour}',
+    'Matériel retiré du prêt.'
+        => 'Equipment removed from the loan.',
+    'Mettre à jour le téléphone'
+        => 'Update the phone number',
+    'N°'
+        => 'No.',
+    'Nom *'
+        => 'Last name *',
+    'non signé'
+        => 'not signed',
+    'Numéro de licence *'
+        => 'Licence number *',
+    'obligatoire. Le téléphone et le numéro de licence peuvent être complétés plus tard, mais sont exigés pour valider le prêt.'
+        => 'required. The phone and licence number can be filled in later, but are needed to validate the loan.',
+    'Ouvrir'
+        => 'Open',
+    'par {cree_par_prenom} {cree_par_nom}'
+        => 'by {cree_par_prenom} {cree_par_nom}',
+    'par {valide_par_prenom} {valide_par_nom}'
+        => 'by {valide_par_prenom} {valide_par_nom}',
+    'Pas de signature à l\'écran'
+        => 'No on-screen signature',
+    'Prénom *'
+        => 'First name *',
+    'Prêt en cours'
+        => 'Loan in progress',
+    'Prêt en cours : seules les coordonnées de l\'emprunteur restent modifiables.'
+        => 'Loan in progress: only the borrower\'s contact details can still be changed.',
+    'Prêt n° {id}'
+        => 'Loan no. {id}',
+    'Prêt terminé'
+        => 'Loan ended',
+    'Prêt terminé : vérifiez maintenant chaque matériel rendu.'
+        => 'Loan ended: now check each returned item.',
+    'Prêt validé : {nombre} matériel(s) passé(s) en « Prêté ».'
+        => 'Loan validated: {nombre} item(s) set to “On loan”.',
+    'Prêt validé : {nombre} matériel(s) passé(s) en « Prêté ». Sans signature à l\'écran : imprimez la fiche PDF pour la faire signer.'
+        => 'Loan validated: {nombre} item(s) set to “On loan”. No on-screen signature: print the PDF form to have it signed.',
+    'Prêt validé le {date_validation}'
+        => 'Loan validated on {date_validation}',
+    'Prêts de matériel'
+        => 'Equipment loans',
+    'Référence ou désignation'
+        => 'Reference or description',
+    'Rendu — disponible'
+        => 'Returned — available',
+    'Rendu — en maintenance'
+        => 'Returned — under maintenance',
+    'Renseignez {champs} de l\'emprunteur.'
+        => 'Fill in the borrower\'s {champs}.',
+    'Renseignez la date du prêt et la date de retour prévue.'
+        => 'Fill in the loan date and the due date.',
+    'Retirer'
+        => 'Remove',
+    'Retirez le matériel signalé comme indisponible.'
+        => 'Remove the equipment flagged as unavailable.',
+    'Retour du matériel'
+        => 'Equipment return',
+    'Retour prévu'
+        => 'Due back',
+    'Retour vérifié'
+        => 'Return checked',
+    'Sans signature à l\'écran, la fiche PDF comporte un cadre à faire signer sur papier.'
+        => 'Without an on-screen signature, the PDF form includes a box to be signed on paper.',
+    'Scanner — prêt n° {id} ({emprunteur_prenom} {emprunteur_nom})'
+        => 'Scanner — loan no. {id} ({emprunteur_prenom} {emprunteur_nom})',
+    'Scanner des QR codes'
+        => 'Scan QR codes',
+    'Seul un prêt en cours peut être terminé.'
+        => 'Only a loan in progress can be ended.',
+    'Seul un prêt en saisie peut être validé.'
+        => 'Only a loan being entered can be validated.',
+    'Seule une fiche en saisie peut être supprimée (historique des prêts).'
+        => 'Only a form being entered can be deleted (loan history).',
+    'Signature de l\'emprunteur'
+        => 'Borrower\'s signature',
+    'Signature de l\'emprunteur ({date_signature}) :'
+        => 'Borrower\'s signature ({date_signature}):',
+    'Signature de l\'emprunteur enregistrée.'
+        => 'Borrower\'s signature saved.',
+    'Signature invalide.'
+        => 'Invalid signature.',
+    'Signature trop volumineuse.'
+        => 'Signature too large.',
+    'Statut inchangé (équipement plus « Prêté ») : {liste}.'
+        => 'Status unchanged (item no longer “On loan”): {liste}.',
+    'Supprimer cette fiche de prêt en saisie ?'
+        => 'Delete this loan form being entered?',
+    'Supprimer la fiche'
+        => 'Delete the form',
+    'Téléphone'
+        => 'Phone',
+    'Téléphone *'
+        => 'Phone *',
+    'Téléphone invalide (chiffres, espaces, + . - ( ) uniquement).'
+        => 'Invalid phone number (digits, spaces, + . - ( ) only).',
+    'Terminer — revenir à la fiche du prêt'
+        => 'Finish — back to the loan form',
+    'Terminer le prêt'
+        => 'End the loan',
+    'Terminer le prêt ? Vous vérifierez ensuite chaque matériel rendu.'
+        => 'End the loan? You will then check each returned item.',
+    'Terminez le prêt avant de vérifier le matériel rendu.'
+        => 'End the loan before checking the returned equipment.',
+    'Tout le reste : rendu — disponible'
+        => 'Everything else: returned — available',
+    'Une erreur est survenue pendant l\'enregistrement du retour. Merci de réessayer.'
+        => 'An error occurred while saving the return. Please try again.',
+    'Une erreur est survenue pendant la validation. Merci de réessayer.'
+        => 'An error occurred during validation. Please try again.',
+    'Valider le prêt'
+        => 'Validate the loan',
+    'Valider le prêt ? Le matériel passera au statut « Prêté ».'
+        => 'Validate the loan? The equipment will get the “On loan” status.',
 ];

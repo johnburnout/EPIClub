@@ -891,6 +891,10 @@ installeur et guide utilisateur ; la CLI reste en français).
   par le garde-fou (classe déduite du chemin PSR-4).
 - Pluriels : deux clés et un `if` (« 1 minute » / « {minutes} minutes »).
 - Le journal d'activité (texte stocké en base) reste en français.
+  Si son texte réutilise un libellé traduit (`label()` d'un enum),
+  l'envelopper dans `Traducteur::enFrancais(fn () => …)`.
+- Jamais de logique sur le texte d'un message (`str_contains($message, …)`) :
+  il est traduit. Exemple corrigé : `PretController::scanAjouter` (liste `deja`).
 - Libellés tirés d'une constante tableau (ex. `AcquisitionImportService::CHAMPS`) :
   méthode qui renvoie les mêmes clés avec `Traducteur::t('…')` littéral
   (`libellesChamps()`), pour que le garde-fou voie les textes.
@@ -908,8 +912,9 @@ installeur et guide utilisateur ; la CLI reste en français).
 | 2 | Connexion, double authentification, mot de passe oublié, sécurité du compte (+ `passkey.js`) | PR #124 |
 | 3 | Équipements (liste, fiche, formulaire, modification groupée), `EquipementStatut`, `DissociationLot`, `RegroupementLot` | PR #125 |
 | 4 | Contrôles (liste, saisie, ligne, scanner), journaux de contrôle, `ControleLigneStatut` | PR #126 |
-| 5 | Acquisitions (liste, saisie, fiche, lignes, import Excel / CSV) | PR en cours |
-| 6+ | Prêts, administration, autres enums, emails, PDF/CSV/étiquettes | à faire |
+| 5 | Acquisitions (liste, saisie, fiche, lignes, import Excel / CSV) | PR #127 |
+| 6 | Prêts (liste, fiche, scanner, validation, retour), `PretStatut`, `PretEtatRetour`, `PretRegles` | PR en cours |
+| 7+ | Administration, tableau de bord, tickets, emails, PDF/CSV/étiquettes | à faire |
 | — | Installeur (`setup/`), guide (`docs/guide_utilisateur.md`) | à faire |
 
 ## Règles de travail établies

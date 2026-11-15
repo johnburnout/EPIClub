@@ -11,6 +11,7 @@ use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\PretLigneManager;
 use Epiclub\Domain\PretManager;
 use Epiclub\Engine\Session;
+use Epiclub\Engine\Traducteur;
 use Epiclub\Exception\AccessDeniedException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -189,6 +190,29 @@ final class PretControllerTest extends TestCase
         $data = json_decode((string) $reponse->getContent(), true);
 
         self::assertSame('deja', $data['statut']);
+    }
+
+    /**
+     * [Localisation] « Déjà sur ce prêt » ne se reconnaît plus au texte
+     * français du message : le statut reste « deja » dans toute langue.
+     */
+    public function testScanDejaSurLePretEnAnglais(): void
+    {
+        Traducteur::definirLangue('en');
+        try {
+            $this->prets->method('findId')->willReturn($this->pret('saisie'));
+            $this->equipements->method('findId')->willReturn(['id' => 7, 'reference' => 'CAS007', 'libelle' => 'Casque']);
+            $this->equipements->method('findIds')->willReturn([7 => ['id' => 7, 'reference' => 'CAS007', 'statut' => 0]]);
+            $this->lignes->method('findPretOuvertPourEquipement')->willReturn(['id' => 12]);
+
+            $reponse = $this->controleur()->scanAjouter($this->post('/prets/scanner/ajouter', ['pret_id' => '12', 'equipement_id' => '7']));
+            $data = json_decode((string) $reponse->getContent(), true);
+
+            self::assertSame('deja', $data['statut']);
+            self::assertSame('CAS007: already on this loan.', $data['message']);
+        } finally {
+            Traducteur::definirLangue('fr');
+        }
     }
 
     public function testValidationPasseLeMaterielEnPreteAvecSignature(): void

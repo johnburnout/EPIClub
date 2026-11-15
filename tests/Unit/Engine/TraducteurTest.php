@@ -70,6 +70,26 @@ final class TraducteurTest extends TestCase
         self::assertStringNotContainsString('{debut}', Traducteur::t('Panne constatée depuis le {debut}', ['debut' => '3']));
     }
 
+    public function testEnFrancaisPuisRetourALaLangue(): void
+    {
+        Traducteur::definirLangue('es');
+        self::assertSame('Panel de control', Traducteur::t('Tableau de bord'));
+        self::assertSame('Tableau de bord', Traducteur::enFrancais(fn () => Traducteur::t('Tableau de bord')));
+        self::assertSame('es', Traducteur::langue());
+    }
+
+    public function testEnFrancaisRetablitLaLangueApresUneException(): void
+    {
+        Traducteur::definirLangue('it');
+        try {
+            Traducteur::enFrancais(function (): never {
+                throw new \RuntimeException('x');
+            });
+        } catch (\RuntimeException) {
+        }
+        self::assertSame('it', Traducteur::langue());
+    }
+
     public function testFiltreTwig(): void
     {
         Traducteur::definirLangue('it');
