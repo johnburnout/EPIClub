@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-11-15 (localisation en anglais, espagnol et italien, PR #123 à #132 : v3.0.0)
-**Version courante** : v3.0.0
+**Dernière mise à jour** : 2026-11-15 (localisation en anglais, espagnol et italien, PR #123 à #132 : v3.0.0 ; audit du 2026-11-10 traité : v3.0.1)
+**Version courante** : v3.0.1
 **Branche** : `main` ; chaque changement passe par une branche et une PR (voir « Règles de travail »)
 
 > **Note canal bêta** : l'endpoint GitHub `/releases/latest` ignore les
@@ -32,6 +32,7 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
+| v3.0.1 | PR #135 + PR de version | Audit du 2026-11-10 (sauvegarde et nettoyage), R1 à R7 : rétention par l'horodatage du nom, `creerAvecMenage()` (rétention et purge des téléversements sous le verrou), toutes les routes POST-only testées (405), notes base dédiée / Nginx / espace disque. | — |
 | v3.0.0 | PR #123 à #132 + #133 | Interface en anglais, espagnol et italien : langue réglée pour le club (personnalisation du tableau de bord, mode automatique = navigateur), e-mails, PDF, exports, installeur et guide traduits (voir « Localisation »). Migration `022_langue_club.sql`. | `d5f5a30` |
 | v2.12.0 | PR #120 | Audit du 2026-11-08, R1 : releases signées hors ligne avec minisign (`SignatureMinisign`, sodium), `.minisig` exigé par l'updater, `bin/signer-release.sh`. | `37531f3` |
 | v2.11.0 | PR #119 | Audit du 2026-11-08, R4 : bandeau du super-admin et journal « Sécurité » quand le limiteur de tentatives est indisponible (`AlerteLimiteur`, `var/alertes/limiteur.json`). | `2635322` |
