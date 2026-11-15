@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Epiclub\Controller;
 
+use Epiclub\Engine\Traducteur;
 use Epiclub\Domain\ClubManager;
 use Epiclub\Domain\DemandeModification;
 use Epiclub\Domain\EquipementManager;
@@ -99,7 +100,7 @@ class TicketController extends AbstractController
         $id = $this->getValidId($request);
         $equipement = $id !== null ? $this->equipementManager()->findId($id) : null;
         if (!$equipement) {
-            $this->session->getFlashBag()->add('error', 'Équipement non trouvé.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Équipement non trouvé.'));
             return $this->redirectTo('/equipements');
         }
 
@@ -129,8 +130,8 @@ class TicketController extends AbstractController
                 ));
                 $this->notifier($equipement, $tickets);
                 $this->session->getFlashBag()->add('success', count($tickets) > 1
-                    ? sprintf('Demande envoyée : %d tickets ouverts (administrateurs et super-administrateurs).', count($tickets))
-                    : 'Demande envoyée : un ticket est ouvert. Vous serez notifié sur votre tableau de bord.');
+                    ? Traducteur::t('Demande envoyée : {nombre} tickets ouverts (administrateurs et super-administrateurs).', ['nombre' => count($tickets)])
+                    : Traducteur::t('Demande envoyée : un ticket est ouvert. Vous serez notifié sur votre tableau de bord.'));
                 return $this->redirectTo('/equipements/equipement-' . $equipement['id']);
             }
         }
@@ -247,7 +248,7 @@ class TicketController extends AbstractController
         $id = $this->getValidId($request);
         $ticket = $id !== null ? $this->ticketManager()->findId($id) : null;
         if (!$ticket) {
-            $this->session->getFlashBag()->add('error', 'Ticket non trouvé.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Ticket non trouvé.'));
             return $this->redirectTo('/tickets');
         }
 
@@ -279,7 +280,7 @@ class TicketController extends AbstractController
         $id = $this->getValidId($request);
         $ticket = $id !== null ? $this->ticketManager()->findId($id) : null;
         if (!$ticket) {
-            $this->session->getFlashBag()->add('error', 'Ticket non trouvé.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Ticket non trouvé.'));
             return $this->redirectTo('/tickets');
         }
         $this->deniAccessUnlessGranted((string) $ticket['role_requis']);
@@ -289,20 +290,20 @@ class TicketController extends AbstractController
         $decision = (string) $request->request->get('decision', '');
         $reponse = trim((string) $request->request->get('reponse', ''));
         if (!in_array($decision, [TicketManager::STATUT_FAIT, TicketManager::STATUT_REFUSE], true)) {
-            $flash->add('error', 'Décision invalide.');
+            $flash->add('error', Traducteur::t('Décision invalide.'));
             return $this->redirectTo($retour);
         }
         if ($decision === TicketManager::STATUT_REFUSE && $reponse === '') {
-            $flash->add('error', 'Indiquez le motif du refus.');
+            $flash->add('error', Traducteur::t('Indiquez le motif du refus.'));
             return $this->redirectTo($retour);
         }
         if (mb_strlen($reponse) > self::REPONSE_MAX) {
-            $flash->add('error', sprintf('La réponse ne doit pas dépasser %d caractères.', self::REPONSE_MAX));
+            $flash->add('error', Traducteur::t('La réponse ne doit pas dépasser {max} caractères.', ['max' => self::REPONSE_MAX]));
             return $this->redirectTo($retour);
         }
 
         if (!$this->ticketManager()->cloturer($id, $decision, $this->utilisateurId(), $reponse !== '' ? $reponse : null, $this->maintenant())) {
-            $flash->add('note', 'Ce ticket a déjà été traité.');
+            $flash->add('note', Traducteur::t('Ce ticket a déjà été traité.'));
             return $this->redirectTo($retour);
         }
 
@@ -311,14 +312,14 @@ class TicketController extends AbstractController
             $id, $decision === TicketManager::STATUT_FAIT ? 'fait' : 'refusé', $this->utilisateurId()
         ));
         $flash->add('success', $decision === TicketManager::STATUT_FAIT
-            ? 'Ticket clos : modification faite. Le demandeur en est notifié.'
-            : 'Ticket clos : demande refusée. Le demandeur en est notifié.');
+            ? Traducteur::t('Ticket clos : modification faite. Le demandeur en est notifié.')
+            : Traducteur::t('Ticket clos : demande refusée. Le demandeur en est notifié.'));
         return $this->redirectTo('/tickets');
     }
 
     /** type => libellé, pour les vues. */
     public static function libelles(): array
     {
-        return array_map(static fn (array $t) => $t[0], DemandeModification::TYPES);
+        return DemandeModification::libelles();
     }
 }

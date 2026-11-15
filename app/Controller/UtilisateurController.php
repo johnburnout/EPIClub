@@ -2,6 +2,7 @@
 
 namespace Epiclub\Controller;
 
+use Epiclub\Engine\Traducteur;
 use Epiclub\Domain\ClubManager;
 use Epiclub\Domain\DoubleAuthentificationManager;
 use Epiclub\Domain\JournalActiviteManager;
@@ -81,15 +82,15 @@ class UtilisateurController extends AbstractController
         }
         $acteur = $this->session->get('user') ?: [];
         if (!$this->canManageUser($acteur, $utilisateur)) {
-            $this->session->getFlashBag()->add('error', "Vous n'avez pas les droits pour modifier cet utilisateur.");
+            $this->session->getFlashBag()->add('error', Traducteur::t("Vous n'avez pas les droits pour modifier cet utilisateur."));
             return new RedirectResponse('/admin/utilisateurs');
         }
         if (($acteur['id'] ?? null) == $utilisateur['id']) {
-            $this->session->getFlashBag()->add('warning', 'Gérez votre propre double authentification depuis la page « Sécurité du compte ».');
+            $this->session->getFlashBag()->add('warning', Traducteur::t('Gérez votre propre double authentification depuis la page « Sécurité du compte ».'));
             return new RedirectResponse('/mon-compte/securite');
         }
         if (!empty($utilisateur['est_protege'])) {
-            $this->session->getFlashBag()->add('error', 'La double authentification du compte protégé ne peut être modifiée que par son titulaire.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('La double authentification du compte protégé ne peut être modifiée que par son titulaire.'));
             return new RedirectResponse('/admin/utilisateurs/utilisateur-' . $id);
         }
 
@@ -99,9 +100,9 @@ class UtilisateurController extends AbstractController
             sprintf('Double authentification réinitialisée pour « %s »', $utilisateur['username'] ?? $id),
             $request
         );
-        $this->session->getFlashBag()->add('success', sprintf(
-            'Double authentification réinitialisée : %s se connectera avec son seul mot de passe et pourra la réactiver.',
-            $utilisateur['username'] ?? 'la personne'
+        $this->session->getFlashBag()->add('success', Traducteur::t(
+            'Double authentification réinitialisée : {utilisateur} se connectera avec son seul mot de passe et pourra la réactiver.',
+            ['utilisateur' => $utilisateur['username'] ?? Traducteur::t('la personne')]
         ));
         return new RedirectResponse('/admin/utilisateurs/utilisateur-' . $id);
     }
@@ -163,10 +164,10 @@ class UtilisateurController extends AbstractController
             // affiché désactivé, avec la raison, quand la suppression
             // est impossible (le contrôleur reste la source de vérité).
             $utilisateurs[$i]['suppression_impossible'] = match (true) {
-                ($actor['id'] ?? null) == $utilisateur['id'] => 'Vous ne pouvez pas supprimer votre propre compte.',
-                !empty($utilisateur['est_protege']) => 'Compte protégé (créé à l\'installation).',
-                ($utilisateur['role'] ?? null) === 'ROLE_SUPER_ADMIN' && $nbSuperAdmins <= 1 => 'Dernier super-administrateur.',
-                $actor === [] || !$this->canManageUser($actor, $utilisateur) => 'Vous n\'avez pas les droits pour supprimer cet utilisateur.',
+                ($actor['id'] ?? null) == $utilisateur['id'] => Traducteur::t('Vous ne pouvez pas supprimer votre propre compte.'),
+                !empty($utilisateur['est_protege']) => Traducteur::t('Compte protégé (créé à l\'installation).'),
+                ($utilisateur['role'] ?? null) === 'ROLE_SUPER_ADMIN' && $nbSuperAdmins <= 1 => Traducteur::t('Dernier super-administrateur.'),
+                $actor === [] || !$this->canManageUser($actor, $utilisateur) => Traducteur::t('Vous n\'avez pas les droits pour supprimer cet utilisateur.'),
                 default => null,
             };
         }
@@ -207,30 +208,30 @@ class UtilisateurController extends AbstractController
             $password = $request->request->get('password');
 
             // Validation
-            if (empty($utilisateur['nom'])) $form_errors['nom'] = 'Le nom est obligatoire.';
-            if (empty($utilisateur['prenom'])) $form_errors['prenom'] = 'Le prénom est obligatoire.';
-            if (empty($utilisateur['username'])) $form_errors['username'] = "Le nom d'utilisateur est obligatoire.";
-            if (empty($utilisateur['email'])) $form_errors['email'] = "L'email est obligatoire.";
-            if (!filter_var($utilisateur['email'], FILTER_VALIDATE_EMAIL)) $form_errors['email'] = "L'email n'est pas valide.";
+            if (empty($utilisateur['nom'])) $form_errors['nom'] = Traducteur::t('Le nom est obligatoire.');
+            if (empty($utilisateur['prenom'])) $form_errors['prenom'] = Traducteur::t('Le prénom est obligatoire.');
+            if (empty($utilisateur['username'])) $form_errors['username'] = Traducteur::t("Le nom d'utilisateur est obligatoire.");
+            if (empty($utilisateur['email'])) $form_errors['email'] = Traducteur::t("L'email est obligatoire.");
+            if (!filter_var($utilisateur['email'], FILTER_VALIDATE_EMAIL)) $form_errors['email'] = Traducteur::t("L'email n'est pas valide.");
             if (empty($password)) {
-                $form_errors['password'] = 'Le mot de passe est obligatoire.';
+                $form_errors['password'] = Traducteur::t('Le mot de passe est obligatoire.');
             } elseif ($error = UtilisateurManager::validatePassword($password)) {
                 $form_errors['password'] = $error;
             }
 
             // [SÉCURITÉ] Le rôle soumis doit être dans la liste autorisée pour l'acteur
             if (!array_key_exists($submittedRole, $assignableRoles)) {
-                $form_errors['role'] = "Vous n'êtes pas autorisé à attribuer ce rôle.";
+                $form_errors['role'] = Traducteur::t("Vous n'êtes pas autorisé à attribuer ce rôle.");
             } else {
                 $utilisateur['role'] = $submittedRole;
             }
 
             // Vérification de l'unicité
             if ($utilisateurManager->findOneByCriteria(['email' => $utilisateur['email']])) {
-                $form_errors['email'] = "Cet email est déjà utilisé.";
+                $form_errors['email'] = Traducteur::t("Cet email est déjà utilisé.");
             }
             if ($utilisateurManager->findOneByCriteria(['username' => $utilisateur['username']])) {
-                $form_errors['username'] = "Ce nom d'utilisateur est déjà pris.";
+                $form_errors['username'] = Traducteur::t("Ce nom d'utilisateur est déjà pris.");
             }
 
             if (empty($form_errors)) {
@@ -241,14 +242,14 @@ class UtilisateurController extends AbstractController
                 $utilisateurManager->save($utilisateur);
                 // [2026-10-24] Mail d'information (sans le mot de passe).
                 if ($this->informerCreation($utilisateur)) {
-                    $this->session->getFlashBag()->add('success', sprintf(
-                        "L'utilisateur a été créé. Un mail l'en informe (%s) ; communiquez-lui son mot de passe.",
-                        $utilisateur['email']
+                    $this->session->getFlashBag()->add('success', Traducteur::t(
+                        "L'utilisateur a été créé. Un mail l'en informe ({email}) ; communiquez-lui son mot de passe.",
+                        ['email' => $utilisateur['email']]
                     ));
                 } else {
-                    $this->session->getFlashBag()->add('success', "L'utilisateur a été créé.");
+                    $this->session->getFlashBag()->add('success', Traducteur::t("L'utilisateur a été créé."));
                     $this->session->getFlashBag()->add('note',
-                        "Le mail d'information n'a pas pu être envoyé (email du club ou serveur SMTP à vérifier) : prévenez la personne vous-même.");
+                        Traducteur::t("Le mail d'information n'a pas pu être envoyé (email du club ou serveur SMTP à vérifier) : prévenez la personne vous-même."));
                 }
                 return new RedirectResponse("/admin/utilisateurs");
             }
@@ -276,15 +277,15 @@ class UtilisateurController extends AbstractController
             return new RedirectResponse('/admin/utilisateurs');
         }
         if (!$this->canManageUser($this->session->get('user') ?: [], $utilisateur)) {
-            $this->session->getFlashBag()->add('error', "Vous n'avez pas les droits pour modifier cet utilisateur.");
+            $this->session->getFlashBag()->add('error', Traducteur::t("Vous n'avez pas les droits pour modifier cet utilisateur."));
             return new RedirectResponse('/admin/utilisateurs');
         }
 
         if ($this->informerCreation($utilisateur)) {
-            $this->session->getFlashBag()->add('success', sprintf('Mail de bienvenue renvoyé à %s.', $utilisateur['email']));
+            $this->session->getFlashBag()->add('success', Traducteur::t('Mail de bienvenue renvoyé à {email}.', ['email' => $utilisateur['email']]));
         } else {
             $this->session->getFlashBag()->add('error',
-                "Le mail de bienvenue n'a pas pu être envoyé (email du club ou serveur SMTP à vérifier).");
+                Traducteur::t("Le mail de bienvenue n'a pas pu être envoyé (email du club ou serveur SMTP à vérifier)."));
         }
         return new RedirectResponse('/admin/utilisateurs/utilisateur-' . $id);
     }
@@ -311,7 +312,7 @@ class UtilisateurController extends AbstractController
         
         // [SÉCURITÉ] Vérifier que l'acteur a le droit de gérer cette cible
         if (!$this->canManageUser($actor, $utilisateur)) {
-            $this->session->getFlashBag()->add('error', "Vous n'avez pas les droits pour modifier cet utilisateur.");
+            $this->session->getFlashBag()->add('error', Traducteur::t("Vous n'avez pas les droits pour modifier cet utilisateur."));
             return new RedirectResponse("/admin/utilisateurs");
         }
         
@@ -352,21 +353,21 @@ class UtilisateurController extends AbstractController
             }
             
             // Validation
-            if (empty($utilisateur['nom'])) $form_errors['nom'] = 'Le nom est obligatoire.';
-            if (empty($utilisateur['prenom'])) $form_errors['prenom'] = 'Le prénom est obligatoire.';
-            if (empty($utilisateur['username'])) $form_errors['username'] = "Le nom d'utilisateur est obligatoire.";
-            if (empty($utilisateur['email'])) $form_errors['email'] = "L'email est obligatoire.";
-            if (!filter_var($utilisateur['email'], FILTER_VALIDATE_EMAIL)) $form_errors['email'] = "L'email n'est pas valide.";
+            if (empty($utilisateur['nom'])) $form_errors['nom'] = Traducteur::t('Le nom est obligatoire.');
+            if (empty($utilisateur['prenom'])) $form_errors['prenom'] = Traducteur::t('Le prénom est obligatoire.');
+            if (empty($utilisateur['username'])) $form_errors['username'] = Traducteur::t("Le nom d'utilisateur est obligatoire.");
+            if (empty($utilisateur['email'])) $form_errors['email'] = Traducteur::t("L'email est obligatoire.");
+            if (!filter_var($utilisateur['email'], FILTER_VALIDATE_EMAIL)) $form_errors['email'] = Traducteur::t("L'email n'est pas valide.");
             
             // Vérification de l'unicité - exclure l'utilisateur actuel
             if ($existingUser = $utilisateurManager->findOneByCriteria(['email' => $utilisateur['email']])) {
                 if ($existingUser['id'] != $utilisateur['id']) {
-                    $form_errors['email'] = "Cet email est déjà utilisé par un autre compte.";
+                    $form_errors['email'] = Traducteur::t("Cet email est déjà utilisé par un autre compte.");
                 }
             }
             if ($existingUser = $utilisateurManager->findOneByCriteria(['username' => $utilisateur['username']])) {
                 if ($existingUser['id'] != $utilisateur['id']) {
-                    $form_errors['username'] = "Ce nom d'utilisateur est déjà pris.";
+                    $form_errors['username'] = Traducteur::t("Ce nom d'utilisateur est déjà pris.");
                 }
             }
             
@@ -385,14 +386,14 @@ class UtilisateurController extends AbstractController
                 // (Aucune affectation, on garde $utilisateur['role'] chargé depuis la BDD.)
             } else {
                 if (!array_key_exists($submittedRole, $assignableRoles)) {
-                    $form_errors['role'] = "Vous n'êtes pas autorisé à attribuer ce rôle.";
+                    $form_errors['role'] = Traducteur::t("Vous n'êtes pas autorisé à attribuer ce rôle.");
                 } else {
                     // [SÉCURITÉ] Empêcher la rétrogradation du dernier SUPER_ADMIN
                     $isDemotingSuperAdmin = ($utilisateur['role'] === 'ROLE_SUPER_ADMIN' && $submittedRole !== 'ROLE_SUPER_ADMIN');
                     if ($estProtege && $submittedRole !== $utilisateur['role']) {
-                        $form_errors['role'] = "Le rôle du compte protégé ne peut pas être modifié.";
+                        $form_errors['role'] = Traducteur::t("Le rôle du compte protégé ne peut pas être modifié.");
                     } elseif ($isDemotingSuperAdmin && $this->isLastSuperAdmin($utilisateur['id'])) {
-                        $form_errors['role'] = "Impossible de rétrograder le dernier SUPER_ADMIN de l'application.";
+                        $form_errors['role'] = Traducteur::t("Impossible de rétrograder le dernier SUPER_ADMIN de l'application.");
                     } else {
                         $newRole = $submittedRole;
                         $utilisateur['role'] = $submittedRole; // affichage cohérent en cas d'erreur ultérieure
@@ -421,7 +422,7 @@ class UtilisateurController extends AbstractController
                 if ($newPasswordHash !== null) {
                     $utilisateurManager->changePassword((int) $utilisateur['id'], $newPasswordHash);
                 }
-                $this->session->getFlashBag()->add('success', "L'utilisateur a été mis à jour.");
+                $this->session->getFlashBag()->add('success', Traducteur::t("L'utilisateur a été mis à jour."));
                 return new RedirectResponse("/admin/utilisateurs/utilisateur-$utilisateur[id]");
             }
         }
@@ -472,50 +473,50 @@ class UtilisateurController extends AbstractController
         $utilisateur = $utilisateurManager->findId($id);
 
         if (!$utilisateur) {
-            $this->session->getFlashBag()->add('error', "L'utilisateur demandé n'existe pas.");
+            $this->session->getFlashBag()->add('error', Traducteur::t("L'utilisateur demandé n'existe pas."));
             return new RedirectResponse("/admin/utilisateurs");
         }
 
         $currentUser = $this->session->get('user');
         if (!$currentUser) {
-            $this->session->getFlashBag()->add('error', 'Impossible de vérifier votre identité.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Impossible de vérifier votre identité.'));
             return new RedirectResponse("/admin/utilisateurs");
         }
 
         // [SÉCURITÉ] Vérifier que l'acteur a le droit de gérer cette cible
         if (!$this->canManageUser($currentUser, $utilisateur)) {
-            $this->session->getFlashBag()->add('error', "Vous n'avez pas les droits pour supprimer cet utilisateur.");
+            $this->session->getFlashBag()->add('error', Traducteur::t("Vous n'avez pas les droits pour supprimer cet utilisateur."));
             return new RedirectResponse("/admin/utilisateurs");
         }
 
         // Empêcher l'auto-suppression
         if ($id == $currentUser['id']) {
-            $this->session->getFlashBag()->add('error', 'Vous ne pouvez pas supprimer votre propre compte.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Vous ne pouvez pas supprimer votre propre compte.'));
             return new RedirectResponse("/admin/utilisateurs");
         }
 
         // 🔒 [2026-10-20] Compte protégé (créé par le setup) : jamais
         // supprimé. Remplace l'ancienne protection du pseudo « admin ».
         if (!empty($utilisateur['est_protege'])) {
-            $this->session->getFlashBag()->add('error', "❌ Le compte super-administrateur protégé ne peut pas être supprimé.");
+            $this->session->getFlashBag()->add('error', Traducteur::t("❌ Le compte super-administrateur protégé ne peut pas être supprimé."));
             return new RedirectResponse("/admin/utilisateurs");
         }
 
         // [SÉCURITÉ] Empêcher la suppression du dernier SUPER_ADMIN
         if ($utilisateur['role'] === 'ROLE_SUPER_ADMIN' && $this->isLastSuperAdmin($utilisateur['id'])) {
-            $this->session->getFlashBag()->add('error', "Impossible de supprimer le dernier SUPER_ADMIN de l'application.");
+            $this->session->getFlashBag()->add('error', Traducteur::t("Impossible de supprimer le dernier SUPER_ADMIN de l'application."));
             return new RedirectResponse("/admin/utilisateurs");
         }
 
         // [SÉCURITÉ Dette 9] Garde du FOREIGN KEY acquisition.saisie_par
         if ($utilisateurManager->hasAcquisitionsSaisies($id)) {
-            $this->session->getFlashBag()->add('error', "Impossible de supprimer cet utilisateur car il a saisi des acquisitions.");
+            $this->session->getFlashBag()->add('error', Traducteur::t("Impossible de supprimer cet utilisateur car il a saisi des acquisitions."));
             return new RedirectResponse("/admin/utilisateurs");
         }
 
         $utilisateurManager->delete($id);
 
-        $this->session->getFlashBag()->add('success', "L'utilisateur {$utilisateur['prenom']} {$utilisateur['nom']} a été supprimé.");
+        $this->session->getFlashBag()->add('success', Traducteur::t("L'utilisateur {prenom} {nom} a été supprimé.", ['prenom' => $utilisateur['prenom'], 'nom' => $utilisateur['nom']]));
 
         return new RedirectResponse("/admin/utilisateurs");
     }

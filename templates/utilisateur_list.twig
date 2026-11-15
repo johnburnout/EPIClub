@@ -2,23 +2,23 @@
 
 {% block body %}
 
-	<h3>Liste des utilisateurs</h3>
+	<h3>{{ 'Liste des utilisateurs'|trans }}</h3>
 	<hr>
 
 	<div class="mb-3">
-		<a href="/admin/utilisateurs/nouveau" class="btn btn-primary">➕ Nouvel utilisateur</a>
+		<a href="/admin/utilisateurs/nouveau" class="btn btn-primary">➕ {{ 'Nouvel utilisateur'|trans }}</a>
 	</div>
 
 	<table class="table table-striped">
 		<thead>
 			<tr>
-				<th>ID</th>
-				<th>Nom</th>
-				<th>Prénom</th>
-				<th>Pseudo</th>
-				<th>Email</th>
-				<th>Rôle</th>
-				<th>Actions</th>
+				<th>{{ 'ID'|trans }}</th>
+				<th>{{ 'Nom'|trans }}</th>
+				<th>{{ 'Prénom'|trans }}</th>
+				<th>{{ 'Pseudo'|trans }}</th>
+				<th>{{ 'Email'|trans }}</th>
+				<th>{{ 'Rôle'|trans }}</th>
+				<th>{{ 'Actions'|trans }}</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -27,23 +27,23 @@
 					<td>{{ utilisateur.id }}</td>
 					<td>{{ utilisateur.nom }}</td>
 					<td>{{ utilisateur.prenom }}</td>
-					<td>{{ utilisateur.username }}{% if utilisateur.est_protege|default(false) %} <span class="badge bg-dark" title="Compte protégé (créé à l'installation)">🔒 Protégé</span>{% endif %}</td>
+					<td>{{ utilisateur.username }}{% if utilisateur.est_protege|default(false) %} <span class="badge bg-dark" title="{{ "Compte protégé (créé à l'installation)"|trans }}">🔒 {{ 'Protégé'|trans }}</span>{% endif %}</td>
 					<td>{{ utilisateur.email }}</td>
 					<td>{{ utilisateur.rolelabel }}</td>
 					<td>
-						<a href="/admin/utilisateurs/utilisateur-{{ utilisateur.id }}" class="btn btn-sm btn-primary">Voir</a>
+						<a href="/admin/utilisateurs/utilisateur-{{ utilisateur.id }}" class="btn btn-sm btn-primary">{{ 'Voir'|trans }}</a>
 						{% if utilisateur.suppression_impossible is empty %}
 						<form method="post" action="/admin/utilisateurs/utilisateur_supprimer-{{ utilisateur.id }}" style="display:inline;">
 							<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 							<button type="submit" class="btn btn-sm btn-danger"
-							        data-confirm="Supprimer {{ utilisateur.prenom }} {{ utilisateur.nom }} ?">
-								Supprimer
+							        data-confirm="{{ 'Supprimer {prenom} {nom} ?'|trans({prenom: utilisateur.prenom, nom: utilisateur.nom}) }}">
+								{{ 'Supprimer'|trans }}
 							</button>
 						</form>
 						{% else %}
 						{# Bouton désactivé : un span porte l'info-bulle (un bouton disabled n'en affiche pas) #}
 						<span class="d-inline-block" tabindex="0" title="{{ utilisateur.suppression_impossible }}">
-							<button type="button" class="btn btn-sm btn-danger" disabled style="pointer-events: none;">Supprimer</button>
+							<button type="button" class="btn btn-sm btn-danger" disabled style="pointer-events: none;">{{ 'Supprimer'|trans }}</button>
 						</span>
 						{% endif %}
 					</td>
@@ -51,6 +51,6 @@
 			{% endfor %}
 		</tbody>
 	</table>
-	{% include '_pagination.twig' with {p: pagination, affiches: utilisateurs|length, elements: 'utilisateurs'} %}
+	{% include '_pagination.twig' with {p: pagination, affiches: utilisateurs|length, elements: 'utilisateurs'|trans} %}
 
 {% endblock %}

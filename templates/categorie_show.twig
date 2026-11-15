@@ -2,7 +2,7 @@
 
 {% block body %}
 
-	<h3>Fiche Catégorie</h3>
+	<h3>{{ 'Fiche Catégorie'|trans }}</h3>
 	<hr>
 
 	<div class="row h-100">
@@ -13,15 +13,15 @@
 		</div>
 		<div class="col-md-6">
 			<div class="mb-3">
-				<label for="libelle">Libellé :</label>
+				<label for="libelle">{{ 'Libellé :'|trans }}</label>
 				{{ categorie.libelle }}
 			</div>
 			<div class="mb-3">
-				<label for="code">Code :</label>
+				<label for="code">{{ 'Code :'|trans }}</label>
 				{% if categorie.code %}
 					<code>{{ categorie.code }}</code>
 				{% else %}
-					<span class="text-muted">— (attribué automatiquement à la première utilisation)</span>
+					<span class="text-muted">— {{ '(attribué automatiquement à la première utilisation)'|trans }}</span>
 				{% endif %}
 			</div>
 			<div class="mb-3">
@@ -29,32 +29,32 @@
 				{% if categorie.est_epi == 0 %}
 					{% set est_epi_value = "Non" %}
 				{% endif %}
-				<label for="est_epi">Classée EPI ? :</label>
+				<label for="est_epi">{{ 'Classée EPI ? :'|trans }}</label>
 				{{ est_epi_value }}
 			</div>
 			<div class="mb-3">
-				<label for="duree_max_utilisation">Durée maximum d'utilisation :</label>
-				{{ categorie.duree_max_utilisation ? 'Oui' : 'Non' }}
+				<label for="duree_max_utilisation">{{ "Durée maximum d'utilisation :"|trans }}</label>
+				{{ categorie.duree_max_utilisation ? 'Oui'|trans : 'Non'|trans }}
 			</div>
 			<div class="mb-3">
-				<label for="description">Description :</label>
+				<label for="description">{{ 'Description :'|trans }}</label>
 				{{ categorie.description }}
 			</div>
 			<div class="mb-3 d-flex gap-2">
-				<a href="/admin/categories" class="btn btn-secondary">Retour à la liste</a>
+				<a href="/admin/categories" class="btn btn-secondary">{{ 'Retour à la liste'|trans }}</a>
 				{% if nb_equipements > 0 %}
-				<a href="/equipements?categorie={{ categorie.id }}" class="btn btn-primary">📋 {{ nb_equipements > 1 ? 'Voir les ' ~ nb_equipements ~ ' équipements' : 'Voir l\'équipement' }}</a>
+				<a href="/equipements?categorie={{ categorie.id }}" class="btn btn-primary">📋 {{ nb_equipements > 1 ? 'Voir les {nombre} équipements'|trans({nombre: nb_equipements}) : "Voir l'équipement"|trans }}</a>
 				{% else %}
-				<span class="btn btn-outline-secondary disabled">Aucun équipement</span>
+				<span class="btn btn-outline-secondary disabled">{{ 'Aucun équipement'|trans }}</span>
 				{% endif %}
 				{% if isGranted('ROLE_ADMIN') %}
-				<a href="/admin/categories/categorie_modification-{{ categorie.id }}" class="btn btn-warning">Modifier</a>
+				<a href="/admin/categories/categorie_modification-{{ categorie.id }}" class="btn btn-warning">{{ 'Modifier'|trans }}</a>
 				<form method="post" action="/admin/categories/supprimer" class="ms-auto">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 					<input type="hidden" name="id" value="{{ categorie.id }}">
 					<button type="submit" class="btn btn-danger"
-					        data-confirm="Êtes-vous sûr de vouloir supprimer la catégorie « {{ categorie.libelle }} » ? Cette action est irréversible.">
-						🗑️ Supprimer
+					        data-confirm="{{ 'Êtes-vous sûr de vouloir supprimer la catégorie « {libelle} » ? Cette action est irréversible.'|trans({libelle: categorie.libelle}) }}">
+						🗑️ {{ 'Supprimer'|trans }}
 					</button>
 				</form>
 				{% endif %}

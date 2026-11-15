@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Epiclub\Controller;
 
+use Epiclub\Engine\Traducteur;
 use Epiclub\Domain\ClubManager;
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\TicketManager;
@@ -259,9 +260,9 @@ class TableauDeBordController extends AbstractController
             $this->validateCsrf($request);
 
             if ($this->isPostTruncated($request)) {
-                $form_errors['images'] = sprintf(
-                    'Le fichier est trop volumineux pour être traité par le serveur (limite PHP : %s).',
-                    ini_get('post_max_size')
+                $form_errors['images'] = Traducteur::t(
+                    'Le fichier est trop volumineux pour être traité par le serveur (limite PHP : {limite}).',
+                    ['limite' => ini_get('post_max_size')]
                 );
             } else {
                 $dureeRaw = trim((string) $request->request->get('alerte_renouvellement_mois', ''));
@@ -269,10 +270,9 @@ class TableauDeBordController extends AbstractController
                     || (int) $dureeRaw < self::DUREE_ALERTE_MIN
                     || (int) $dureeRaw > self::DUREE_ALERTE_MAX
                 ) {
-                    $form_errors['alerte_renouvellement_mois'] = sprintf(
-                        'La durée doit être un nombre entier de mois entre %d et %d.',
-                        self::DUREE_ALERTE_MIN,
-                        self::DUREE_ALERTE_MAX
+                    $form_errors['alerte_renouvellement_mois'] = Traducteur::t(
+                        'La durée doit être un nombre entier de mois entre {min} et {max}.',
+                        ['min' => self::DUREE_ALERTE_MIN, 'max' => self::DUREE_ALERTE_MAX]
                     );
                 } else {
                     $duree = (int) $dureeRaw;
@@ -286,10 +286,9 @@ class TableauDeBordController extends AbstractController
                         || (int) $controleRaw < self::DUREE_CONTROLE_MIN
                         || (int) $controleRaw > self::DUREE_CONTROLE_MAX
                     ) {
-                        $form_errors['alerte_controle_mois'] = sprintf(
-                            'Le délai de la notification « EPI non vérifiés » doit être un nombre entier de mois entre %d et %d.',
-                            self::DUREE_CONTROLE_MIN,
-                            self::DUREE_CONTROLE_MAX
+                        $form_errors['alerte_controle_mois'] = Traducteur::t(
+                            'Le délai de la notification « EPI non vérifiés » doit être un nombre entier de mois entre {min} et {max}.',
+                            ['min' => self::DUREE_CONTROLE_MIN, 'max' => self::DUREE_CONTROLE_MAX]
                         );
                     } else {
                         $dureeControle = (int) $controleRaw;
@@ -321,7 +320,7 @@ class TableauDeBordController extends AbstractController
                             $form_errors[$champ] = $e->getMessage();
                         } catch (\Throwable $e) {
                             error_log('[TableauDeBordController] Upload ' . $champ . ': ' . $e->getMessage());
-                            $form_errors[$champ] = "Erreur lors du téléversement de l'image.";
+                            $form_errors[$champ] = Traducteur::t("Erreur lors du téléversement de l'image.");
                         }
                     } elseif ($request->request->has('supprimer_' . $champ) && !empty($club[$champ])) {
                         // Retour à l'image par défaut
@@ -335,7 +334,7 @@ class TableauDeBordController extends AbstractController
                     foreach ($aSupprimer as $ancien) {
                         $this->supprimerImage($ancien);
                     }
-                    $this->session->getFlashBag()->add('success', 'Les réglages du tableau de bord ont été enregistrés.');
+                    $this->session->getFlashBag()->add('success', Traducteur::t('Les réglages du tableau de bord ont été enregistrés.'));
                     return $this->redirectTo('/admin/tableau-de-bord');
                 }
 

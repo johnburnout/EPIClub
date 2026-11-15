@@ -8,11 +8,11 @@
 <form method="get" action="{{ url }}" class="mb-3">
 	<div class="row g-3">
 		<div class="col-md-3">
-			<label for="q" class="form-label">Recherche</label>
+			<label for="q" class="form-label">{{ 'Recherche'|trans }}</label>
 			<input type="search" name="q" id="q" value="{{ filtres.q }}" maxlength="100"
 			       class="form-control" placeholder="{{ placeholder }}">
 		</div>
-		{% for s in selects|default([])|merge([{nom: 'equipements', label: 'Équipements', options: {'': 'Tous', 'avec': 'Avec équipements', 'sans': 'Sans équipement'}}]) %}
+		{% for s in selects|default([])|merge([{nom: 'equipements', label: 'Équipements'|trans, options: {'': 'Tous'|trans, 'avec': 'Avec équipements'|trans, 'sans': 'Sans équipement'|trans}}]) %}
 			<div class="col-md-2">
 				<label for="{{ s.nom }}" class="form-label">{{ s.label }}</label>
 				<select name="{{ s.nom }}" id="{{ s.nom }}" class="form-select">
@@ -25,7 +25,7 @@
 	</div>
 	<div class="row g-3 mt-1">
 		<div class="col-md-3">
-			<label for="order_by" class="form-label">Trier par</label>
+			<label for="order_by" class="form-label">{{ 'Trier par'|trans }}</label>
 			<select name="order_by" id="order_by" class="form-select">
 				{% for cle, libelle in tris %}
 					<option value="{{ cle }}" {% if filtres.order_by == cle %}selected{% endif %}>{{ libelle }}</option>
@@ -33,22 +33,22 @@
 			</select>
 		</div>
 		<div class="col-md-2">
-			<label for="order_dir" class="form-label">Ordre</label>
+			<label for="order_dir" class="form-label">{{ 'Ordre'|trans }}</label>
 			<select name="order_dir" id="order_dir" class="form-select">
-				<option value="asc" {% if filtres.order_dir == 'asc' %}selected{% endif %}>Croissant</option>
-				<option value="desc" {% if filtres.order_dir == 'desc' %}selected{% endif %}>Décroissant</option>
+				<option value="asc" {% if filtres.order_dir == 'asc' %}selected{% endif %}>{{ 'Croissant'|trans }}</option>
+				<option value="desc" {% if filtres.order_dir == 'desc' %}selected{% endif %}>{{ 'Décroissant'|trans }}</option>
 			</select>
 		</div>
 		<div class="col-md-4 d-flex align-items-end gap-2">
-			<button type="submit" class="btn btn-secondary">Appliquer</button>
-			<a href="{{ url }}" class="btn btn-outline-secondary">Réinitialiser</a>
+			<button type="submit" class="btn btn-secondary">{{ 'Appliquer'|trans }}</button>
+			<a href="{{ url }}" class="btn btn-outline-secondary">{{ 'Réinitialiser'|trans }}</a>
 		</div>
 	</div>
 	<p class="small text-muted mt-2 mb-0">
 		{% if affiches == total %}
 			{{ total }} {{ total > 1 ? elements : element }}
 		{% else %}
-			{{ affiches }} {{ affiches > 1 ? elements : element }} sur {{ total }}
+			{{ '{affiches} {elements} sur {total}'|trans({affiches: affiches, elements: (affiches > 1 ? elements : element), total: total}) }}
 		{% endif %}
 	</p>
 </form>

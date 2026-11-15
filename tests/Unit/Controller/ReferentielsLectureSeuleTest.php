@@ -164,7 +164,8 @@ final class ReferentielsLectureSeuleTest extends TestCase
         // Fiche en lecture seule (plus de formulaire)
         $fiche = (string) $controller->show($this->avecId('/admin/emplacements/emplacement-5', 5))->getContent();
         self::assertStringContainsString('Fiche emplacement', $fiche);
-        self::assertStringContainsString("Voir l'équipement", $fiche);
+        // Texte affiché : les apostrophes traduites sortent échappées (&#039;).
+        self::assertStringContainsString("Voir l'équipement", html_entity_decode($fiche, ENT_QUOTES));
         self::assertStringNotContainsString('<form method="post">', $fiche);
     }
 

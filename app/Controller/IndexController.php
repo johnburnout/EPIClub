@@ -2,6 +2,7 @@
 
 namespace Epiclub\Controller;
 
+use Epiclub\Engine\Traducteur;
 use Epiclub\Domain\JournalActiviteManager;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\ConfigProvider;
@@ -130,7 +131,7 @@ class IndexController extends AbstractController
         
         // Validation basique SMTP (iso-comportement)
         if (empty($host) || empty($port) || empty($user) || empty($from)) {
-            $this->session->getFlashBag()->add('error', 'Tous les champs obligatoires doivent être remplis.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Tous les champs obligatoires doivent être remplis.'));
             return $this->redirectTo('/admin/system-settings');
         }
         
@@ -151,13 +152,13 @@ class IndexController extends AbstractController
         // Lecture du fichier .env.local.php actuel
         $envFile = $this->environmentFilePath();
         if (!file_exists($envFile)) {
-            $this->session->getFlashBag()->add('error', 'Fichier de configuration introuvable.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Fichier de configuration introuvable.'));
             return $this->redirectTo('/admin/system-settings');
         }
         
         $current = require $envFile;
         if (!is_array($current)) {
-            $this->session->getFlashBag()->add('error', 'Fichier de configuration invalide.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Fichier de configuration invalide.'));
             return $this->redirectTo('/admin/system-settings');
         }
         
@@ -207,7 +208,7 @@ class IndexController extends AbstractController
 
         $parser->setAll($values);
         
-        $this->session->getFlashBag()->add('success', 'Configuration mise à jour avec succès.');
+        $this->session->getFlashBag()->add('success', Traducteur::t('Configuration mise à jour avec succès.'));
         return $this->redirectTo('/admin/system-settings');
     }
 
@@ -224,7 +225,7 @@ class IndexController extends AbstractController
         if ($alerte->etat() !== null) {
             $alerte->acquitter();
             $this->journaliser(JournalActiviteManager::TYPE_SECURITE, 'Alerte du limiteur de tentatives acquittée', $request);
-            $this->session->getFlashBag()->add('success', 'Alerte acquittée. Elle réapparaîtra si le limiteur tombe de nouveau en panne.');
+            $this->session->getFlashBag()->add('success', Traducteur::t('Alerte acquittée. Elle réapparaîtra si le limiteur tombe de nouveau en panne.'));
         }
 
         return $this->redirectTo('/');
@@ -242,14 +243,14 @@ class IndexController extends AbstractController
             // Charger .env.local.php
             $envFile = $this->environmentFilePath();
             if (!file_exists($envFile)) {
-                return new JsonResponse(['success' => false, 'error' => 'Fichier .env.local.php introuvable']);
+                return new JsonResponse(['success' => false, 'error' => Traducteur::t('Fichier .env.local.php introuvable')]);
             }
             $env = require $envFile;
             $from = $env['MAILER_FROM'] ?? '';
             $fromName = $env['MAILER_NAME'] ?? 'EPIClub';
 
             if (empty($from)) {
-                return new JsonResponse(['success' => false, 'error' => 'Adresse expéditeur manquante']);
+                return new JsonResponse(['success' => false, 'error' => Traducteur::t('Adresse expéditeur manquante')]);
             }
 
             // [VAGUE 13 - #50c] Instancier le service mailer via ConfigProvider.
@@ -269,7 +270,7 @@ class IndexController extends AbstractController
 
             return new JsonResponse([
                 'success' => true,
-                'message' => '✅ Email de test envoyé avec succès à ' . $from
+                'message' => '✅ ' . Traducteur::t('Email de test envoyé avec succès à {adresse}', ['adresse' => $from])
             ]);
 
         } catch (\Throwable $e) {
@@ -283,7 +284,7 @@ class IndexController extends AbstractController
 
             return new JsonResponse([
                 'success' => false,
-                'error' => 'Erreur lors de l\'envoi de l\'email de test. Consultez les logs serveur pour plus de détails.'
+                'error' => Traducteur::t('Erreur lors de l\'envoi de l\'email de test. Consultez les logs serveur pour plus de détails.')
             ], 500);
         }
     }

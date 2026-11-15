@@ -2,7 +2,7 @@
 
 {% macro ligne(t, libelles, statuts, avec_demandeur) %}
 	<tr>
-		<td><a href="/tickets/ticket-{{ t.id }}">n° {{ t.id }}</a></td>
+		<td><a href="/tickets/ticket-{{ t.id }}">{{ 'n° {id}'|trans({id: t.id}) }}</a></td>
 		<td>{{ t.date_creation|date('d/m/Y') }}</td>
 		<td>
 			{% if t.equipement_reference and not t.equipement_supprime %}
@@ -19,40 +19,39 @@
 
 {% block body %}
 	{% import _self as tickets %}
-	{% set statuts = {'ouvert': ['En attente', 'bg-warning text-dark'], 'fait': ['Faite', 'bg-success'], 'refuse': ['Refusée', 'bg-danger']} %}
-	<h3>Demandes de modification</h3>
+	{% set statuts = {'ouvert': ['En attente'|trans, 'bg-warning text-dark'], 'fait': ['Faite'|trans, 'bg-success'], 'refuse': ['Refusée'|trans, 'bg-danger']} %}
+	<h3>{{ 'Demandes de modification'|trans }}</h3>
 	<hr>
 
 	{% if isGranted('ROLE_ADMIN') %}
-		<h5>À traiter <span class="badge bg-warning text-dark">{{ pagination_a_traiter.total }}</span></h5>
+		<h5>{{ 'À traiter'|trans }} <span class="badge bg-warning text-dark">{{ pagination_a_traiter.total }}</span></h5>
 		{% if a_traiter %}
 			<div class="table-responsive mb-4">
 				<table class="table table-sm table-striped align-middle">
-					<thead><tr><th>Ticket</th><th>Date</th><th>Équipement</th><th>Modifications</th><th>Demandeur</th><th>Statut</th></tr></thead>
+					<thead><tr><th>{{ 'Ticket'|trans }}</th><th>{{ 'Date'|trans }}</th><th>{{ 'Équipement'|trans }}</th><th>{{ 'Modifications'|trans }}</th><th>{{ 'Demandeur'|trans }}</th><th>{{ 'Statut'|trans }}</th></tr></thead>
 					<tbody>
 						{% for t in a_traiter %}{{ tickets.ligne(t, libelles, statuts, true) }}{% endfor %}
 					</tbody>
 				</table>
 			</div>
-			{% include '_pagination.twig' with {p: pagination_a_traiter, affiches: a_traiter|length, elements: 'demandes'} %}
+			{% include '_pagination.twig' with {p: pagination_a_traiter, affiches: a_traiter|length, elements: 'demandes'|trans} %}
 		{% else %}
-			<p class="text-muted mb-4">Aucune demande en attente.</p>
+			<p class="text-muted mb-4">{{ 'Aucune demande en attente.'|trans }}</p>
 		{% endif %}
 	{% endif %}
 
-	<h5>Mes demandes</h5>
+	<h5>{{ 'Mes demandes'|trans }}</h5>
 	{% if mes_demandes %}
 		<div class="table-responsive">
 			<table class="table table-sm table-striped align-middle">
-				<thead><tr><th>Ticket</th><th>Date</th><th>Équipement</th><th>Modifications</th><th>Statut</th></tr></thead>
+				<thead><tr><th>{{ 'Ticket'|trans }}</th><th>{{ 'Date'|trans }}</th><th>{{ 'Équipement'|trans }}</th><th>{{ 'Modifications'|trans }}</th><th>{{ 'Statut'|trans }}</th></tr></thead>
 				<tbody>
 					{% for t in mes_demandes %}{{ tickets.ligne(t, libelles, statuts, false) }}{% endfor %}
 				</tbody>
 			</table>
 		</div>
-		{% include '_pagination.twig' with {p: pagination_mes_demandes, affiches: mes_demandes|length, elements: 'demandes'} %}
+		{% include '_pagination.twig' with {p: pagination_mes_demandes, affiches: mes_demandes|length, elements: 'demandes'|trans} %}
 	{% else %}
-		<p class="text-muted">Vous n'avez fait aucune demande. Elles se font depuis la fiche d'un équipement
-			(« Demander une modification »).</p>
+		<p class="text-muted">{{ "Vous n'avez fait aucune demande. Elles se font depuis la fiche d'un équipement (« Demander une modification »)."|trans }}</p>
 	{% endif %}
 {% endblock %}

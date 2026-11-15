@@ -9,9 +9,9 @@
 			<div class="card h-100">
 				<div class="card-body d-flex flex-column gap-3">
 					<div class="text-center">
-						<img src="{{ logo_url }}" alt="Logo {{ club.nom|default('du club') }}"
+						<img src="{{ logo_url }}" alt="{{ 'Logo {nom}'|trans({nom: (club.nom|default('du club'))}) }}"
 						     class="img-fluid mb-2" style="max-height: 140px; object-fit: contain;">
-						<h4 class="mb-0 text-primary">{{ club.nom|default('Mon club') }}</h4>
+						<h4 class="mb-0 text-primary">{{ club.nom|default('Mon club'|trans) }}</h4>
 						{% if club.activite is not empty %}
 							<div class="small text-body-secondary">{{ club.activite }}</div>
 						{% endif %}
@@ -20,22 +20,22 @@
 					{% if alerte %}
 						<div id="alerte-renouvellement" class="alert alert-warning alert-dismissible mb-0 position-relative" role="alert">
 							<a href="{{ alerte.url }}" class="alert-link text-decoration-none d-block"
-							   title="Afficher la liste des équipements par date de fin croissante">
-								⚠️ <strong>{{ alerte.total }} EPI à renouveler</strong>
+							   title="{{ 'Afficher la liste des équipements par date de fin croissante'|trans }}">
+								⚠️ <strong>{{ '{total} EPI à renouveler'|trans({total: alerte.total}) }}</strong>
 								{% if alerte.mois > 1 %}
-									dans les {{ alerte.mois }} prochains mois
+									{{ 'dans les {mois} prochains mois'|trans({mois: alerte.mois}) }}
 								{% else %}
-									dans le mois à venir
+									{{ 'dans le mois à venir'|trans }}
 								{% endif %}
 								<span class="d-block small fw-normal">
-									(avant le {{ alerte.date_limite|date('d/m/Y') }}{% if alerte.echus > 0 %}, dont {{ alerte.echus }} déjà échu{{ alerte.echus > 1 ? 's' : '' }}{% endif %})
+									{{ '(avant le {date_limite}'|trans({date_limite: (alerte.date_limite|date('d/m/Y'))}) }}{% if alerte.echus > 0 %}{% if alerte.echus > 1 %}{{ ', dont {echus} déjà échus'|trans({echus: alerte.echus}) }}{% else %}{{ ', dont {echus} déjà échu'|trans({echus: alerte.echus}) }}{% endif %}{% endif %})
 								</span>
-								<span class="d-block small mt-1">Voir la liste →</span>
+								<span class="d-block small mt-1">{{ 'Voir la liste →'|trans }}</span>
 							</a>
 							<form method="post" action="/tableau_de_bord/masquer-alerte" id="form-masquer-alerte" class="m-0">
 								<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-								<button type="submit" class="btn-close" aria-label="Fermer la notification"
-								        title="Masquer jusqu'à la prochaine connexion"></button>
+								<button type="submit" class="btn-close" aria-label="{{ 'Fermer la notification'|trans }}"
+								        title="{{ "Masquer jusqu'à la prochaine connexion"|trans }}"></button>
 							</form>
 						</div>
 					{% endif %}
@@ -44,13 +44,12 @@
 					{% if alerte_controle|default(null) %}
 						<div id="alerte-controle" class="alert alert-warning mb-0" role="alert">
 							<a href="{{ alerte_controle.url }}" class="alert-link text-decoration-none d-block"
-							   title="Afficher les EPI non vérifiés, du plus ancien contrôle au plus récent">
-								🔎 <strong>{{ alerte_controle.total }} EPI non vérifié{{ alerte_controle.total > 1 ? 's' : '' }}</strong>
-								depuis plus de {{ alerte_controle.mois }} mois
+							   title="{{ 'Afficher les EPI non vérifiés, du plus ancien contrôle au plus récent'|trans }}">
+								🔎 {% if alerte_controle.total > 1 %}{{ '<strong>{total} EPI non vérifiés</strong> depuis plus de {mois} mois'|trans({total: (alerte_controle.total)|e, mois: (alerte_controle.mois)|e})|raw }}{% else %}{{ '<strong>{total} EPI non vérifié</strong> depuis plus de {mois} mois'|trans({total: (alerte_controle.total)|e, mois: (alerte_controle.mois)|e})|raw }}{% endif %}
 								<span class="d-block small fw-normal">
-									(dernier contrôle ou mise en service avant le {{ alerte_controle.avant|date('d/m/Y') }})
+									{{ '(dernier contrôle ou mise en service avant le {avant})'|trans({avant: (alerte_controle.avant|date('d/m/Y'))}) }}
 								</span>
-								<span class="d-block small mt-1">Voir la liste →</span>
+								<span class="d-block small mt-1">{{ 'Voir la liste →'|trans }}</span>
 							</a>
 						</div>
 					{% endif %}
@@ -58,10 +57,10 @@
 					{% if prets_en_retard|default(0) > 0 %}
 						<div id="alerte-prets-retard" class="alert alert-danger mb-0" role="alert">
 							<a href="/prets?retard=1" class="alert-link text-decoration-none d-block"
-							   title="Afficher les prêts en retard">
-								⏰ <strong>{{ prets_en_retard }} prêt{{ prets_en_retard > 1 ? 's' : '' }} en retard</strong>
-								<span class="d-block small fw-normal">Date de retour prévue dépassée</span>
-								<span class="d-block small mt-1">Voir les prêts →</span>
+							   title="{{ 'Afficher les prêts en retard'|trans }}">
+								⏰ <strong>{% if prets_en_retard > 1 %}{{ '{nombre} prêts en retard'|trans({nombre: prets_en_retard}) }}{% else %}{{ '{nombre} prêt en retard'|trans({nombre: prets_en_retard}) }}{% endif %}</strong>
+								<span class="d-block small fw-normal">{{ 'Date de retour prévue dépassée'|trans }}</span>
+								<span class="d-block small mt-1">{{ 'Voir les prêts →'|trans }}</span>
 							</a>
 						</div>
 					{% endif %}
@@ -69,22 +68,22 @@
 					{# [2026-10-24] Demandes de modification à traiter (administrateurs) #}
 					{% if tickets_a_traiter|default([]) is not empty %}
 						<div id="alerte-tickets" class="alert alert-info mb-0" role="alert">
-							📨 <strong>{{ tickets_a_traiter|length }} demande{{ tickets_a_traiter|length > 1 ? 's' : '' }} de modification à traiter</strong>
+							📨 <strong>{% if tickets_a_traiter|length > 1 %}{{ '{nombre} demandes de modification à traiter'|trans({nombre: tickets_a_traiter|length}) }}{% else %}{{ '{nombre} demande de modification à traiter'|trans({nombre: tickets_a_traiter|length}) }}{% endif %}</strong>
 							<ul class="list-unstyled small mb-1 mt-1">
 								{% for t in tickets_a_traiter|slice(0, 5) %}
 									<li class="mb-1">
 										{% if t.equipement_reference and not t.equipement_supprime %}
 											<a href="/equipements/equipement_modification-{{ t.equipement_id }}" class="alert-link"
-											   title="Formulaire de modification de l'équipement">{{ t.equipement_reference }}</a>
+											   title="{{ "Formulaire de modification de l'équipement"|trans }}">{{ t.equipement_reference }}</a>
 										{% else %}
 											{{ t.equipement_reference|default('?') }}
 										{% endif %}
 										: {{ t.modifications|map(m => libelles_modifications[m.type]|default(m.type))|join(', ') }}
-										— <a href="/tickets/ticket-{{ t.id }}" class="alert-link">traiter</a>
+										— <a href="/tickets/ticket-{{ t.id }}" class="alert-link">{{ 'traiter'|trans }}</a>
 									</li>
 								{% endfor %}
 							</ul>
-							<a href="/tickets" class="alert-link small">Toutes les demandes →</a>
+							<a href="/tickets" class="alert-link small">{{ 'Toutes les demandes →'|trans }}</a>
 						</div>
 					{% endif %}
 
@@ -92,20 +91,19 @@
 					{% for t in tickets_traites|default([]) %}
 						<div class="alert {{ t.statut == 'fait' ? 'alert-success' : 'alert-danger' }} mb-0 ticket-traite" role="alert">
 							<a href="/tickets/ticket-{{ t.id }}" class="alert-link text-decoration-none d-block">
-								{{ t.statut == 'fait' ? '✅' : '✖' }} Votre demande sur <strong>{{ t.equipement_reference|default('?') }}</strong>
-								{{ t.statut == 'fait' ? 'a été traitée' : 'a été refusée' }}
-								<span class="d-block small mt-1">Voir la réponse →</span>
+								{% if t.statut == 'fait' %}✅ {{ 'Votre demande sur <strong>{reference}</strong> a été traitée'|trans({reference: (t.equipement_reference|default('?'))|e})|raw }}{% else %}✖ {{ 'Votre demande sur <strong>{reference}</strong> a été refusée'|trans({reference: (t.equipement_reference|default('?'))|e})|raw }}{% endif %}
+								<span class="d-block small mt-1">{{ 'Voir la réponse →'|trans }}</span>
 							</a>
 						</div>
 					{% endfor %}
 
 					<a href="/controles/scanner" class="btn btn-primary w-100 py-2">
-						📷 Scanner un QR code
+						📷 {{ 'Scanner un QR code'|trans }}
 					</a>
 
 					{% if isGranted('ROLE_ADMIN') %}
 						<a href="/admin/tableau-de-bord" class="small text-body-secondary mt-auto text-center">
-							⚙️ Personnaliser le tableau de bord
+							⚙️ {{ 'Personnaliser le tableau de bord'|trans }}
 						</a>
 					{% endif %}
 				</div>

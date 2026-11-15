@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Epiclub\Controller;
 
+use Epiclub\Engine\Traducteur;
 use Epiclub\Domain\JournalActiviteManager;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\Pagination;
@@ -54,7 +55,7 @@ class JournalActiviteController extends AbstractController
         return $this->render('journal_activite.twig', [
             'entrees' => $entrees,
             'filtres' => $filtres,
-            'types' => JournalActiviteManager::TYPES,
+            'types' => JournalActiviteManager::libellesTypes(),
             'pagination' => $pagination,
             'export_url' => self::URL . '/export' . self::queryFiltres($filtres),
             'confirmation' => self::CONFIRMATION,
@@ -141,7 +142,7 @@ class JournalActiviteController extends AbstractController
         if ($saisie !== self::CONFIRMATION) {
             $this->session->getFlashBag()->add(
                 'error',
-                sprintf('Journal non réinitialisé : saisissez exactement « %s » pour confirmer.', self::CONFIRMATION)
+                Traducteur::t('Journal non réinitialisé : saisissez exactement « {mot} » pour confirmer.', ['mot' => self::CONFIRMATION])
             );
             return $this->redirectTo(self::URL);
         }
@@ -153,7 +154,7 @@ class JournalActiviteController extends AbstractController
             $request
         );
 
-        $this->session->getFlashBag()->add('success', "Le journal d'activité a été réinitialisé.");
+        $this->session->getFlashBag()->add('success', Traducteur::t("Le journal d'activité a été réinitialisé."));
         return $this->redirectTo(self::URL);
     }
 

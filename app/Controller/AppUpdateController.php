@@ -2,6 +2,7 @@
 
 namespace Epiclub\Controller;
 
+use Epiclub\Engine\Traducteur;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\DatabaseBackup;
 use Epiclub\Engine\MySqlDatabaseDumper;
@@ -176,7 +177,7 @@ class AppUpdateController extends AbstractController
             'can_update' => $canUpdate,
             'release_notes' => $latestRelease ? $latestRelease['body'] : null,
             'error' => $latestRelease === null
-                ? 'Impossible de contacter GitHub (limite de l\'API ou réseau). Nouvel essai automatique dans quelques minutes.'
+                ? Traducteur::t('Impossible de contacter GitHub (limite de l\'API ou réseau). Nouvel essai automatique dans quelques minutes.')
                 : null,
             'csrf_token' => $csrfToken,
             'cleanup_needed' => $cleanupNeeded,
@@ -206,7 +207,7 @@ class AppUpdateController extends AbstractController
             if (!$token || !$expected || !hash_equals((string) $expected, (string) $token)) {
                 return $this->resultat([
                     'success' => false,
-                    'message' => 'Token CSRF invalide. Merci de recharger la page.',
+                    'message' => Traducteur::t('Token CSRF invalide. Merci de recharger la page.'),
                 ]);
             }
 
@@ -218,7 +219,7 @@ class AppUpdateController extends AbstractController
             } catch (VerrouOccupeException $e) {
                 return $this->resultat([
                     'success' => false,
-                    'message' => $e->getMessage() . ' Rien n\'a été modifié.',
+                    'message' => $e->getMessage() . ' ' . Traducteur::t("Rien n'a été modifié."),
                 ]);
             }
 
@@ -241,7 +242,7 @@ class AppUpdateController extends AbstractController
                     function () use (&$reponse): void {
                         $reponse = $this->resultat([
                             'success' => true,
-                            'message' => 'Mise à jour réussie. Version actuelle : ' . $this->versionLivree(),
+                            'message' => Traducteur::t('Mise à jour réussie. Version actuelle : {version}', ['version' => $this->versionLivree()]),
                         ]);
                     },
                 );
@@ -251,7 +252,7 @@ class AppUpdateController extends AbstractController
 
             return $reponse ?? $this->resultat([
                 'success' => true,
-                'message' => 'Mise à jour réussie. Version actuelle : ' . $resultat['version'],
+                'message' => Traducteur::t('Mise à jour réussie. Version actuelle : {version}', ['version' => $resultat['version']]),
             ]);
         } catch (\Throwable $e) {
             error_log(sprintf(
@@ -263,7 +264,7 @@ class AppUpdateController extends AbstractController
 
             return $this->resultat([
                 'success' => false,
-                'message' => 'Une erreur est survenue lors de la mise à jour. Merci de réessayer ou de contacter un administrateur.',
+                'message' => Traducteur::t('Une erreur est survenue lors de la mise à jour. Merci de réessayer ou de contacter un administrateur.'),
             ]);
         } finally {
             $verrou->liberer();
@@ -349,12 +350,12 @@ class AppUpdateController extends AbstractController
         $token = $request->request->get('csrf_token');
         $expected = $this->session->get('csrf_token');
         if (!$token || !$expected || !hash_equals((string) $expected, (string) $token)) {
-            $this->addFlash('error', 'Token CSRF invalide. Merci de réessayer.');
+            $this->addFlash('error', Traducteur::t('Token CSRF invalide. Merci de réessayer.'));
             return new RedirectResponse('/admin/update');
         }
 
         $this->cleanupTempDir();
-        $this->addFlash('success', 'Dossier temporaire nettoyé.');
+        $this->addFlash('success', Traducteur::t('Dossier temporaire nettoyé.'));
         return new RedirectResponse('/admin/update');
     }
 

@@ -2,6 +2,7 @@
 
 namespace Epiclub\Controller;
 
+use Epiclub\Engine\Traducteur;
 use Epiclub\Domain\CategorieManager;
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\ReferenceGenerator;
@@ -181,7 +182,7 @@ class CategorieController extends AbstractController
         $categorie = $categorieManager->findId($id);
 
         if (!$categorie) {
-            $this->session->getFlashBag()->add('error', "La catégorie demandée n'existe pas.");
+            $this->session->getFlashBag()->add('error', Traducteur::t("La catégorie demandée n'existe pas."));
             return new RedirectResponse('/admin/categories');
         }
 
@@ -206,7 +207,7 @@ class CategorieController extends AbstractController
             $categorie = $categorieManager->findId($id);
             if (!$categorie) {
                 // ID syntaxiquement valide mais inexistant en BDD
-                $this->session->getFlashBag()->add('error', "La catégorie demandée n'existe pas.");
+                $this->session->getFlashBag()->add('error', Traducteur::t("La catégorie demandée n'existe pas."));
                 return new RedirectResponse('/admin/categories');
             }
         }
@@ -224,7 +225,7 @@ class CategorieController extends AbstractController
             $libelle = is_string($libelleRaw) ? trim($libelleRaw) : '';
             
             if ($libelle === '') {
-                $form_errors['libelle'] = 'Le libellé est obligatoire.';
+                $form_errors['libelle'] = Traducteur::t('Le libellé est obligatoire.');
             } else {
                 $libelle = mb_substr($libelle, 0, 32);
             }
@@ -249,10 +250,10 @@ class CategorieController extends AbstractController
                     ? $referenceGenerator->suggestCode($libelle, $this->codesPris($selfId))
                     : null;
             } elseif (!preg_match('/^[A-Z0-9]{2,8}$/', $code)) {
-                $form_errors['code'] = 'Le code doit contenir 2 à 8 caractères (lettres sans accent ou chiffres).';
+                $form_errors['code'] = Traducteur::t('Le code doit contenir 2 à 8 caractères (lettres sans accent ou chiffres).');
             } elseif (in_array($code, $this->codesPris($selfId), true)) {
                 $suggestion = $referenceGenerator->suggestCode($libelle !== '' ? $libelle : $code, $this->codesPris($selfId));
-                $form_errors['code'] = "Ce code est déjà utilisé par une autre catégorie. Suggestion : $suggestion.";
+                $form_errors['code'] = Traducteur::t('Ce code est déjà utilisé par une autre catégorie. Suggestion : {suggestion}.', ['suggestion' => $suggestion]);
             }
 
             if (empty($form_errors)) {
@@ -292,13 +293,13 @@ class CategorieController extends AbstractController
                         $form_errors['image'] = $e->getMessage();
                     } catch (\Throwable $e) {
                         error_log('[CategorieController] Upload failed: ' . $e->getMessage());
-                        $form_errors['image'] = "Erreur lors du téléversement de l'image.";
+                        $form_errors['image'] = Traducteur::t("Erreur lors du téléversement de l'image.");
                     }
                 }
 
                 if (empty($form_errors)) {
                     $categorieManager->save($categorie);
-                    $this->session->getFlashBag()->add('success', "La catégorie a été enregistrée.");
+                    $this->session->getFlashBag()->add('success', Traducteur::t("La catégorie a été enregistrée."));
                     return $this->redirectTo("/admin/categories");
                 }
             }
@@ -332,18 +333,18 @@ class CategorieController extends AbstractController
         $categorie = $categorieManager->findId($id);
 
         if (!$categorie) {
-            $this->session->getFlashBag()->add('error', "La catégorie demandée n'existe pas.");
+            $this->session->getFlashBag()->add('error', Traducteur::t("La catégorie demandée n'existe pas."));
             return new RedirectResponse('/admin/categories');
         }
 
         if ($categorieManager->hasEquipements($id)) {
-            $this->session->getFlashBag()->add('error', "Impossible de supprimer cette catégorie car elle a des équipements associés.");
+            $this->session->getFlashBag()->add('error', Traducteur::t("Impossible de supprimer cette catégorie car elle a des équipements associés."));
             return new RedirectResponse('/admin/categories');
         }
 
         // [SÉCURITÉ Dette 9] Garde du FOREIGN KEY acquisition_ligne.categorie_id
         if ($categorieManager->hasLignesAcquisition($id)) {
-            $this->session->getFlashBag()->add('error', "Impossible de supprimer cette catégorie car elle est utilisée par des lignes d'acquisition.");
+            $this->session->getFlashBag()->add('error', Traducteur::t("Impossible de supprimer cette catégorie car elle est utilisée par des lignes d'acquisition."));
             return new RedirectResponse('/admin/categories');
         }
 
@@ -361,7 +362,7 @@ class CategorieController extends AbstractController
             }
         }
 
-        $this->session->getFlashBag()->add('success', "La catégorie '{$categorie['libelle']}' a été supprimée.");
+        $this->session->getFlashBag()->add('success', Traducteur::t("La catégorie '{libelle}' a été supprimée.", ['libelle' => $categorie['libelle']]));
 
         return new RedirectResponse('/admin/categories');
     }

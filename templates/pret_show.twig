@@ -133,7 +133,7 @@
 					</form>
 				{% endif %}
 				<div class="px-3">
-					{% include '_pagination.twig' with {p: pagination_lignes, affiches: lignes|length, elements: 'matériels'} %}
+					{% include '_pagination.twig' with {p: pagination_lignes, affiches: lignes|length, elements: 'matériels'|trans} %}
 				</div>
 			{% endif %}
 		</div>
@@ -219,7 +219,7 @@
 						</div>
 						<button type="submit" class="btn btn-primary">➕ {{ 'Ajouter la sélection'|trans }}</button>
 					</form>
-					{% include '_pagination.twig' with {p: pagination, affiches: disponibles|length, elements: 'matériels'} %}
+					{% include '_pagination.twig' with {p: pagination, affiches: disponibles|length, elements: 'matériels'|trans} %}
 				{% endif %}
 			</div>
 		</div>

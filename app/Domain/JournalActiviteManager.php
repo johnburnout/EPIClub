@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Epiclub\Domain;
 
+use Epiclub\Engine\Traducteur;
 use Epiclub\Engine\AbstractManager;
 
 /**
@@ -37,6 +38,25 @@ class JournalActiviteManager extends AbstractManager
         self::TYPE_SECURITE => 'Sécurité',
         self::TYPE_JOURNAL => 'Journal',
     ];
+
+    /**
+     * [Localisation] Libellés de TYPES dans la langue de l'utilisateur
+     * (filtre et badges de la page « Journal d'activité »).
+     *
+     * @return array<string, string>
+     */
+    public static function libellesTypes(): array
+    {
+        return [
+            self::TYPE_CONNEXION => Traducteur::t('Connexion'),
+            self::TYPE_CONTROLE => Traducteur::t('Contrôle'),
+            self::TYPE_PRET => Traducteur::t('Prêt'),
+            self::TYPE_ACQUISITION => Traducteur::t('Acquisition'),
+            self::TYPE_EQUIPEMENT => Traducteur::t('Équipement'),
+            self::TYPE_SECURITE => Traducteur::t('Sécurité'),
+            self::TYPE_JOURNAL => Traducteur::t('Journal'),
+        ];
+    }
 
     /** « acquisition n° 12 (facture F-2026-01) » */
     public static function libelleAcquisition(array $acquisition): string

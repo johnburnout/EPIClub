@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Epiclub\Controller;
 
+use Epiclub\Engine\Traducteur;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\MigrationManager;
 use Epiclub\Engine\SauvegardeService;
@@ -152,9 +153,9 @@ class SauvegardeController extends AbstractController
         $this->deniAccessUnlessGranted('ROLE_SUPER_ADMIN');
 
         if ($this->isPostTruncated($request)) {
-            $this->session->getFlashBag()->add('danger', sprintf(
-                'Archive trop volumineuse pour le serveur (limite : %s). Déposez-la par FTP dans le dossier var/backups/ : elle apparaîtra dans la liste.',
-                $this->limiteTeleversement()
+            $this->session->getFlashBag()->add('danger', Traducteur::t(
+                'Archive trop volumineuse pour le serveur (limite : {limite}). Déposez-la par FTP dans le dossier var/backups/ : elle apparaîtra dans la liste.',
+                ['limite' => $this->limiteTeleversement()]
             ));
             return $this->redirectTo('/admin/sauvegarde');
         }
@@ -163,13 +164,13 @@ class SauvegardeController extends AbstractController
         $fichier = $request->files->get('archive');
         if (!$fichier instanceof UploadedFile || !$fichier->isValid()) {
             $message = $fichier instanceof UploadedFile && in_array($fichier->getError(), [UPLOAD_ERR_INI_SIZE, UPLOAD_ERR_FORM_SIZE], true)
-                ? sprintf('Archive trop volumineuse pour le serveur (limite : %s). Déposez-la par FTP dans le dossier var/backups/ : elle apparaîtra dans la liste.', $this->limiteTeleversement())
-                : 'Aucune archive reçue. Sélectionnez un fichier .zip.';
+                ? Traducteur::t('Archive trop volumineuse pour le serveur (limite : {limite}). Déposez-la par FTP dans le dossier var/backups/ : elle apparaîtra dans la liste.', ['limite' => $this->limiteTeleversement()])
+                : Traducteur::t('Aucune archive reçue. Sélectionnez un fichier .zip.');
             $this->session->getFlashBag()->add('danger', $message);
             return $this->redirectTo('/admin/sauvegarde');
         }
         if (strtolower($fichier->getClientOriginalExtension()) !== 'zip') {
-            $this->session->getFlashBag()->add('danger', 'Le fichier doit être une archive .zip produite par EPIClub.');
+            $this->session->getFlashBag()->add('danger', Traducteur::t('Le fichier doit être une archive .zip produite par EPIClub.'));
             return $this->redirectTo('/admin/sauvegarde');
         }
 
@@ -180,7 +181,7 @@ class SauvegardeController extends AbstractController
             $fichier->move($service->dossierSauvegardes(), $nom);
         } catch (\Throwable $e) {
             error_log('[SauvegardeController] televerser : ' . $e->getMessage());
-            $this->session->getFlashBag()->add('danger', 'L\'archive n\'a pas pu être enregistrée sur le serveur.');
+            $this->session->getFlashBag()->add('danger', Traducteur::t('L\'archive n\'a pas pu être enregistrée sur le serveur.'));
             return $this->redirectTo('/admin/sauvegarde');
         }
 
@@ -219,9 +220,9 @@ class SauvegardeController extends AbstractController
         $retour = '/admin/sauvegarde/verifier/' . rawurlencode($nom);
 
         if (trim((string) $request->request->get('confirmation', '')) !== self::MOT_CONFIRMATION) {
-            $this->session->getFlashBag()->add('danger', sprintf(
-                'Restauration non lancée : saisissez %s pour confirmer.',
-                self::MOT_CONFIRMATION
+            $this->session->getFlashBag()->add('danger', Traducteur::t(
+                'Restauration non lancée : saisissez {mot} pour confirmer.',
+                ['mot' => self::MOT_CONFIRMATION]
             ));
             return $this->redirectTo($retour);
         }
@@ -246,15 +247,17 @@ class SauvegardeController extends AbstractController
         }
 
         $m = $resultat['manifeste'];
-        $message = sprintf(
-            'Restauration terminée : sauvegarde du %s (version %s), %d fichier(s). L\'état précédent est conservé dans « %s ».',
-            date('d/m/Y à H:i', strtotime((string) $m['cree_le']) ?: time()),
-            $m['version'],
-            $m['nb_fichiers'],
-            $resultat['filet']
+        $message = Traducteur::t(
+            'Restauration terminée : sauvegarde du {date} (version {version}), {fichiers} fichier(s). L\'état précédent est conservé dans « {filet} ».',
+            [
+                'date' => date(Traducteur::t('d/m/Y à H:i'), strtotime((string) $m['cree_le']) ?: time()),
+                'version' => $m['version'],
+                'fichiers' => $m['nb_fichiers'],
+                'filet' => $resultat['filet'],
+            ]
         );
         if ($resultat['migrations'] !== []) {
-            $message .= ' Base mise à niveau (' . implode(', ', $resultat['migrations']) . ').';
+            $message .= ' ' . Traducteur::t('Base mise à niveau ({migrations}).', ['migrations' => implode(', ', $resultat['migrations'])]);
         }
         $this->session->getFlashBag()->add('success', $message);
 
@@ -271,7 +274,7 @@ class SauvegardeController extends AbstractController
         $nom = (string) $request->attributes->get('nom');
         try {
             $this->sauvegardeService()->supprimer($nom);
-            $this->session->getFlashBag()->add('success', 'Sauvegarde « ' . $nom . ' » supprimée.');
+            $this->session->getFlashBag()->add('success', Traducteur::t('Sauvegarde « {nom} » supprimée.', ['nom' => $nom]));
         } catch (SauvegardeException $e) {
             $this->session->getFlashBag()->add('danger', $e->getMessage());
         }

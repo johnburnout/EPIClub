@@ -2,7 +2,7 @@
 
 {% block body %}
 
-	<h3>{% if categorie.id %}Modifier{% else %}Nouvelle{% endif %} catégorie</h3>
+	<h3>{% if categorie.id %}{{ 'Modifier catégorie'|trans }}{% else %}{{ 'Nouvelle catégorie'|trans }}{% endif %}</h3>
 	<hr>
 
 	{# Affichage des erreurs de validation #}
@@ -18,7 +18,7 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
 		<div class="mb-3">
-			<label for="libelle">Libellé * :</label>
+			<label for="libelle">{{ 'Libellé * :'|trans }}</label>
 			<input type="text"
 			       id="libelle"
 			       name="libelle"
@@ -32,7 +32,7 @@
 		</div>
 
 		<div class="mb-3">
-			<label for="code">Code :</label>
+			<label for="code">{{ 'Code :'|trans }}</label>
 			<input type="text"
 			       id="code"
 			       name="code"
@@ -40,47 +40,40 @@
 			       class="form-control{% if form_errors.code is defined and form_errors.code %} is-invalid{% endif %}"
 			       maxlength="8"
 			       style="max-width: 12rem; text-transform: uppercase;"
-			       placeholder="ex. COR">
+			       placeholder="{{ 'ex. COR'|trans }}">
 			<small class="form-text text-muted">
-				Code utilisé dans la référence automatique des équipements (2 à 8 caractères, lettres sans accent ou chiffres).
-				Laisser vide pour une suggestion automatique à partir du libellé.
-			</small>
+				{{ 'Code utilisé dans la référence automatique des équipements (2 à 8 caractères, lettres sans accent ou chiffres). Laisser vide pour une suggestion automatique à partir du libellé.'|trans }} </small>
 			{% if form_errors.code is defined and form_errors.code %}
 				<div class="invalid-feedback d-block">{{ form_errors.code }}</div>
 			{% endif %}
 		</div>
 
 		<div class="mb-3">
-			<label for="description">Description :</label>
+			<label for="description">{{ 'Description :'|trans }}</label>
 			<textarea id="description" name="description" class="form-control" rows="3">{{ categorie.description }}</textarea>
 		</div>
 
 		<div class="mb-3 form-check">
 			<input type="checkbox" id="est_epi" name="est_epi" class="form-check-input" {% if categorie.est_epi %}checked{% endif %}>
-			<label class="form-check-label" for="est_epi">Classée EPI</label>
+			<label class="form-check-label" for="est_epi">{{ 'Classée EPI'|trans }}</label>
 		</div>
 
 		<div class="mb-3 form-check">
 			<input type="checkbox" id="duree_max_utilisation" name="duree_max_utilisation" class="form-check-input" {% if categorie.duree_max_utilisation %}checked{% endif %}>
-			<label class="form-check-label" for="duree_max_utilisation">Durée maximum d'utilisation</label>
+			<label class="form-check-label" for="duree_max_utilisation">{{ "Durée maximum d'utilisation"|trans }}</label>
 			<small class="form-text text-muted d-block">
-				Cocher si les équipements de cette catégorie ont une durée de vie limitée par le fabricant
-				(généralement 10 ans, date de péremption). Valeur par défaut, modifiable sur chaque fiche équipement.
-			</small>
+				{{ 'Cocher si les équipements de cette catégorie ont une durée de vie limitée par le fabricant (généralement 10 ans, date de péremption). Valeur par défaut, modifiable sur chaque fiche équipement.'|trans }} </small>
 		</div>
 
 		<div class="mb-3 form-check">
 			<input type="checkbox" id="textile_remplacable" name="textile_remplacable" class="form-check-input" {% if categorie.textile_remplacable|default(false) %}checked{% endif %}>
-			<label class="form-check-label" for="textile_remplacable">Élément textile remplaçable</label>
+			<label class="form-check-label" for="textile_remplacable">{{ 'Élément textile remplaçable'|trans }}</label>
 			<small class="form-text text-muted d-block">
-				Cocher si l'élément textile de ces équipements peut être changé (ex. sangle de dégaine). Un équipement
-				en maintenance dont le contrôleur constate le remplacement repart alors pour 10 ans. Valeur par défaut,
-				modifiable sur chaque fiche équipement.
-			</small>
+				{{ "Cocher si l'élément textile de ces équipements peut être changé (ex. sangle de dégaine). Un équipement en maintenance dont le contrôleur constate le remplacement repart alors pour 10 ans. Valeur par défaut, modifiable sur chaque fiche équipement."|trans }} </small>
 		</div>
 
 		<div class="mb-3">
-			<label for="image">Image :</label>
+			<label for="image">{{ 'Image :'|trans }}</label>
 			<input type="file"
 			       id="image"
 			       name="image"
@@ -90,13 +83,13 @@
 				<div class="invalid-feedback d-block">{{ form_errors.image }}</div>
 			{% endif %}
 			{% if categorie.image %}
-				<small class="form-text text-muted">Image actuelle : {{ categorie.image }}</small>
+				<small class="form-text text-muted">{{ 'Image actuelle : {image}'|trans({image: categorie.image}) }}</small>
 			{% endif %}
 		</div>
 
 		<div class="form-actions">
-			<button type="submit" class="btn btn-primary">Enregistrer</button>
-			<a href="/admin/categories" class="btn btn-secondary">Annuler</a>
+			<button type="submit" class="btn btn-primary">{{ 'Enregistrer'|trans }}</button>
+			<a href="/admin/categories" class="btn btn-secondary">{{ 'Annuler'|trans }}</a>
 		</div>
 	</form>
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Epiclub\Domain;
 
+use Epiclub\Engine\Traducteur;
 use Epiclub\Engine\Session;
 
 /**
@@ -38,10 +39,32 @@ final class DemandeModification
         'acquisition' => ['Référence ou date de l\'acquisition', 'ROLE_SUPER_ADMIN', null],
     ];
 
+    /**
+     * [Localisation] Libellés de TYPES dans la langue de l'utilisateur.
+     *
+     * @return array<string, string> type => libellé
+     */
+    public static function libelles(): array
+    {
+        return [
+            'statut' => Traducteur::t('Statut'),
+            'dates' => Traducteur::t("Dates (mise en service, fin d'utilisation)"),
+            'nombre' => Traducteur::t("Nombre actuel d'éléments du lot"),
+            'remarques' => Traducteur::t('Remarques, photo ou notice'),
+            'dissociation' => Traducteur::t('Dissocier le lot'),
+            'regroupement' => Traducteur::t('Regrouper en lot (équipements identiques)'),
+            'libelle' => Traducteur::t('Libellé'),
+            'reference' => Traducteur::t('Référence'),
+            'categorie' => Traducteur::t('Catégorie'),
+            'lot' => Traducteur::t('Lot / nombre initial'),
+            'acquisition' => Traducteur::t("Référence ou date de l'acquisition"),
+        ];
+    }
+
     /** Libellé d'un type (le type lui-même s'il est inconnu). */
     public static function libelle(string $type): string
     {
-        return self::TYPES[$type][0] ?? $type;
+        return self::libelles()[$type] ?? $type;
     }
 
     /** Rôle requis pour faire une modification du type donné. */
@@ -61,9 +84,9 @@ final class DemandeModification
         $niveau = Session::niveau($role);
         $lot = (int) ($equipement['nombre_initial'] ?? 1) > 1 && (int) ($equipement['nombre'] ?? 1) > 1;
         $types = [];
-        foreach (self::TYPES as $type => [$libelle, $requis, $condition]) {
+        foreach (self::TYPES as $type => [, $requis, $condition]) {
             if (Session::niveau($requis) > $niveau && ($condition !== 'lot' || $lot)) {
-                $types[$type] = $libelle;
+                $types[$type] = self::libelle($type);
             }
         }
         return $types;
@@ -83,7 +106,7 @@ final class DemandeModification
         $cochees = is_array($cochees) ? array_values(array_unique(array_map('strval', $cochees))) : [];
         $remarques = is_array($remarques) ? $remarques : [];
         if ($cochees === []) {
-            return 'Cochez au moins une modification à demander.';
+            return Traducteur::t('Cochez au moins une modification à demander.');
         }
 
         $parRole = [];
@@ -93,15 +116,15 @@ final class DemandeModification
             }
             $remarque = trim((string) ($remarques[$type] ?? ''));
             if ($remarque === '') {
-                return sprintf('« %s » : la remarque est obligatoire.', self::libelle($type));
+                return Traducteur::t('« {type} » : la remarque est obligatoire.', ['type' => self::libelle($type)]);
             }
             if (mb_strlen($remarque) > self::REMARQUE_MAX) {
-                return sprintf('« %s » : la remarque ne doit pas dépasser %d caractères.', self::libelle($type), self::REMARQUE_MAX);
+                return Traducteur::t('« {type} » : la remarque ne doit pas dépasser {max} caractères.', ['type' => self::libelle($type), 'max' => self::REMARQUE_MAX]);
             }
             $parRole[(string) self::roleRequis($type)][$type] = $remarque;
         }
         if (count($parRole, COUNT_RECURSIVE) - count($parRole) !== count($cochees)) {
-            return 'Modification demandée non autorisée.';
+            return Traducteur::t('Modification demandée non autorisée.');
         }
         return $parRole;
     }

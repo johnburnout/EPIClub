@@ -1982,4 +1982,880 @@ return [
         => 'Validate the loan',
     'Valider le prêt ? Le matériel passera au statut « Prêté ».'
         => 'Validate the loan? The equipment will get the “On loan” status.',
+
+    // --- Administration (1) ---
+    '❌ Le compte super-administrateur protégé ne peut pas être supprimé.'
+        => '❌ The protected super administrator account cannot be deleted.',
+    '💾 Si la nouvelle version modifie la base, une sauvegarde SQL est faite automatiquement avant (dossier <code>var/backups/</code>). Pour une sauvegarde complète avec les photos et factures :'
+        => '💾 If the new version changes the database, an SQL backup is made automatically beforehand (<code>var/backups/</code> folder). For a full backup including photos and invoices:',
+    '« {type} » : la remarque est obligatoire.'
+        => '“{type}”: the remark is required.',
+    '« {type} » : la remarque ne doit pas dépasser {max} caractères.'
+        => '“{type}”: the remark must not exceed {max} characters.',
+    ', dont {echus} déjà échu'
+        => ', {echus} of which already expired',
+    ', dont {echus} déjà échus'
+        => ', {echus} of which already expired',
+    '(application d\'authentification ou passkey).'
+        => '(authenticator app or passkey).',
+    '(archivé)'
+        => '(archived)',
+    '(attribué automatiquement à la première utilisation)'
+        => '(assigned automatically on first use)',
+    '(avant le {date_limite}'
+        => '(before {date_limite}',
+    '(dernier contrôle ou mise en service avant le {avant})'
+        => '(last inspection or commissioning before {avant})',
+    '(obligatoire en cas de refus)'
+        => '(required if refused)',
+    '{affiches} {elements} sur {total}'
+        => '{affiches} {elements} out of {total}',
+    '{nb} équipement'
+        => '{nb} item',
+    '{nb} équipements'
+        => '{nb} items',
+    '{nombre} demande de modification à traiter'
+        => '{nombre} change request to handle',
+    '{nombre} demandes de modification à traiter'
+        => '{nombre} change requests to handle',
+    '{nombre} prêt en retard'
+        => '{nombre} overdue loan',
+    '{nombre} prêts en retard'
+        => '{nombre} overdue loans',
+    '{p} Ko'
+        => '{p} KB',
+    '{p} Mo'
+        => '{p} MB',
+    '{tables} tables'
+        => '{tables} tables',
+    '{total} EPI à renouveler'
+        => '{total} PPE to replace',
+    '&larr; Retour aux sauvegardes'
+        => '&larr; Back to backups',
+    '<code>CAT</code> : code de la catégorie (obligatoire, défini dans l\'écran Catégories) ;'
+        => '<code>CAT</code>: category code (required, set in the Categories screen);',
+    '<code>N…</code> : n° d\'ordre — autant de <code>N</code> que de chiffres (<code>NNN</code> → <code>001</code>).'
+        => '<code>N…</code>: sequence number — as many <code>N</code> as digits (<code>NNN</code> → <code>001</code>).',
+    '<code>YY</code> : année sur 2 chiffres (ex. <code>26</code>) — <code>YYYY</code> sur 4 chiffres ;'
+        => '<code>YY</code>: 2-digit year (e.g. <code>26</code>) — <code>YYYY</code> for 4 digits;',
+    '<small> La configuration du serveur (<code>.env.local.php</code> : accès à la base, SMTP, clé de chiffrement) n\'est pas incluse. Conservez-en une copie à part : sa clé <code>SECRET_KEY</code> est indispensable pour restaurer sur une nouvelle installation. </small>'
+        => '<small> The server configuration (<code>.env.local.php</code>: database access, SMTP, encryption key) is not included. Keep a separate copy: its <code>SECRET_KEY</code> is required to restore on a new installation. </small>',
+    '<small> Taille maximale acceptée par le serveur : <strong>{limite_upload}</strong> (64 Mo prévus par EPIClub ; si la valeur affichée est plus basse, l\'hébergement ignore <code>public/.user.ini</code> : réglez <code>upload_max_filesize</code> et <code>post_max_size</code> dans les options PHP du domaine). Au-delà, déposez l\'archive par FTP dans le dossier <code>var/backups/</code> d\'EPIClub : elle apparaîtra ci-dessous. </small>'
+        => '<small> Maximum size accepted by the server: <strong>{limite_upload}</strong> (EPIClub expects 64 MB; if the value shown is lower, the hosting ignores <code>public/.user.ini</code>: set <code>upload_max_filesize</code> and <code>post_max_size</code> in the domain\'s PHP options). Beyond that, upload the archive by FTP to EPIClub\'s <code>var/backups/</code> folder: it will appear below. </small>',
+    '<small>Rien n\'a été modifié. Archive : <code>{nom}</code></small>'
+        => '<small>Nothing was changed. Archive: <code>{nom}</code></small>',
+    '<strong>{statuts}</strong> par {traite_par_prenom} {traite_par_nom}, le {date_traitement}.'
+        => '<strong>{statuts}</strong> by {traite_par_prenom} {traite_par_nom}, on {date_traitement}.',
+    '<strong>{total} EPI non vérifié</strong> depuis plus de {mois} mois'
+        => '<strong>{total} PPE not checked</strong> for more than {mois} months',
+    '<strong>{total} EPI non vérifiés</strong> depuis plus de {mois} mois'
+        => '<strong>{total} PPE not checked</strong> for more than {mois} months',
+    '<strong>À traiter par :</strong> {role_requis}'
+        => '<strong>To be handled by:</strong> {role_requis}',
+    '<strong>Cette archive ne peut pas être restaurée.</strong><br> {erreur}'
+        => '<strong>This archive cannot be restored.</strong><br> {erreur}',
+    '<strong>Demandé par :</strong> {demandeur_prenom} {demandeur_nom}, le {date_creation}'
+        => '<strong>Requested by:</strong> {demandeur_prenom} {demandeur_nom}, on {date_creation}',
+    '<strong>Libellé :</strong> {libelle}'
+        => '<strong>Name:</strong> {libelle}',
+    '<strong>Toutes les données actuelles seront remplacées</strong> par celles de cette sauvegarde : équipements, contrôles, acquisitions, utilisateurs et mots de passe, réglages, photos et factures. Ce qui a été saisi depuis le {cree_le} sera perdu.'
+        => '<strong>All current data will be replaced</strong> by this backup\'s: items, inspections, purchases, users and passwords, settings, photos and invoices. Anything entered since {cree_le} will be lost.',
+    'À traiter'
+        => 'To handle',
+    'Action'
+        => 'Action',
+    'Activité :'
+        => 'Activity:',
+    'Adresse de réponse (Reply-To)'
+        => 'Reply address (Reply-To)',
+    'Adresse expéditeur manquante'
+        => 'Sender address missing',
+    'Adresse mail'
+        => 'Email address',
+    'Adresse mail :'
+        => 'Email address:',
+    'Adresse mail * :'
+        => 'Email address *:',
+    'Affichage de {affiches} {elements} sur {total} (page {page}/{totalPages})'
+        => 'Showing {affiches} {elements} out of {total} (page {page}/{totalPages})',
+    'Afficher ces équipements'
+        => 'Show these items',
+    'Afficher la liste des équipements par date de fin croissante'
+        => 'Show the item list by ascending end date',
+    'Afficher les EPI non vérifiés, du plus ancien contrôle au plus récent'
+        => 'Show unchecked PPE, from the oldest inspection to the most recent',
+    'Afficher les prêts en retard'
+        => 'Show overdue loans',
+    'Alerte acquittée. Elle réapparaîtra si le limiteur tombe de nouveau en panne.'
+        => 'Alert acknowledged. It will reappear if the limiter fails again.',
+    'Aperçu (catégorie de code <code>COR</code>, premier équipement de l\'année) :'
+        => 'Preview (category with code <code>COR</code>, first item of the year):',
+    'Appareil perdu : seul un super-administrateur peut la réinitialiser.'
+        => 'Lost device: only a super administrator can reset it.',
+    'Archive'
+        => 'Archive',
+    'Archive trop volumineuse pour le serveur (limite : {limite}). Déposez-la par FTP dans le dossier var/backups/ : elle apparaîtra dans la liste.'
+        => 'Archive too large for the server (limit: {limite}). Upload it by FTP to the var/backups/ folder: it will appear in the list.',
+    'Archive vérifiée : complète, intacte et compatible avec cette installation.'
+        => 'Archive checked: complete, intact and compatible with this installation.',
+    'Aucun'
+        => 'None',
+    'Aucun contrôle en cours pour cet équipement'
+        => 'No inspection in progress for this item',
+    'Aucun emplacement ne correspond à ces critères.'
+        => 'No location matches these criteria.',
+    'Aucun équipement'
+        => 'No items',
+    'Aucun fournisseur trouvé!'
+        => 'No supplier found!',
+    'Aucune archive reçue. Sélectionnez un fichier .zip.'
+        => 'No archive received. Select a .zip file.',
+    'Aucune catégorie ne correspond à ces critères.'
+        => 'No category matches these criteria.',
+    'Aucune demande en attente.'
+        => 'No pending requests.',
+    'Aucune entrée'
+        => 'No entries',
+    'Aucune. Les sauvegardes automatiques faites avant chaque restauration (les 3 dernières) apparaîtront ici.'
+        => 'None. The automatic backups made before each restore (the last 3) will appear here.',
+    'avant restauration'
+        => 'before restore',
+    'Avec équipements'
+        => 'With items',
+    'Base de données'
+        => 'Database',
+    'Base mise à niveau ({migrations}).'
+        => 'Database upgraded ({migrations}).',
+    'beta'
+        => 'beta',
+    'Bêta — inclut les versions de test (pré-releases)'
+        => 'Beta — includes test versions (pre-releases)',
+    'Canal de mise à jour'
+        => 'Update channel',
+    'Canal de mise à jour :'
+        => 'Update channel:',
+    'Canal suivi par la page Administration → Mise à jour. Réserver « Bêta » à une instance de test.'
+        => 'Channel followed by the Administration → Update page. Keep “Beta” for a test instance.',
+    'catégorie'
+        => 'category',
+    'catégories'
+        => 'categories',
+    'Ce code est déjà utilisé par une autre catégorie. Suggestion : {suggestion}.'
+        => 'This code is already used by another category. Suggestion: {suggestion}.',
+    'Ce compte super-administrateur a été créé à l\'installation : il ne peut être ni supprimé, ni rétrogradé, et seul son titulaire peut modifier son adresse mail et son mot de passe.'
+        => 'This super administrator account was created at installation: it can be neither deleted nor demoted, and only its owner can change its email address and password.',
+    'Ce nom d\'utilisateur est déjà pris.'
+        => 'This username is already taken.',
+    'Ce ticket a déjà été traité.'
+        => 'This ticket has already been handled.',
+    'Cet email est déjà utilisé par un autre compte.'
+        => 'This email is already used by another account.',
+    'Cet email est déjà utilisé.'
+        => 'This email is already used.',
+    'chaque personne l\'active depuis « 🔐 Sécurité ».'
+        => 'each person enables it from “🔐 Security”.',
+    'Chiffrement'
+        => 'Encryption',
+    'Classée EPI'
+        => 'Classified as PPE',
+    'Classée EPI ? :'
+        => 'Classified as PPE?:',
+    'Cocher si l\'élément textile de ces équipements peut être changé (ex. sangle de dégaine). Un équipement en maintenance dont le contrôleur constate le remplacement repart alors pour 10 ans. Valeur par défaut, modifiable sur chaque fiche équipement.'
+        => 'Tick if these items\' textile component can be replaced (e.g. a quickdraw sling). An item under maintenance whose replacement the inspector confirms then starts again for 10 years. Default value, can be changed on each item record.',
+    'Cocher si les équipements de cette catégorie ont une durée de vie limitée par le fabricant (généralement 10 ans, date de péremption). Valeur par défaut, modifiable sur chaque fiche équipement.'
+        => 'Tick if the items in this category have a lifespan limited by the manufacturer (usually 10 years, expiry date). Default value, can be changed on each item record.',
+    'Cochez au moins une modification à demander.'
+        => 'Tick at least one change to request.',
+    'Cochez les modifications que vous ne pouvez pas faire vous-même et précisez chacune dans sa remarque (obligatoire). Les personnes habilitées sont prévenues par mail et sur leur tableau de bord ; vous serez notifié sur le vôtre quand la demande sera traitée.'
+        => 'Tick the changes you cannot make yourself and describe each one in its remark (required). Authorised people are notified by email and on their dashboard; you will be notified on yours when the request is handled.',
+    'Code :'
+        => 'Code:',
+    'Code utilisé dans la référence automatique des équipements (2 à 8 caractères, lettres sans accent ou chiffres). Laisser vide pour une suggestion automatique à partir du libellé.'
+        => 'Code used in automatic item references (2 to 8 characters, unaccented letters or digits). Leave empty for an automatic suggestion from the name.',
+    'Compte protégé'
+        => 'Protected account',
+    'Compte protégé : suppression impossible'
+        => 'Protected account: cannot be deleted',
+    'Compte protégé (créé à l\'installation)'
+        => 'Protected account (created at installation)',
+    'Compte protégé (créé à l\'installation).'
+        => 'Protected account (created at installation).',
+    'Configuration mise à jour avec succès.'
+        => 'Configuration updated successfully.',
+    'Configuration SMTP mise à jour avec succès.'
+        => 'SMTP configuration updated successfully.',
+    'Configuration système'
+        => 'System configuration',
+    'Confirmation'
+        => 'Confirmation',
+    'Confirmer la mise à jour vers la version {latest_version} ?'
+        => 'Confirm the update to version {latest_version}?',
+    'Connexions, contrôles et prêts de matériel. L\'export reprend les filtres en cours.'
+        => 'Logins, inspections and equipment loans. The export uses the current filters.',
+    'Contenu de la sauvegarde'
+        => 'Backup contents',
+    'Créée le'
+        => 'Created on',
+    'Créer l\'utilisateur'
+        => 'Create the user',
+    'Créer un nouvel utilisateur'
+        => 'Create a new user',
+    'dans le mois à venir'
+        => 'within the next month',
+    'dans les {mois} prochains mois'
+        => 'within the next {mois} months',
+    'Date de retour prévue dépassée'
+        => 'Due date passed',
+    'Dates (mise en service, fin d\'utilisation)'
+        => 'Dates (commissioning, end of use)',
+    'Décision invalide.'
+        => 'Invalid decision.',
+    'Délai avant suppression d\'un équipement égaré (mois)'
+        => 'Delay before deleting a lost item (months)',
+    'Délai sans contrôle, en mois'
+        => 'Time without inspection, in months',
+    'Demande de modification n° {id}'
+        => 'Change request no. {id}',
+    'Demande envoyée : {nombre} tickets ouverts (administrateurs et super-administrateurs).'
+        => 'Request sent: {nombre} tickets opened (administrators and super administrators).',
+    'Demande envoyée : un ticket est ouvert. Vous serez notifié sur votre tableau de bord.'
+        => 'Request sent: a ticket has been opened. You will be notified on your dashboard.',
+    'demandes'
+        => 'requests',
+    'Demandeur'
+        => 'Requester',
+    'Dernier SUPER_ADMIN : suppression impossible'
+        => 'Last SUPER_ADMIN: cannot be deleted',
+    'Dernier super-administrateur.'
+        => 'Last super administrator.',
+    'Dernière version sur GitHub :'
+        => 'Latest version on GitHub:',
+    'Derniers contrôles'
+        => 'Latest inspections',
+    'Des fichiers temporaires persistent.'
+        => 'Temporary files remain.',
+    'Description'
+        => 'Description',
+    'Description :'
+        => 'Description:',
+    'Dossier temporaire nettoyé.'
+        => 'Temporary folder cleaned.',
+    'Double authentification réinitialisée : {utilisateur} se connectera avec son seul mot de passe et pourra la réactiver.'
+        => 'Two-factor authentication reset: {utilisateur} will log in with their password only and can enable it again.',
+    'Durée max'
+        => 'Max lifespan',
+    'Durée max ?'
+        => 'Max lifespan?',
+    'Editer'
+        => 'Edit',
+    'Email'
+        => 'Email',
+    'Email :'
+        => 'Email:',
+    'Email de l\'expéditeur (From) *'
+        => 'Sender email (From) *',
+    'Email de test envoyé avec succès à {adresse}'
+        => 'Test email sent successfully to {adresse}',
+    'emplacements'
+        => 'locations',
+    'En cas d\'erreur pendant l\'opération, cet état est rétabli automatiquement.'
+        => 'If an error occurs during the operation, this state is restored automatically.',
+    'Enregistrer la configuration'
+        => 'Save the configuration',
+    'entrées'
+        => 'entries',
+    'Entre {duree_controle_min} et {duree_controle_max} mois. Date de référence : dernier contrôle clôturé ou, à défaut, mise en service (hors équipements « Hors service » et « Égaré »). Notification affichée aux contrôleurs et administrateurs.'
+        => 'Between {duree_controle_min} and {duree_controle_max} months. Reference date: last closed inspection or, failing that, commissioning (excluding “Out of service” and “Lost” items). Notification shown to inspectors and administrators.',
+    'Envoyer la demande'
+        => 'Send the request',
+    'Équipement :'
+        => 'Item:',
+    'Équipement non trouvé'
+        => 'Item not found',
+    'Erreur : {erreur}'
+        => 'Error: {erreur}',
+    'Erreur lors de l\'envoi de l\'email de test. Consultez les logs serveur pour plus de détails.'
+        => 'Error while sending the test email. See the server logs for details.',
+    'Erreur lors de la mise à jour'
+        => 'Error during the update',
+    'Erreur lors du téléversement de l\'image.'
+        => 'Error while uploading the image.',
+    'Erreur serveur'
+        => 'Server error',
+    'Est EPI ?'
+        => 'Is PPE?',
+    'État indisponible.'
+        => 'Status unavailable.',
+    'Êtes-vous sûr de vouloir supprimer ce fournisseur ? Cette action est irréversible.'
+        => 'Are you sure you want to delete this supplier? This cannot be undone.',
+    'Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.'
+        => 'Are you sure you want to delete this user? This cannot be undone.',
+    'Êtes-vous sûr de vouloir supprimer la catégorie « {libelle} » ? Cette action est irréversible.'
+        => 'Are you sure you want to delete the category “{libelle}”? This cannot be undone.',
+    'Êtes-vous sûr de vouloir supprimer le fournisseur « {nom} » ?'
+        => 'Are you sure you want to delete the supplier “{nom}”?',
+    'ex. COR'
+        => 'e.g. COR',
+    'Exporter (texte)'
+        => 'Export (text)',
+    'Faite'
+        => 'Done',
+    'Faites la modification (lien ci-dessus, nouvel onglet), puis clôturez la demande. Un refus doit être motivé.'
+        => 'Make the change (link above, new tab), then close the request. A refusal must be justified.',
+    'Fermer la notification'
+        => 'Close the notification',
+    'Fiche Catégorie'
+        => 'Category record',
+    'Fiche de l\'acquisition'
+        => 'Purchase record',
+    'Fiche emplacement'
+        => 'Location record',
+    'Fiche fournisseur'
+        => 'Supplier record',
+    'Fiche Utilisateur'
+        => 'User record',
+    'Fiches de prêt (emprunteur, dates, matériel, signature, export PDF), statuts « Prêté » et « Égaré ». Accessible aux contrôleurs et administrateurs (menu « Prêts »).'
+        => 'Loan forms (borrower, dates, equipment, signature, PDF export), “On loan” and “Lost” statuses. Available to inspectors and administrators (“Loans” menu).',
+    'fiches de prêt'
+        => 'loan forms',
+    'Fichier .env.local.php introuvable'
+        => 'File .env.local.php not found',
+    'Fichier de configuration introuvable.'
+        => 'Configuration file not found.',
+    'Fichier de configuration invalide.'
+        => 'Invalid configuration file.',
+    'Fichiers (photos, images, factures)'
+        => 'Files (photos, images, invoices)',
+    'Formulaire de modification de l\'équipement'
+        => 'Item edit form',
+    'Fournisseur non trouvé.'
+        => 'Supplier not found.',
+    'fournisseurs'
+        => 'suppliers',
+    'Génération impossible'
+        => 'Generation failed',
+    'Gérer ma double authentification'
+        => 'Manage my two-factor authentication',
+    'Gérez votre propre double authentification depuis la page « Sécurité du compte ».'
+        => 'Manage your own two-factor authentication from the “Account security” page.',
+    'Gestion des versions'
+        => 'Version management',
+    'Gestion du club'
+        => 'Club management',
+    'Gestionnaire de prêt de matériel'
+        => 'Equipment loan manager',
+    'Guide d\'utilisation'
+        => 'User guide',
+    'Hôte (Host) *'
+        => 'Host *',
+    'Identifiant, rôle et lien de connexion — jamais le mot de passe'
+        => 'Username, role and login link — never the password',
+    'Image :'
+        => 'Image:',
+    'Image (URL)'
+        => 'Image (URL)',
+    'Image actuelle : {image}'
+        => 'Current image: {image}',
+    'Impossible d\'écrire dans le répertoire du projet. Veuillez vérifier les droits.'
+        => 'Cannot write to the project directory. Please check the permissions.',
+    'Impossible de contacter GitHub (limite de l\'API ou réseau). Nouvel essai automatique dans quelques minutes.'
+        => 'Cannot reach GitHub (API limit or network). Automatic retry in a few minutes.',
+    'Impossible de contacter le serveur.'
+        => 'Cannot reach the server.',
+    'Impossible de rétrograder le dernier SUPER_ADMIN de l\'application.'
+        => 'The application\'s last SUPER_ADMIN cannot be demoted.',
+    'Impossible de supprimer ce fournisseur car il a des acquisitions associées.'
+        => 'This supplier cannot be deleted because it has linked purchases.',
+    'Impossible de supprimer cet emplacement car il contient des équipements.'
+        => 'This location cannot be deleted because it contains items.',
+    'Impossible de supprimer cet utilisateur car il a saisi des acquisitions.'
+        => 'This user cannot be deleted because they entered purchases.',
+    'Impossible de supprimer cette catégorie car elle a des équipements associés.'
+        => 'This category cannot be deleted because it has linked items.',
+    'Impossible de supprimer cette catégorie car elle est utilisée par des lignes d\'acquisition.'
+        => 'This category cannot be deleted because purchase rows use it.',
+    'Impossible de supprimer le dernier SUPER_ADMIN de l\'application.'
+        => 'The application\'s last SUPER_ADMIN cannot be deleted.',
+    'Impossible de vérifier votre identité.'
+        => 'Cannot verify your identity.',
+    'Indiquez le motif du refus.'
+        => 'Give the reason for refusal.',
+    'IP'
+        => 'IP',
+    'Journal'
+        => 'Log',
+    'Journal non réinitialisé : saisissez exactement « {mot} » pour confirmer.'
+        => 'Log not reset: type exactly “{mot}” to confirm.',
+    'JPEG, PNG, WebP ou GIF. Format paysage conseillé, redimensionné à 1920 px maximum.'
+        => 'JPEG, PNG, WebP or GIF. Landscape format recommended, resized to 1920 px maximum.',
+    'JPEG, PNG, WebP ou GIF. Redimensionné à 400 px maximum.'
+        => 'JPEG, PNG, WebP or GIF. Resized to 400 px maximum.',
+
+    // --- Administration (2) ---
+    'fournisseur'
+        => 'supplier',
+    'L\'acquisition #{id} a été supprimée.'
+        => 'Purchase #{id} has been deleted.',
+    'l\'activer'
+        => 'enable it',
+    'L\'activité sélectionnée n\'est pas valide.'
+        => 'The selected activity is not valid.',
+    'L\'archive complète de cette version est en cours de préparation sur GitHub (quelques minutes après la publication). Rechargez cette page dans quelques minutes pour l\'installer.'
+        => 'The full archive of this version is being prepared on GitHub (a few minutes after publication). Reload this page in a few minutes to install it.',
+    'L\'archive n\'a pas pu être enregistrée sur le serveur.'
+        => 'The archive could not be saved on the server.',
+    'L\'email est obligatoire.'
+        => 'The email is required.',
+    'L\'email n\'est pas valide.'
+        => 'The email is not valid.',
+    'L\'emplacement \'{libelle}\' a été supprimé.'
+        => 'Location \'{libelle}\' has been deleted.',
+    'L\'emplacement a été enregistré.'
+        => 'The location has been saved.',
+    'L\'emplacement demandé n\'existe pas.'
+        => 'The requested location does not exist.',
+    'L\'état actuel est sauvegardé automatiquement juste avant (archive « avant restauration »).'
+        => 'The current state is backed up automatically just before (“before restore” archive).',
+    'L\'URL de l\'image doit commencer par http:// ou https://'
+        => 'The image URL must start with http:// or https://',
+    'L\'URL de l\'image n\'est pas valide.'
+        => 'The image URL is not valid.',
+    'L\'utilisateur {prenom} {nom} a été supprimé.'
+        => 'User {prenom} {nom} has been deleted.',
+    'L\'utilisateur a été créé.'
+        => 'The user has been created.',
+    'L\'utilisateur a été créé. Un mail l\'en informe ({email}) ; communiquez-lui son mot de passe.'
+        => 'The user has been created. An email informs them ({email}); give them their password.',
+    'L\'utilisateur a été mis à jour.'
+        => 'The user has been updated.',
+    'L\'utilisateur demandé n\'existe pas.'
+        => 'The requested user does not exist.',
+    'La catégorie \'{libelle}\' a été supprimée.'
+        => 'Category \'{libelle}\' has been deleted.',
+    'La catégorie a été enregistrée.'
+        => 'The category has been saved.',
+    'La catégorie demandée n\'existe pas.'
+        => 'The requested category does not exist.',
+    'La double authentification du compte protégé ne peut être modifiée que par son titulaire.'
+        => 'Two-factor authentication on the protected account can only be changed by its owner.',
+    'La durée doit être un nombre entier de mois entre {min} et {max}.'
+        => 'The duration must be a whole number of months between {min} and {max}.',
+    'la personne'
+        => 'the person',
+    'La réponse ne doit pas dépasser {max} caractères.'
+        => 'The reply must not exceed {max} characters.',
+    'Laisser vide pour conserver le mot de passe actuel.'
+        => 'Leave empty to keep the current password.',
+    'Laisser vide pour ne pas modifier'
+        => 'Leave empty to keep unchanged',
+    'Laisser vide pour ne pas modifier le mot de passe.'
+        => 'Leave empty to keep the password unchanged.',
+    'Laissez vide pour utiliser l\'email de l\'expéditeur.'
+        => 'Leave empty to use the sender\'s email.',
+    'Le code doit contenir 2 à 8 caractères (lettres sans accent ou chiffres).'
+        => 'The code must contain 2 to 8 characters (unaccented letters or digits).',
+    'Le délai de la notification « EPI non vérifiés » doit être un nombre entier de mois entre {min} et {max}.'
+        => 'The delay for the “Unchecked PPE” notification must be a whole number of months between {min} and {max}.',
+    'Le délai doit être un nombre de mois entre {min} et {max}.'
+        => 'The delay must be a number of months between {min} and {max}.',
+    'Le fichier doit être une archive .zip produite par EPIClub.'
+        => 'The file must be a .zip archive produced by EPIClub.',
+    'Le fournisseur \'{nom}\' a été supprimé.'
+        => 'Supplier \'{nom}\' has been deleted.',
+    'Le fournisseur a été enregistré.'
+        => 'The supplier has been saved.',
+    'Le fournisseur demandé n\'existe pas.'
+        => 'The requested supplier does not exist.',
+    'Le journal d\'activité a été réinitialisé.'
+        => 'The activity log has been reset.',
+    'Le mail d\'information n\'a pas pu être envoyé (email du club ou serveur SMTP à vérifier) : prévenez la personne vous-même.'
+        => 'The information email could not be sent (check the club email or SMTP server): inform the person yourself.',
+    'Le mail de bienvenue n\'a pas pu être envoyé (email du club ou serveur SMTP à vérifier).'
+        => 'The welcome email could not be sent (check the club email or SMTP server).',
+    'Le modèle de référence a été enregistré.'
+        => 'The reference pattern has been saved.',
+    'Le modèle de référence définit le format des références attribuées automatiquement aux équipements lors de la <strong>validation d\'une acquisition</strong> ou d\'un <strong>import Excel/CSV</strong> (quand la colonne référence est vide).'
+        => 'The reference pattern defines the format of references assigned automatically to items when <strong>a purchase is validated</strong> or during an <strong>Excel/CSV import</strong> (when the reference column is empty).',
+    'Le mot de passe est obligatoire pour un nouvel utilisateur.'
+        => 'A password is required for a new user.',
+    'Le mot de passe existant reste inchangé si ce champ est vide.'
+        => 'The existing password stays unchanged if this field is empty.',
+    'Le n° d\'ordre est remis à zéro chaque année, par catégorie : la première corde saisie en 2027 sera <code>27COR001</code>.'
+        => 'The sequence number restarts each year, per category: the first rope entered in 2027 will be <code>27COR001</code>.',
+    'Le nom d\'utilisateur est obligatoire.'
+        => 'The username is required.',
+    'Le nom du club est obligatoire.'
+        => 'The club name is required.',
+    'Le pseudo ne peut pas être modifié.'
+        => 'The username cannot be changed.',
+    'Le rôle du compte protégé ne peut pas être modifié.'
+        => 'The protected account\'s role cannot be changed.',
+    'Le tableau de bord signale les équipements dont la date de fin d\'utilisation tombe dans ce délai (ainsi que ceux déjà échus, hors équipements « Hors service »).'
+        => 'The dashboard flags items whose end-of-use date falls within this period (and those already expired, excluding “Out of service” items).',
+    'les factures jointes aux acquisitions.'
+        => 'the invoices attached to purchases.',
+    'Les informations du club ont été mises à jour.'
+        => 'The club details have been updated.',
+    'les photos des équipements, les images du club et des catégories, les QR codes enregistrés ;'
+        => 'item photos, club and category images, saved QR codes;',
+    'Les réglages du tableau de bord ont été enregistrés.'
+        => 'The dashboard settings have been saved.',
+    'les versions bêta (pré-releases) sont proposées. Réglage <code>UPDATE_CHANNEL</code> dans <code>.env.local.php</code>.'
+        => 'beta versions (pre-releases) are offered. <code>UPDATE_CHANNEL</code> setting in <code>.env.local.php</code>.',
+    'Libellé :'
+        => 'Name:',
+    'Libellé * :'
+        => 'Name *:',
+    'Libellé, code, description'
+        => 'Name, code, description',
+    'Libellé, description'
+        => 'Name, description',
+    'Liste des utilisateurs'
+        => 'Users',
+    'Logo {nom}'
+        => '{nom} logo',
+    'Logo actuel'
+        => 'Current logo',
+    'Logo du club'
+        => 'Club logo',
+    'Lot / nombre initial'
+        => 'Batch / initial number',
+    'Mail de bienvenue renvoyé à {email}.'
+        => 'Welcome email sent again to {email}.',
+    'Masquer jusqu\'à la prochaine connexion'
+        => 'Hide until next login',
+    'matériels'
+        => 'items',
+    'Mes demandes'
+        => 'My requests',
+    'Mise à jour d\'EPIClub'
+        => 'EPIClub update',
+    'Mise à jour réussie'
+        => 'Update successful',
+    'Mise à jour réussie. Version actuelle : {version}'
+        => 'Update successful. Current version: {version}',
+    'Modèle de référence * :'
+        => 'Reference pattern *:',
+    'Modification demandée non autorisée.'
+        => 'Requested change not allowed.',
+    'Modification faite'
+        => 'Change made',
+    'Modifications'
+        => 'Changes',
+    'Modifications demandées'
+        => 'Requested changes',
+    'Modifier catégorie'
+        => 'Edit category',
+    'Modifier emplacement'
+        => 'Edit location',
+    'Modifier l\'utilisateur'
+        => 'Edit the user',
+    'Modules'
+        => 'Modules',
+    'mois'
+        => 'months',
+    'Mon club'
+        => 'My club',
+    'Mot de confirmation'
+        => 'Confirmation word',
+    'Mot de passe *'
+        => 'Password *',
+    'Nettoyer'
+        => 'Clean up',
+    'Nettoyer le dossier temporaire de mise à jour ?'
+        => 'Clean up the temporary update folder?',
+    'Nom :'
+        => 'Name:',
+    'Nom * :'
+        => 'Name *:',
+    'Nom affiché dans les emails envoyés.'
+        => 'Name shown in sent emails.',
+    'Nom d\'utilisateur *'
+        => 'Username *',
+    'Nom de l\'expéditeur (From Name)'
+        => 'Sender name (From Name)',
+    'Nom du club * :'
+        => 'Club name *:',
+    'Nom, email, téléphone'
+        => 'Name, email, phone',
+    'Nombre actuel d\'éléments du lot'
+        => 'Current number of units in the batch',
+    'Non disponible'
+        => 'Not available',
+    'Non renseigné'
+        => 'Not provided',
+    'Notes de version :'
+        => 'Release notes:',
+    'Notification « EPI à renouveler »'
+        => '“PPE to replace” notification',
+    'Notification « EPI non vérifiés »'
+        => '“Unchecked PPE” notification',
+    'Nouveau'
+        => 'New',
+    'Nouveau mot de passe :'
+        => 'New password:',
+    'Nouvel emplacement'
+        => 'New location',
+    'Nouvel utilisateur'
+        => 'New user',
+    'Paramètres d\'envoi'
+        => 'Sending settings',
+    'Paramètres système'
+        => 'System settings',
+    'Personnalisation du tableau de bord'
+        => 'Dashboard customisation',
+    'Personnaliser le tableau de bord'
+        => 'Customise the dashboard',
+    'Photo de fond'
+        => 'Background photo',
+    'Photo de fond actuelle'
+        => 'Current background photo',
+    'planifiée'
+        => 'scheduled',
+    'Port *'
+        => 'Port *',
+    'pour ces filtres'
+        => 'for these filters',
+    'Pour confirmer, saisissez <strong>{mot_confirmation}</strong> :'
+        => 'To confirm, type <strong>{mot_confirmation}</strong>:',
+    'Prénom'
+        => 'First name',
+    'Prénom :'
+        => 'First name:',
+    'Prénom * :'
+        => 'First name *:',
+    'Protégé'
+        => 'Protected',
+    'Pseudo'
+        => 'Username',
+    'Pseudo :'
+        => 'Username:',
+    'Pseudo * :'
+        => 'Username *:',
+    'QR Code - {reference}'
+        => 'QR code - {reference}',
+    'Référence ou date de l\'acquisition'
+        => 'Purchase reference or date',
+    'Référencement automatique'
+        => 'Automatic referencing',
+    'Refusée'
+        => 'Refused',
+    'Refuser'
+        => 'Refuse',
+    'Regrouper en lot (équipements identiques)'
+        => 'Merge into a batch (identical items)',
+    'Réinitialiser (appareil perdu)'
+        => 'Reset (lost device)',
+    'Réinitialiser la double authentification de {username} ? Ses passkeys, son application et ses codes de secours seront supprimés : la connexion se fera avec le seul mot de passe.'
+        => 'Reset two-factor authentication for {username}? Their passkeys, app and backup codes will be deleted: login will use the password only.',
+    'Réinitialiser le journal'
+        => 'Reset the log',
+    'Remarque (obligatoire)'
+        => 'Remark (required)',
+    'Remarques, photo ou notice'
+        => 'Remarks, photo or instructions',
+    'Remplace <strong>toutes</strong> les données actuelles (base et fichiers) par celles d\'une sauvegarde. L\'archive est d\'abord vérifiée sans rien modifier ; la restauration ne démarre qu\'après votre confirmation. L\'état actuel est sauvegardé automatiquement juste avant.'
+        => 'Replaces <strong>all</strong> current data (database and files) with a backup\'s. The archive is first checked without changing anything; the restore only starts after your confirmation. The current state is backed up automatically just before.',
+    'Renvoyer le mail de bienvenue'
+        => 'Resend the welcome email',
+    'Renvoyer le mail de bienvenue à {email} ?'
+        => 'Resend the welcome email to {email}?',
+    'Réponse au demandeur'
+        => 'Reply to the requester',
+    'réponse@domaine.fr'
+        => 'reply@domain.com',
+    'Reprendre le contrôle'
+        => 'Resume the inspection',
+    'Requête invalide'
+        => 'Invalid request',
+    'Ressource non trouvée'
+        => 'Resource not found',
+    'Restauration en cours… ne fermez pas la page'
+        => 'Restoring… do not close the page',
+    'Restauration non lancée : saisissez {mot} pour confirmer.'
+        => 'Restore not started: type {mot} to confirm.',
+    'Restauration terminée : sauvegarde du {date} (version {version}), {fichiers} fichier(s). L\'état précédent est conservé dans « {filet} ».'
+        => 'Restore complete: backup from {date} (version {version}), {fichiers} file(s). The previous state is kept in “{filet}”.',
+    'Restaurer'
+        => 'Restore',
+    'Restaurer…'
+        => 'Restore…',
+    'Restaurer une sauvegarde'
+        => 'Restore a backup',
+    'Retirer les filtres'
+        => 'Remove the filters',
+    'Retour à la fiche'
+        => 'Back to the record',
+    'Retour à la page de mise à jour'
+        => 'Back to the update page',
+    'Revenir à la photo par défaut'
+        => 'Back to the default photo',
+    'Revenir au logo EPIClub par défaut'
+        => 'Back to the default EPIClub logo',
+    'Rien n\'a été modifié.'
+        => 'Nothing was changed.',
+    'Rôle'
+        => 'Role',
+    'Rôle :'
+        => 'Role:',
+    'Rôle * :'
+        => 'Role *:',
+    'Saisir un emplacement'
+        => 'Enter a location',
+    'Saisir une entrée'
+        => 'Enter an entry',
+    'Sans équipement'
+        => 'Without items',
+    'Sauvegarde « {nom} » supprimée.'
+        => 'Backup “{nom}” deleted.',
+    'Sauvegarde et restauration'
+        => 'Backup and restore',
+    'Sauvegardes conservées sur le serveur'
+        => 'Backups kept on the server',
+    'Scanner un QR code'
+        => 'Scan a QR code',
+    'Scannez ce QR code'
+        => 'Scan this QR code',
+    'Sélectionnez une activité --'
+        => 'Select an activity --',
+    'Serveur SMTP'
+        => 'SMTP server',
+    'Seul le titulaire du compte protégé peut la modifier.'
+        => 'Only the owner of the protected account can change it.',
+    'seules les versions stables sont proposées. Pour suivre les bêtas : <code>UPDATE_CHANNEL=beta</code> dans <code>.env.local.php</code>.'
+        => 'only stable versions are offered. To follow betas: <code>UPDATE_CHANNEL=beta</code> in <code>.env.local.php</code>.',
+    'Si votre compte n\'existe pas dans la sauvegarde, vous serez déconnecté.'
+        => 'If your account does not exist in the backup, you will be logged out.',
+    'Signaler les EPI non vérifiés depuis plus de :'
+        => 'Flag PPE not checked for more than:',
+    'SSL'
+        => 'SSL',
+    'stable'
+        => 'stable',
+    'Stable — versions définitives uniquement (recommandé en production)'
+        => 'Stable — final versions only (recommended in production)',
+    'Succès'
+        => 'Success',
+    'Supprime définitivement toutes les entrées (pensez à exporter le journal avant). La réinitialisation est elle-même inscrite dans le nouveau journal. Pour confirmer, saisissez <strong>{confirmation}</strong>.'
+        => 'Permanently deletes all entries (remember to export the log first). The reset itself is recorded in the new log. To confirm, type <strong>{confirmation}</strong>.',
+    'Supprimer {prenom} {nom} ?'
+        => 'Delete {prenom} {nom}?',
+    'Supprimer cet emplacement ?'
+        => 'Delete this location?',
+    'Supprimer définitivement {nom} ?'
+        => 'Permanently delete {nom}?',
+    'Supprimer l\'utilisateur'
+        => 'Delete the user',
+    'Taille'
+        => 'Size',
+    'Télécharge une archive <code>.zip</code> contenant :'
+        => 'Downloads a <code>.zip</code> archive containing:',
+    'Télécharger et installer'
+        => 'Download and install',
+    'Télécharger le QR Code'
+        => 'Download the QR code',
+    'Télécharger une sauvegarde'
+        => 'Download a backup',
+    'Téléphone :'
+        => 'Phone:',
+    'téléversée, non restaurée'
+        => 'uploaded, not restored',
+    'Tester l\'envoi'
+        => 'Test sending',
+    'Ticket'
+        => 'Ticket',
+    'Ticket clos : demande refusée. Le demandeur en est notifié.'
+        => 'Ticket closed: request refused. The requester is notified.',
+    'Ticket clos : modification faite. Le demandeur en est notifié.'
+        => 'Ticket closed: change made. The requester is notified.',
+    'Ticket non trouvé.'
+        => 'Ticket not found.',
+    'TLS'
+        => 'TLS',
+    'Token CSRF invalide. Merci de recharger la page.'
+        => 'Invalid CSRF token. Please reload the page.',
+    'Token CSRF invalide. Merci de réessayer.'
+        => 'Invalid CSRF token. Please try again.',
+    'Tous les champs obligatoires doivent être remplis.'
+        => 'All required fields must be filled in.',
+    'toute la base de données (équipements, contrôles, acquisitions, utilisateurs, réglages…) ;'
+        => 'the whole database (items, inspections, purchases, users, settings…);',
+    'Toutes les demandes'
+        => 'All requests',
+    'Toutes les demandes →'
+        => 'All requests →',
+    'traiter'
+        => 'handle',
+    'Traiter la demande'
+        => 'Handle the request',
+    'Type'
+        => 'Type',
+    'Un contrôle est en cours pour cet équipement'
+        => 'An inspection is in progress for this item',
+    'Un équipement « Égaré » peut être supprimé par un administrateur une fois ce délai écoulé depuis sa déclaration (12 mois par défaut).'
+        => 'A “Lost” item can be deleted by an administrator once this period has passed since it was declared (12 months by default).',
+    'Une erreur est survenue lors de la mise à jour. Merci de réessayer ou de contacter un administrateur.'
+        => 'An error occurred during the update. Please try again or contact an administrator.',
+    'Une mise à jour est disponible !'
+        => 'An update is available!',
+    'URL absolue http ou https, sans slash final, sans query ni fragment. Laisser vide pour ne pas modifier la valeur actuelle.'
+        => 'Absolute http or https URL, with no trailing slash, query or fragment. Leave empty to keep the current value.',
+    'URL racine'
+        => 'Root URL',
+    'URL racine (ROOT_URL)'
+        => 'Root URL (ROOT_URL)',
+    'Utilisateur, action…'
+        => 'User, action…',
+    'utilisateurs'
+        => 'users',
+    'Variables disponibles'
+        => 'Available variables',
+    'Vérifier l\'archive'
+        => 'Check the archive',
+    'Vérifier puis restaurer'
+        => 'Check, then restore',
+    'Version d\'EPIClub'
+        => 'EPIClub version',
+    'Version installée :'
+        => 'Installed version:',
+    'Voir l\'équipement'
+        => 'View the item',
+    'Voir la fiche équipement'
+        => 'View the item record',
+    'Voir la liste →'
+        => 'View the list →',
+    'Voir la réponse →'
+        => 'View the reply →',
+    'Voir les {nombre} équipements'
+        => 'View the {nombre} items',
+    'Voir les prêts →'
+        => 'View loans →',
+    'Votre demande sur <strong>{reference}</strong> a été refusée'
+        => 'Your request on <strong>{reference}</strong> was refused',
+    'Votre demande sur <strong>{reference}</strong> a été traitée'
+        => 'Your request on <strong>{reference}</strong> has been handled',
+    'Votre rôle vous permet déjà de faire toutes ces modifications vous-même.'
+        => 'Your role already lets you make all these changes yourself.',
+    'Vous disposez de la version la plus récente.'
+        => 'You have the latest version.',
+    'Vous êtes en mode consultation'
+        => 'You are in read-only mode',
+    'Vous n\'avez fait aucune demande. Elles se font depuis la fiche d\'un équipement (« Demander une modification »).'
+        => 'You have not made any requests. They are made from an item\'s record (“Request a change”).',
+    'Vous n\'avez pas les droits pour modifier cet utilisateur.'
+        => 'You do not have the rights to edit this user.',
+    'Vous n\'avez pas les droits pour supprimer cet utilisateur.'
+        => 'You do not have the rights to delete this user.',
+    'Vous n\'êtes pas autorisé à attribuer ce rôle.'
+        => 'You are not allowed to assign this role.',
+    'Vous ne pouvez pas modifier votre propre rôle. Demandez à un autre administrateur.'
+        => 'You cannot change your own role. Ask another administrator.',
+    'Vous ne pouvez pas supprimer votre propre compte'
+        => 'You cannot delete your own account',
+    'Vous ne pouvez pas supprimer votre propre compte.'
+        => 'You cannot delete your own account.',
+
+    // --- Complément (etape7a) ---
+    'emplacement'
+        => 'location',
 ];

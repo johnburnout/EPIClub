@@ -2,7 +2,7 @@
 
 {% block body %}
 
-	<h3>Référencement automatique</h3>
+	<h3>{{ 'Référencement automatique'|trans }}</h3>
 	<hr>
 
 	{% if form_errors is defined and form_errors %}
@@ -14,16 +14,14 @@
 	{% endif %}
 
 	<p>
-		Le modèle de référence définit le format des références attribuées automatiquement
-		aux équipements lors de la <strong>validation d'une acquisition</strong> ou d'un
-		<strong>import Excel/CSV</strong> (quand la colonne référence est vide).
+		{{ "Le modèle de référence définit le format des références attribuées automatiquement aux équipements lors de la <strong>validation d'une acquisition</strong> ou d'un <strong>import Excel/CSV</strong> (quand la colonne référence est vide)."|trans|raw }}
 	</p>
 
 	<form method="post">
 		<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
 		<div class="mb-3">
-			<label for="ref_modele">Modèle de référence * :</label>
+			<label for="ref_modele">{{ 'Modèle de référence * :'|trans }}</label>
 			<input type="text"
 			       id="ref_modele"
 			       name="ref_modele"
@@ -35,28 +33,27 @@
 		</div>
 
 		<div class="mb-3">
-			<label>Aperçu (catégorie de code <code>COR</code>, premier équipement de l'année) :</label>
+			<label>{{ "Aperçu (catégorie de code <code>COR</code>, premier équipement de l'année) :"|trans|raw }}</label>
 			<div><code id="apercu" class="fs-5"></code></div>
 		</div>
 
 		<div class="card mb-3" style="max-width: 40rem;">
 			<div class="card-body">
-				<h6 class="card-title">Variables disponibles</h6>
+				<h6 class="card-title">{{ 'Variables disponibles'|trans }}</h6>
 				<ul class="mb-2">
-					<li><code>YY</code> : année sur 2 chiffres (ex. <code>26</code>) — <code>YYYY</code> sur 4 chiffres ;</li>
-					<li><code>CAT</code> : code de la catégorie (obligatoire, défini dans l'écran Catégories) ;</li>
-					<li><code>N…</code> : n° d'ordre — autant de <code>N</code> que de chiffres (<code>NNN</code> → <code>001</code>).</li>
+					<li>{{ '<code>YY</code> : année sur 2 chiffres (ex. <code>26</code>) — <code>YYYY</code> sur 4 chiffres ;'|trans|raw }}</li>
+					<li>{{ "<code>CAT</code> : code de la catégorie (obligatoire, défini dans l'écran Catégories) ;"|trans|raw }}</li>
+					<li>{{ "<code>N…</code> : n° d'ordre — autant de <code>N</code> que de chiffres (<code>NNN</code> → <code>001</code>)."|trans|raw }}</li>
 				</ul>
 				<p class="mb-0 text-muted">
-					Le n° d'ordre est remis à zéro chaque année, par catégorie :
-					la première corde saisie en 2027 sera <code>27COR001</code>.
+					{{ "Le n° d'ordre est remis à zéro chaque année, par catégorie : la première corde saisie en 2027 sera <code>27COR001</code>."|trans|raw }}
 				</p>
 			</div>
 		</div>
 
 		<div class="form-actions">
-			<button type="submit" class="btn btn-primary">Enregistrer</button>
-			<a href="/tableau_de_bord" class="btn btn-secondary">Annuler</a>
+			<button type="submit" class="btn btn-primary">{{ 'Enregistrer'|trans }}</button>
+			<a href="/tableau_de_bord" class="btn btn-secondary">{{ 'Annuler'|trans }}</a>
 		</div>
 	</form>
 

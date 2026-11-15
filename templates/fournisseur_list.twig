@@ -1,25 +1,25 @@
 {% extends "_layout.twig" %}
 
 {% block body %}
-	<h3>Fournisseurs</h3>
+	<h3>{{ 'Fournisseurs'|trans }}</h3>
 	<hr>
 	{% if isGranted('ROLE_ADMIN') %}
-	<a href="/admin/fournisseurs/nouveau" class="btn btn-primary">Nouveau</a>
+	<a href="/admin/fournisseurs/nouveau" class="btn btn-primary">{{ 'Nouveau'|trans }}</a>
 	<hr>
 	{% endif %}
 	{% include '_filtres_referentiel.twig' with {
-		url: '/admin/fournisseurs', placeholder: 'Nom, email, téléphone',
+		url: '/admin/fournisseurs', placeholder: 'Nom, email, téléphone'|trans,
 		tris: {'nom': 'Nom', 'equipements': 'Nombre d\'équipements'},
-		affiches: nb_filtres, element: 'fournisseur', elements: 'fournisseurs'
+		affiches: nb_filtres, element: 'fournisseur'|trans, elements: 'fournisseurs'|trans
 	} %}
 	{% if fournisseurs %}
 		<table class="table">
 			<thead>
 				<tr>
-					<th>Nom</th>
-					<th>Adresse mail</th>
-					<th>Téléphone</th>
-					<th>Équipements</th>
+					<th>{{ 'Nom'|trans }}</th>
+					<th>{{ 'Adresse mail'|trans }}</th>
+					<th>{{ 'Téléphone'|trans }}</th>
+					<th>{{ 'Équipements'|trans }}</th>
 					<th></th>
 				</tr>
 			</thead>
@@ -32,21 +32,21 @@
 						<td>
 							{% set nb = nb_equipements[fournisseur.id]|default(0) %}
 						{% if nb > 0 %}
-							<a href="/equipements?fournisseur={{ fournisseur.id }}" title="Afficher ces équipements">{{ nb }} équipement{{ nb > 1 ? 's' : '' }}</a>
+							<a href="/equipements?fournisseur={{ fournisseur.id }}" title="{{ 'Afficher ces équipements'|trans }}">{% if nb > 1 %}{{ '{nb} équipements'|trans({nb: nb}) }}{% else %}{{ '{nb} équipement'|trans({nb: nb}) }}{% endif %}</a>
 						{% else %}
-							<span class="text-muted">Aucun</span>
+							<span class="text-muted">{{ 'Aucun'|trans }}</span>
 						{% endif %}
 						</td>
 						<td>
-							<a href="/admin/fournisseurs/fournisseur-{{ fournisseur.id }}" class="btn btn-primary btn-block">Voir</a>
+							<a href="/admin/fournisseurs/fournisseur-{{ fournisseur.id }}" class="btn btn-primary btn-block">{{ 'Voir'|trans }}</a>
 							{% if isGranted('ROLE_ADMIN') %}
-							<a href="/admin/fournisseurs/fournisseur_modification-{{ fournisseur.id }}" class="btn btn-primary btn-block">Editer</a>
+							<a href="/admin/fournisseurs/fournisseur_modification-{{ fournisseur.id }}" class="btn btn-primary btn-block">{{ 'Editer'|trans }}</a>
 							<form method="post" action="/admin/fournisseurs/supprimer" style="display:inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 								<input type="hidden" name="id" value="{{ fournisseur.id }}">
 								<button type="submit" class="btn btn-danger btn-block"
-								        data-confirm="Êtes-vous sûr de vouloir supprimer le fournisseur « {{ fournisseur.nom }} » ?">
-									Supprimer
+								        data-confirm="{{ 'Êtes-vous sûr de vouloir supprimer le fournisseur « {nom} » ?'|trans({nom: fournisseur.nom}) }}">
+									{{ 'Supprimer'|trans }}
 								</button>
 							</form>
 							{% endif %}
@@ -55,8 +55,8 @@
 				{% endfor %}
 			</tbody>
 		</table>
-		{% include '_pagination.twig' with {p: pagination, affiches: fournisseurs|length, elements: 'fournisseurs'} %}
+		{% include '_pagination.twig' with {p: pagination, affiches: fournisseurs|length, elements: 'fournisseurs'|trans} %}
 	{% else %}
-		<p>Aucun fournisseur trouvé!</p>
+		<p>{{ 'Aucun fournisseur trouvé!'|trans }}</p>
 	{% endif %}
 {% endblock %}

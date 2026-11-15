@@ -2,6 +2,7 @@
 
 namespace Epiclub\Controller;
 
+use Epiclub\Engine\Traducteur;
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\ControleManager;
 use Epiclub\Domain\ControleLigneManager;
@@ -90,7 +91,7 @@ class QrRedirectController extends AbstractController
         // 3. Vérifier que l'équipement existe
         $equipement = $this->equipementManager()->findId($id);
         if (!$equipement) {
-            $this->addFlash('danger', 'Équipement non trouvé');
+            $this->addFlash('danger', Traducteur::t('Équipement non trouvé'));
             return $this->redirectTo('/equipements');
         }
 
@@ -135,7 +136,7 @@ class QrRedirectController extends AbstractController
         $equipement = $this->equipementManager()->findId($id);
 
         if (!$equipement) {
-            $this->addFlash('danger', 'Équipement non trouvé');
+            $this->addFlash('danger', Traducteur::t('Équipement non trouvé'));
             return $this->redirectTo('/equipements');
         }
 
@@ -178,7 +179,7 @@ class QrRedirectController extends AbstractController
         $equipement = $this->equipementManager()->findId($id);
 
         if (!$equipement) {
-            return new Response('Équipement non trouvé', Response::HTTP_NOT_FOUND);
+            return new Response(Traducteur::t('Équipement non trouvé'), Response::HTTP_NOT_FOUND);
         }
 
         $baseUrl = $this->getBaseUrl();
@@ -186,7 +187,7 @@ class QrRedirectController extends AbstractController
 
         if (!class_exists('Endroid\QrCode\Builder\Builder')) {
             error_log('[QrRedirectController] Endroid QR Code non trouvé');
-            return new Response('Génération impossible', Response::HTTP_INTERNAL_SERVER_ERROR);
+            return new Response(Traducteur::t('Génération impossible'), Response::HTTP_INTERNAL_SERVER_ERROR);
         }
 
         try {
@@ -204,7 +205,7 @@ class QrRedirectController extends AbstractController
 
         } catch (\Exception $e) {
             error_log('[QrRedirectController] Generate QR failed: ' . $e->getMessage());
-            return new Response('Erreur serveur', Response::HTTP_INTERNAL_SERVER_ERROR);
+            return new Response(Traducteur::t('Erreur serveur'), Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -224,7 +225,7 @@ class QrRedirectController extends AbstractController
         $equipement = $this->equipementManager()->findId($id);
 
         if (!$equipement) {
-            return new Response('Équipement non trouvé', Response::HTTP_NOT_FOUND);
+            return new Response(Traducteur::t('Équipement non trouvé'), Response::HTTP_NOT_FOUND);
         }
 
         $baseUrl = $this->getBaseUrl();
@@ -246,7 +247,7 @@ class QrRedirectController extends AbstractController
 
         } catch (\Exception $e) {
             error_log('[QrRedirectController] Download QR failed: ' . $e->getMessage());
-            return new Response('Erreur serveur', Response::HTTP_INTERNAL_SERVER_ERROR);
+            return new Response(Traducteur::t('Erreur serveur'), Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -301,13 +302,13 @@ class QrRedirectController extends AbstractController
 
         $id = $this->extractId($request, '/\/qr\/save\/(\d+)/');
         if (!$id) {
-            return new JsonResponse(['error' => 'Requête invalide'], Response::HTTP_BAD_REQUEST);
+            return new JsonResponse(['error' => Traducteur::t('Requête invalide')], Response::HTTP_BAD_REQUEST);
         }
 
         $equipement = $this->equipementManager()->findId($id);
 
         if (!$equipement) {
-            return new JsonResponse(['error' => 'Ressource non trouvée'], Response::HTTP_NOT_FOUND);
+            return new JsonResponse(['error' => Traducteur::t('Ressource non trouvée')], Response::HTTP_NOT_FOUND);
         }
 
         $baseUrl = $this->getBaseUrl();
@@ -332,7 +333,7 @@ class QrRedirectController extends AbstractController
             ]);
         } catch (\Exception $e) {
             error_log('[QrRedirectController] Save QR failed: ' . $e->getMessage());
-            return new JsonResponse(['error' => 'Erreur serveur'], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return new JsonResponse(['error' => Traducteur::t('Erreur serveur')], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -346,13 +347,13 @@ class QrRedirectController extends AbstractController
 
         $id = $this->extractId($request, '/\/api\/qr\/generate\/(\d+)/');
         if (!$id) {
-            return new JsonResponse(['error' => 'Requête invalide'], Response::HTTP_BAD_REQUEST);
+            return new JsonResponse(['error' => Traducteur::t('Requête invalide')], Response::HTTP_BAD_REQUEST);
         }
 
         $equipement = $this->equipementManager()->findId($id);
 
         if (!$equipement) {
-            return new JsonResponse(['error' => 'Ressource non trouvée'], Response::HTTP_NOT_FOUND);
+            return new JsonResponse(['error' => Traducteur::t('Ressource non trouvée')], Response::HTTP_NOT_FOUND);
         }
 
         $baseUrl = $this->getBaseUrl();

@@ -2,6 +2,8 @@
 
 namespace Epiclub\Enum;
 
+use Epiclub\Engine\Traducteur;
+
 /**
  * Hiérarchie des rôles (du plus bas au plus élevé) :
  *   USER < CONTROLLEUR < ADMIN < SUPER_ADMIN
@@ -25,11 +27,13 @@ class UserRole
      */
     static public function list(): array
     {
+        // [Localisation] Libellés dans la langue de l'utilisateur (les
+        // constantes gardent le libellé français, clé de traduction).
         return [
-            'ROLE_USER' => self::ROLE_USER,
-            'ROLE_CONTROLLEUR' => self::ROLE_CONTROLLEUR,
-            'ROLE_ADMIN' => self::ROLE_ADMIN,
-            'ROLE_SUPER_ADMIN' => self::ROLE_SUPER_ADMIN,
+            'ROLE_USER' => Traducteur::t('Utilisateur'),
+            'ROLE_CONTROLLEUR' => Traducteur::t('Contrôleur'),
+            'ROLE_ADMIN' => Traducteur::t('Administrateur'),
+            'ROLE_SUPER_ADMIN' => Traducteur::t('Super Administrateur'),
         ];
     }
 
@@ -52,10 +56,7 @@ class UserRole
         if ($actorRole === 'ROLE_ADMIN') {
             // Un ADMIN peut créer/modifier des USER et CONTROLLEUR, mais pas
             // promouvoir quelqu'un ADMIN ou SUPER_ADMIN.
-            return [
-                'ROLE_USER' => self::ROLE_USER,
-                'ROLE_CONTROLLEUR' => self::ROLE_CONTROLLEUR,
-            ];
+            return array_intersect_key($all, array_flip(['ROLE_USER', 'ROLE_CONTROLLEUR']));
         }
 
         // Aucun autre rôle n'a le droit de distribuer des rôles.
@@ -68,13 +69,6 @@ class UserRole
      */
     static public function fromRole(string $role): string
     {
-        $matches = [
-            'ROLE_USER' => self::ROLE_USER,
-            'ROLE_CONTROLLEUR' => self::ROLE_CONTROLLEUR,
-            'ROLE_ADMIN' => self::ROLE_ADMIN,
-            'ROLE_SUPER_ADMIN' => self::ROLE_SUPER_ADMIN,
-        ];
-
-        return $matches[$role] ?? $role;
+        return self::list()[$role] ?? $role;
     }
 }

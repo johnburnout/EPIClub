@@ -2,57 +2,57 @@
 
 {% block body %}
 	<div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
-		<h3 class="mb-0">🗒️ Journal d'activité</h3>
-		<a href="{{ export_url }}" class="btn btn-outline-primary">⬇️ Exporter (texte)</a>
+		<h3 class="mb-0">🗒️ {{ "Journal d'activité"|trans }}</h3>
+		<a href="{{ export_url }}" class="btn btn-outline-primary">⬇️ {{ 'Exporter (texte)'|trans }}</a>
 	</div>
 	<p class="text-body-secondary small mt-2 mb-0">
-		Connexions, contrôles et prêts de matériel. L'export reprend les filtres en cours.
+		{{ "Connexions, contrôles et prêts de matériel. L'export reprend les filtres en cours."|trans }}
 	</p>
 	<hr>
 
 	<form method="get" class="mb-3">
 		<div class="row g-3 align-items-end">
 			<div class="col-md-2">
-				<label for="type" class="form-label">Type</label>
+				<label for="type" class="form-label">{{ 'Type'|trans }}</label>
 				<select name="type" id="type" class="form-select">
-					<option value="">Tous</option>
+					<option value="">{{ 'Tous'|trans }}</option>
 					{% for cle, libelle in types %}
 						<option value="{{ cle }}" {% if filtres.type == cle %}selected{% endif %}>{{ libelle }}</option>
 					{% endfor %}
 				</select>
 			</div>
 			<div class="col-md-2">
-				<label for="du" class="form-label">Du</label>
+				<label for="du" class="form-label">{{ 'Du'|trans }}</label>
 				<input type="date" name="du" id="du" value="{{ filtres.du }}" class="form-control">
 			</div>
 			<div class="col-md-2">
-				<label for="au" class="form-label">Au</label>
+				<label for="au" class="form-label">{{ 'Au'|trans }}</label>
 				<input type="date" name="au" id="au" value="{{ filtres.au }}" class="form-control">
 			</div>
 			<div class="col-md-4">
-				<label for="q" class="form-label">Recherche</label>
+				<label for="q" class="form-label">{{ 'Recherche'|trans }}</label>
 				<input type="search" name="q" id="q" value="{{ filtres.q }}" maxlength="100"
-				       placeholder="Utilisateur, action…" class="form-control">
+				       placeholder="{{ 'Utilisateur, action…'|trans }}" class="form-control">
 			</div>
 			<div class="col-md-2 d-flex gap-2">
-				<button type="submit" class="btn btn-secondary flex-fill">Filtrer</button>
-				<a href="/admin/journal-activite" class="btn btn-outline-secondary" title="Retirer les filtres">✖</a>
+				<button type="submit" class="btn btn-secondary flex-fill">{{ 'Filtrer'|trans }}</button>
+				<a href="/admin/journal-activite" class="btn btn-outline-secondary" title="{{ 'Retirer les filtres'|trans }}">✖</a>
 			</div>
 		</div>
 	</form>
 
 	{% if entrees is empty %}
-		<div class="alert alert-info">Aucune entrée{% if filtres.type or filtres.du or filtres.au or filtres.q %} pour ces filtres{% endif %}.</div>
+		<div class="alert alert-info">{{ 'Aucune entrée'|trans }}{% if filtres.type or filtres.du or filtres.au or filtres.q %} {{ 'pour ces filtres'|trans }}{% endif %}.</div>
 	{% else %}
 		<div class="table-responsive">
 			<table class="table table-striped table-sm align-middle">
 				<thead>
 					<tr>
-						<th class="text-nowrap">Date</th>
-						<th>Type</th>
-						<th>Utilisateur</th>
-						<th>Action</th>
-						<th>IP</th>
+						<th class="text-nowrap">{{ 'Date'|trans }}</th>
+						<th>{{ 'Type'|trans }}</th>
+						<th>{{ 'Utilisateur'|trans }}</th>
+						<th>{{ 'Action'|trans }}</th>
+						<th>{{ 'IP'|trans }}</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -71,24 +71,22 @@
 				</tbody>
 			</table>
 		</div>
-		{% include '_pagination.twig' with {p: pagination, affiches: entrees|length, elements: 'entrées'} %}
+		{% include '_pagination.twig' with {p: pagination, affiches: entrees|length, elements: 'entrées'|trans} %}
 	{% endif %}
 
 	{% if isGranted('ROLE_SUPER_ADMIN') %}
 		<div class="card border-danger mt-4">
 			<div class="card-body">
-				<h5 class="card-title text-danger">Réinitialiser le journal</h5>
+				<h5 class="card-title text-danger">{{ 'Réinitialiser le journal'|trans }}</h5>
 				<p class="card-text small mb-2">
-					Supprime définitivement toutes les entrées (pensez à exporter le journal avant).
-					La réinitialisation est elle-même inscrite dans le nouveau journal.
-					Pour confirmer, saisissez <strong>{{ confirmation }}</strong>.
+					{{ 'Supprime définitivement toutes les entrées (pensez à exporter le journal avant). La réinitialisation est elle-même inscrite dans le nouveau journal. Pour confirmer, saisissez <strong>{confirmation}</strong>.'|trans({confirmation: (confirmation)|e})|raw }}
 				</p>
 				<form method="post" action="/admin/journal-activite/reinitialiser" class="d-flex flex-wrap gap-2 m-0">
 					<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 					<input type="text" name="confirmation" required autocomplete="off" pattern="{{ confirmation }}"
-					       placeholder="{{ confirmation }}" aria-label="Mot de confirmation"
+					       placeholder="{{ confirmation }}" aria-label="{{ 'Mot de confirmation'|trans }}"
 					       class="form-control" style="max-width: 16rem;">
-					<button type="submit" class="btn btn-danger">Réinitialiser</button>
+					<button type="submit" class="btn btn-danger">{{ 'Réinitialiser'|trans }}</button>
 				</form>
 			</div>
 		</div>
