@@ -1700,4 +1700,286 @@ return [
         => 'Vedi le acquisizioni',
     'Voir les équipements'
         => 'Vedi le attrezzature',
+
+    // --- Prêts ---
+    ' : ajouté au prêt.'
+        => ': aggiunta al prestito.',
+    ' : déjà sur ce prêt.'
+        => ': già in questo prestito.',
+    '« Je reconnais avoir reçu le matériel ci-dessus en bon état et m\'engage à le restituer au plus tard le {date_retour_prevue}. » Signez avec le doigt ou la souris dans le cadre.'
+        => '«Dichiaro di aver ricevuto il materiale sopra indicato in buono stato e mi impegno a restituirlo entro il {date_retour_prevue}.» Firma con il dito o il mouse nel riquadro.',
+    '(facultative)'
+        => '(facoltativa)',
+    '(fin enregistrée par {termine_par_prenom} {termine_par_nom})'
+        => '(fine registrata da {termine_par_prenom} {termine_par_nom})',
+    '{nb_a_verifier} à vérifier'
+        => '{nb_a_verifier} da verificare',
+    '{nombre} matériel(s) vérifié(s). Reste {restants} matériel(s) à vérifier.'
+        => '{nombre} materiale/i verificato/i. Restano {restants} materiale/i da verificare.',
+    '{nombre} matériel(s) vérifié(s). Retour complet.'
+        => '{nombre} materiale/i verificato/i. Restituzione completa.',
+    '{reference} : date limite d\'utilisation atteinte.'
+        => '{reference}: data limite di utilizzo raggiunta.',
+    '{reference} : déjà inscrit sur le prêt n° {id} ({prenom} {nom}).'
+        => '{reference}: già iscritto nel prestito n. {id} ({prenom} {nom}).',
+    '{reference} : déjà sur ce prêt.'
+        => '{reference}: già in questo prestito.',
+    '{reference} : équipement en cours de contrôle.'
+        => '{reference}: attrezzatura in ispezione.',
+    '{reference} : équipement supprimé.'
+        => '{reference}: attrezzatura eliminata.',
+    '{reference} : statut « {statut} », seul un matériel disponible peut être prêté.'
+        => '{reference}: stato «{statut}», si può prestare solo materiale disponibile.',
+    'Signature — prêt n° {id}'
+        => 'Firma — prestito n. {id}',
+    'Validation — prêt n° {id}'
+        => 'Convalida — prestito n. {id}',
+    '<strong>Caméra indisponible :</strong> le navigateur n\'autorise la caméra que sur une page servie en <strong>HTTPS</strong> (ou en localhost). Ajoutez le matériel depuis la fiche du prêt.'
+        => '<strong>Fotocamera non disponibile:</strong> il browser consente la fotocamera solo su una pagina servita in <strong>HTTPS</strong> (o in localhost). Aggiungi il materiale dalla scheda del prestito.',
+    '<strong>Du</strong> {date_pret} <strong>au</strong> {date_retour_prevue} (retour prévu)'
+        => '<strong>Dal</strong> {date_pret} <strong>al</strong> {date_retour_prevue} (restituzione prevista)',
+    '<strong>Emprunteur :</strong> {emprunteur_prenom} {emprunteur_nom}'
+        => '<strong>Mutuatario:</strong> {emprunteur_prenom} {emprunteur_nom}',
+    '<strong>Téléphone :</strong> {emprunteur_telephone}'
+        => '<strong>Telefono:</strong> {emprunteur_telephone}',
+    'Ajout impossible.'
+        => 'Aggiunta impossibile.',
+    'Ajouté au prêt n° {id} ({prenom} {nom}) : {references}.'
+        => 'Aggiunto al prestito n. {id} ({prenom} {nom}): {references}.',
+    'Ajouter du matériel'
+        => 'Aggiungi materiale',
+    'Ajouter la sélection'
+        => 'Aggiungi la selezione',
+    'Ajoutez au moins un matériel au prêt.'
+        => 'Aggiungi almeno un materiale al prestito.',
+    'Après la fin du prêt, chaque matériel est vérifié et repasse Disponible, En maintenance ou Égaré.'
+        => 'Alla fine del prestito, ogni materiale viene verificato e torna Disponibile, In manutenzione o Smarrito.',
+    'Aucun matériel disponible ne correspond.'
+        => 'Nessun materiale disponibile corrisponde.',
+    'Aucun matériel pour l\'instant.'
+        => 'Ancora nessun materiale.',
+    'Aucune fiche de prêt.'
+        => 'Nessuna scheda di prestito.',
+    'Ce prêt n\'est plus en saisie : le matériel ne peut plus être retiré.'
+        => 'Questo prestito non è più in compilazione: il materiale non può più essere rimosso.',
+    'Ce prêt n\'est plus en saisie : plus d\'ajout de matériel possible.'
+        => 'Questo prestito non è più in compilazione: non si può più aggiungere materiale.',
+    'Ce prêt n\'est plus en saisie.'
+        => 'Questo prestito non è più in compilazione.',
+    'Chaque matériel scanné est ajouté au prêt (s\'il est disponible) ; enchaînez les scans, puis revenez à la fiche du prêt.'
+        => 'Ogni materiale scansionato viene aggiunto al prestito (se disponibile); continua a scansionare, poi torna alla scheda del prestito.',
+    'Choisissez un état pour au moins un matériel.'
+        => 'Scegli uno stato per almeno un materiale.',
+    'Créer la fiche'
+        => 'Crea la scheda',
+    'Date de retour'
+        => 'Data di restituzione',
+    'Date de retour invalide (elle ne peut précéder la date du prêt).'
+        => 'Data di restituzione non valida (non può precedere la data del prestito).',
+    'Date de retour prévue *'
+        => 'Data di restituzione prevista *',
+    'Date du prêt *'
+        => 'Data del prestito *',
+    'Effacer'
+        => 'Cancella',
+    'En retard seulement'
+        => 'Solo in ritardo',
+    'Enregistrer l\'état des matériels cochés ? Ce choix est définitif.'
+        => 'Salvare lo stato dei materiali spuntati? La scelta è definitiva.',
+    'Enregistrer la signature'
+        => 'Salva la firma',
+    'Enregistrer la vérification'
+        => 'Salva la verifica',
+    'Équipement #{id} introuvable.'
+        => 'Attrezzatura n. {id} non trovata.',
+    'Faire signer'
+        => 'Fai firmare',
+    'Faites signer l\'emprunteur dans le cadre avant d\'enregistrer.'
+        => 'Fai firmare il mutuatario nel riquadro prima di salvare.',
+    'Fiche créée le {created_at}'
+        => 'Scheda creata il {created_at}',
+    'Fiche de prêt créée : ajoutez maintenant le matériel.'
+        => 'Scheda di prestito creata: ora aggiungi il materiale.',
+    'Fiche de prêt introuvable.'
+        => 'Scheda di prestito non trovata.',
+    'Fiche de prêt supprimée.'
+        => 'Scheda di prestito eliminata.',
+    'Fiche PDF'
+        => 'Scheda PDF',
+    'inconnu'
+        => 'sconosciuto',
+    'Informations de l\'emprunteur enregistrées.'
+        => 'Dati del mutuatario salvati.',
+    'La date de retour prévue doit être postérieure ou égale à la date du prêt.'
+        => 'La data di restituzione prevista deve essere uguale o successiva alla data del prestito.',
+    'La date de retour prévue est obligatoire (date valide).'
+        => 'La data di restituzione prevista è obbligatoria (data valida).',
+    'La date du prêt est obligatoire (date valide).'
+        => 'La data del prestito è obbligatoria (data valida).',
+    'La fiche est exportable en PDF une fois le prêt validé.'
+        => 'La scheda è esportabile in PDF una volta convalidato il prestito.',
+    'La vérification porte sur la page affichée.'
+        => 'La verifica riguarda la pagina visualizzata.',
+    'Le gestionnaire de prêt n\'est pas activé (Administration › Club).'
+        => 'Il gestore dei prestiti non è attivato (Amministrazione › Club).',
+    'Le gestionnaire de prêt n\'est pas activé.'
+        => 'Il gestore dei prestiti non è attivato.',
+    'Le matériel passera au statut « Prêté ». L\'emprunteur pourra signer sur l\'écran (téléphone) ; sinon, imprimez la fiche PDF pour la faire signer.'
+        => 'Il materiale passerà allo stato «In prestito». Il mutuatario potrà firmare sullo schermo (telefono); altrimenti stampa la scheda PDF per farla firmare.',
+    'Le matériel sans état coché reste « Prêté » jusqu\'à sa vérification.'
+        => 'Il materiale senza stato spuntato resta «In prestito» fino alla verifica.',
+    'le nom'
+        => 'il cognome',
+    'Le nom est obligatoire.'
+        => 'Il cognome è obbligatorio.',
+    'Le nom ne doit pas dépasser 64 caractères.'
+        => 'Il cognome non deve superare 64 caratteri.',
+    'le numéro de licence'
+        => 'il numero di tessera',
+    'Le numéro de licence ne doit pas dépasser 32 caractères.'
+        => 'Il numero di tessera non deve superare 32 caratteri.',
+    'le prénom'
+        => 'il nome',
+    'Le prénom est obligatoire.'
+        => 'Il nome è obbligatorio.',
+    'Le prénom ne doit pas dépasser 64 caractères.'
+        => 'Il nome non deve superare 64 caratteri.',
+    'Le prêt n\'a pas été validé : retirez ou remplacez le matériel concerné.'
+        => 'Il prestito non è stato convalidato: rimuovi o sostituisci il materiale interessato.',
+    'le téléphone'
+        => 'il telefono',
+    'Le téléphone est obligatoire.'
+        => 'Il telefono è obbligatorio.',
+    'Le téléphone ne doit pas dépasser 20 caractères.'
+        => 'Il telefono non deve superare 20 caratteri.',
+    'Licence'
+        => 'Tessera',
+    'licence {emprunteur_licence}'
+        => 'tessera {emprunteur_licence}',
+    'Matériel'
+        => 'Materiale',
+    'Matériel ({lignes})'
+        => 'Materiale ({lignes})',
+    'Matériel du prêt :'
+        => 'Materiale del prestito:',
+    'Matériel prêté ({nb_lignes})'
+        => 'Materiale prestato ({nb_lignes})',
+    'Matériel rendu à vérifier'
+        => 'Materiale restituito da verificare',
+    'Matériel rendu le {date_retour}'
+        => 'Materiale restituito il {date_retour}',
+    'Matériel retiré du prêt.'
+        => 'Materiale rimosso dal prestito.',
+    'Mettre à jour le téléphone'
+        => 'Aggiorna il telefono',
+    'N°'
+        => 'N.',
+    'Nom *'
+        => 'Cognome *',
+    'non signé'
+        => 'non firmato',
+    'Numéro de licence *'
+        => 'Numero di tessera *',
+    'obligatoire. Le téléphone et le numéro de licence peuvent être complétés plus tard, mais sont exigés pour valider le prêt.'
+        => 'obbligatorio. Il telefono e il numero di tessera possono essere completati in seguito, ma sono richiesti per convalidare il prestito.',
+    'Ouvrir'
+        => 'Apri',
+    'par {cree_par_prenom} {cree_par_nom}'
+        => 'da {cree_par_prenom} {cree_par_nom}',
+    'par {valide_par_prenom} {valide_par_nom}'
+        => 'da {valide_par_prenom} {valide_par_nom}',
+    'Pas de signature à l\'écran'
+        => 'Nessuna firma sullo schermo',
+    'Prénom *'
+        => 'Nome *',
+    'Prêt en cours'
+        => 'Prestito in corso',
+    'Prêt en cours : seules les coordonnées de l\'emprunteur restent modifiables.'
+        => 'Prestito in corso: restano modificabili solo i recapiti del mutuatario.',
+    'Prêt n° {id}'
+        => 'Prestito n. {id}',
+    'Prêt terminé'
+        => 'Prestito terminato',
+    'Prêt terminé : vérifiez maintenant chaque matériel rendu.'
+        => 'Prestito terminato: verifica ora ogni materiale restituito.',
+    'Prêt validé : {nombre} matériel(s) passé(s) en « Prêté ».'
+        => 'Prestito convalidato: {nombre} materiale/i passato/i a «In prestito».',
+    'Prêt validé : {nombre} matériel(s) passé(s) en « Prêté ». Sans signature à l\'écran : imprimez la fiche PDF pour la faire signer.'
+        => 'Prestito convalidato: {nombre} materiale/i passato/i a «In prestito». Nessuna firma sullo schermo: stampa la scheda PDF per farla firmare.',
+    'Prêt validé le {date_validation}'
+        => 'Prestito convalidato il {date_validation}',
+    'Prêts de matériel'
+        => 'Prestiti di materiale',
+    'Référence ou désignation'
+        => 'Riferimento o designazione',
+    'Rendu — disponible'
+        => 'Restituito — disponibile',
+    'Rendu — en maintenance'
+        => 'Restituito — in manutenzione',
+    'Renseignez {champs} de l\'emprunteur.'
+        => 'Indica {champs} del mutuatario.',
+    'Renseignez la date du prêt et la date de retour prévue.'
+        => 'Indica la data del prestito e la data di restituzione prevista.',
+    'Retirer'
+        => 'Rimuovi',
+    'Retirez le matériel signalé comme indisponible.'
+        => 'Rimuovi il materiale segnalato come non disponibile.',
+    'Retour du matériel'
+        => 'Restituzione del materiale',
+    'Retour prévu'
+        => 'Restituzione prevista',
+    'Retour vérifié'
+        => 'Restituzione verificata',
+    'Sans signature à l\'écran, la fiche PDF comporte un cadre à faire signer sur papier.'
+        => 'Senza firma sullo schermo, la scheda PDF contiene un riquadro da firmare su carta.',
+    'Scanner — prêt n° {id} ({emprunteur_prenom} {emprunteur_nom})'
+        => 'Scanner — prestito n. {id} ({emprunteur_prenom} {emprunteur_nom})',
+    'Scanner des QR codes'
+        => 'Scansiona codici QR',
+    'Seul un prêt en cours peut être terminé.'
+        => 'Solo un prestito in corso può essere terminato.',
+    'Seul un prêt en saisie peut être validé.'
+        => 'Solo un prestito in compilazione può essere convalidato.',
+    'Seule une fiche en saisie peut être supprimée (historique des prêts).'
+        => 'Solo una scheda in compilazione può essere eliminata (storico dei prestiti).',
+    'Signature de l\'emprunteur'
+        => 'Firma del mutuatario',
+    'Signature de l\'emprunteur ({date_signature}) :'
+        => 'Firma del mutuatario ({date_signature}):',
+    'Signature de l\'emprunteur enregistrée.'
+        => 'Firma del mutuatario salvata.',
+    'Signature invalide.'
+        => 'Firma non valida.',
+    'Signature trop volumineuse.'
+        => 'Firma troppo grande.',
+    'Statut inchangé (équipement plus « Prêté ») : {liste}.'
+        => 'Stato invariato (attrezzatura non più «In prestito»): {liste}.',
+    'Supprimer cette fiche de prêt en saisie ?'
+        => 'Eliminare questa scheda di prestito in compilazione?',
+    'Supprimer la fiche'
+        => 'Elimina la scheda',
+    'Téléphone'
+        => 'Telefono',
+    'Téléphone *'
+        => 'Telefono *',
+    'Téléphone invalide (chiffres, espaces, + . - ( ) uniquement).'
+        => 'Telefono non valido (solo cifre, spazi, + . - ( )).',
+    'Terminer — revenir à la fiche du prêt'
+        => 'Termina — torna alla scheda del prestito',
+    'Terminer le prêt'
+        => 'Termina il prestito',
+    'Terminer le prêt ? Vous vérifierez ensuite chaque matériel rendu.'
+        => 'Terminare il prestito? Poi verificherai ogni materiale restituito.',
+    'Terminez le prêt avant de vérifier le matériel rendu.'
+        => 'Termina il prestito prima di verificare il materiale restituito.',
+    'Tout le reste : rendu — disponible'
+        => 'Tutto il resto: restituito — disponibile',
+    'Une erreur est survenue pendant l\'enregistrement du retour. Merci de réessayer.'
+        => 'Si è verificato un errore durante il salvataggio della restituzione. Riprova.',
+    'Une erreur est survenue pendant la validation. Merci de réessayer.'
+        => 'Si è verificato un errore durante la convalida. Riprova.',
+    'Valider le prêt'
+        => 'Convalida il prestito',
+    'Valider le prêt ? Le matériel passera au statut « Prêté ».'
+        => 'Convalidare il prestito? Il materiale passerà allo stato «In prestito».',
 ];

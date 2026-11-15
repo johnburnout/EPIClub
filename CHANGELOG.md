@@ -38,6 +38,9 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 - **Acquisitions traduites (5e étape).** Liste, saisie, fiche (correction
   de la référence et de la date comprise), lignes et import Excel / CSV
   (correspondance des colonnes, rapport d'import), avec leurs messages.
+- **Prêts traduits (6e étape).** Liste, fiche, scanner, validation et
+  signature, vérification du retour, avec leurs messages et les libellés
+  de statut et d'état de retour.
 
 ### Fixed
 

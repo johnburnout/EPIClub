@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Epiclub\Enum;
 
+use Epiclub\Engine\Traducteur;
+
 /**
  * Statut d'une fiche de prêt (colonne `pret.statut`, migration 016).
  *
@@ -22,9 +24,9 @@ enum PretStatut: string
     public function label(): string
     {
         return match ($this) {
-            self::SAISIE   => 'En saisie',
-            self::EN_COURS => 'Prêt en cours',
-            self::TERMINE  => 'Prêt terminé',
+            self::SAISIE   => Traducteur::t('En saisie'),
+            self::EN_COURS => Traducteur::t('Prêt en cours'),
+            self::TERMINE  => Traducteur::t('Prêt terminé'),
         };
     }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Epiclub\Controller;
 
+use Epiclub\Engine\Traducteur;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Epiclub\Domain\CategorieManager;
@@ -86,7 +87,7 @@ class PretController extends AbstractController
     {
         $this->deniAccessUnlessGranted('ROLE_CONTROLLEUR');
         if (!$this->pretActif()) {
-            $this->session->getFlashBag()->add('note', "Le gestionnaire de prêt n'est pas activé (Administration › Club).");
+            $this->session->getFlashBag()->add('note', Traducteur::t("Le gestionnaire de prêt n'est pas activé (Administration › Club)."));
             return $this->redirectTo('/tableau_de_bord');
         }
         return null;
@@ -102,7 +103,7 @@ class PretController extends AbstractController
         $id = $this->getValidId($request, $cle);
         $pret = $id === null ? null : $this->pretManager()->findId($id);
         if (!$pret) {
-            $this->session->getFlashBag()->add('error', 'Fiche de prêt introuvable.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Fiche de prêt introuvable.'));
             return null;
         }
         return $pret;
@@ -210,7 +211,7 @@ class PretController extends AbstractController
                     'Création du ' . self::libelleJournal(['id' => $id] + $data),
                     $request
                 );
-                $this->session->getFlashBag()->add('success', 'Fiche de prêt créée : ajoutez maintenant le matériel.');
+                $this->session->getFlashBag()->add('success', Traducteur::t('Fiche de prêt créée : ajoutez maintenant le matériel.'));
                 return $this->redirectTo('/prets/pret-' . (int) $id);
             }
         }
@@ -246,7 +247,7 @@ class PretController extends AbstractController
             if ($form_errors === []) {
                 $data['id'] = (int) $pret['id'];
                 $this->pretManager()->save($data);
-                $this->session->getFlashBag()->add('success', "Informations de l'emprunteur enregistrées.");
+                $this->session->getFlashBag()->add('success', Traducteur::t("Informations de l'emprunteur enregistrées."));
                 return $this->redirectTo(self::urlFiche($pret));
             }
         }
@@ -320,7 +321,7 @@ class PretController extends AbstractController
     {
         $erreurs = PretRegles::erreursValidation($pret, $lignes);
         if (array_filter($lignes, static fn(array $l) => !empty($l['motif'])) !== []) {
-            $erreurs[] = 'Retirez le matériel signalé comme indisponible.';
+            $erreurs[] = Traducteur::t('Retirez le matériel signalé comme indisponible.');
         }
         return $erreurs;
     }
@@ -387,11 +388,11 @@ class PretController extends AbstractController
     /**
      * Ajoute un ou plusieurs équipements à un prêt en saisie.
      *
-     * @return array{ajoutes: list<string>, refus: list<string>}
+     * @return array{ajoutes: list<string>, refus: list<string>, deja: list<string>}
      */
     private function ajouterEquipements(array $pret, array $ids): array
     {
-        $resultat = ['ajoutes' => [], 'refus' => []];
+        $resultat = ['ajoutes' => [], 'refus' => [], 'deja' => []];
         $jour = $this->aujourdhui();
         $equipements = $this->equipementManager()->findIds($ids);
         $lignes = $this->pretLigneManager();
@@ -399,12 +400,13 @@ class PretController extends AbstractController
         foreach (array_unique(array_map('intval', $ids)) as $id) {
             $e = $equipements[$id] ?? null;
             if ($e === null) {
-                $resultat['refus'][] = "Équipement #{$id} introuvable.";
+                $resultat['refus'][] = Traducteur::t('Équipement #{id} introuvable.', ['id' => $id]);
                 continue;
             }
             $autre = $lignes->findPretOuvertPourEquipement($id);
             if ($autre !== null && (int) $autre['id'] === (int) $pret['id']) {
-                $resultat['refus'][] = "{$e['reference']} : déjà sur ce prêt.";
+                $resultat['refus'][] = Traducteur::t('{reference} : déjà sur ce prêt.', ['reference' => $e['reference']]);
+                $resultat['deja'][] = (string) $e['reference'];
                 continue;
             }
             $motif = PretRegles::motifIneligibilite($e, $autre, $jour);
@@ -432,7 +434,7 @@ class PretController extends AbstractController
         $retour = self::retourSur($request->request->get('retour'), self::urlFiche($pret));
 
         if ($pret['statut'] !== PretStatut::SAISIE->value) {
-            $this->session->getFlashBag()->add('error', "Ce prêt n'est plus en saisie : plus d'ajout de matériel possible.");
+            $this->session->getFlashBag()->add('error', Traducteur::t("Ce prêt n'est plus en saisie : plus d'ajout de matériel possible."));
             return $this->redirectTo($retour);
         }
 
@@ -443,15 +445,15 @@ class PretController extends AbstractController
         }
         $ids = array_values(array_filter(array_map('strval', $ids), 'ctype_digit'));
         if ($ids === []) {
-            $this->session->getFlashBag()->add('error', 'Aucun équipement sélectionné.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Aucun équipement sélectionné.'));
             return $this->redirectTo($retour);
         }
 
         $resultat = $this->ajouterEquipements($pret, $ids);
-        $libellePret = sprintf('prêt n° %d (%s %s)', $pret['id'], $pret['emprunteur_prenom'], $pret['emprunteur_nom']);
         if ($resultat['ajoutes'] !== []) {
-            $this->session->getFlashBag()->add('success', sprintf(
-                'Ajouté au %s : %s.', $libellePret, implode(', ', $resultat['ajoutes'])
+            $this->session->getFlashBag()->add('success', Traducteur::t(
+                'Ajouté au prêt n° {id} ({prenom} {nom}) : {references}.',
+                ['id' => $pret['id'], 'prenom' => $pret['emprunteur_prenom'], 'nom' => $pret['emprunteur_nom'], 'references' => implode(', ', $resultat['ajoutes'])]
             ));
         }
         foreach ($resultat['refus'] as $refus) {
@@ -475,11 +477,11 @@ class PretController extends AbstractController
             return $this->redirectTo('/prets');
         }
         if ($pret['statut'] !== PretStatut::SAISIE->value) {
-            $this->session->getFlashBag()->add('error', "Ce prêt n'est plus en saisie : le matériel ne peut plus être retiré.");
+            $this->session->getFlashBag()->add('error', Traducteur::t("Ce prêt n'est plus en saisie : le matériel ne peut plus être retiré."));
             return $this->redirectTo(self::urlFiche($pret));
         }
         $this->pretLigneManager()->delete((int) $ligne['id']);
-        $this->session->getFlashBag()->add('success', 'Matériel retiré du prêt.');
+        $this->session->getFlashBag()->add('success', Traducteur::t('Matériel retiré du prêt.'));
         return $this->redirectTo(self::urlFiche($pret));
     }
 
@@ -497,7 +499,7 @@ class PretController extends AbstractController
             return $this->redirectTo('/prets');
         }
         if ($pret['statut'] !== PretStatut::SAISIE->value) {
-            $this->session->getFlashBag()->add('error', "Ce prêt n'est plus en saisie.");
+            $this->session->getFlashBag()->add('error', Traducteur::t("Ce prêt n'est plus en saisie."));
             return $this->redirectTo(self::urlFiche($pret));
         }
         return $this->render('pret_scan.twig', [
@@ -512,25 +514,25 @@ class PretController extends AbstractController
         try {
             $this->validateCsrf($request);
         } catch (\Throwable) {
-            return new JsonResponse(['statut' => 'erreur', 'message' => 'Jeton de sécurité invalide, rechargez la page.'], Response::HTTP_FORBIDDEN);
+            return new JsonResponse(['statut' => 'erreur', 'message' => Traducteur::t('Jeton de sécurité invalide, rechargez la page.')], Response::HTTP_FORBIDDEN);
         }
         if (!$this->pretActif()) {
-            return new JsonResponse(['statut' => 'erreur', 'message' => "Le gestionnaire de prêt n'est pas activé."], Response::HTTP_FORBIDDEN);
+            return new JsonResponse(['statut' => 'erreur', 'message' => Traducteur::t("Le gestionnaire de prêt n'est pas activé.")], Response::HTTP_FORBIDDEN);
         }
 
         $pretId = $request->request->get('pret_id');
         $equipementId = $request->request->get('equipement_id');
         if (!is_string($pretId) || !ctype_digit($pretId) || !is_string($equipementId) || !ctype_digit($equipementId)) {
-            return new JsonResponse(['statut' => 'erreur', 'message' => 'QR code invalide.'], Response::HTTP_BAD_REQUEST);
+            return new JsonResponse(['statut' => 'erreur', 'message' => Traducteur::t('QR code invalide.')], Response::HTTP_BAD_REQUEST);
         }
         $pret = $this->pretManager()->findId((int) $pretId);
         if (!$pret || $pret['statut'] !== PretStatut::SAISIE->value) {
-            return new JsonResponse(['statut' => 'erreur', 'message' => "Ce prêt n'est plus en saisie."]);
+            return new JsonResponse(['statut' => 'erreur', 'message' => Traducteur::t("Ce prêt n'est plus en saisie.")]);
         }
 
         $equipement = $this->equipementManager()->findId((int) $equipementId);
         if (!$equipement) {
-            return new JsonResponse(['statut' => 'introuvable', 'message' => 'Équipement non trouvé.']);
+            return new JsonResponse(['statut' => 'introuvable', 'message' => Traducteur::t('Équipement non trouvé.')]);
         }
         $base = ['reference' => $equipement['reference'], 'libelle' => $equipement['libelle']];
 
@@ -538,9 +540,11 @@ class PretController extends AbstractController
         if ($resultat['ajoutes'] !== []) {
             return new JsonResponse(['statut' => 'ajoute'] + $base);
         }
-        $message = $resultat['refus'][0] ?? 'Ajout impossible.';
+        // [Localisation] « Déjà sur ce prêt » se reconnaît à la liste dédiée,
+        // plus au texte du message (traduit).
+        $message = $resultat['refus'][0] ?? Traducteur::t('Ajout impossible.');
         return new JsonResponse([
-            'statut' => str_contains($message, 'déjà sur ce prêt') ? 'deja' : 'refuse',
+            'statut' => $resultat['deja'] !== [] ? 'deja' : 'refuse',
             'message' => $message,
         ] + $base);
     }
@@ -591,7 +595,7 @@ class PretController extends AbstractController
 
             if ($signatureSeule) {
                 if ($signature === null) {
-                    $this->session->getFlashBag()->add('error', "Faites signer l'emprunteur dans le cadre avant d'enregistrer.");
+                    $this->session->getFlashBag()->add('error', Traducteur::t("Faites signer l'emprunteur dans le cadre avant d'enregistrer."));
                     return $this->redirectTo(self::urlFiche($pret) . '/valider');
                 }
                 $this->pretManager()->save([
@@ -599,7 +603,7 @@ class PretController extends AbstractController
                     'signature' => $signature,
                     'date_signature' => date('Y-m-d H:i:s'),
                 ]);
-                $this->session->getFlashBag()->add('success', "Signature de l'emprunteur enregistrée.");
+                $this->session->getFlashBag()->add('success', Traducteur::t("Signature de l'emprunteur enregistrée."));
                 return $this->redirectTo(self::urlFiche($pret));
             }
 
@@ -608,7 +612,7 @@ class PretController extends AbstractController
                 foreach ($refus as $e) {
                     $this->session->getFlashBag()->add('error', $e);
                 }
-                $this->session->getFlashBag()->add('error', "Le prêt n'a pas été validé : retirez ou remplacez le matériel concerné.");
+                $this->session->getFlashBag()->add('error', Traducteur::t("Le prêt n'a pas été validé : retirez ou remplacez le matériel concerné."));
                 return $this->redirectTo(self::urlFiche($pret));
             }
             $this->journaliser(JournalActiviteManager::TYPE_PRET, sprintf(
@@ -617,11 +621,9 @@ class PretController extends AbstractController
                 count($lignes),
                 $signature === null ? ', signature sur papier' : ''
             ), $request);
-            $this->session->getFlashBag()->add('success', sprintf(
-                'Prêt validé : %d matériel(s) passé(s) en « Prêté ».%s',
-                count($lignes),
-                $signature === null ? " Sans signature à l'écran : imprimez la fiche PDF pour la faire signer." : ''
-            ));
+            $this->session->getFlashBag()->add('success', $signature === null
+                ? Traducteur::t("Prêt validé : {nombre} matériel(s) passé(s) en « Prêté ». Sans signature à l'écran : imprimez la fiche PDF pour la faire signer.", ['nombre' => count($lignes)])
+                : Traducteur::t('Prêt validé : {nombre} matériel(s) passé(s) en « Prêté ».', ['nombre' => count($lignes)]));
             return $this->redirectTo(self::urlFiche($pret));
         }
 
@@ -681,7 +683,7 @@ class PretController extends AbstractController
         } catch (\Throwable $e) {
             $manager->rollBack();
             error_log(sprintf('[PretController] Validation du prêt id=%s impossible : %s', $pret['id'], $e->getMessage()));
-            return ['Une erreur est survenue pendant la validation. Merci de réessayer.'];
+            return [Traducteur::t('Une erreur est survenue pendant la validation. Merci de réessayer.')];
         }
     }
 
@@ -700,7 +702,7 @@ class PretController extends AbstractController
             return $this->redirectTo('/prets');
         }
         if ($pret['statut'] !== PretStatut::EN_COURS->value) {
-            $this->session->getFlashBag()->add('error', 'Seul un prêt en cours peut être terminé.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Seul un prêt en cours peut être terminé.'));
             return $this->redirectTo(self::urlFiche($pret));
         }
 
@@ -709,7 +711,7 @@ class PretController extends AbstractController
             $date = $this->aujourdhui();
         }
         if (!PretRegles::dateValide($date) || $date < substr((string) $pret['date_pret'], 0, 10)) {
-            $this->session->getFlashBag()->add('error', 'Date de retour invalide (elle ne peut précéder la date du prêt).');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Date de retour invalide (elle ne peut précéder la date du prêt).'));
             return $this->redirectTo(self::urlFiche($pret));
         }
 
@@ -725,7 +727,7 @@ class PretController extends AbstractController
             'Fin du ' . self::libelleJournal($pret) . ' (retour le ' . date('d/m/Y', (int) strtotime($date)) . ')',
             $request
         );
-        $this->session->getFlashBag()->add('success', 'Prêt terminé : vérifiez maintenant chaque matériel rendu.');
+        $this->session->getFlashBag()->add('success', Traducteur::t('Prêt terminé : vérifiez maintenant chaque matériel rendu.'));
         return $this->redirectTo(self::urlFiche($pret) . '#retour');
     }
 
@@ -744,7 +746,7 @@ class PretController extends AbstractController
             return $this->redirectTo('/prets');
         }
         if ($pret['statut'] !== PretStatut::TERMINE->value) {
-            $this->session->getFlashBag()->add('error', 'Terminez le prêt avant de vérifier le matériel rendu.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Terminez le prêt avant de vérifier le matériel rendu.'));
             return $this->redirectTo(self::urlFiche($pret));
         }
 
@@ -759,7 +761,7 @@ class PretController extends AbstractController
             }
         }
         if ($aTraiter === []) {
-            $this->session->getFlashBag()->add('error', 'Choisissez un état pour au moins un matériel.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Choisissez un état pour au moins un matériel.'));
             return $this->redirectTo(self::urlFiche($pret) . '#retour');
         }
 
@@ -784,26 +786,25 @@ class PretController extends AbstractController
         } catch (\Throwable $e) {
             $manager->rollBack();
             error_log(sprintf('[PretController] Retour du prêt id=%s impossible : %s', $pret['id'], $e->getMessage()));
-            $this->session->getFlashBag()->add('error', "Une erreur est survenue pendant l'enregistrement du retour. Merci de réessayer.");
+            $this->session->getFlashBag()->add('error', Traducteur::t("Une erreur est survenue pendant l'enregistrement du retour. Merci de réessayer."));
             return $this->redirectTo(self::urlFiche($pret) . '#retour');
         }
 
         $restants = count(array_filter($lignes, static fn(array $l) => $l['etat_retour'] === null)) - count($aTraiter);
-        $this->journaliser(JournalActiviteManager::TYPE_PRET, sprintf(
+        // Journal en français (libellés d'état traduits ailleurs).
+        $this->journaliser(JournalActiviteManager::TYPE_PRET, Traducteur::enFrancais(static fn () => sprintf(
             'Retour du %s — %s',
             self::libelleJournal($pret),
             implode(', ', array_map(
                 static fn(array $t) => $t[0]['reference'] . ' : ' . mb_strtolower($t[1]->label()),
                 $aTraiter
             ))
-        ), $request);
-        $this->session->getFlashBag()->add('success', sprintf(
-            '%d matériel(s) vérifié(s).%s',
-            count($aTraiter),
-            $restants > 0 ? " Reste {$restants} matériel(s) à vérifier." : ' Retour complet.'
-        ));
+        )), $request);
+        $this->session->getFlashBag()->add('success', $restants > 0
+            ? Traducteur::t('{nombre} matériel(s) vérifié(s). Reste {restants} matériel(s) à vérifier.', ['nombre' => count($aTraiter), 'restants' => $restants])
+            : Traducteur::t('{nombre} matériel(s) vérifié(s). Retour complet.', ['nombre' => count($aTraiter)]));
         if ($nonModifies !== []) {
-            $this->session->getFlashBag()->add('note', 'Statut inchangé (équipement plus « Prêté ») : ' . implode(', ', $nonModifies) . '.');
+            $this->session->getFlashBag()->add('note', Traducteur::t('Statut inchangé (équipement plus « Prêté ») : {liste}.', ['liste' => implode(', ', $nonModifies)]));
         }
         return $this->redirectTo(self::urlFiche($pret) . ($restants > 0 ? '#retour' : ''));
     }
@@ -823,12 +824,12 @@ class PretController extends AbstractController
             return $this->redirectTo('/prets');
         }
         if ($pret['statut'] !== PretStatut::SAISIE->value) {
-            $this->session->getFlashBag()->add('error', 'Seule une fiche en saisie peut être supprimée (historique des prêts).');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Seule une fiche en saisie peut être supprimée (historique des prêts).'));
             return $this->redirectTo(self::urlFiche($pret));
         }
         $this->pretManager()->delete((int) $pret['id']);
         $this->journaliser(JournalActiviteManager::TYPE_PRET, 'Suppression du ' . self::libelleJournal($pret) . ' (en saisie)', $request);
-        $this->session->getFlashBag()->add('success', 'Fiche de prêt supprimée.');
+        $this->session->getFlashBag()->add('success', Traducteur::t('Fiche de prêt supprimée.'));
         return $this->redirectTo('/prets');
     }
 
@@ -847,7 +848,7 @@ class PretController extends AbstractController
         }
         $statut = PretStatut::from($pret['statut']);
         if (!$statut->exportable()) {
-            $this->session->getFlashBag()->add('error', 'La fiche est exportable en PDF une fois le prêt validé.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('La fiche est exportable en PDF une fois le prêt validé.'));
             return $this->redirectTo(self::urlFiche($pret));
         }
 

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Epiclub\Enum;
 
+use Epiclub\Engine\Traducteur;
+
 /**
  * État constaté au retour d'un matériel prêté (colonne
  * `pret_ligne.etat_retour`, migration 016) et statut d'équipement
@@ -18,9 +20,9 @@ enum PretEtatRetour: string
     public function label(): string
     {
         return match ($this) {
-            self::DISPONIBLE  => 'Rendu — disponible',
-            self::MAINTENANCE => 'Rendu — en maintenance',
-            self::EGARE       => 'Égaré',
+            self::DISPONIBLE  => Traducteur::t('Rendu — disponible'),
+            self::MAINTENANCE => Traducteur::t('Rendu — en maintenance'),
+            self::EGARE       => Traducteur::t('Égaré'),
         };
     }
 

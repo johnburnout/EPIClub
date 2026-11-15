@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Epiclub\Domain;
 
+use Epiclub\Engine\Traducteur;
 use Epiclub\Enum\EquipementStatut;
 use Epiclub\Enum\PretStatut;
 
@@ -31,29 +32,29 @@ final class PretRegles
         $ref = (string) ($equipement['reference'] ?? '#' . ($equipement['id'] ?? '?'));
 
         if (!empty($equipement['deleted_at'])) {
-            return "{$ref} : équipement supprimé.";
+            return Traducteur::t('{reference} : équipement supprimé.', ['reference' => $ref]);
         }
         if ($autrePret !== null) {
-            return sprintf('%s : déjà inscrit sur le prêt n° %d (%s %s).',
-                $ref,
-                (int) $autrePret['id'],
-                $autrePret['emprunteur_prenom'] ?? '',
-                $autrePret['emprunteur_nom'] ?? ''
-            );
+            return Traducteur::t('{reference} : déjà inscrit sur le prêt n° {id} ({prenom} {nom}).', [
+                'reference' => $ref,
+                'id' => (int) $autrePret['id'],
+                'prenom' => $autrePret['emprunteur_prenom'] ?? '',
+                'nom' => $autrePret['emprunteur_nom'] ?? '',
+            ]);
         }
         if (!empty($equipement['controle_en_cours'])) {
-            return "{$ref} : équipement en cours de contrôle.";
+            return Traducteur::t('{reference} : équipement en cours de contrôle.', ['reference' => $ref]);
         }
         $statut = EquipementStatut::tryFrom((int) ($equipement['statut'] ?? -1));
         if ($statut !== EquipementStatut::DISPONIBLE) {
-            return sprintf('%s : statut « %s », seul un matériel disponible peut être prêté.',
-                $ref,
-                $statut?->label() ?? 'inconnu'
-            );
+            return Traducteur::t('{reference} : statut « {statut} », seul un matériel disponible peut être prêté.', [
+                'reference' => $ref,
+                'statut' => $statut?->label() ?? Traducteur::t('inconnu'),
+            ]);
         }
         $fin = (string) ($equipement['date_fin_utilisation'] ?? '');
         if ($fin !== '' && substr($fin, 0, 10) <= $aujourdhui) {
-            return "{$ref} : date limite d'utilisation atteinte.";
+            return Traducteur::t("{reference} : date limite d'utilisation atteinte.", ['reference' => $ref]);
         }
 
         return null;
@@ -83,11 +84,11 @@ final class PretRegles
         // Téléphone : modifiable en saisie ET pendant le prêt.
         $tel = $texte('emprunteur_telephone');
         if (mb_strlen($tel) > 20) {
-            $erreurs['emprunteur_telephone'] = 'Le téléphone ne doit pas dépasser 20 caractères.';
+            $erreurs['emprunteur_telephone'] = Traducteur::t('Le téléphone ne doit pas dépasser 20 caractères.');
         } elseif ($tel !== '' && !preg_match('/^[0-9+().\s-]+$/', $tel)) {
-            $erreurs['emprunteur_telephone'] = 'Téléphone invalide (chiffres, espaces, + . - ( ) uniquement).';
+            $erreurs['emprunteur_telephone'] = Traducteur::t('Téléphone invalide (chiffres, espaces, + . - ( ) uniquement).');
         } elseif ($tel === '' && $statut === PretStatut::EN_COURS) {
-            $erreurs['emprunteur_telephone'] = 'Le téléphone est obligatoire.';
+            $erreurs['emprunteur_telephone'] = Traducteur::t('Le téléphone est obligatoire.');
         }
         $data['emprunteur_telephone'] = $tel;
 
@@ -95,33 +96,41 @@ final class PretRegles
             return [$data, $erreurs];
         }
 
-        foreach (['emprunteur_nom' => 'Le nom', 'emprunteur_prenom' => 'Le prénom'] as $cle => $libelle) {
+        $messages = [
+            'emprunteur_nom' => [Traducteur::t('Le nom est obligatoire.'), Traducteur::t('Le nom ne doit pas dépasser 64 caractères.')],
+            'emprunteur_prenom' => [Traducteur::t('Le prénom est obligatoire.'), Traducteur::t('Le prénom ne doit pas dépasser 64 caractères.')],
+        ];
+        foreach ($messages as $cle => [$obligatoire, $tropLong]) {
             $v = $texte($cle);
             if ($v === '') {
-                $erreurs[$cle] = "{$libelle} est obligatoire.";
+                $erreurs[$cle] = $obligatoire;
             } elseif (mb_strlen($v) > 64) {
-                $erreurs[$cle] = "{$libelle} ne doit pas dépasser 64 caractères.";
+                $erreurs[$cle] = $tropLong;
             }
             $data[$cle] = $v;
         }
 
         $licence = $texte('emprunteur_licence');
         if (mb_strlen($licence) > 32) {
-            $erreurs['emprunteur_licence'] = 'Le numéro de licence ne doit pas dépasser 32 caractères.';
+            $erreurs['emprunteur_licence'] = Traducteur::t('Le numéro de licence ne doit pas dépasser 32 caractères.');
         }
         $data['emprunteur_licence'] = $licence;
 
-        foreach (['date_pret' => 'La date du prêt', 'date_retour_prevue' => 'La date de retour prévue'] as $cle => $libelle) {
+        $messages = [
+            'date_pret' => Traducteur::t('La date du prêt est obligatoire (date valide).'),
+            'date_retour_prevue' => Traducteur::t('La date de retour prévue est obligatoire (date valide).'),
+        ];
+        foreach ($messages as $cle => $message) {
             $v = $texte($cle);
             if (!self::dateValide($v)) {
-                $erreurs[$cle] = "{$libelle} est obligatoire (date valide).";
+                $erreurs[$cle] = $message;
             }
             $data[$cle] = $v;
         }
         if (self::dateValide($data['date_pret']) && self::dateValide($data['date_retour_prevue'])
             && $data['date_retour_prevue'] < $data['date_pret']
         ) {
-            $erreurs['date_retour_prevue'] = 'La date de retour prévue doit être postérieure ou égale à la date du prêt.';
+            $erreurs['date_retour_prevue'] = Traducteur::t('La date de retour prévue doit être postérieure ou égale à la date du prêt.');
         }
 
         $remarques = $texte('remarques');
@@ -141,13 +150,13 @@ final class PretRegles
     {
         $erreurs = [];
         if (($pret['statut'] ?? null) !== PretStatut::SAISIE->value) {
-            $erreurs[] = "Seul un prêt en saisie peut être validé.";
+            $erreurs[] = Traducteur::t("Seul un prêt en saisie peut être validé.");
         }
         $libelles = [
-            'emprunteur_nom' => 'le nom',
-            'emprunteur_prenom' => 'le prénom',
-            'emprunteur_telephone' => 'le téléphone',
-            'emprunteur_licence' => 'le numéro de licence',
+            'emprunteur_nom' => Traducteur::t('le nom'),
+            'emprunteur_prenom' => Traducteur::t('le prénom'),
+            'emprunteur_telephone' => Traducteur::t('le téléphone'),
+            'emprunteur_licence' => Traducteur::t('le numéro de licence'),
         ];
         $manquants = [];
         foreach ($libelles as $cle => $libelle) {
@@ -156,15 +165,15 @@ final class PretRegles
             }
         }
         if ($manquants !== []) {
-            $erreurs[] = "Renseignez " . implode(', ', $manquants) . " de l'emprunteur.";
+            $erreurs[] = Traducteur::t("Renseignez {champs} de l'emprunteur.", ['champs' => implode(', ', $manquants)]);
         }
         if (!self::dateValide((string) ($pret['date_pret'] ?? ''))
             || !self::dateValide((string) ($pret['date_retour_prevue'] ?? ''))
         ) {
-            $erreurs[] = 'Renseignez la date du prêt et la date de retour prévue.';
+            $erreurs[] = Traducteur::t('Renseignez la date du prêt et la date de retour prévue.');
         }
         if ($lignes === []) {
-            $erreurs[] = 'Ajoutez au moins un matériel au prêt.';
+            $erreurs[] = Traducteur::t('Ajoutez au moins un matériel au prêt.');
         }
         return $erreurs;
     }
@@ -181,14 +190,14 @@ final class PretRegles
         }
         $brut = trim($brut);
         if (!str_starts_with($brut, self::PREFIXE_SIGNATURE)) {
-            return [null, 'Signature invalide.'];
+            return [null, Traducteur::t('Signature invalide.')];
         }
         $binaire = base64_decode(substr($brut, strlen(self::PREFIXE_SIGNATURE)), true);
         if ($binaire === false || !str_starts_with($binaire, "\x89PNG\r\n\x1a\n")) {
-            return [null, 'Signature invalide.'];
+            return [null, Traducteur::t('Signature invalide.')];
         }
         if (strlen($binaire) > self::SIGNATURE_TAILLE_MAX) {
-            return [null, 'Signature trop volumineuse.'];
+            return [null, Traducteur::t('Signature trop volumineuse.')];
         }
         return [self::PREFIXE_SIGNATURE . base64_encode($binaire), null];
     }

@@ -1700,4 +1700,286 @@ return [
         => 'Ver las adquisiciones',
     'Voir les équipements'
         => 'Ver los equipos',
+
+    // --- Prêts ---
+    ' : ajouté au prêt.'
+        => ': añadido al préstamo.',
+    ' : déjà sur ce prêt.'
+        => ': ya está en este préstamo.',
+    '« Je reconnais avoir reçu le matériel ci-dessus en bon état et m\'engage à le restituer au plus tard le {date_retour_prevue}. » Signez avec le doigt ou la souris dans le cadre.'
+        => '«Reconozco haber recibido el material anterior en buen estado y me comprometo a devolverlo a más tardar el {date_retour_prevue}.» Firme con el dedo o el ratón en el recuadro.',
+    '(facultative)'
+        => '(opcional)',
+    '(fin enregistrée par {termine_par_prenom} {termine_par_nom})'
+        => '(fin registrado por {termine_par_prenom} {termine_par_nom})',
+    '{nb_a_verifier} à vérifier'
+        => '{nb_a_verifier} por verificar',
+    '{nombre} matériel(s) vérifié(s). Reste {restants} matériel(s) à vérifier.'
+        => '{nombre} material(es) verificado(s). Quedan {restants} por verificar.',
+    '{nombre} matériel(s) vérifié(s). Retour complet.'
+        => '{nombre} material(es) verificado(s). Devolución completa.',
+    '{reference} : date limite d\'utilisation atteinte.'
+        => '{reference}: fecha límite de uso alcanzada.',
+    '{reference} : déjà inscrit sur le prêt n° {id} ({prenom} {nom}).'
+        => '{reference}: ya inscrito en el préstamo n.º {id} ({prenom} {nom}).',
+    '{reference} : déjà sur ce prêt.'
+        => '{reference}: ya está en este préstamo.',
+    '{reference} : équipement en cours de contrôle.'
+        => '{reference}: equipo en inspección.',
+    '{reference} : équipement supprimé.'
+        => '{reference}: equipo eliminado.',
+    '{reference} : statut « {statut} », seul un matériel disponible peut être prêté.'
+        => '{reference}: estado «{statut}», solo se puede prestar material disponible.',
+    'Signature — prêt n° {id}'
+        => 'Firma — préstamo n.º {id}',
+    'Validation — prêt n° {id}'
+        => 'Validación — préstamo n.º {id}',
+    '<strong>Caméra indisponible :</strong> le navigateur n\'autorise la caméra que sur une page servie en <strong>HTTPS</strong> (ou en localhost). Ajoutez le matériel depuis la fiche du prêt.'
+        => '<strong>Cámara no disponible:</strong> el navegador solo permite la cámara en una página servida por <strong>HTTPS</strong> (o en localhost). Añada el material desde la ficha del préstamo.',
+    '<strong>Du</strong> {date_pret} <strong>au</strong> {date_retour_prevue} (retour prévu)'
+        => '<strong>Del</strong> {date_pret} <strong>al</strong> {date_retour_prevue} (devolución prevista)',
+    '<strong>Emprunteur :</strong> {emprunteur_prenom} {emprunteur_nom}'
+        => '<strong>Prestatario:</strong> {emprunteur_prenom} {emprunteur_nom}',
+    '<strong>Téléphone :</strong> {emprunteur_telephone}'
+        => '<strong>Teléfono:</strong> {emprunteur_telephone}',
+    'Ajout impossible.'
+        => 'No se puede añadir.',
+    'Ajouté au prêt n° {id} ({prenom} {nom}) : {references}.'
+        => 'Añadido al préstamo n.º {id} ({prenom} {nom}): {references}.',
+    'Ajouter du matériel'
+        => 'Añadir material',
+    'Ajouter la sélection'
+        => 'Añadir la selección',
+    'Ajoutez au moins un matériel au prêt.'
+        => 'Añada al menos un material al préstamo.',
+    'Après la fin du prêt, chaque matériel est vérifié et repasse Disponible, En maintenance ou Égaré.'
+        => 'Tras el fin del préstamo, cada material se verifica y vuelve a Disponible, En mantenimiento o Extraviado.',
+    'Aucun matériel disponible ne correspond.'
+        => 'Ningún material disponible coincide.',
+    'Aucun matériel pour l\'instant.'
+        => 'Todavía no hay material.',
+    'Aucune fiche de prêt.'
+        => 'Ninguna ficha de préstamo.',
+    'Ce prêt n\'est plus en saisie : le matériel ne peut plus être retiré.'
+        => 'Este préstamo ya no está en edición: el material ya no puede retirarse.',
+    'Ce prêt n\'est plus en saisie : plus d\'ajout de matériel possible.'
+        => 'Este préstamo ya no está en edición: ya no se puede añadir material.',
+    'Ce prêt n\'est plus en saisie.'
+        => 'Este préstamo ya no está en edición.',
+    'Chaque matériel scanné est ajouté au prêt (s\'il est disponible) ; enchaînez les scans, puis revenez à la fiche du prêt.'
+        => 'Cada material escaneado se añade al préstamo (si está disponible); encadene los escaneos y vuelva a la ficha del préstamo.',
+    'Choisissez un état pour au moins un matériel.'
+        => 'Elija un estado para al menos un material.',
+    'Créer la fiche'
+        => 'Crear la ficha',
+    'Date de retour'
+        => 'Fecha de devolución',
+    'Date de retour invalide (elle ne peut précéder la date du prêt).'
+        => 'Fecha de devolución no válida (no puede ser anterior a la fecha del préstamo).',
+    'Date de retour prévue *'
+        => 'Fecha de devolución prevista *',
+    'Date du prêt *'
+        => 'Fecha del préstamo *',
+    'Effacer'
+        => 'Borrar',
+    'En retard seulement'
+        => 'Solo con retraso',
+    'Enregistrer l\'état des matériels cochés ? Ce choix est définitif.'
+        => '¿Guardar el estado de los materiales marcados? Esta elección es definitiva.',
+    'Enregistrer la signature'
+        => 'Guardar la firma',
+    'Enregistrer la vérification'
+        => 'Guardar la verificación',
+    'Équipement #{id} introuvable.'
+        => 'Equipo n.º {id} no encontrado.',
+    'Faire signer'
+        => 'Hacer firmar',
+    'Faites signer l\'emprunteur dans le cadre avant d\'enregistrer.'
+        => 'Haga firmar al prestatario en el recuadro antes de guardar.',
+    'Fiche créée le {created_at}'
+        => 'Ficha creada el {created_at}',
+    'Fiche de prêt créée : ajoutez maintenant le matériel.'
+        => 'Ficha de préstamo creada: añada ahora el material.',
+    'Fiche de prêt introuvable.'
+        => 'Ficha de préstamo no encontrada.',
+    'Fiche de prêt supprimée.'
+        => 'Ficha de préstamo eliminada.',
+    'Fiche PDF'
+        => 'Ficha PDF',
+    'inconnu'
+        => 'desconocido',
+    'Informations de l\'emprunteur enregistrées.'
+        => 'Datos del prestatario guardados.',
+    'La date de retour prévue doit être postérieure ou égale à la date du prêt.'
+        => 'La fecha de devolución prevista debe ser posterior o igual a la fecha del préstamo.',
+    'La date de retour prévue est obligatoire (date valide).'
+        => 'La fecha de devolución prevista es obligatoria (fecha válida).',
+    'La date du prêt est obligatoire (date valide).'
+        => 'La fecha del préstamo es obligatoria (fecha válida).',
+    'La fiche est exportable en PDF une fois le prêt validé.'
+        => 'La ficha puede exportarse a PDF una vez validado el préstamo.',
+    'La vérification porte sur la page affichée.'
+        => 'La verificación se refiere a la página mostrada.',
+    'Le gestionnaire de prêt n\'est pas activé (Administration › Club).'
+        => 'El gestor de préstamos no está activado (Administración › Club).',
+    'Le gestionnaire de prêt n\'est pas activé.'
+        => 'El gestor de préstamos no está activado.',
+    'Le matériel passera au statut « Prêté ». L\'emprunteur pourra signer sur l\'écran (téléphone) ; sinon, imprimez la fiche PDF pour la faire signer.'
+        => 'El material pasará al estado «Prestado». El prestatario podrá firmar en la pantalla (teléfono); si no, imprima la ficha PDF para que la firme.',
+    'Le matériel sans état coché reste « Prêté » jusqu\'à sa vérification.'
+        => 'El material sin estado marcado sigue «Prestado» hasta su verificación.',
+    'le nom'
+        => 'el apellido',
+    'Le nom est obligatoire.'
+        => 'El apellido es obligatorio.',
+    'Le nom ne doit pas dépasser 64 caractères.'
+        => 'El apellido no debe superar los 64 caracteres.',
+    'le numéro de licence'
+        => 'el número de licencia',
+    'Le numéro de licence ne doit pas dépasser 32 caractères.'
+        => 'El número de licencia no debe superar los 32 caracteres.',
+    'le prénom'
+        => 'el nombre',
+    'Le prénom est obligatoire.'
+        => 'El nombre es obligatorio.',
+    'Le prénom ne doit pas dépasser 64 caractères.'
+        => 'El nombre no debe superar los 64 caracteres.',
+    'Le prêt n\'a pas été validé : retirez ou remplacez le matériel concerné.'
+        => 'El préstamo no se ha validado: retire o sustituya el material afectado.',
+    'le téléphone'
+        => 'el teléfono',
+    'Le téléphone est obligatoire.'
+        => 'El teléfono es obligatorio.',
+    'Le téléphone ne doit pas dépasser 20 caractères.'
+        => 'El teléfono no debe superar los 20 caracteres.',
+    'Licence'
+        => 'Licencia',
+    'licence {emprunteur_licence}'
+        => 'licencia {emprunteur_licence}',
+    'Matériel'
+        => 'Material',
+    'Matériel ({lignes})'
+        => 'Material ({lignes})',
+    'Matériel du prêt :'
+        => 'Material del préstamo:',
+    'Matériel prêté ({nb_lignes})'
+        => 'Material prestado ({nb_lignes})',
+    'Matériel rendu à vérifier'
+        => 'Material devuelto por verificar',
+    'Matériel rendu le {date_retour}'
+        => 'Material devuelto el {date_retour}',
+    'Matériel retiré du prêt.'
+        => 'Material retirado del préstamo.',
+    'Mettre à jour le téléphone'
+        => 'Actualizar el teléfono',
+    'N°'
+        => 'N.º',
+    'Nom *'
+        => 'Apellido *',
+    'non signé'
+        => 'sin firmar',
+    'Numéro de licence *'
+        => 'Número de licencia *',
+    'obligatoire. Le téléphone et le numéro de licence peuvent être complétés plus tard, mais sont exigés pour valider le prêt.'
+        => 'obligatorio. El teléfono y el número de licencia pueden completarse más tarde, pero son necesarios para validar el préstamo.',
+    'Ouvrir'
+        => 'Abrir',
+    'par {cree_par_prenom} {cree_par_nom}'
+        => 'por {cree_par_prenom} {cree_par_nom}',
+    'par {valide_par_prenom} {valide_par_nom}'
+        => 'por {valide_par_prenom} {valide_par_nom}',
+    'Pas de signature à l\'écran'
+        => 'Sin firma en pantalla',
+    'Prénom *'
+        => 'Nombre *',
+    'Prêt en cours'
+        => 'Préstamo en curso',
+    'Prêt en cours : seules les coordonnées de l\'emprunteur restent modifiables.'
+        => 'Préstamo en curso: solo los datos de contacto del prestatario siguen siendo modificables.',
+    'Prêt n° {id}'
+        => 'Préstamo n.º {id}',
+    'Prêt terminé'
+        => 'Préstamo terminado',
+    'Prêt terminé : vérifiez maintenant chaque matériel rendu.'
+        => 'Préstamo terminado: verifique ahora cada material devuelto.',
+    'Prêt validé : {nombre} matériel(s) passé(s) en « Prêté ».'
+        => 'Préstamo validado: {nombre} material(es) pasado(s) a «Prestado».',
+    'Prêt validé : {nombre} matériel(s) passé(s) en « Prêté ». Sans signature à l\'écran : imprimez la fiche PDF pour la faire signer.'
+        => 'Préstamo validado: {nombre} material(es) pasado(s) a «Prestado». Sin firma en pantalla: imprima la ficha PDF para que la firmen.',
+    'Prêt validé le {date_validation}'
+        => 'Préstamo validado el {date_validation}',
+    'Prêts de matériel'
+        => 'Préstamos de material',
+    'Référence ou désignation'
+        => 'Referencia o designación',
+    'Rendu — disponible'
+        => 'Devuelto — disponible',
+    'Rendu — en maintenance'
+        => 'Devuelto — en mantenimiento',
+    'Renseignez {champs} de l\'emprunteur.'
+        => 'Indique {champs} del prestatario.',
+    'Renseignez la date du prêt et la date de retour prévue.'
+        => 'Indique la fecha del préstamo y la fecha de devolución prevista.',
+    'Retirer'
+        => 'Retirar',
+    'Retirez le matériel signalé comme indisponible.'
+        => 'Retire el material señalado como no disponible.',
+    'Retour du matériel'
+        => 'Devolución del material',
+    'Retour prévu'
+        => 'Devolución prevista',
+    'Retour vérifié'
+        => 'Devolución verificada',
+    'Sans signature à l\'écran, la fiche PDF comporte un cadre à faire signer sur papier.'
+        => 'Sin firma en pantalla, la ficha PDF incluye un recuadro para firmar en papel.',
+    'Scanner — prêt n° {id} ({emprunteur_prenom} {emprunteur_nom})'
+        => 'Escáner — préstamo n.º {id} ({emprunteur_prenom} {emprunteur_nom})',
+    'Scanner des QR codes'
+        => 'Escanear códigos QR',
+    'Seul un prêt en cours peut être terminé.'
+        => 'Solo se puede terminar un préstamo en curso.',
+    'Seul un prêt en saisie peut être validé.'
+        => 'Solo se puede validar un préstamo en edición.',
+    'Seule une fiche en saisie peut être supprimée (historique des prêts).'
+        => 'Solo se puede eliminar una ficha en edición (historial de préstamos).',
+    'Signature de l\'emprunteur'
+        => 'Firma del prestatario',
+    'Signature de l\'emprunteur ({date_signature}) :'
+        => 'Firma del prestatario ({date_signature}):',
+    'Signature de l\'emprunteur enregistrée.'
+        => 'Firma del prestatario guardada.',
+    'Signature invalide.'
+        => 'Firma no válida.',
+    'Signature trop volumineuse.'
+        => 'Firma demasiado grande.',
+    'Statut inchangé (équipement plus « Prêté ») : {liste}.'
+        => 'Estado sin cambios (el equipo ya no está «Prestado»): {liste}.',
+    'Supprimer cette fiche de prêt en saisie ?'
+        => '¿Eliminar esta ficha de préstamo en edición?',
+    'Supprimer la fiche'
+        => 'Eliminar la ficha',
+    'Téléphone'
+        => 'Teléfono',
+    'Téléphone *'
+        => 'Teléfono *',
+    'Téléphone invalide (chiffres, espaces, + . - ( ) uniquement).'
+        => 'Teléfono no válido (solo cifras, espacios, + . - ( )).',
+    'Terminer — revenir à la fiche du prêt'
+        => 'Terminar — volver a la ficha del préstamo',
+    'Terminer le prêt'
+        => 'Terminar el préstamo',
+    'Terminer le prêt ? Vous vérifierez ensuite chaque matériel rendu.'
+        => '¿Terminar el préstamo? Después verificará cada material devuelto.',
+    'Terminez le prêt avant de vérifier le matériel rendu.'
+        => 'Termine el préstamo antes de verificar el material devuelto.',
+    'Tout le reste : rendu — disponible'
+        => 'Todo lo demás: devuelto — disponible',
+    'Une erreur est survenue pendant l\'enregistrement du retour. Merci de réessayer.'
+        => 'Se ha producido un error al guardar la devolución. Inténtelo de nuevo.',
+    'Une erreur est survenue pendant la validation. Merci de réessayer.'
+        => 'Se ha producido un error durante la validación. Inténtelo de nuevo.',
+    'Valider le prêt'
+        => 'Validar el préstamo',
+    'Valider le prêt ? Le matériel passera au statut « Prêté ».'
+        => '¿Validar el préstamo? El material pasará al estado «Prestado».',
 ];
