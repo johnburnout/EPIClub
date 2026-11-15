@@ -6,49 +6,49 @@
 	{% set is_edit_mode = utilisateur.id is defined and utilisateur.id %}
 	{% set is_self_edit = is_self is defined and is_self %}
 
-	<h3>{% if is_edit_mode %}Modifier l'utilisateur{% else %}Créer un nouvel utilisateur{% endif %}</h3>
+	<h3>{% if is_edit_mode %}{{ "Modifier l'utilisateur"|trans }}{% else %}{{ 'Créer un nouvel utilisateur'|trans }}{% endif %}</h3>
 	<hr>
 
 	<form method="post">
 		<div class="mb-3">
-			<label for="nom">Nom * :</label>
+			<label for="nom">{{ 'Nom * :'|trans }}</label>
 			<input type="text" id="nom" name="nom" value="{{ utilisateur.nom }}" class="form-control {% if form_errors.nom %}is-invalid{% endif %}">
 			{% if form_errors.nom %}<div class="invalid-feedback">{{ form_errors.nom }}</div>{% endif %}
 		</div>
 
 		<div class="mb-3">
-			<label for="prenom">Prénom * :</label>
+			<label for="prenom">{{ 'Prénom * :'|trans }}</label>
 			<input type="text" id="prenom" name="prenom" value="{{ utilisateur.prenom }}" class="form-control {% if form_errors.prenom %}is-invalid{% endif %}">
 			{% if form_errors.prenom %}<div class="invalid-feedback">{{ form_errors.prenom }}</div>{% endif %}
 		</div>
 
 		<div class="mb-3">
-			<label for="username">Pseudo * :</label>
+			<label for="username">{{ 'Pseudo * :'|trans }}</label>
 			<input type="text" id="username" name="username" value="{{ utilisateur.username }}" class="form-control {% if form_errors.username %}is-invalid{% endif %}">
 			{% if form_errors.username %}<div class="invalid-feedback">{{ form_errors.username }}</div>{% endif %}
 		</div>
 
 		<div class="mb-3">
-			<label for="email">Adresse mail * :</label>
+			<label for="email">{{ 'Adresse mail * :'|trans }}</label>
 			<input type="email" id="email" name="email" value="{{ utilisateur.email }}" class="form-control {% if form_errors.email %}is-invalid{% endif %}">
 			{% if form_errors.email %}<div class="invalid-feedback">{{ form_errors.email }}</div>{% endif %}
 		</div>
 
 		<div class="mb-3">
-			<label for="password">{% if is_edit_mode %}Nouveau mot de passe{% else %}Mot de passe *{% endif %} :</label>
+			<label for="password">{% if is_edit_mode %}{{ 'Nouveau mot de passe'|trans }}{% else %}{{ 'Mot de passe *'|trans }}{% endif %} :</label>
 			<input type="password" id="password" name="password" class="form-control {% if form_errors.password %}is-invalid{% endif %}">
 			<small class="form-text text-muted">
 				{% if is_edit_mode %}
-					Laisser vide pour conserver le mot de passe actuel.
+					{{ 'Laisser vide pour conserver le mot de passe actuel.'|trans }}
 				{% else %}
-					Le mot de passe est obligatoire pour un nouvel utilisateur.
+					{{ 'Le mot de passe est obligatoire pour un nouvel utilisateur.'|trans }}
 				{% endif %}
 			</small>
 			{% if form_errors.password %}<div class="invalid-feedback">{{ form_errors.password }}</div>{% endif %}
 		</div>
 
 		<div class="mb-3">
-			<label for="role">Rôle * :</label>
+			<label for="role">{{ 'Rôle * :'|trans }}</label>
 
 			{% if is_self_edit %}
 				{# Un utilisateur ne peut pas modifier son propre rôle via ce formulaire.
@@ -61,8 +61,7 @@
 				</select>
 				<input type="hidden" name="role" value="{{ utilisateur.role }}">
 				<small class="form-text text-muted">
-					Vous ne pouvez pas modifier votre propre rôle. Demandez à un autre administrateur.
-				</small>
+					{{ 'Vous ne pouvez pas modifier votre propre rôle. Demandez à un autre administrateur.'|trans }} </small>
 			{% else %}
 				<select name="role" id="role" class="form-control {% if form_errors.role %}is-invalid{% endif %}">
 					{% for role, label in roles %}
@@ -76,9 +75,9 @@
 		<div class="form-actions">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 			<button type="submit" class="btn btn-primary">
-				{% if is_edit_mode %}Enregistrer{% else %}Créer l'utilisateur{% endif %}
+				{% if is_edit_mode %}{{ 'Enregistrer'|trans }}{% else %}{{ "Créer l'utilisateur"|trans }}{% endif %}
 			</button>
-			<a href="/admin/utilisateurs" class="btn btn-secondary">Annuler</a>
+			<a href="/admin/utilisateurs" class="btn btn-secondary">{{ 'Annuler'|trans }}</a>
 		</div>
 	</form>
 

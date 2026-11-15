@@ -8,7 +8,7 @@
                 <div class="card-header bg-primary text-white">
                     <h4 class="mb-0">
                         <i class="fas fa-qrcode"></i>
-                        QR Code - {{ equipement.reference }}
+                        {{ 'QR Code - {reference}'|trans({reference: equipement.reference}) }}
                     </h4>
                 </div>
                 <div class="card-body">
@@ -16,26 +16,26 @@
                         <div class="col-md-4 text-center">
                             <!-- QR Code généré dynamiquement -->
                             <img src="/qr/generate/{{ equipement.id }}" 
-                                 alt="QR Code de {{ equipement.reference }}" 
+                                 alt="{{ 'QR Code de {reference}'|trans({reference: equipement.reference}) }}" 
                                  class="img-fluid border p-2"
                                  style="max-width: 200px;">
-                            <p class="text-muted small mt-2">Scannez ce QR code</p>
+                            <p class="text-muted small mt-2">{{ 'Scannez ce QR code'|trans }}</p>
                             <a href="/qr/download/{{ equipement.id }}" 
                                class="btn btn-sm btn-outline-success mt-2">
-                                <i class="fas fa-download"></i> Télécharger
+                                <i class="fas fa-download"></i> {{ 'Télécharger'|trans }}
                             </a>
                         </div>
                         <div class="col-md-8">
                             <h5>{{ equipement.libelle }}</h5>
-                            <p><strong>Référence :</strong> {{ equipement.reference }}</p>
-                            <p><strong>Catégorie :</strong> 
+                            <p>{{ '<strong>Référence :</strong> {reference}'|trans({reference: (equipement.reference)|e})|raw }}</p>
+                            <p><strong>{{ 'Catégorie :'|trans }}</strong> 
                                 {% if equipement.categorie %}
                                     {{ equipement.categorie.libelle }}
                                 {% else %}
-                                    <span class="text-muted">Non définie</span>
+                                    <span class="text-muted">{{ 'Non définie'|trans }}</span>
                                 {% endif %}
                             </p>
-                            <p><strong>Statut :</strong> 
+                            <p><strong>{{ 'Statut :'|trans }}</strong> 
                                 {% set s = statut_equipement(equipement.statut) %}
                                 <span class="badge bg-{{ s.badge }}">{{ s.libelle }}</span>
                             </p>
@@ -47,39 +47,39 @@
                                     <!-- Contrôle en cours -->
                                     <div class="alert alert-info">
                                         <i class="fas fa-clipboard-check"></i>
-                                        Un contrôle est en cours pour cet équipement
+                                        {{ 'Un contrôle est en cours pour cet équipement'|trans }}
                                     </div>
                                     <a href="/admin/controles/edit/{{ controleEnCours.id }}" 
                                        class="btn btn-primary btn-lg">
                                         <i class="fas fa-edit"></i> 
-                                        Reprendre le contrôle
+                                        {{ 'Reprendre le contrôle'|trans }}
                                     </a>
                                 {% elseif peutCreerControle %}
                                     <!-- Aucun contrôle en cours mais l'utilisateur peut en créer -->
                                     <div class="alert alert-success">
                                         <i class="fas fa-check-circle"></i>
-                                        Aucun contrôle en cours pour cet équipement
+                                        {{ 'Aucun contrôle en cours pour cet équipement'|trans }}
                                     </div>
                                     <a href="/equipements/equipement-{{ equipement.id }}" 
                                        class="btn btn-info btn-lg">
                                         <i class="fas fa-eye"></i> 
-                                        Voir la fiche équipement
+                                        {{ 'Voir la fiche équipement'|trans }}
                                     </a>
                                     <a href="/admin/controles/nouveau?equipement_id={{ equipement.id }}" 
                                        class="btn btn-warning btn-lg">
                                         <i class="fas fa-play"></i> 
-                                        Démarrer un contrôle
+                                        {{ 'Démarrer un contrôle'|trans }}
                                     </a>
                                 {% else %}
                                     <!-- Simple utilisateur : uniquement la fiche -->
                                     <div class="alert alert-secondary">
                                         <i class="fas fa-info-circle"></i>
-                                        Vous êtes en mode consultation
+                                        {{ 'Vous êtes en mode consultation'|trans }}
                                     </div>
                                     <a href="/equipements/equipement-{{ equipement.id }}" 
                                        class="btn btn-info btn-lg">
                                         <i class="fas fa-eye"></i> 
-                                        Voir la fiche équipement
+                                        {{ 'Voir la fiche équipement'|trans }}
                                     </a>
                                 {% endif %}
                             </div>
@@ -89,12 +89,12 @@
                 <div class="card-footer">
                     <a href="/equipements" class="btn btn-secondary">
                         <i class="fas fa-arrow-left"></i> 
-                        Retour à la liste
+                        {{ 'Retour à la liste'|trans }}
                     </a>
                     <a href="/qr/download/{{ equipement.id }}" 
                        class="btn btn-success float-end">
                         <i class="fas fa-download"></i> 
-                        Télécharger le QR Code
+                        {{ 'Télécharger le QR Code'|trans }}
                     </a>
                 </div>
             </div>
@@ -103,16 +103,16 @@
             {% if historiqueControles %}
             <div class="card mt-4">
                 <div class="card-header bg-secondary text-white">
-                    <h5 class="mb-0">📋 Derniers contrôles</h5>
+                    <h5 class="mb-0">📋 {{ 'Derniers contrôles'|trans }}</h5>
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-striped mb-0">
                             <thead>
                                 <tr>
-                                    <th>Date</th>
-                                    <th>Statut</th>
-                                    <th>Contrôleur</th>
+                                    <th>{{ 'Date'|trans }}</th>
+                                    <th>{{ 'Statut'|trans }}</th>
+                                    <th>{{ 'Contrôleur'|trans }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -127,10 +127,10 @@
                                                 'hors_service': 'secondary'
                                             }[controle.statut] }}">
                                                 {{ {
-                                                    'a_controler': 'À contrôler',
+                                                    'a_controler': 'À contrôler'|trans,
                                                     'controle_ok': 'OK',
                                                     'controle_ko': 'KO',
-                                                    'hors_service': 'Hors service'
+                                                    'hors_service': 'Hors service'|trans
                                                 }[controle.statut] }}
                                             </span>
                                         </td>

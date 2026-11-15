@@ -1982,4 +1982,880 @@ return [
         => 'Convalida il prestito',
     'Valider le prêt ? Le matériel passera au statut « Prêté ».'
         => 'Convalidare il prestito? Il materiale passerà allo stato «In prestito».',
+
+    // --- Administration (1) ---
+    '❌ Le compte super-administrateur protégé ne peut pas être supprimé.'
+        => '❌ L\'account super amministratore protetto non può essere eliminato.',
+    '💾 Si la nouvelle version modifie la base, une sauvegarde SQL est faite automatiquement avant (dossier <code>var/backups/</code>). Pour une sauvegarde complète avec les photos et factures :'
+        => '💾 Se la nuova versione modifica il database, prima viene fatto automaticamente un backup SQL (cartella <code>var/backups/</code>). Per un backup completo con foto e fatture:',
+    '« {type} » : la remarque est obligatoire.'
+        => '«{type}»: l\'osservazione è obbligatoria.',
+    '« {type} » : la remarque ne doit pas dépasser {max} caractères.'
+        => '«{type}»: l\'osservazione non deve superare {max} caratteri.',
+    ', dont {echus} déjà échu'
+        => ', di cui {echus} già scaduto',
+    ', dont {echus} déjà échus'
+        => ', di cui {echus} già scaduti',
+    '(application d\'authentification ou passkey).'
+        => '(app di autenticazione o passkey).',
+    '(archivé)'
+        => '(archiviato)',
+    '(attribué automatiquement à la première utilisation)'
+        => '(assegnato automaticamente al primo utilizzo)',
+    '(avant le {date_limite}'
+        => '(prima del {date_limite}',
+    '(dernier contrôle ou mise en service avant le {avant})'
+        => '(ultima ispezione o messa in servizio prima del {avant})',
+    '(obligatoire en cas de refus)'
+        => '(obbligatorio in caso di rifiuto)',
+    '{affiches} {elements} sur {total}'
+        => '{affiches} {elements} su {total}',
+    '{nb} équipement'
+        => '{nb} attrezzatura',
+    '{nb} équipements'
+        => '{nb} attrezzature',
+    '{nombre} demande de modification à traiter'
+        => '{nombre} richiesta di modifica da gestire',
+    '{nombre} demandes de modification à traiter'
+        => '{nombre} richieste di modifica da gestire',
+    '{nombre} prêt en retard'
+        => '{nombre} prestito in ritardo',
+    '{nombre} prêts en retard'
+        => '{nombre} prestiti in ritardo',
+    '{p} Ko'
+        => '{p} KB',
+    '{p} Mo'
+        => '{p} MB',
+    '{tables} tables'
+        => '{tables} tabelle',
+    '{total} EPI à renouveler'
+        => '{total} DPI da rinnovare',
+    '&larr; Retour aux sauvegardes'
+        => '&larr; Torna ai backup',
+    '<code>CAT</code> : code de la catégorie (obligatoire, défini dans l\'écran Catégories) ;'
+        => '<code>CAT</code>: codice della categoria (obbligatorio, definito nella schermata Categorie);',
+    '<code>N…</code> : n° d\'ordre — autant de <code>N</code> que de chiffres (<code>NNN</code> → <code>001</code>).'
+        => '<code>N…</code>: numero d\'ordine — tante <code>N</code> quante cifre (<code>NNN</code> → <code>001</code>).',
+    '<code>YY</code> : année sur 2 chiffres (ex. <code>26</code>) — <code>YYYY</code> sur 4 chiffres ;'
+        => '<code>YY</code>: anno a 2 cifre (es. <code>26</code>) — <code>YYYY</code> a 4 cifre;',
+    '<small> La configuration du serveur (<code>.env.local.php</code> : accès à la base, SMTP, clé de chiffrement) n\'est pas incluse. Conservez-en une copie à part : sa clé <code>SECRET_KEY</code> est indispensable pour restaurer sur une nouvelle installation. </small>'
+        => '<small> La configurazione del server (<code>.env.local.php</code>: accesso al database, SMTP, chiave di cifratura) non è inclusa. Conservane una copia a parte: la sua chiave <code>SECRET_KEY</code> è indispensabile per ripristinare su una nuova installazione. </small>',
+    '<small> Taille maximale acceptée par le serveur : <strong>{limite_upload}</strong> (64 Mo prévus par EPIClub ; si la valeur affichée est plus basse, l\'hébergement ignore <code>public/.user.ini</code> : réglez <code>upload_max_filesize</code> et <code>post_max_size</code> dans les options PHP du domaine). Au-delà, déposez l\'archive par FTP dans le dossier <code>var/backups/</code> d\'EPIClub : elle apparaîtra ci-dessous. </small>'
+        => '<small> Dimensione massima accettata dal server: <strong>{limite_upload}</strong> (EPIClub prevede 64 MB; se il valore mostrato è più basso, l\'hosting ignora <code>public/.user.ini</code>: imposta <code>upload_max_filesize</code> e <code>post_max_size</code> nelle opzioni PHP del dominio). Oltre, carica l\'archivio via FTP nella cartella <code>var/backups/</code> di EPIClub: apparirà qui sotto. </small>',
+    '<small>Rien n\'a été modifié. Archive : <code>{nom}</code></small>'
+        => '<small>Non è stato modificato nulla. Archivio: <code>{nom}</code></small>',
+    '<strong>{statuts}</strong> par {traite_par_prenom} {traite_par_nom}, le {date_traitement}.'
+        => '<strong>{statuts}</strong> da {traite_par_prenom} {traite_par_nom}, il {date_traitement}.',
+    '<strong>{total} EPI non vérifié</strong> depuis plus de {mois} mois'
+        => '<strong>{total} DPI non verificato</strong> da più di {mois} mesi',
+    '<strong>{total} EPI non vérifiés</strong> depuis plus de {mois} mois'
+        => '<strong>{total} DPI non verificati</strong> da più di {mois} mesi',
+    '<strong>À traiter par :</strong> {role_requis}'
+        => '<strong>Da gestire da:</strong> {role_requis}',
+    '<strong>Cette archive ne peut pas être restaurée.</strong><br> {erreur}'
+        => '<strong>Questo archivio non può essere ripristinato.</strong><br> {erreur}',
+    '<strong>Demandé par :</strong> {demandeur_prenom} {demandeur_nom}, le {date_creation}'
+        => '<strong>Richiesto da:</strong> {demandeur_prenom} {demandeur_nom}, il {date_creation}',
+    '<strong>Libellé :</strong> {libelle}'
+        => '<strong>Denominazione:</strong> {libelle}',
+    '<strong>Toutes les données actuelles seront remplacées</strong> par celles de cette sauvegarde : équipements, contrôles, acquisitions, utilisateurs et mots de passe, réglages, photos et factures. Ce qui a été saisi depuis le {cree_le} sera perdu.'
+        => '<strong>Tutti i dati attuali saranno sostituiti</strong> da quelli di questo backup: attrezzature, ispezioni, acquisizioni, utenti e password, impostazioni, foto e fatture. Quanto inserito dal {cree_le} andrà perso.',
+    'À traiter'
+        => 'Da gestire',
+    'Action'
+        => 'Azione',
+    'Activité :'
+        => 'Attività:',
+    'Adresse de réponse (Reply-To)'
+        => 'Indirizzo di risposta (Reply-To)',
+    'Adresse expéditeur manquante'
+        => 'Indirizzo del mittente mancante',
+    'Adresse mail'
+        => 'Indirizzo email',
+    'Adresse mail :'
+        => 'Indirizzo email:',
+    'Adresse mail * :'
+        => 'Indirizzo email *:',
+    'Affichage de {affiches} {elements} sur {total} (page {page}/{totalPages})'
+        => 'Visualizzazione di {affiches} {elements} su {total} (pagina {page}/{totalPages})',
+    'Afficher ces équipements'
+        => 'Mostra queste attrezzature',
+    'Afficher la liste des équipements par date de fin croissante'
+        => 'Mostra l\'elenco delle attrezzature per data di fine crescente',
+    'Afficher les EPI non vérifiés, du plus ancien contrôle au plus récent'
+        => 'Mostra i DPI non verificati, dall\'ispezione più vecchia alla più recente',
+    'Afficher les prêts en retard'
+        => 'Mostra i prestiti in ritardo',
+    'Alerte acquittée. Elle réapparaîtra si le limiteur tombe de nouveau en panne.'
+        => 'Avviso confermato. Ricomparirà se il limitatore si guasta di nuovo.',
+    'Aperçu (catégorie de code <code>COR</code>, premier équipement de l\'année) :'
+        => 'Anteprima (categoria con codice <code>COR</code>, prima attrezzatura dell\'anno):',
+    'Appareil perdu : seul un super-administrateur peut la réinitialiser.'
+        => 'Dispositivo perso: solo un super amministratore può reimpostarla.',
+    'Archive'
+        => 'Archivio',
+    'Archive trop volumineuse pour le serveur (limite : {limite}). Déposez-la par FTP dans le dossier var/backups/ : elle apparaîtra dans la liste.'
+        => 'Archivio troppo grande per il server (limite: {limite}). Caricalo via FTP nella cartella var/backups/: apparirà nell\'elenco.',
+    'Archive vérifiée : complète, intacte et compatible avec cette installation.'
+        => 'Archivio verificato: completo, integro e compatibile con questa installazione.',
+    'Aucun'
+        => 'Nessuno',
+    'Aucun contrôle en cours pour cet équipement'
+        => 'Nessuna ispezione in corso per questa attrezzatura',
+    'Aucun emplacement ne correspond à ces critères.'
+        => 'Nessuna ubicazione corrisponde a questi criteri.',
+    'Aucun équipement'
+        => 'Nessuna attrezzatura',
+    'Aucun fournisseur trouvé!'
+        => 'Nessun fornitore trovato!',
+    'Aucune archive reçue. Sélectionnez un fichier .zip.'
+        => 'Nessun archivio ricevuto. Seleziona un file .zip.',
+    'Aucune catégorie ne correspond à ces critères.'
+        => 'Nessuna categoria corrisponde a questi criteri.',
+    'Aucune demande en attente.'
+        => 'Nessuna richiesta in attesa.',
+    'Aucune entrée'
+        => 'Nessuna voce',
+    'Aucune. Les sauvegardes automatiques faites avant chaque restauration (les 3 dernières) apparaîtront ici.'
+        => 'Nessuno. I backup automatici fatti prima di ogni ripristino (gli ultimi 3) appariranno qui.',
+    'avant restauration'
+        => 'prima del ripristino',
+    'Avec équipements'
+        => 'Con attrezzature',
+    'Base de données'
+        => 'Database',
+    'Base mise à niveau ({migrations}).'
+        => 'Database aggiornato ({migrations}).',
+    'beta'
+        => 'beta',
+    'Bêta — inclut les versions de test (pré-releases)'
+        => 'Beta — include le versioni di prova (pre-release)',
+    'Canal de mise à jour'
+        => 'Canale di aggiornamento',
+    'Canal de mise à jour :'
+        => 'Canale di aggiornamento:',
+    'Canal suivi par la page Administration → Mise à jour. Réserver « Bêta » à une instance de test.'
+        => 'Canale seguito dalla pagina Amministrazione → Aggiornamento. Riserva «Beta» a un\'istanza di prova.',
+    'catégorie'
+        => 'categoria',
+    'catégories'
+        => 'categorie',
+    'Ce code est déjà utilisé par une autre catégorie. Suggestion : {suggestion}.'
+        => 'Questo codice è già usato da un\'altra categoria. Suggerimento: {suggestion}.',
+    'Ce compte super-administrateur a été créé à l\'installation : il ne peut être ni supprimé, ni rétrogradé, et seul son titulaire peut modifier son adresse mail et son mot de passe.'
+        => 'Questo account super amministratore è stato creato all\'installazione: non può essere né eliminato né declassato, e solo il titolare può modificarne email e password.',
+    'Ce nom d\'utilisateur est déjà pris.'
+        => 'Questo nome utente è già in uso.',
+    'Ce ticket a déjà été traité.'
+        => 'Questo ticket è già stato gestito.',
+    'Cet email est déjà utilisé par un autre compte.'
+        => 'Questa email è già usata da un altro account.',
+    'Cet email est déjà utilisé.'
+        => 'Questa email è già in uso.',
+    'chaque personne l\'active depuis « 🔐 Sécurité ».'
+        => 'ogni persona la attiva da «🔐 Sicurezza».',
+    'Chiffrement'
+        => 'Cifratura',
+    'Classée EPI'
+        => 'Classificata DPI',
+    'Classée EPI ? :'
+        => 'Classificata DPI?:',
+    'Cocher si l\'élément textile de ces équipements peut être changé (ex. sangle de dégaine). Un équipement en maintenance dont le contrôleur constate le remplacement repart alors pour 10 ans. Valeur par défaut, modifiable sur chaque fiche équipement.'
+        => 'Spunta se l\'elemento tessile di queste attrezzature può essere sostituito (es. fettuccia di un rinvio). Un\'attrezzatura in manutenzione di cui l\'ispettore constata la sostituzione riparte per 10 anni. Valore predefinito, modificabile su ogni scheda attrezzatura.',
+    'Cocher si les équipements de cette catégorie ont une durée de vie limitée par le fabricant (généralement 10 ans, date de péremption). Valeur par défaut, modifiable sur chaque fiche équipement.'
+        => 'Spunta se le attrezzature di questa categoria hanno una durata di vita limitata dal fabbricante (di solito 10 anni, data di scadenza). Valore predefinito, modificabile su ogni scheda attrezzatura.',
+    'Cochez au moins une modification à demander.'
+        => 'Spunta almeno una modifica da richiedere.',
+    'Cochez les modifications que vous ne pouvez pas faire vous-même et précisez chacune dans sa remarque (obligatoire). Les personnes habilitées sont prévenues par mail et sur leur tableau de bord ; vous serez notifié sur le vôtre quand la demande sera traitée.'
+        => 'Spunta le modifiche che non puoi fare da solo e precisa ciascuna nella sua osservazione (obbligatoria). Le persone abilitate sono avvisate via email e sul loro pannello; tu sarai avvisato sul tuo quando la richiesta sarà gestita.',
+    'Code :'
+        => 'Codice:',
+    'Code utilisé dans la référence automatique des équipements (2 à 8 caractères, lettres sans accent ou chiffres). Laisser vide pour une suggestion automatique à partir du libellé.'
+        => 'Codice usato nel riferimento automatico delle attrezzature (da 2 a 8 caratteri, lettere senza accento o cifre). Lasciare vuoto per un suggerimento automatico dalla denominazione.',
+    'Compte protégé'
+        => 'Account protetto',
+    'Compte protégé : suppression impossible'
+        => 'Account protetto: eliminazione impossibile',
+    'Compte protégé (créé à l\'installation)'
+        => 'Account protetto (creato all\'installazione)',
+    'Compte protégé (créé à l\'installation).'
+        => 'Account protetto (creato all\'installazione).',
+    'Configuration mise à jour avec succès.'
+        => 'Configurazione aggiornata correttamente.',
+    'Configuration SMTP mise à jour avec succès.'
+        => 'Configurazione SMTP aggiornata correttamente.',
+    'Configuration système'
+        => 'Configurazione di sistema',
+    'Confirmation'
+        => 'Conferma',
+    'Confirmer la mise à jour vers la version {latest_version} ?'
+        => 'Confermare l\'aggiornamento alla versione {latest_version}?',
+    'Connexions, contrôles et prêts de matériel. L\'export reprend les filtres en cours.'
+        => 'Accessi, ispezioni e prestiti di materiale. L\'esportazione applica i filtri in corso.',
+    'Contenu de la sauvegarde'
+        => 'Contenuto del backup',
+    'Créée le'
+        => 'Creato il',
+    'Créer l\'utilisateur'
+        => 'Crea l\'utente',
+    'Créer un nouvel utilisateur'
+        => 'Crea un nuovo utente',
+    'dans le mois à venir'
+        => 'nel prossimo mese',
+    'dans les {mois} prochains mois'
+        => 'nei prossimi {mois} mesi',
+    'Date de retour prévue dépassée'
+        => 'Data di restituzione prevista superata',
+    'Dates (mise en service, fin d\'utilisation)'
+        => 'Date (messa in servizio, fine utilizzo)',
+    'Décision invalide.'
+        => 'Decisione non valida.',
+    'Délai avant suppression d\'un équipement égaré (mois)'
+        => 'Termine prima dell\'eliminazione di un\'attrezzatura smarrita (mesi)',
+    'Délai sans contrôle, en mois'
+        => 'Tempo senza ispezione, in mesi',
+    'Demande de modification n° {id}'
+        => 'Richiesta di modifica n. {id}',
+    'Demande envoyée : {nombre} tickets ouverts (administrateurs et super-administrateurs).'
+        => 'Richiesta inviata: {nombre} ticket aperti (amministratori e super amministratori).',
+    'Demande envoyée : un ticket est ouvert. Vous serez notifié sur votre tableau de bord.'
+        => 'Richiesta inviata: è stato aperto un ticket. Riceverai un avviso sul tuo pannello.',
+    'demandes'
+        => 'richieste',
+    'Demandeur'
+        => 'Richiedente',
+    'Dernier SUPER_ADMIN : suppression impossible'
+        => 'Ultimo SUPER_ADMIN: eliminazione impossibile',
+    'Dernier super-administrateur.'
+        => 'Ultimo super amministratore.',
+    'Dernière version sur GitHub :'
+        => 'Ultima versione su GitHub:',
+    'Derniers contrôles'
+        => 'Ultime ispezioni',
+    'Des fichiers temporaires persistent.'
+        => 'Restano file temporanei.',
+    'Description'
+        => 'Descrizione',
+    'Description :'
+        => 'Descrizione:',
+    'Dossier temporaire nettoyé.'
+        => 'Cartella temporanea ripulita.',
+    'Double authentification réinitialisée : {utilisateur} se connectera avec son seul mot de passe et pourra la réactiver.'
+        => 'Autenticazione a due fattori reimpostata: {utilisateur} accederà con la sola password e potrà riattivarla.',
+    'Durée max'
+        => 'Durata max',
+    'Durée max ?'
+        => 'Durata max?',
+    'Editer'
+        => 'Modifica',
+    'Email'
+        => 'Email',
+    'Email :'
+        => 'Email:',
+    'Email de l\'expéditeur (From) *'
+        => 'Email del mittente (From) *',
+    'Email de test envoyé avec succès à {adresse}'
+        => 'Email di prova inviata correttamente a {adresse}',
+    'emplacements'
+        => 'ubicazioni',
+    'En cas d\'erreur pendant l\'opération, cet état est rétabli automatiquement.'
+        => 'In caso di errore durante l\'operazione, questo stato viene ripristinato automaticamente.',
+    'Enregistrer la configuration'
+        => 'Salva la configurazione',
+    'entrées'
+        => 'voci',
+    'Entre {duree_controle_min} et {duree_controle_max} mois. Date de référence : dernier contrôle clôturé ou, à défaut, mise en service (hors équipements « Hors service » et « Égaré »). Notification affichée aux contrôleurs et administrateurs.'
+        => 'Tra {duree_controle_min} e {duree_controle_max} mesi. Data di riferimento: ultima ispezione chiusa o, in mancanza, messa in servizio (escluse le attrezzature «Fuori servizio» e «Smarrito»). Avviso mostrato a ispettori e amministratori.',
+    'Envoyer la demande'
+        => 'Invia la richiesta',
+    'Équipement :'
+        => 'Attrezzatura:',
+    'Équipement non trouvé'
+        => 'Attrezzatura non trovata',
+    'Erreur : {erreur}'
+        => 'Errore: {erreur}',
+    'Erreur lors de l\'envoi de l\'email de test. Consultez les logs serveur pour plus de détails.'
+        => 'Errore durante l\'invio dell\'email di prova. Consulta i log del server per i dettagli.',
+    'Erreur lors de la mise à jour'
+        => 'Errore durante l\'aggiornamento',
+    'Erreur lors du téléversement de l\'image.'
+        => 'Errore durante il caricamento dell\'immagine.',
+    'Erreur serveur'
+        => 'Errore del server',
+    'Est EPI ?'
+        => 'È DPI?',
+    'État indisponible.'
+        => 'Stato non disponibile.',
+    'Êtes-vous sûr de vouloir supprimer ce fournisseur ? Cette action est irréversible.'
+        => 'Sei sicuro di voler eliminare questo fornitore? Questa azione è irreversibile.',
+    'Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.'
+        => 'Sei sicuro di voler eliminare questo utente? Questa azione è irreversibile.',
+    'Êtes-vous sûr de vouloir supprimer la catégorie « {libelle} » ? Cette action est irréversible.'
+        => 'Sei sicuro di voler eliminare la categoria «{libelle}»? Questa azione è irreversibile.',
+    'Êtes-vous sûr de vouloir supprimer le fournisseur « {nom} » ?'
+        => 'Sei sicuro di voler eliminare il fornitore «{nom}»?',
+    'ex. COR'
+        => 'es. COR',
+    'Exporter (texte)'
+        => 'Esporta (testo)',
+    'Faite'
+        => 'Fatta',
+    'Faites la modification (lien ci-dessus, nouvel onglet), puis clôturez la demande. Un refus doit être motivé.'
+        => 'Fai la modifica (link qui sopra, nuova scheda), poi chiudi la richiesta. Un rifiuto deve essere motivato.',
+    'Fermer la notification'
+        => 'Chiudi l\'avviso',
+    'Fiche Catégorie'
+        => 'Scheda categoria',
+    'Fiche de l\'acquisition'
+        => 'Scheda dell\'acquisizione',
+    'Fiche emplacement'
+        => 'Scheda ubicazione',
+    'Fiche fournisseur'
+        => 'Scheda fornitore',
+    'Fiche Utilisateur'
+        => 'Scheda utente',
+    'Fiches de prêt (emprunteur, dates, matériel, signature, export PDF), statuts « Prêté » et « Égaré ». Accessible aux contrôleurs et administrateurs (menu « Prêts »).'
+        => 'Schede di prestito (mutuatario, date, materiale, firma, esportazione PDF), stati «In prestito» e «Smarrito». Accessibile a ispettori e amministratori (menu «Prestiti»).',
+    'fiches de prêt'
+        => 'schede di prestito',
+    'Fichier .env.local.php introuvable'
+        => 'File .env.local.php non trovato',
+    'Fichier de configuration introuvable.'
+        => 'File di configurazione non trovato.',
+    'Fichier de configuration invalide.'
+        => 'File di configurazione non valido.',
+    'Fichiers (photos, images, factures)'
+        => 'File (foto, immagini, fatture)',
+    'Formulaire de modification de l\'équipement'
+        => 'Modulo di modifica dell\'attrezzatura',
+    'Fournisseur non trouvé.'
+        => 'Fornitore non trovato.',
+    'fournisseurs'
+        => 'fornitori',
+    'Génération impossible'
+        => 'Generazione impossibile',
+    'Gérer ma double authentification'
+        => 'Gestisci la mia autenticazione a due fattori',
+    'Gérez votre propre double authentification depuis la page « Sécurité du compte ».'
+        => 'Gestisci la tua autenticazione a due fattori dalla pagina «Sicurezza dell\'account».',
+    'Gestion des versions'
+        => 'Gestione delle versioni',
+    'Gestion du club'
+        => 'Gestione del club',
+    'Gestionnaire de prêt de matériel'
+        => 'Gestore dei prestiti di materiale',
+    'Guide d\'utilisation'
+        => 'Guida all\'uso',
+    'Hôte (Host) *'
+        => 'Host *',
+    'Identifiant, rôle et lien de connexion — jamais le mot de passe'
+        => 'Nome utente, ruolo e link di accesso — mai la password',
+    'Image :'
+        => 'Immagine:',
+    'Image (URL)'
+        => 'Immagine (URL)',
+    'Image actuelle : {image}'
+        => 'Immagine attuale: {image}',
+    'Impossible d\'écrire dans le répertoire du projet. Veuillez vérifier les droits.'
+        => 'Impossibile scrivere nella directory del progetto. Verifica i permessi.',
+    'Impossible de contacter GitHub (limite de l\'API ou réseau). Nouvel essai automatique dans quelques minutes.'
+        => 'Impossibile contattare GitHub (limite dell\'API o rete). Nuovo tentativo automatico tra qualche minuto.',
+    'Impossible de contacter le serveur.'
+        => 'Impossibile contattare il server.',
+    'Impossible de rétrograder le dernier SUPER_ADMIN de l\'application.'
+        => 'Impossibile declassare l\'ultimo SUPER_ADMIN dell\'applicazione.',
+    'Impossible de supprimer ce fournisseur car il a des acquisitions associées.'
+        => 'Impossibile eliminare questo fornitore perché ha acquisizioni associate.',
+    'Impossible de supprimer cet emplacement car il contient des équipements.'
+        => 'Impossibile eliminare questa ubicazione perché contiene attrezzature.',
+    'Impossible de supprimer cet utilisateur car il a saisi des acquisitions.'
+        => 'Impossibile eliminare questo utente perché ha inserito acquisizioni.',
+    'Impossible de supprimer cette catégorie car elle a des équipements associés.'
+        => 'Impossibile eliminare questa categoria perché ha attrezzature associate.',
+    'Impossible de supprimer cette catégorie car elle est utilisée par des lignes d\'acquisition.'
+        => 'Impossibile eliminare questa categoria perché è usata da righe di acquisizione.',
+    'Impossible de supprimer le dernier SUPER_ADMIN de l\'application.'
+        => 'Impossibile eliminare l\'ultimo SUPER_ADMIN dell\'applicazione.',
+    'Impossible de vérifier votre identité.'
+        => 'Impossibile verificare la tua identità.',
+    'Indiquez le motif du refus.'
+        => 'Indica il motivo del rifiuto.',
+    'IP'
+        => 'IP',
+    'Journal'
+        => 'Registro',
+    'Journal non réinitialisé : saisissez exactement « {mot} » pour confirmer.'
+        => 'Registro non reimpostato: digita esattamente «{mot}» per confermare.',
+    'JPEG, PNG, WebP ou GIF. Format paysage conseillé, redimensionné à 1920 px maximum.'
+        => 'JPEG, PNG, WebP o GIF. Consigliato il formato orizzontale, ridimensionato a 1920 px al massimo.',
+    'JPEG, PNG, WebP ou GIF. Redimensionné à 400 px maximum.'
+        => 'JPEG, PNG, WebP o GIF. Ridimensionato a 400 px al massimo.',
+
+    // --- Administration (2) ---
+    'fournisseur'
+        => 'fornitore',
+    'L\'acquisition #{id} a été supprimée.'
+        => 'L\'acquisizione n. {id} è stata eliminata.',
+    'l\'activer'
+        => 'attivarla',
+    'L\'activité sélectionnée n\'est pas valide.'
+        => 'L\'attività selezionata non è valida.',
+    'L\'archive complète de cette version est en cours de préparation sur GitHub (quelques minutes après la publication). Rechargez cette page dans quelques minutes pour l\'installer.'
+        => 'L\'archivio completo di questa versione è in preparazione su GitHub (qualche minuto dopo la pubblicazione). Ricarica questa pagina tra qualche minuto per installarla.',
+    'L\'archive n\'a pas pu être enregistrée sur le serveur.'
+        => 'Impossibile salvare l\'archivio sul server.',
+    'L\'email est obligatoire.'
+        => 'L\'email è obbligatoria.',
+    'L\'email n\'est pas valide.'
+        => 'L\'email non è valida.',
+    'L\'emplacement \'{libelle}\' a été supprimé.'
+        => 'L\'ubicazione \'{libelle}\' è stata eliminata.',
+    'L\'emplacement a été enregistré.'
+        => 'L\'ubicazione è stata salvata.',
+    'L\'emplacement demandé n\'existe pas.'
+        => 'L\'ubicazione richiesta non esiste.',
+    'L\'état actuel est sauvegardé automatiquement juste avant (archive « avant restauration »).'
+        => 'Lo stato attuale viene salvato automaticamente subito prima (archivio «prima del ripristino»).',
+    'L\'URL de l\'image doit commencer par http:// ou https://'
+        => 'L\'URL dell\'immagine deve iniziare con http:// o https://',
+    'L\'URL de l\'image n\'est pas valide.'
+        => 'L\'URL dell\'immagine non è valido.',
+    'L\'utilisateur {prenom} {nom} a été supprimé.'
+        => 'L\'utente {prenom} {nom} è stato eliminato.',
+    'L\'utilisateur a été créé.'
+        => 'L\'utente è stato creato.',
+    'L\'utilisateur a été créé. Un mail l\'en informe ({email}) ; communiquez-lui son mot de passe.'
+        => 'L\'utente è stato creato. Un\'email lo informa ({email}); comunicagli la password.',
+    'L\'utilisateur a été mis à jour.'
+        => 'L\'utente è stato aggiornato.',
+    'L\'utilisateur demandé n\'existe pas.'
+        => 'L\'utente richiesto non esiste.',
+    'La catégorie \'{libelle}\' a été supprimée.'
+        => 'La categoria \'{libelle}\' è stata eliminata.',
+    'La catégorie a été enregistrée.'
+        => 'La categoria è stata salvata.',
+    'La catégorie demandée n\'existe pas.'
+        => 'La categoria richiesta non esiste.',
+    'La double authentification du compte protégé ne peut être modifiée que par son titulaire.'
+        => 'L\'autenticazione a due fattori dell\'account protetto può essere modificata solo dal titolare.',
+    'La durée doit être un nombre entier de mois entre {min} et {max}.'
+        => 'La durata deve essere un numero intero di mesi tra {min} e {max}.',
+    'la personne'
+        => 'la persona',
+    'La réponse ne doit pas dépasser {max} caractères.'
+        => 'La risposta non deve superare {max} caratteri.',
+    'Laisser vide pour conserver le mot de passe actuel.'
+        => 'Lasciare vuoto per mantenere la password attuale.',
+    'Laisser vide pour ne pas modifier'
+        => 'Lasciare vuoto per non modificare',
+    'Laisser vide pour ne pas modifier le mot de passe.'
+        => 'Lasciare vuoto per non modificare la password.',
+    'Laissez vide pour utiliser l\'email de l\'expéditeur.'
+        => 'Lascia vuoto per usare l\'email del mittente.',
+    'Le code doit contenir 2 à 8 caractères (lettres sans accent ou chiffres).'
+        => 'Il codice deve contenere da 2 a 8 caratteri (lettere senza accento o cifre).',
+    'Le délai de la notification « EPI non vérifiés » doit être un nombre entier de mois entre {min} et {max}.'
+        => 'Il termine dell\'avviso «DPI non verificati» deve essere un numero intero di mesi tra {min} e {max}.',
+    'Le délai doit être un nombre de mois entre {min} et {max}.'
+        => 'Il termine deve essere un numero di mesi tra {min} e {max}.',
+    'Le fichier doit être une archive .zip produite par EPIClub.'
+        => 'Il file deve essere un archivio .zip prodotto da EPIClub.',
+    'Le fournisseur \'{nom}\' a été supprimé.'
+        => 'Il fornitore \'{nom}\' è stato eliminato.',
+    'Le fournisseur a été enregistré.'
+        => 'Il fornitore è stato salvato.',
+    'Le fournisseur demandé n\'existe pas.'
+        => 'Il fornitore richiesto non esiste.',
+    'Le journal d\'activité a été réinitialisé.'
+        => 'Il registro attività è stato reimpostato.',
+    'Le mail d\'information n\'a pas pu être envoyé (email du club ou serveur SMTP à vérifier) : prévenez la personne vous-même.'
+        => 'Impossibile inviare l\'email informativa (verifica l\'email del club o il server SMTP): avvisa tu la persona.',
+    'Le mail de bienvenue n\'a pas pu être envoyé (email du club ou serveur SMTP à vérifier).'
+        => 'Impossibile inviare l\'email di benvenuto (verifica l\'email del club o il server SMTP).',
+    'Le modèle de référence a été enregistré.'
+        => 'Il modello di riferimento è stato salvato.',
+    'Le modèle de référence définit le format des références attribuées automatiquement aux équipements lors de la <strong>validation d\'une acquisition</strong> ou d\'un <strong>import Excel/CSV</strong> (quand la colonne référence est vide).'
+        => 'Il modello di riferimento definisce il formato dei riferimenti assegnati automaticamente alle attrezzature alla <strong>convalida di un\'acquisizione</strong> o durante un\'<strong>importazione Excel/CSV</strong> (quando la colonna riferimento è vuota).',
+    'Le mot de passe est obligatoire pour un nouvel utilisateur.'
+        => 'La password è obbligatoria per un nuovo utente.',
+    'Le mot de passe existant reste inchangé si ce champ est vide.'
+        => 'La password esistente resta invariata se questo campo è vuoto.',
+    'Le n° d\'ordre est remis à zéro chaque année, par catégorie : la première corde saisie en 2027 sera <code>27COR001</code>.'
+        => 'Il numero d\'ordine riparte ogni anno, per categoria: la prima corda inserita nel 2027 sarà <code>27COR001</code>.',
+    'Le nom d\'utilisateur est obligatoire.'
+        => 'Il nome utente è obbligatorio.',
+    'Le nom du club est obligatoire.'
+        => 'Il nome del club è obbligatorio.',
+    'Le pseudo ne peut pas être modifié.'
+        => 'Il nome utente non può essere modificato.',
+    'Le rôle du compte protégé ne peut pas être modifié.'
+        => 'Il ruolo dell\'account protetto non può essere modificato.',
+    'Le tableau de bord signale les équipements dont la date de fin d\'utilisation tombe dans ce délai (ainsi que ceux déjà échus, hors équipements « Hors service »).'
+        => 'Il pannello segnala le attrezzature la cui data di fine utilizzo cade in questo periodo (e quelle già scadute, escluse le attrezzature «Fuori servizio»).',
+    'les factures jointes aux acquisitions.'
+        => 'le fatture allegate alle acquisizioni.',
+    'Les informations du club ont été mises à jour.'
+        => 'Le informazioni del club sono state aggiornate.',
+    'les photos des équipements, les images du club et des catégories, les QR codes enregistrés ;'
+        => 'le foto delle attrezzature, le immagini del club e delle categorie, i codici QR salvati;',
+    'Les réglages du tableau de bord ont été enregistrés.'
+        => 'Le impostazioni del pannello sono state salvate.',
+    'les versions bêta (pré-releases) sont proposées. Réglage <code>UPDATE_CHANNEL</code> dans <code>.env.local.php</code>.'
+        => 'vengono proposte le versioni beta (pre-release). Impostazione <code>UPDATE_CHANNEL</code> in <code>.env.local.php</code>.',
+    'Libellé :'
+        => 'Denominazione:',
+    'Libellé * :'
+        => 'Denominazione *:',
+    'Libellé, code, description'
+        => 'Denominazione, codice, descrizione',
+    'Libellé, description'
+        => 'Denominazione, descrizione',
+    'Liste des utilisateurs'
+        => 'Elenco degli utenti',
+    'Logo {nom}'
+        => 'Logo {nom}',
+    'Logo actuel'
+        => 'Logo attuale',
+    'Logo du club'
+        => 'Logo del club',
+    'Lot / nombre initial'
+        => 'Lotto / numero iniziale',
+    'Mail de bienvenue renvoyé à {email}.'
+        => 'Email di benvenuto reinviata a {email}.',
+    'Masquer jusqu\'à la prochaine connexion'
+        => 'Nascondi fino al prossimo accesso',
+    'matériels'
+        => 'materiali',
+    'Mes demandes'
+        => 'Le mie richieste',
+    'Mise à jour d\'EPIClub'
+        => 'Aggiornamento di EPIClub',
+    'Mise à jour réussie'
+        => 'Aggiornamento riuscito',
+    'Mise à jour réussie. Version actuelle : {version}'
+        => 'Aggiornamento riuscito. Versione attuale: {version}',
+    'Modèle de référence * :'
+        => 'Modello di riferimento *:',
+    'Modification demandée non autorisée.'
+        => 'Modifica richiesta non autorizzata.',
+    'Modification faite'
+        => 'Modifica fatta',
+    'Modifications'
+        => 'Modifiche',
+    'Modifications demandées'
+        => 'Modifiche richieste',
+    'Modifier catégorie'
+        => 'Modifica categoria',
+    'Modifier emplacement'
+        => 'Modifica ubicazione',
+    'Modifier l\'utilisateur'
+        => 'Modifica l\'utente',
+    'Modules'
+        => 'Moduli',
+    'mois'
+        => 'mesi',
+    'Mon club'
+        => 'Il mio club',
+    'Mot de confirmation'
+        => 'Parola di conferma',
+    'Mot de passe *'
+        => 'Password *',
+    'Nettoyer'
+        => 'Ripulisci',
+    'Nettoyer le dossier temporaire de mise à jour ?'
+        => 'Ripulire la cartella temporanea di aggiornamento?',
+    'Nom :'
+        => 'Nome:',
+    'Nom * :'
+        => 'Nome *:',
+    'Nom affiché dans les emails envoyés.'
+        => 'Nome mostrato nelle email inviate.',
+    'Nom d\'utilisateur *'
+        => 'Nome utente *',
+    'Nom de l\'expéditeur (From Name)'
+        => 'Nome del mittente (From Name)',
+    'Nom du club * :'
+        => 'Nome del club *:',
+    'Nom, email, téléphone'
+        => 'Nome, email, telefono',
+    'Nombre actuel d\'éléments du lot'
+        => 'Numero attuale di elementi del lotto',
+    'Non disponible'
+        => 'Non disponibile',
+    'Non renseigné'
+        => 'Non indicato',
+    'Notes de version :'
+        => 'Note di rilascio:',
+    'Notification « EPI à renouveler »'
+        => 'Avviso «DPI da rinnovare»',
+    'Notification « EPI non vérifiés »'
+        => 'Avviso «DPI non verificati»',
+    'Nouveau'
+        => 'Nuovo',
+    'Nouveau mot de passe :'
+        => 'Nuova password:',
+    'Nouvel emplacement'
+        => 'Nuova ubicazione',
+    'Nouvel utilisateur'
+        => 'Nuovo utente',
+    'Paramètres d\'envoi'
+        => 'Parametri di invio',
+    'Paramètres système'
+        => 'Parametri di sistema',
+    'Personnalisation du tableau de bord'
+        => 'Personalizzazione del pannello',
+    'Personnaliser le tableau de bord'
+        => 'Personalizza il pannello',
+    'Photo de fond'
+        => 'Foto di sfondo',
+    'Photo de fond actuelle'
+        => 'Foto di sfondo attuale',
+    'planifiée'
+        => 'pianificato',
+    'Port *'
+        => 'Porta *',
+    'pour ces filtres'
+        => 'per questi filtri',
+    'Pour confirmer, saisissez <strong>{mot_confirmation}</strong> :'
+        => 'Per confermare, digita <strong>{mot_confirmation}</strong>:',
+    'Prénom'
+        => 'Nome',
+    'Prénom :'
+        => 'Nome:',
+    'Prénom * :'
+        => 'Nome *:',
+    'Protégé'
+        => 'Protetto',
+    'Pseudo'
+        => 'Nome utente',
+    'Pseudo :'
+        => 'Nome utente:',
+    'Pseudo * :'
+        => 'Nome utente *:',
+    'QR Code - {reference}'
+        => 'Codice QR - {reference}',
+    'Référence ou date de l\'acquisition'
+        => 'Riferimento o data dell\'acquisizione',
+    'Référencement automatique'
+        => 'Riferimenti automatici',
+    'Refusée'
+        => 'Rifiutata',
+    'Refuser'
+        => 'Rifiuta',
+    'Regrouper en lot (équipements identiques)'
+        => 'Raggruppa in lotto (attrezzature identiche)',
+    'Réinitialiser (appareil perdu)'
+        => 'Reimposta (dispositivo perso)',
+    'Réinitialiser la double authentification de {username} ? Ses passkeys, son application et ses codes de secours seront supprimés : la connexion se fera avec le seul mot de passe.'
+        => 'Reimpostare l\'autenticazione a due fattori di {username}? Passkey, app e codici di emergenza saranno eliminati: l\'accesso avverrà con la sola password.',
+    'Réinitialiser le journal'
+        => 'Reimposta il registro',
+    'Remarque (obligatoire)'
+        => 'Osservazione (obbligatoria)',
+    'Remarques, photo ou notice'
+        => 'Osservazioni, foto o istruzioni',
+    'Remplace <strong>toutes</strong> les données actuelles (base et fichiers) par celles d\'une sauvegarde. L\'archive est d\'abord vérifiée sans rien modifier ; la restauration ne démarre qu\'après votre confirmation. L\'état actuel est sauvegardé automatiquement juste avant.'
+        => 'Sostituisce <strong>tutti</strong> i dati attuali (database e file) con quelli di un backup. L\'archivio viene prima verificato senza modificare nulla; il ripristino parte solo dopo la tua conferma. Lo stato attuale viene salvato automaticamente subito prima.',
+    'Renvoyer le mail de bienvenue'
+        => 'Reinvia l\'email di benvenuto',
+    'Renvoyer le mail de bienvenue à {email} ?'
+        => 'Reinviare l\'email di benvenuto a {email}?',
+    'Réponse au demandeur'
+        => 'Risposta al richiedente',
+    'réponse@domaine.fr'
+        => 'risposta@dominio.it',
+    'Reprendre le contrôle'
+        => 'Riprendi l\'ispezione',
+    'Requête invalide'
+        => 'Richiesta non valida',
+    'Ressource non trouvée'
+        => 'Risorsa non trovata',
+    'Restauration en cours… ne fermez pas la page'
+        => 'Ripristino in corso… non chiudere la pagina',
+    'Restauration non lancée : saisissez {mot} pour confirmer.'
+        => 'Ripristino non avviato: digita {mot} per confermare.',
+    'Restauration terminée : sauvegarde du {date} (version {version}), {fichiers} fichier(s). L\'état précédent est conservé dans « {filet} ».'
+        => 'Ripristino completato: backup del {date} (versione {version}), {fichiers} file. Lo stato precedente è conservato in «{filet}».',
+    'Restaurer'
+        => 'Ripristina',
+    'Restaurer…'
+        => 'Ripristina…',
+    'Restaurer une sauvegarde'
+        => 'Ripristina un backup',
+    'Retirer les filtres'
+        => 'Rimuovi i filtri',
+    'Retour à la fiche'
+        => 'Torna alla scheda',
+    'Retour à la page de mise à jour'
+        => 'Torna alla pagina di aggiornamento',
+    'Revenir à la photo par défaut'
+        => 'Torna alla foto predefinita',
+    'Revenir au logo EPIClub par défaut'
+        => 'Torna al logo EPIClub predefinito',
+    'Rien n\'a été modifié.'
+        => 'Non è stato modificato nulla.',
+    'Rôle'
+        => 'Ruolo',
+    'Rôle :'
+        => 'Ruolo:',
+    'Rôle * :'
+        => 'Ruolo *:',
+    'Saisir un emplacement'
+        => 'Inserisci un\'ubicazione',
+    'Saisir une entrée'
+        => 'Inserisci una voce',
+    'Sans équipement'
+        => 'Senza attrezzature',
+    'Sauvegarde « {nom} » supprimée.'
+        => 'Backup «{nom}» eliminato.',
+    'Sauvegarde et restauration'
+        => 'Backup e ripristino',
+    'Sauvegardes conservées sur le serveur'
+        => 'Backup conservati sul server',
+    'Scanner un QR code'
+        => 'Scansiona un codice QR',
+    'Scannez ce QR code'
+        => 'Scansiona questo codice QR',
+    'Sélectionnez une activité --'
+        => 'Seleziona un\'attività --',
+    'Serveur SMTP'
+        => 'Server SMTP',
+    'Seul le titulaire du compte protégé peut la modifier.'
+        => 'Solo il titolare dell\'account protetto può modificarla.',
+    'seules les versions stables sont proposées. Pour suivre les bêtas : <code>UPDATE_CHANNEL=beta</code> dans <code>.env.local.php</code>.'
+        => 'vengono proposte solo le versioni stabili. Per seguire le beta: <code>UPDATE_CHANNEL=beta</code> in <code>.env.local.php</code>.',
+    'Si votre compte n\'existe pas dans la sauvegarde, vous serez déconnecté.'
+        => 'Se il tuo account non esiste nel backup, verrai disconnesso.',
+    'Signaler les EPI non vérifiés depuis plus de :'
+        => 'Segnala i DPI non verificati da più di:',
+    'SSL'
+        => 'SSL',
+    'stable'
+        => 'stabile',
+    'Stable — versions définitives uniquement (recommandé en production)'
+        => 'Stabile — solo versioni definitive (consigliato in produzione)',
+    'Succès'
+        => 'Successo',
+    'Supprime définitivement toutes les entrées (pensez à exporter le journal avant). La réinitialisation est elle-même inscrite dans le nouveau journal. Pour confirmer, saisissez <strong>{confirmation}</strong>.'
+        => 'Elimina definitivamente tutte le voci (ricorda di esportare prima il registro). La reimpostazione stessa viene registrata nel nuovo registro. Per confermare, digita <strong>{confirmation}</strong>.',
+    'Supprimer {prenom} {nom} ?'
+        => 'Eliminare {prenom} {nom}?',
+    'Supprimer cet emplacement ?'
+        => 'Eliminare questa ubicazione?',
+    'Supprimer définitivement {nom} ?'
+        => 'Eliminare definitivamente {nom}?',
+    'Supprimer l\'utilisateur'
+        => 'Elimina l\'utente',
+    'Taille'
+        => 'Dimensione',
+    'Télécharge une archive <code>.zip</code> contenant :'
+        => 'Scarica un archivio <code>.zip</code> contenente:',
+    'Télécharger et installer'
+        => 'Scarica e installa',
+    'Télécharger le QR Code'
+        => 'Scarica il codice QR',
+    'Télécharger une sauvegarde'
+        => 'Scarica un backup',
+    'Téléphone :'
+        => 'Telefono:',
+    'téléversée, non restaurée'
+        => 'caricato, non ripristinato',
+    'Tester l\'envoi'
+        => 'Prova l\'invio',
+    'Ticket'
+        => 'Ticket',
+    'Ticket clos : demande refusée. Le demandeur en est notifié.'
+        => 'Ticket chiuso: richiesta rifiutata. Il richiedente ne è avvisato.',
+    'Ticket clos : modification faite. Le demandeur en est notifié.'
+        => 'Ticket chiuso: modifica fatta. Il richiedente ne è avvisato.',
+    'Ticket non trouvé.'
+        => 'Ticket non trovato.',
+    'TLS'
+        => 'TLS',
+    'Token CSRF invalide. Merci de recharger la page.'
+        => 'Token CSRF non valido. Ricarica la pagina.',
+    'Token CSRF invalide. Merci de réessayer.'
+        => 'Token CSRF non valido. Riprova.',
+    'Tous les champs obligatoires doivent être remplis.'
+        => 'Tutti i campi obbligatori devono essere compilati.',
+    'toute la base de données (équipements, contrôles, acquisitions, utilisateurs, réglages…) ;'
+        => 'l\'intero database (attrezzature, ispezioni, acquisizioni, utenti, impostazioni…);',
+    'Toutes les demandes'
+        => 'Tutte le richieste',
+    'Toutes les demandes →'
+        => 'Tutte le richieste →',
+    'traiter'
+        => 'gestisci',
+    'Traiter la demande'
+        => 'Gestisci la richiesta',
+    'Type'
+        => 'Tipo',
+    'Un contrôle est en cours pour cet équipement'
+        => 'È in corso un\'ispezione per questa attrezzatura',
+    'Un équipement « Égaré » peut être supprimé par un administrateur une fois ce délai écoulé depuis sa déclaration (12 mois par défaut).'
+        => 'Un\'attrezzatura «Smarrita» può essere eliminata da un amministratore trascorso questo termine dalla sua dichiarazione (12 mesi per impostazione predefinita).',
+    'Une erreur est survenue lors de la mise à jour. Merci de réessayer ou de contacter un administrateur.'
+        => 'Si è verificato un errore durante l\'aggiornamento. Riprova o contatta un amministratore.',
+    'Une mise à jour est disponible !'
+        => 'È disponibile un aggiornamento!',
+    'URL absolue http ou https, sans slash final, sans query ni fragment. Laisser vide pour ne pas modifier la valeur actuelle.'
+        => 'URL assoluto http o https, senza slash finale, query né frammento. Lasciare vuoto per non modificare il valore attuale.',
+    'URL racine'
+        => 'URL radice',
+    'URL racine (ROOT_URL)'
+        => 'URL radice (ROOT_URL)',
+    'Utilisateur, action…'
+        => 'Utente, azione…',
+    'utilisateurs'
+        => 'utenti',
+    'Variables disponibles'
+        => 'Variabili disponibili',
+    'Vérifier l\'archive'
+        => 'Verifica l\'archivio',
+    'Vérifier puis restaurer'
+        => 'Verifica e ripristina',
+    'Version d\'EPIClub'
+        => 'Versione di EPIClub',
+    'Version installée :'
+        => 'Versione installata:',
+    'Voir l\'équipement'
+        => 'Vedi l\'attrezzatura',
+    'Voir la fiche équipement'
+        => 'Vedi la scheda attrezzatura',
+    'Voir la liste →'
+        => 'Vedi l\'elenco →',
+    'Voir la réponse →'
+        => 'Vedi la risposta →',
+    'Voir les {nombre} équipements'
+        => 'Vedi le {nombre} attrezzature',
+    'Voir les prêts →'
+        => 'Vedi i prestiti →',
+    'Votre demande sur <strong>{reference}</strong> a été refusée'
+        => 'La tua richiesta su <strong>{reference}</strong> è stata rifiutata',
+    'Votre demande sur <strong>{reference}</strong> a été traitée'
+        => 'La tua richiesta su <strong>{reference}</strong> è stata gestita',
+    'Votre rôle vous permet déjà de faire toutes ces modifications vous-même.'
+        => 'Il tuo ruolo ti permette già di fare tutte queste modifiche da solo.',
+    'Vous disposez de la version la plus récente.'
+        => 'Hai la versione più recente.',
+    'Vous êtes en mode consultation'
+        => 'Sei in modalità consultazione',
+    'Vous n\'avez fait aucune demande. Elles se font depuis la fiche d\'un équipement (« Demander une modification »).'
+        => 'Non hai fatto alcuna richiesta. Si fanno dalla scheda di un\'attrezzatura («Richiedi una modifica»).',
+    'Vous n\'avez pas les droits pour modifier cet utilisateur.'
+        => 'Non hai i permessi per modificare questo utente.',
+    'Vous n\'avez pas les droits pour supprimer cet utilisateur.'
+        => 'Non hai i permessi per eliminare questo utente.',
+    'Vous n\'êtes pas autorisé à attribuer ce rôle.'
+        => 'Non sei autorizzato ad assegnare questo ruolo.',
+    'Vous ne pouvez pas modifier votre propre rôle. Demandez à un autre administrateur.'
+        => 'Non puoi modificare il tuo ruolo. Chiedi a un altro amministratore.',
+    'Vous ne pouvez pas supprimer votre propre compte'
+        => 'Non puoi eliminare il tuo account',
+    'Vous ne pouvez pas supprimer votre propre compte.'
+        => 'Non puoi eliminare il tuo account.',
+
+    // --- Complément (etape7a) ---
+    'emplacement'
+        => 'ubicazione',
 ];

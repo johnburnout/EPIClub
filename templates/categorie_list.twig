@@ -1,31 +1,31 @@
 {% extends "_layout.twig" %}
 
 {% block body %}
-	<h3>Catégories</h3>
+	<h3>{{ 'Catégories'|trans }}</h3>
 	<hr>
 	{% if isGranted('ROLE_ADMIN') %}
-	<a href="/admin/categories/nouvelle" class="btn btn-primary">Saisir une entrée</a>
+	<a href="/admin/categories/nouvelle" class="btn btn-primary">{{ 'Saisir une entrée'|trans }}</a>
 	<hr>
 	{% endif %}
 	{% include '_filtres_referentiel.twig' with {
-		url: '/admin/categories', placeholder: 'Libellé, code, description',
+		url: '/admin/categories', placeholder: 'Libellé, code, description'|trans,
 		tris: {'libelle': 'Libellé', 'code': 'Code', 'equipements': 'Nombre d\'équipements'},
 		selects: [
-			{nom: 'epi', label: 'EPI', options: {'': 'Toutes', 'oui': 'EPI', 'non': 'Non EPI'}},
-			{nom: 'duree_max', label: 'Durée max', options: {'': 'Toutes', 'oui': 'Oui', 'non': 'Non'}}
+			{nom: 'epi', label: 'EPI'|trans, options: {'': 'Toutes'|trans, 'oui': 'EPI'|trans, 'non': 'Non EPI'|trans}},
+			{nom: 'duree_max', label: 'Durée max'|trans, options: {'': 'Toutes'|trans, 'oui': 'Oui'|trans, 'non': 'Non'|trans}}
 		],
-		affiches: nb_filtres, element: 'catégorie', elements: 'catégories'
+		affiches: nb_filtres, element: 'catégorie'|trans, elements: 'catégories'|trans
 	} %}
 	<table class="table">
 		<thead>
 			<tr>
-				<th>Libellé</th>
-				<th>Code</th>
-				<th>Description</th>
-				<th>Est EPI ?</th>
-				<th>Durée max ?</th>
-				<th>Équipements</th>
-				<th>Actions</th>
+				<th>{{ 'Libellé'|trans }}</th>
+				<th>{{ 'Code'|trans }}</th>
+				<th>{{ 'Description'|trans }}</th>
+				<th>{{ 'Est EPI ?'|trans }}</th>
+				<th>{{ 'Durée max ?'|trans }}</th>
+				<th>{{ 'Équipements'|trans }}</th>
+				<th>{{ 'Actions'|trans }}</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -40,34 +40,34 @@
 					<td>{% if categorie.code %}<code>{{ categorie.code }}</code>{% endif %}</td>
 					<td>{{ categorie.description }}</td>
 					<td>{{ est_epi_value }}</td>
-					<td>{{ categorie.duree_max_utilisation ? 'Oui' : 'Non' }}</td>
+					<td>{{ categorie.duree_max_utilisation ? 'Oui'|trans : 'Non'|trans }}</td>
 					<td>
 						{% set nb = nb_equipements[categorie.id]|default(0) %}
 						{% if nb > 0 %}
-							<a href="/equipements?categorie={{ categorie.id }}" title="Afficher ces équipements">{{ nb }} équipement{{ nb > 1 ? 's' : '' }}</a>
+							<a href="/equipements?categorie={{ categorie.id }}" title="{{ 'Afficher ces équipements'|trans }}">{% if nb > 1 %}{{ '{nb} équipements'|trans({nb: nb}) }}{% else %}{{ '{nb} équipement'|trans({nb: nb}) }}{% endif %}</a>
 						{% else %}
-							<span class="text-muted">Aucun</span>
+							<span class="text-muted">{{ 'Aucun'|trans }}</span>
 						{% endif %}
 					</td>
 					<td>
-						<a href="/admin/categories/categorie-{{ categorie.id }}" class="btn btn-primary btn-sm">Voir</a>
+						<a href="/admin/categories/categorie-{{ categorie.id }}" class="btn btn-primary btn-sm">{{ 'Voir'|trans }}</a>
 						{% if isGranted('ROLE_ADMIN') %}
-						<a href="/admin/categories/categorie_modification-{{ categorie.id }}" class="btn btn-warning btn-sm">Modifier</a>
+						<a href="/admin/categories/categorie_modification-{{ categorie.id }}" class="btn btn-warning btn-sm">{{ 'Modifier'|trans }}</a>
 						<form method="post" action="/admin/categories/supprimer" style="display:inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 							<input type="hidden" name="id" value="{{ categorie.id }}">
 							<button type="submit" class="btn btn-danger btn-sm"
-							        data-confirm="Êtes-vous sûr de vouloir supprimer la catégorie « {{ categorie.libelle }} » ? Cette action est irréversible.">
-								Supprimer
+							        data-confirm="{{ 'Êtes-vous sûr de vouloir supprimer la catégorie « {libelle} » ? Cette action est irréversible.'|trans({libelle: categorie.libelle}) }}">
+								{{ 'Supprimer'|trans }}
 							</button>
 						</form>
 						{% endif %}
 					</td>
 				</tr>
 			{% else %}
-				<tr><td colspan="7" class="text-muted">Aucune catégorie ne correspond à ces critères.</td></tr>
+				<tr><td colspan="7" class="text-muted">{{ 'Aucune catégorie ne correspond à ces critères.'|trans }}</td></tr>
 			{% endfor %}
 		</tbody>
 	</table>
-	{% include '_pagination.twig' with {p: pagination, affiches: categories|length, elements: 'catégories'} %}
+	{% include '_pagination.twig' with {p: pagination, affiches: categories|length, elements: 'catégories'|trans} %}
 {% endblock %}

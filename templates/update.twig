@@ -2,29 +2,29 @@
 
 {% block body %}
 <div class="container mt-4">
-    <h3>Mise à jour d'EPIClub</h3>
+    <h3>{{ "Mise à jour d'EPIClub"|trans }}</h3>
     <hr>
 
     <div class="card">
         <div class="card-header bg-primary text-white">
-            <i class="fas fa-sync-alt"></i> Gestion des versions
+            <i class="fas fa-sync-alt"></i> {{ 'Gestion des versions'|trans }}
         </div>
         <div class="card-body">
-            <p><strong>Version installée :</strong> <span class="badge bg-secondary">{{ current_version }}</span></p>
-            <p><strong>Canal de mise à jour :</strong>
+            <p><strong>{{ 'Version installée :'|trans }}</strong> <span class="badge bg-secondary">{{ current_version }}</span></p>
+            <p><strong>{{ 'Canal de mise à jour :'|trans }}</strong>
                 {% if update_channel == 'beta' %}
-                    <span class="badge bg-warning text-dark">beta</span>
-                    <small class="text-muted">— les versions bêta (pré-releases) sont proposées. Réglage <code>UPDATE_CHANNEL</code> dans <code>.env.local.php</code>.</small>
+                    <span class="badge bg-warning text-dark">{{ 'beta'|trans }}</span>
+                    <small class="text-muted">— {{ 'les versions bêta (pré-releases) sont proposées. Réglage <code>UPDATE_CHANNEL</code> dans <code>.env.local.php</code>.'|trans|raw }}</small>
                 {% else %}
-                    <span class="badge bg-success">stable</span>
-                    <small class="text-muted">— seules les versions stables sont proposées. Pour suivre les bêtas : <code>UPDATE_CHANNEL=beta</code> dans <code>.env.local.php</code>.</small>
+                    <span class="badge bg-success">{{ 'stable'|trans }}</span>
+                    <small class="text-muted">— {{ 'seules les versions stables sont proposées. Pour suivre les bêtas : <code>UPDATE_CHANNEL=beta</code> dans <code>.env.local.php</code>.'|trans|raw }}</small>
                 {% endif %}
             </p>
-            <p><strong>Dernière version sur GitHub :</strong>
+            <p><strong>{{ 'Dernière version sur GitHub :'|trans }}</strong>
                 {% if latest_version %}
                     <span class="badge bg-info">{{ latest_version }}</span>
                 {% else %}
-                    <span class="badge bg-danger">Non disponible</span>
+                    <span class="badge bg-danger">{{ 'Non disponible'|trans }}</span>
                 {% endif %}
             </p>
 
@@ -34,12 +34,12 @@
 
             {% if cleanup_needed %}
                 <div class="alert alert-warning">
-                    <i class="fas fa-trash"></i> Des fichiers temporaires persistent.
+                    <i class="fas fa-trash"></i> {{ 'Des fichiers temporaires persistent.'|trans }}
                     <form method="post" action="/admin/update/cleanup" style="display:inline;">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-sm btn-secondary"
-                                data-confirm="Nettoyer le dossier temporaire de mise à jour ?">
-                            Nettoyer
+                                data-confirm="{{ 'Nettoyer le dossier temporaire de mise à jour ?'|trans }}">
+                            {{ 'Nettoyer'|trans }}
                         </button>
                     </form>
                 </div>
@@ -47,33 +47,32 @@
 
             {% if update_available %}
                 <div class="alert alert-success">
-                    <i class="fas fa-check-circle"></i> Une mise à jour est disponible !
+                    <i class="fas fa-check-circle"></i> {{ 'Une mise à jour est disponible !'|trans }}
                 </div>
 
                 {% if archive_en_preparation|default(false) %}
                     <div class="alert alert-info">
-                        <i class="fas fa-hourglass-half"></i> L'archive complète de cette version est en cours de préparation sur GitHub
-                        (quelques minutes après la publication). Rechargez cette page dans quelques minutes pour l'installer.
+                        <i class="fas fa-hourglass-half"></i> {{ "L'archive complète de cette version est en cours de préparation sur GitHub (quelques minutes après la publication). Rechargez cette page dans quelques minutes pour l'installer."|trans }}
                     </div>
                 {% elseif can_update %}
-                    <form method="post" action="/admin/update/perform" data-confirm="Confirmer la mise à jour vers la version {{ latest_version }} ?">
+                    <form method="post" action="/admin/update/perform" data-confirm="{{ 'Confirmer la mise à jour vers la version {latest_version} ?'|trans({latest_version: latest_version}) }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <button type="submit" class="btn btn-warning">
-                            <i class="fas fa-download"></i> Télécharger et installer
+                            <i class="fas fa-download"></i> {{ 'Télécharger et installer'|trans }}
                         </button>
                     </form>
                     <p class="text-muted mt-2">
-                        <small>💾 Si la nouvelle version modifie la base, une sauvegarde SQL est faite automatiquement avant (dossier <code>var/backups/</code>). Pour une sauvegarde complète avec les photos et factures : <a href="/admin/sauvegarde">Sauvegarde / restauration</a>.</small>
+                        <small>{{ '💾 Si la nouvelle version modifie la base, une sauvegarde SQL est faite automatiquement avant (dossier <code>var/backups/</code>). Pour une sauvegarde complète avec les photos et factures :'|trans|raw }} <a href="/admin/sauvegarde">{{ 'Sauvegarde / restauration'|trans }}</a>.</small>
                     </p>
                 {% else %}
                     <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle"></i> Impossible d'écrire dans le répertoire du projet. Veuillez vérifier les droits.
+                        <i class="fas fa-exclamation-triangle"></i> {{ "Impossible d'écrire dans le répertoire du projet. Veuillez vérifier les droits."|trans }}
                     </div>
                 {% endif %}
 
                 {% if release_notes %}
                     <div class="mt-4">
-                        <h5>Notes de version :</h5>
+                        <h5>{{ 'Notes de version :'|trans }}</h5>
                         <div class="border p-3 bg-light" style="max-height:300px; overflow-y:auto;">
                             {{ release_notes|nl2br }}
                         </div>
@@ -82,7 +81,7 @@
 
             {% elseif latest_version and not update_available %}
                 <div class="alert alert-info">
-                    <i class="fas fa-check-circle"></i> Vous disposez de la version la plus récente.
+                    <i class="fas fa-check-circle"></i> {{ 'Vous disposez de la version la plus récente.'|trans }}
                 </div>
             {% endif %}
         </div>

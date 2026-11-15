@@ -2,38 +2,37 @@
 
 {% block body %}
 
-	<h3>Fiche Utilisateur{% if est_protege|default(false) %} <span class="badge bg-dark align-middle fs-6">🔒 Compte protégé</span>{% endif %}</h3>
+	<h3>{{ 'Fiche Utilisateur'|trans }}{% if est_protege|default(false) %} <span class="badge bg-dark align-middle fs-6">🔒 {{ 'Compte protégé'|trans }}</span>{% endif %}</h3>
 	<hr>
 
 	{% if protege_pour_acteur|default(false) %}
 		<div class="alert alert-info">
-			🔒 Ce compte super-administrateur a été créé à l'installation : il ne peut être ni supprimé,
-			ni rétrogradé, et seul son titulaire peut modifier son adresse mail et son mot de passe.
+			🔒 {{ "Ce compte super-administrateur a été créé à l'installation : il ne peut être ni supprimé, ni rétrogradé, et seul son titulaire peut modifier son adresse mail et son mot de passe."|trans }}
 		</div>
 	{% endif %}
 
 	<form method="post">
 		<div class="mb-3">
-			<label for="prenom">Prénom :</label>
+			<label for="prenom">{{ 'Prénom :'|trans }}</label>
 			<input type="text" id="prenom" name="prenom" value="{{ utilisateur.prenom }}" class="form-control {% if form_errors.prenom %}is-invalid{% endif %}">
 			{% if form_errors.prenom %}<div class="invalid-feedback">{{ form_errors.prenom }}</div>{% endif %}
 		</div>
 
 		<div class="mb-3">
-			<label for="nom">Nom :</label>
+			<label for="nom">{{ 'Nom :'|trans }}</label>
 			<input type="text" id="nom" name="nom" value="{{ utilisateur.nom }}" class="form-control {% if form_errors.nom %}is-invalid{% endif %}">
 			{% if form_errors.nom %}<div class="invalid-feedback">{{ form_errors.nom }}</div>{% endif %}
 		</div>
 
 		<div class="mb-3">
-			<label for="username">Pseudo :</label>
+			<label for="username">{{ 'Pseudo :'|trans }}</label>
 			<input type="text" id="username" value="{{ utilisateur.username }}" class="form-control" readonly disabled>
-			<small class="form-text text-muted">Le pseudo ne peut pas être modifié.</small>
+			<small class="form-text text-muted">{{ 'Le pseudo ne peut pas être modifié.'|trans }}</small>
 			<input type="hidden" name="username" value="{{ utilisateur.username }}">
 		</div>
 
 		<div class="mb-3">
-			<label for="email">Adresse mail :</label>
+			<label for="email">{{ 'Adresse mail :'|trans }}</label>
 			<input type="email" id="email" name="email" value="{{ utilisateur.email }}" class="form-control {% if form_errors.email %}is-invalid{% endif %}"
 			       {% if protege_pour_acteur|default(false) %}readonly disabled{% endif %}>
 			{% if form_errors.email %}<div class="invalid-feedback">{{ form_errors.email }}</div>{% endif %}
@@ -41,15 +40,15 @@
 
 		{% if not protege_pour_acteur|default(false) %}
 		<div class="mb-3">
-			<label for="password">Nouveau mot de passe :</label>
+			<label for="password">{{ 'Nouveau mot de passe :'|trans }}</label>
 			<input type="password" id="password" name="password" class="form-control {% if form_errors.password %}is-invalid{% endif %}">
-			<small class="form-text text-muted">Laisser vide pour ne pas modifier le mot de passe.</small>
+			<small class="form-text text-muted">{{ 'Laisser vide pour ne pas modifier le mot de passe.'|trans }}</small>
 			{% if form_errors.password %}<div class="invalid-feedback">{{ form_errors.password }}</div>{% endif %}
 		</div>
 		{% endif %}
 
 		<div class="mb-3">
-			<label for="role">Rôle :</label>
+			<label for="role">{{ 'Rôle :'|trans }}</label>
 
 			{% if (is_self is defined and is_self) or protege_pour_acteur|default(false) %}
 				{# Un utilisateur ne peut pas modifier son propre rôle via ce formulaire.
@@ -63,9 +62,9 @@
 				<input type="hidden" name="role" value="{{ utilisateur.role }}">
 				<small class="form-text text-muted">
 					{% if protege_pour_acteur|default(false) %}
-						Le rôle du compte protégé ne peut pas être modifié.
+						{{ 'Le rôle du compte protégé ne peut pas être modifié.'|trans }}
 					{% else %}
-						Vous ne pouvez pas modifier votre propre rôle. Demandez à un autre administrateur.
+						{{ 'Vous ne pouvez pas modifier votre propre rôle. Demandez à un autre administrateur.'|trans }}
 					{% endif %}
 				</small>
 			{% else %}
@@ -80,33 +79,33 @@
 
 		<div class="form-actions d-flex gap-2">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-			<button type="submit" class="btn btn-primary">Enregistrer</button>
-			<a href="/admin/utilisateurs" class="btn btn-secondary">Retour à la liste</a>
+			<button type="submit" class="btn btn-primary">{{ 'Enregistrer'|trans }}</button>
+			<a href="/admin/utilisateurs" class="btn btn-secondary">{{ 'Retour à la liste'|trans }}</a>
 			{# [2026-10-24] Formulaire séparé (attribut `form`), comme la suppression. #}
 			<button type="submit" form="bienvenue-utilisateur-form" class="btn btn-outline-secondary"
-			        title="Identifiant, rôle et lien de connexion — jamais le mot de passe"
-			        data-confirm="Renvoyer le mail de bienvenue à {{ utilisateur.email }} ?">
-				✉️ Renvoyer le mail de bienvenue
+			        title="{{ 'Identifiant, rôle et lien de connexion — jamais le mot de passe'|trans }}"
+			        data-confirm="{{ 'Renvoyer le mail de bienvenue à {email} ?'|trans({email: utilisateur.email}) }}">
+				✉️ {{ 'Renvoyer le mail de bienvenue'|trans }}
 			</button>
 
 			{# Le bouton de suppression utilise l'attribut HTML5 `form` pour cibler
 			   un formulaire séparé (les formulaires ne peuvent pas être imbriqués). #}
 			{% if can_delete is defined and can_delete %}
 				<button type="submit" form="delete-utilisateur-form" class="btn btn-danger ms-auto"
-				        data-confirm="Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.">
-					🗑️ Supprimer l'utilisateur
+				        data-confirm="{{ 'Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.'|trans }}">
+					🗑️ {{ "Supprimer l'utilisateur"|trans }}
 				</button>
 			{% elseif is_self is defined and is_self %}
 				<span class="badge bg-info ms-auto p-2">
-					🔒 Vous ne pouvez pas supprimer votre propre compte
+					🔒 {{ 'Vous ne pouvez pas supprimer votre propre compte'|trans }}
 				</span>
 			{% elseif est_protege|default(false) %}
 				<span class="badge bg-info ms-auto p-2">
-					🔒 Compte protégé : suppression impossible
+					🔒 {{ 'Compte protégé : suppression impossible'|trans }}
 				</span>
 			{% elseif utilisateur.role == 'ROLE_SUPER_ADMIN' %}
 				<span class="badge bg-warning text-dark ms-auto p-2">
-					🔒 Dernier SUPER_ADMIN : suppression impossible
+					🔒 {{ 'Dernier SUPER_ADMIN : suppression impossible'|trans }}
 				</span>
 			{% endif %}
 		</div>
@@ -115,27 +114,27 @@
 	{# [migration 020] Double authentification du compte #}
 	<div class="card mt-4">
 		<div class="card-body">
-			<h5 class="card-title">🔐 Double authentification</h5>
+			<h5 class="card-title">🔐 {{ 'Double authentification'|trans }}</h5>
 			{% if double_auth is null %}
-				<p class="text-muted mb-0">État indisponible.</p>
+				<p class="text-muted mb-0">{{ 'État indisponible.'|trans }}</p>
 			{% elseif double_auth %}
-				<p class="mb-2"><span class="badge bg-success">Activée</span> (application d'authentification ou passkey).</p>
+				<p class="mb-2"><span class="badge bg-success">{{ 'Activée'|trans }}</span> {{ "(application d'authentification ou passkey)."|trans }}</p>
 				{% if is_self %}
-					<a href="/mon-compte/securite" class="btn btn-outline-primary btn-sm">Gérer ma double authentification</a>
+					<a href="/mon-compte/securite" class="btn btn-outline-primary btn-sm">{{ 'Gérer ma double authentification'|trans }}</a>
 				{% elseif peut_reinitialiser_2fa %}
 					<form method="post" action="/admin/utilisateurs/utilisateur_2fa_reinitialiser-{{ utilisateur.id }}" class="d-inline"
-					      data-confirm="Réinitialiser la double authentification de {{ utilisateur.username }} ? Ses passkeys, son application et ses codes de secours seront supprimés : la connexion se fera avec le seul mot de passe.">
+					      data-confirm="{{ 'Réinitialiser la double authentification de {username} ? Ses passkeys, son application et ses codes de secours seront supprimés : la connexion se fera avec le seul mot de passe.'|trans({username: utilisateur.username}) }}">
 						<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-						<button type="submit" class="btn btn-outline-danger btn-sm">Réinitialiser (appareil perdu)</button>
+						<button type="submit" class="btn btn-outline-danger btn-sm">{{ 'Réinitialiser (appareil perdu)'|trans }}</button>
 					</form>
 				{% elseif not isGranted('ROLE_SUPER_ADMIN') %}
-					<small class="text-muted">Appareil perdu : seul un super-administrateur peut la réinitialiser.</small>
+					<small class="text-muted">{{ 'Appareil perdu : seul un super-administrateur peut la réinitialiser.'|trans }}</small>
 				{% else %}
-					<small class="text-muted">Seul le titulaire du compte protégé peut la modifier.</small>
+					<small class="text-muted">{{ 'Seul le titulaire du compte protégé peut la modifier.'|trans }}</small>
 				{% endif %}
 			{% else %}
-				<p class="mb-0"><span class="badge bg-secondary">Non activée</span>
-					{% if is_self %} — <a href="/mon-compte/securite">l'activer</a>{% else %} — chaque personne l'active depuis « 🔐 Sécurité ».{% endif %}</p>
+				<p class="mb-0"><span class="badge bg-secondary">{{ 'Non activée'|trans }}</span>
+					{% if is_self %} — <a href="/mon-compte/securite">{{ "l'activer"|trans }}</a>{% else %} — {{ "chaque personne l'active depuis « 🔐 Sécurité »."|trans }}{% endif %}</p>
 			{% endif %}
 		</div>
 	</div>

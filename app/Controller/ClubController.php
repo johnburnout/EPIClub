@@ -1,6 +1,7 @@
 <?php 
 namespace Epiclub\Controller;
 
+use Epiclub\Engine\Traducteur;
 use Epiclub\Domain\ClubManager;
 use Epiclub\Engine\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -64,10 +65,9 @@ class ClubController extends AbstractController
                 || (int) $delai > \Epiclub\Domain\SuppressionEgare::DELAI_MAX
             ) {
                 $club['delai_suppression_egare_mois'] = $delai;
-                $form_errors['delai_suppression_egare_mois'] = sprintf(
-                    'Le délai doit être un nombre de mois entre %d et %d.',
-                    \Epiclub\Domain\SuppressionEgare::DELAI_MIN,
-                    \Epiclub\Domain\SuppressionEgare::DELAI_MAX
+                $form_errors['delai_suppression_egare_mois'] = Traducteur::t(
+                    'Le délai doit être un nombre de mois entre {min} et {max}.',
+                    ['min' => \Epiclub\Domain\SuppressionEgare::DELAI_MIN, 'max' => \Epiclub\Domain\SuppressionEgare::DELAI_MAX]
                 );
             } else {
                 $club['delai_suppression_egare_mois'] = (int) $delai;
@@ -75,22 +75,22 @@ class ClubController extends AbstractController
             
             // Validation
             if (empty($club['nom'])) {
-                $form_errors['nom'] = "Le nom du club est obligatoire.";
+                $form_errors['nom'] = Traducteur::t("Le nom du club est obligatoire.");
             }
             
             if (!empty($club['email']) && !filter_var($club['email'], FILTER_VALIDATE_EMAIL)) {
-                $form_errors['email'] = "L'email n'est pas valide.";
+                $form_errors['email'] = Traducteur::t("L'email n'est pas valide.");
             }
             
             // Validation de l'activité (doit être dans la liste)
             if (!empty($club['activite']) && !in_array($club['activite'], self::ACTIVITES)) {
-                $form_errors['activite'] = "L'activité sélectionnée n'est pas valide.";
+                $form_errors['activite'] = Traducteur::t("L'activité sélectionnée n'est pas valide.");
             }
             
             if (empty($form_errors)) {
                 $clubManager->save($club);
                 
-                $this->session->getFlashBag()->add('success', "Les informations du club ont été mises à jour.");
+                $this->session->getFlashBag()->add('success', Traducteur::t("Les informations du club ont été mises à jour."));
                 
                 return new RedirectResponse("/admin/club");
             }

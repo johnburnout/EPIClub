@@ -6,16 +6,16 @@
 #}
 {% if p.visible %}
 	<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 my-2">
-		<nav aria-label="Pagination">
+		<nav aria-label="{{ 'Pagination'|trans }}">
 			<ul class="pagination mb-0">
 				{% if p.hasPrevious %}
-					<li class="page-item"><a class="page-link" href="{{ p.urls.first }}">Premier</a></li>
-					<li class="page-item"><a class="page-link" href="{{ p.urls.previous }}">Précédent</a></li>
+					<li class="page-item"><a class="page-link" href="{{ p.urls.first }}">{{ 'Premier'|trans }}</a></li>
+					<li class="page-item"><a class="page-link" href="{{ p.urls.previous }}">{{ 'Précédent'|trans }}</a></li>
 				{% endif %}
-				<li class="page-item disabled"><span class="page-link">Page {{ p.page }} sur {{ p.totalPages }}</span></li>
+				<li class="page-item disabled"><span class="page-link">{{ 'Page {page} sur {totalPages}'|trans({page: p.page, totalPages: p.totalPages}) }}</span></li>
 				{% if p.hasNext %}
-					<li class="page-item"><a class="page-link" href="{{ p.urls.next }}">Suivant</a></li>
-					<li class="page-item"><a class="page-link" href="{{ p.urls.last }}">Dernier</a></li>
+					<li class="page-item"><a class="page-link" href="{{ p.urls.next }}">{{ 'Suivant'|trans }}</a></li>
+					<li class="page-item"><a class="page-link" href="{{ p.urls.last }}">{{ 'Dernier'|trans }}</a></li>
 				{% endif %}
 			</ul>
 		</nav>
@@ -24,7 +24,7 @@
 				{% for nom, valeur in p.query %}
 					<input type="hidden" name="{{ nom }}" value="{{ valeur }}">
 				{% endfor %}
-				<label for="{{ p.param_limit }}" class="small text-nowrap mb-0">Lignes par page</label>
+				<label for="{{ p.param_limit }}" class="small text-nowrap mb-0">{{ 'Lignes par page'|trans }}</label>
 				<select name="{{ p.param_limit }}" id="{{ p.param_limit }}" class="form-select form-select-sm" data-auto-submit>
 					{% for n in p.limites %}
 						<option value="{{ n }}" {% if p.limit == n %}selected{% endif %}>{{ n }}</option>
@@ -33,5 +33,5 @@
 			</form>
 		{% endif %}
 	</div>
-	<p class="text-muted small">Affichage de {{ affiches }} {{ elements }} sur {{ p.total }} (page {{ p.page }}/{{ p.totalPages }})</p>
+	<p class="text-muted small">{{ 'Affichage de {affiches} {elements} sur {total} (page {page}/{totalPages})'|trans({affiches: affiches, elements: elements, total: p.total, page: p.page, totalPages: p.totalPages}) }}</p>
 {% endif %}

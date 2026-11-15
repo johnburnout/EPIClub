@@ -2,6 +2,7 @@
 
 namespace Epiclub\Controller;
 
+use Epiclub\Engine\Traducteur;
 use Epiclub\Domain\EmplacementManager;
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Engine\AbstractController;
@@ -95,7 +96,7 @@ class EmplacementController extends AbstractController
         $emplacement = $emplacementManager->findId($id);
 
         if (!$emplacement) {
-            $this->session->getFlashBag()->add('error', "L'emplacement demandé n'existe pas.");
+            $this->session->getFlashBag()->add('error', Traducteur::t("L'emplacement demandé n'existe pas."));
             return new RedirectResponse('/admin/emplacements');
         }
 
@@ -120,7 +121,7 @@ class EmplacementController extends AbstractController
             $emplacement = $emplacementManager->findId($id);
             if (!$emplacement) {
                 // ID syntaxiquement valide mais inexistant en BDD
-                $this->session->getFlashBag()->add('error', "L'emplacement demandé n'existe pas.");
+                $this->session->getFlashBag()->add('error', Traducteur::t("L'emplacement demandé n'existe pas."));
                 return new RedirectResponse('/admin/emplacements');
             }
         }
@@ -136,18 +137,18 @@ class EmplacementController extends AbstractController
             $image = trim($request->request->get('image'));
             
             if (empty($libelle)) {
-                $form_errors['libelle'] = 'Le libellé est obligatoire.';
+                $form_errors['libelle'] = Traducteur::t('Le libellé est obligatoire.');
             }
             
             // [VALIDATION] Si une URL est fournie, elle doit être valide
             // et utiliser le schéma http ou https (rejette javascript:, data:, etc.)
             if ($image !== '') {
                 if (!filter_var($image, FILTER_VALIDATE_URL)) {
-                    $form_errors['image'] = "L'URL de l'image n'est pas valide.";
+                    $form_errors['image'] = Traducteur::t("L'URL de l'image n'est pas valide.");
                 } else {
                     $scheme = strtolower((string) parse_url($image, PHP_URL_SCHEME));
                     if (!in_array($scheme, ['http', 'https'], true)) {
-                        $form_errors['image'] = "L'URL de l'image doit commencer par http:// ou https://";
+                        $form_errors['image'] = Traducteur::t("L'URL de l'image doit commencer par http:// ou https://");
                     }
                 }
             }
@@ -163,7 +164,7 @@ class EmplacementController extends AbstractController
                 );
                 
                 $emplacementManager->save($emplacement);
-                $this->session->getFlashBag()->add('success', "L'emplacement a été enregistré.");
+                $this->session->getFlashBag()->add('success', Traducteur::t("L'emplacement a été enregistré."));
                 return $this->redirectTo("/admin/emplacements");
             }
         }
@@ -196,12 +197,12 @@ class EmplacementController extends AbstractController
         $emplacement = $emplacementManager->findId($id);
 
         if (!$emplacement) {
-            $this->session->getFlashBag()->add('error', "L'emplacement demandé n'existe pas.");
+            $this->session->getFlashBag()->add('error', Traducteur::t("L'emplacement demandé n'existe pas."));
             return new RedirectResponse('/admin/emplacements');
         }
 
         if ($emplacementManager->hasEquipements($id)) {
-            $this->session->getFlashBag()->add('error', "Impossible de supprimer cet emplacement car il contient des équipements.");
+            $this->session->getFlashBag()->add('error', Traducteur::t("Impossible de supprimer cet emplacement car il contient des équipements."));
             return new RedirectResponse('/admin/emplacements');
         }
 
@@ -209,7 +210,7 @@ class EmplacementController extends AbstractController
         // le champ `image` contient une URL externe, pas un chemin local.
         $emplacementManager->delete($id);
 
-        $this->session->getFlashBag()->add('success', "L'emplacement '{$emplacement['libelle']}' a été supprimé.");
+        $this->session->getFlashBag()->add('success', Traducteur::t("L'emplacement '{libelle}' a été supprimé.", ['libelle' => $emplacement['libelle']]));
 
         return new RedirectResponse('/admin/emplacements');
     }

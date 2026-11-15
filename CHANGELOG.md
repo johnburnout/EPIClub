@@ -41,6 +41,12 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 - **Prêts traduits (6e étape).** Liste, fiche, scanner, validation et
   signature, vérification du retour, avec leurs messages et les libellés
   de statut et d'état de retour.
+- **Administration traduite (7e étape).** Tableau de bord et ses
+  réglages, club, utilisateurs, catégories, emplacements, fournisseurs,
+  modèle de référence, demandes de modification, journal d'activité,
+  paramètres système, mise à jour, sauvegarde et restauration, page du
+  QR code, avec leurs messages et les libellés de rôles. Le journal
+  d'activité, son export et les e-mails restent pour l'instant en français.
 
 ### Fixed
 

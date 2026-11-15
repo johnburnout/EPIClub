@@ -2,7 +2,7 @@
 
 {% block body %}
 
-	<h3>Personnalisation du tableau de bord</h3>
+	<h3>{{ 'Personnalisation du tableau de bord'|trans }}</h3>
 	<hr>
 
 	{% for message in form_errors %}
@@ -15,82 +15,78 @@
 		<div class="row g-4">
 			{# --- Logo --- #}
 			<div class="col-md-6">
-				<label for="logo" class="form-label fw-bold">Logo du club</label>
+				<label for="logo" class="form-label fw-bold">{{ 'Logo du club'|trans }}</label>
 				<div class="mb-2">
-					<img src="{{ logo_url }}" alt="Logo actuel" class="img-thumbnail" style="max-height: 120px;">
+					<img src="{{ logo_url }}" alt="{{ 'Logo actuel'|trans }}" class="img-thumbnail" style="max-height: 120px;">
 				</div>
 				<input type="file" id="logo" name="logo" accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
 				       class="form-control {% if form_errors.logo is defined %}is-invalid{% endif %}">
-				<div class="form-text">JPEG, PNG, WebP ou GIF. Redimensionné à 400 px maximum.</div>
+				<div class="form-text">{{ 'JPEG, PNG, WebP ou GIF. Redimensionné à 400 px maximum.'|trans }}</div>
 				{% if logo_personnalise %}
 					<div class="form-check mt-2">
 						<input class="form-check-input" type="checkbox" id="supprimer_logo" name="supprimer_logo" value="1">
-						<label class="form-check-label" for="supprimer_logo">Revenir au logo EPIClub par défaut</label>
+						<label class="form-check-label" for="supprimer_logo">{{ 'Revenir au logo EPIClub par défaut'|trans }}</label>
 					</div>
 				{% endif %}
 			</div>
 
 			{# --- Photo de fond --- #}
 			<div class="col-md-6">
-				<label for="image_fond" class="form-label fw-bold">Photo de fond</label>
+				<label for="image_fond" class="form-label fw-bold">{{ 'Photo de fond'|trans }}</label>
 				<div class="mb-2">
-					<img src="{{ fond_url }}" alt="Photo de fond actuelle" class="img-thumbnail" style="max-height: 120px;">
+					<img src="{{ fond_url }}" alt="{{ 'Photo de fond actuelle'|trans }}" class="img-thumbnail" style="max-height: 120px;">
 				</div>
 				<input type="file" id="image_fond" name="image_fond" accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
 				       class="form-control {% if form_errors.image_fond is defined %}is-invalid{% endif %}">
-				<div class="form-text">JPEG, PNG, WebP ou GIF. Format paysage conseillé, redimensionné à 1920 px maximum.</div>
+				<div class="form-text">{{ 'JPEG, PNG, WebP ou GIF. Format paysage conseillé, redimensionné à 1920 px maximum.'|trans }}</div>
 				{% if fond_personnalise %}
 					<div class="form-check mt-2">
 						<input class="form-check-input" type="checkbox" id="supprimer_image_fond" name="supprimer_image_fond" value="1">
-						<label class="form-check-label" for="supprimer_image_fond">Revenir à la photo par défaut</label>
+						<label class="form-check-label" for="supprimer_image_fond">{{ 'Revenir à la photo par défaut'|trans }}</label>
 					</div>
 				{% endif %}
 			</div>
 
 			{# --- Notification de renouvellement --- #}
 			<div class="col-md-6">
-				<label for="alerte_renouvellement_mois" class="form-label fw-bold">Notification « EPI à renouveler »</label>
+				<label for="alerte_renouvellement_mois" class="form-label fw-bold">{{ 'Notification « EPI à renouveler »'|trans }}</label>
 				<div class="input-group" style="max-width: 16rem;">
 					<input type="number" id="alerte_renouvellement_mois" name="alerte_renouvellement_mois"
 					       value="{{ duree }}" min="{{ duree_min }}" max="{{ duree_max }}" step="1" required
 					       class="form-control {% if form_errors.alerte_renouvellement_mois is defined %}is-invalid{% endif %}">
-					<span class="input-group-text">mois</span>
+					<span class="input-group-text">{{ 'mois'|trans }}</span>
 				</div>
 				<div class="form-text">
-					Le tableau de bord signale les équipements dont la date de fin d'utilisation
-					tombe dans ce délai (ainsi que ceux déjà échus, hors équipements « Hors service »).
+					{{ "Le tableau de bord signale les équipements dont la date de fin d'utilisation tombe dans ce délai (ainsi que ceux déjà échus, hors équipements « Hors service »)."|trans }}
 				</div>
 			</div>
 
 			{# --- [migration 019] Notification « EPI non vérifiés » --- #}
 			<div class="col-md-6">
-				<span class="form-label fw-bold d-block">Notification « EPI non vérifiés »</span>
+				<span class="form-label fw-bold d-block">{{ 'Notification « EPI non vérifiés »'|trans }}</span>
 				<div class="form-check form-switch">
 					<input class="form-check-input" type="checkbox" role="switch" id="alerte_controle_actif"
 					       name="alerte_controle_actif" value="1" {% if club.alerte_controle_actif|default(0) %}checked{% endif %}>
 					<label class="form-check-label" for="alerte_controle_actif">
-						Signaler les EPI non vérifiés depuis plus de :
+						{{ 'Signaler les EPI non vérifiés depuis plus de :'|trans }}
 					</label>
 				</div>
 				<div class="input-group mt-1" style="max-width: 16rem;">
 					<input type="number" id="alerte_controle_mois" name="alerte_controle_mois"
 					       value="{{ duree_controle }}" min="{{ duree_controle_min }}" max="{{ duree_controle_max }}" step="1" required
-					       aria-label="Délai sans contrôle, en mois"
+					       aria-label="{{ 'Délai sans contrôle, en mois'|trans }}"
 					       class="form-control {% if form_errors.alerte_controle_mois is defined %}is-invalid{% endif %}">
-					<span class="input-group-text">mois</span>
+					<span class="input-group-text">{{ 'mois'|trans }}</span>
 				</div>
 				<div class="form-text">
-					Entre {{ duree_controle_min }} et {{ duree_controle_max }} mois.
-					Date de référence : dernier contrôle clôturé ou, à défaut, mise en service
-					(hors équipements « Hors service » et « Égaré »). Notification affichée
-					aux contrôleurs et administrateurs.
+					{{ 'Entre {duree_controle_min} et {duree_controle_max} mois. Date de référence : dernier contrôle clôturé ou, à défaut, mise en service (hors équipements « Hors service » et « Égaré »). Notification affichée aux contrôleurs et administrateurs.'|trans({duree_controle_min: duree_controle_min, duree_controle_max: duree_controle_max}) }}
 				</div>
 			</div>
 		</div>
 
 		<div class="mt-4">
-			<button type="submit" class="btn btn-primary">Enregistrer</button>
-			<a href="/tableau_de_bord" class="btn btn-secondary">Retour au tableau de bord</a>
+			<button type="submit" class="btn btn-primary">{{ 'Enregistrer'|trans }}</button>
+			<a href="/tableau_de_bord" class="btn btn-secondary">{{ 'Retour au tableau de bord'|trans }}</a>
 		</div>
 	</form>
 

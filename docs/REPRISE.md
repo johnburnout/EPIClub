@@ -870,8 +870,8 @@ croisées avec `app/bootstrap.php` et `app/Engine/EnvironmentFileParser`.
 
 ## Localisation (chantier en cours)
 
-Interface traduite en anglais, espagnol et italien, une PR par groupe
-d'écrans (périmètre décidé le 2026-11-15 : interface web, emails, PDF,
+Interface traduite en anglais, espagnol et italien (sortie prévue en
+**v3.0.0**), une PR par groupe d'écrans (périmètre décidé le 2026-11-15 : interface web, emails, PDF,
 installeur et guide utilisateur ; la CLI reste en français).
 
 - **Clés = texte français.** `{{ 'Texte'|trans }}` dans les gabarits,
@@ -891,6 +891,8 @@ installeur et guide utilisateur ; la CLI reste en français).
   par le garde-fou (classe déduite du chemin PSR-4).
 - Pluriels : deux clés et un `if` (« 1 minute » / « {minutes} minutes »).
 - Le journal d'activité (texte stocké en base) reste en français.
+- Pluriels : jamais de paramètre « s » (`équipement{s}`) ; deux clés et un
+  `{% if %}`. Mots passés aux gabarits partiels (`elements: '…'|trans`).
   Si son texte réutilise un libellé traduit (`label()` d'un enum),
   l'envelopper dans `Traducteur::enFrancais(fn () => …)`.
 - Jamais de logique sur le texte d'un message (`str_contains($message, …)`) :
@@ -913,8 +915,9 @@ installeur et guide utilisateur ; la CLI reste en français).
 | 3 | Équipements (liste, fiche, formulaire, modification groupée), `EquipementStatut`, `DissociationLot`, `RegroupementLot` | PR #125 |
 | 4 | Contrôles (liste, saisie, ligne, scanner), journaux de contrôle, `ControleLigneStatut` | PR #126 |
 | 5 | Acquisitions (liste, saisie, fiche, lignes, import Excel / CSV) | PR #127 |
-| 6 | Prêts (liste, fiche, scanner, validation, retour), `PretStatut`, `PretEtatRetour`, `PretRegles` | PR en cours |
-| 7+ | Administration, tableau de bord, tickets, emails, PDF/CSV/étiquettes | à faire |
+| 6 | Prêts (liste, fiche, scanner, validation, retour), `PretStatut`, `PretEtatRetour`, `PretRegles` | PR #128 |
+| 7 | Administration : tableau de bord, club, utilisateurs, référentiels, tickets, journal d'activité, système, mise à jour, sauvegarde, page QR ; `UserRole`, `DemandeModification`, `JournalActiviteManager::libellesTypes()` | PR en cours |
+| 8 | Documents : e-mails, PDF, CSV, étiquettes, export du journal | à faire |
 | — | Installeur (`setup/`), guide (`docs/guide_utilisateur.md`) | à faire |
 
 ## Règles de travail établies

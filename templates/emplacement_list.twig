@@ -1,24 +1,24 @@
 {% extends "_layout.twig" %}
 
 {% block body %}
-	<h3>Emplacements</h3>
+	<h3>{{ 'Emplacements'|trans }}</h3>
 	<hr>
 	{% if isGranted('ROLE_ADMIN') %}
-	<a href="/admin/emplacements/nouveau" class="btn btn-primary">Saisir un emplacement</a>
+	<a href="/admin/emplacements/nouveau" class="btn btn-primary">{{ 'Saisir un emplacement'|trans }}</a>
 	<hr>
 	{% endif %}
 	{% include '_filtres_referentiel.twig' with {
-		url: '/admin/emplacements', placeholder: 'Libellé, description',
+		url: '/admin/emplacements', placeholder: 'Libellé, description'|trans,
 		tris: {'libelle': 'Libellé', 'equipements': 'Nombre d\'équipements'},
-		affiches: nb_filtres, element: 'emplacement', elements: 'emplacements'
+		affiches: nb_filtres, element: 'emplacement'|trans, elements: 'emplacements'|trans
 	} %}
 	<table class="table table-striped">
 		<thead>
 			<tr>
-				<th>Libellé</th>
-				<th>Description</th>
-				<th>Équipements</th>
-				<th>Actions</th>
+				<th>{{ 'Libellé'|trans }}</th>
+				<th>{{ 'Description'|trans }}</th>
+				<th>{{ 'Équipements'|trans }}</th>
+				<th>{{ 'Actions'|trans }}</th>
 			</tr>
 		</thead>
 		<tbody>
@@ -29,30 +29,30 @@
 					<td>
 						{% set nb = nb_equipements[emplacement.id]|default(0) %}
 						{% if nb > 0 %}
-							<a href="/equipements?emplacement={{ emplacement.id }}" title="Afficher ces équipements">{{ nb }} équipement{{ nb > 1 ? 's' : '' }}</a>
+							<a href="/equipements?emplacement={{ emplacement.id }}" title="{{ 'Afficher ces équipements'|trans }}">{% if nb > 1 %}{{ '{nb} équipements'|trans({nb: nb}) }}{% else %}{{ '{nb} équipement'|trans({nb: nb}) }}{% endif %}</a>
 						{% else %}
-							<span class="text-muted">Aucun</span>
+							<span class="text-muted">{{ 'Aucun'|trans }}</span>
 						{% endif %}
 					</td>
 					<td>
-						<a href="/admin/emplacements/emplacement-{{ emplacement.id }}" class="btn btn-sm btn-primary">Voir</a>
+						<a href="/admin/emplacements/emplacement-{{ emplacement.id }}" class="btn btn-sm btn-primary">{{ 'Voir'|trans }}</a>
 						{% if isGranted('ROLE_ADMIN') %}
-						<a href="/admin/emplacements/emplacement_modification-{{ emplacement.id }}" class="btn btn-sm btn-warning">Modifier</a>
+						<a href="/admin/emplacements/emplacement_modification-{{ emplacement.id }}" class="btn btn-sm btn-warning">{{ 'Modifier'|trans }}</a>
 						<form method="post" action="/admin/emplacements/supprimer" style="display:inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 							<input type="hidden" name="id" value="{{ emplacement.id }}">
 							<button type="submit" class="btn btn-sm btn-danger"
-							        data-confirm="Supprimer cet emplacement ?">
-								Supprimer
+							        data-confirm="{{ 'Supprimer cet emplacement ?'|trans }}">
+								{{ 'Supprimer'|trans }}
 							</button>
 						</form>
 						{% endif %}
 					</td>
 				</tr>
 			{% else %}
-				<tr><td colspan="4" class="text-muted">Aucun emplacement ne correspond à ces critères.</td></tr>
+				<tr><td colspan="4" class="text-muted">{{ 'Aucun emplacement ne correspond à ces critères.'|trans }}</td></tr>
 			{% endfor %}
 		</tbody>
 	</table>
-	{% include '_pagination.twig' with {p: pagination, affiches: emplacements|length, elements: 'emplacements'} %}
+	{% include '_pagination.twig' with {p: pagination, affiches: emplacements|length, elements: 'emplacements'|trans} %}
 {% endblock %}

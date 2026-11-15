@@ -2,6 +2,7 @@
 
 namespace Epiclub\Controller;
 
+use Epiclub\Engine\Traducteur;
 use Epiclub\Domain\ClubManager;
 use Epiclub\Domain\ReferenceGenerator;
 use Epiclub\Engine\AbstractController;
@@ -59,7 +60,7 @@ class ReferenceController extends AbstractController
                 // n'est pas touchée. Singleton id=1 forcé dans
                 // ClubManager::_patch().
                 $clubManager->save(['id' => 1, 'ref_modele' => $modele]);
-                $this->session->getFlashBag()->add('success', "Le modèle de référence a été enregistré.");
+                $this->session->getFlashBag()->add('success', Traducteur::t("Le modèle de référence a été enregistré."));
                 return $this->redirectTo('/admin/references');
             }
         }

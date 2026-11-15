@@ -968,7 +968,7 @@ class AcquisitionController extends AbstractController
                 count($lignes),
                 count($lignes) > 1 ? 's' : ''
             ), $request);
-            $this->session->getFlashBag()->add('success', "L'acquisition #{$id} a été supprimée.");
+            $this->session->getFlashBag()->add('success', Traducteur::t("L'acquisition #{id} a été supprimée.", ['id' => $id]));
             return new HandlerResult($this->redirectTo('/admin/acquisitions'));
         } catch (\Throwable $e) {
             error_log(sprintf(

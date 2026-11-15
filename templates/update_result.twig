@@ -7,9 +7,9 @@
             <div class="card-header bg-{{ success ? 'success' : 'danger' }} text-white">
                 <h3 class="mb-0">
                     {% if success %}
-                        ✅ Mise à jour réussie
+                        ✅ {{ 'Mise à jour réussie'|trans }}
                     {% else %}
-                        ❌ Erreur lors de la mise à jour
+                        ❌ {{ 'Erreur lors de la mise à jour'|trans }}
                     {% endif %}
                 </h3>
             </div>
@@ -21,7 +21,7 @@
                 {% endif %}
             </div>
             <div class="card-footer">
-                <a href="/admin/update" class="btn btn-primary">← Retour à la page de mise à jour</a>
+                <a href="/admin/update" class="btn btn-primary">← {{ 'Retour à la page de mise à jour'|trans }}</a>
             </div>
         </div>
     </div>

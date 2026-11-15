@@ -1,19 +1,19 @@
 {% extends "_layout.twig" %}
 
 {% block body %}
-    <h3>Paramètres système</h3>
+    <h3>{{ 'Paramètres système'|trans }}</h3>
     <hr>
 
     {# Affichage des messages de succès/erreur #}
     {% if app.request.get('success') %}
         <div class="alert alert-success alert-dismissible fade show" role="alert">
-            ✅ Configuration SMTP mise à jour avec succès.
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            ✅ {{ 'Configuration SMTP mise à jour avec succès.'|trans }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ 'Fermer'|trans }}"></button>
         </div>
     {% elseif app.request.get('error') %}
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            ❌ Erreur : {{ app.request.get('error') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            ❌ {{ 'Erreur : {erreur}'|trans({erreur: app.request.get('error')}) }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ 'Fermer'|trans }}"></button>
         </div>
     {% endif %}
 
@@ -21,7 +21,7 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header bg-primary text-white">
-                    <i class="fas fa-cog"></i> Configuration système
+                    <i class="fas fa-cog"></i> {{ 'Configuration système'|trans }}
                 </div>
                 <div class="card-body">
                     {# [#97 - Dette 1] Route canonique /update-system-settings (alias /update-smtp conservé) #}
@@ -32,10 +32,10 @@
                         {% endif %}
                         
                         {# [VAGUE 13 - #59] Configuration système : ROOT_URL #}
-                        <h5 class="border-bottom pb-2 mb-3">URL racine</h5>
+                        <h5 class="border-bottom pb-2 mb-3">{{ 'URL racine'|trans }}</h5>
                         
                         <div class="mb-3">
-                            <label for="root_url" class="form-label">URL racine (ROOT_URL)</label>
+                            <label for="root_url" class="form-label">{{ 'URL racine (ROOT_URL)'|trans }}</label>
                             <input type="url"
                                 class="form-control"
                                 id="root_url"
@@ -43,24 +43,22 @@
                                 value="{{ settings.root_url|default('') }}"
                                 placeholder="https://epiclub.example.com">
                             <div class="form-text">
-                                URL absolue http ou https, sans slash final, sans query ni fragment.
-                                Laisser vide pour ne pas modifier la valeur actuelle.
+                                {{ 'URL absolue http ou https, sans slash final, sans query ni fragment. Laisser vide pour ne pas modifier la valeur actuelle.'|trans }}
                             </div>
                         </div>
 
                         <div class="mb-3">
-                            <label for="update_channel" class="form-label">Canal de mise à jour</label>
+                            <label for="update_channel" class="form-label">{{ 'Canal de mise à jour'|trans }}</label>
                             <select class="form-select" id="update_channel" name="update_channel">
                                 <option value="stable" {% if settings.update_channel|default('stable') == 'stable' %}selected{% endif %}>
-                                    Stable — versions définitives uniquement (recommandé en production)
+                                    {{ 'Stable — versions définitives uniquement (recommandé en production)'|trans }}
                                 </option>
                                 <option value="beta" {% if settings.update_channel|default('stable') == 'beta' %}selected{% endif %}>
-                                    Bêta — inclut les versions de test (pré-releases)
+                                    {{ 'Bêta — inclut les versions de test (pré-releases)'|trans }}
                                 </option>
                             </select>
                             <div class="form-text">
-                                Canal suivi par la page Administration → Mise à jour.
-                                Réserver « Bêta » à une instance de test.
+                                {{ 'Canal suivi par la page Administration → Mise à jour. Réserver « Bêta » à une instance de test.'|trans }}
                             </div>
                         </div>
                         
@@ -68,67 +66,67 @@
                         <div class="row">
                             {# --- COLONNE GAUCHE : SMTP --- #}
                             <div class="col-md-6">
-                                <h5 class="border-bottom pb-2">Serveur SMTP</h5>
+                                <h5 class="border-bottom pb-2">{{ 'Serveur SMTP'|trans }}</h5>
                                 
                                 <div class="mb-3">
-                                    <label for="smtp_host" class="form-label">Hôte (Host) *</label>
+                                    <label for="smtp_host" class="form-label">{{ 'Hôte (Host) *'|trans }}</label>
                                     <input type="text" class="form-control" id="smtp_host" name="smtp_host" 
                                            value="{{ settings.smtp_host|default('') }}" required>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="smtp_port" class="form-label">Port *</label>
+                                    <label for="smtp_port" class="form-label">{{ 'Port *'|trans }}</label>
                                     <input type="number" class="form-control" id="smtp_port" name="smtp_port" 
                                            value="{{ settings.smtp_port|default(587) }}" required>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="smtp_encryption" class="form-label">Chiffrement</label>
+                                    <label for="smtp_encryption" class="form-label">{{ 'Chiffrement'|trans }}</label>
                                     <select class="form-select" id="smtp_encryption" name="smtp_encryption">
-                                        <option value="none" {% if settings.smtp_encryption == 'none' %}selected{% endif %}>Aucun</option>
-                                        <option value="ssl" {% if settings.smtp_encryption == 'ssl' %}selected{% endif %}>SSL</option>
-                                        <option value="tls" {% if settings.smtp_encryption == 'tls' %}selected{% endif %}>TLS</option>
+                                        <option value="none" {% if settings.smtp_encryption == 'none' %}selected{% endif %}>{{ 'Aucun'|trans }}</option>
+                                        <option value="ssl" {% if settings.smtp_encryption == 'ssl' %}selected{% endif %}>{{ 'SSL'|trans }}</option>
+                                        <option value="tls" {% if settings.smtp_encryption == 'tls' %}selected{% endif %}>{{ 'TLS'|trans }}</option>
                                     </select>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="smtp_username" class="form-label">Nom d'utilisateur *</label>
+                                    <label for="smtp_username" class="form-label">{{ "Nom d'utilisateur *"|trans }}</label>
                                     <input type="text" class="form-control" id="smtp_username" name="smtp_username" 
                                            value="{{ settings.smtp_username|default('') }}" required>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="smtp_password" class="form-label">Mot de passe</label>
+                                    <label for="smtp_password" class="form-label">{{ 'Mot de passe'|trans }}</label>
                                     <input type="password" class="form-control" id="smtp_password" name="smtp_password" 
-                                        value="" placeholder="Laisser vide pour ne pas modifier">
-                                    <div class="form-text">Le mot de passe existant reste inchangé si ce champ est vide.</div>
+                                        value="" placeholder="{{ 'Laisser vide pour ne pas modifier'|trans }}">
+                                    <div class="form-text">{{ 'Le mot de passe existant reste inchangé si ce champ est vide.'|trans }}</div>
                                 </div>
                             </div>
 
                             {# --- COLONNE DROITE : PARAMÈTRES D'ENVOI --- #}
                             <div class="col-md-6">
-                                <h5 class="border-bottom pb-2">Paramètres d'envoi</h5>
+                                <h5 class="border-bottom pb-2">{{ "Paramètres d'envoi"|trans }}</h5>
 
                                 <div class="mb-3">
-                                    <label for="mail_from" class="form-label">Email de l'expéditeur (From) *</label>
+                                    <label for="mail_from" class="form-label">{{ "Email de l'expéditeur (From) *"|trans }}</label>
                                     <input type="email" class="form-control" id="mail_from" name="mail_from" 
                                            value="{{ settings.mail_from|default('') }}" required>
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="mail_from_name" class="form-label">Nom de l'expéditeur (From Name)</label>
+                                    <label for="mail_from_name" class="form-label">{{ "Nom de l'expéditeur (From Name)"|trans }}</label>
                                     <input type="text" class="form-control" id="mail_from_name" name="mail_from_name" 
                                            value="{{ settings.mail_from_name|default('Mon Site') }}">
-                                    <div class="form-text">Nom affiché dans les emails envoyés.</div>
+                                    <div class="form-text">{{ 'Nom affiché dans les emails envoyés.'|trans }}</div>
                                 </div>
 
                                 <hr>
 
                                 <div class="mb-3">
-                                    <label for="mail_reply_to" class="form-label">Adresse de réponse (Reply-To)</label>
+                                    <label for="mail_reply_to" class="form-label">{{ 'Adresse de réponse (Reply-To)'|trans }}</label>
                                     <input type="email" class="form-control" id="mail_reply_to" name="mail_reply_to" 
-                                           value="{{ settings.mail_reply_to|default('') }}" placeholder="réponse@domaine.fr">
-                                    <div class="form-text">Laissez vide pour utiliser l'email de l'expéditeur.</div>
+                                           value="{{ settings.mail_reply_to|default('') }}" placeholder="{{ 'réponse@domaine.fr'|trans }}">
+                                    <div class="form-text">{{ "Laissez vide pour utiliser l'email de l'expéditeur."|trans }}</div>
                                 </div>
                             </div>
                         </div>
@@ -136,10 +134,10 @@
                         <div class="row mt-3">
                             <div class="col-12 d-flex gap-2">
                                 <button type="submit" class="btn btn-success">
-                                    <i class="fas fa-save"></i> Enregistrer la configuration
+                                    <i class="fas fa-save"></i> {{ 'Enregistrer la configuration'|trans }}
                                 </button>
                                 <button type="button" class="btn btn-secondary" id="testMailBtn">
-                                    <i class="fas fa-envelope"></i> Tester l'envoi
+                                    <i class="fas fa-envelope"></i> {{ "Tester l'envoi"|trans }}
                                 </button>
                             </div>
                         </div>
@@ -160,7 +158,7 @@
                 testBtn.addEventListener('click', function() {
                     // Désactiver le bouton pendant l'envoi
                     const originalHtml = this.innerHTML;
-                    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Envoi en cours...';
+                    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + {{ 'Envoi en cours...'|trans|json_encode|raw }};
                     this.disabled = true;
 
                     // Appel AJAX vers /test-mail
@@ -179,15 +177,15 @@
 
                         // Afficher une notification
                         if (data.success) {
-                            showNotification('success', '✅ Succès', data.message);
+                            showNotification('success', '✅ ' + {{ 'Succès'|trans|json_encode|raw }}, data.message);
                         } else {
-                            showNotification('danger', '❌ Erreur', data.error || 'Erreur inconnue');
+                            showNotification('danger', '❌ ' + {{ 'Erreur'|trans|json_encode|raw }}, data.error || {{ 'Erreur inconnue'|trans|json_encode|raw }});
                         }
                     })
                     .catch(error => {
                         this.innerHTML = originalHtml;
                         this.disabled = false;
-                        showNotification('danger', '❌ Erreur', 'Impossible de contacter le serveur.');
+                        showNotification('danger', '❌ ' + {{ 'Erreur'|trans|json_encode|raw }}, {{ 'Impossible de contacter le serveur.'|trans|json_encode|raw }});
                         console.error('Erreur :', error);
                     });
                 });
