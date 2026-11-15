@@ -487,12 +487,8 @@ final class SauvegardeServiceTest extends TestCase
         self::assertSame(SauvegardeService::TYPE_PLANIFIEE, $types[$planifiees[0]]);
         self::assertSame(SauvegardeService::TYPE_MANUELLE, $types[$manuelle]);
 
-        // Archives créées dans la même seconde : seul le suffixe « -N »
-        // départage ; on fixe des dates pour un ordre sans ambiguïté.
-        foreach ($planifiees as $rang => $nom) {
-            touch($this->sauvegardes . '/' . $nom, time() - 100 + $rang);
-        }
-
+        // Archives créées dans la même seconde : le suffixe « -N » du nom
+        // départage (audit 2026-11-10, R2).
         $supprimees = $service->conserver(SauvegardeService::TYPE_PLANIFIEE, 2);
 
         self::assertSame([$planifiees[0]], $supprimees);
@@ -501,6 +497,92 @@ final class SauvegardeServiceTest extends TestCase
         self::assertContains($planifiees[1], $restantes);
         self::assertContains($planifiees[2], $restantes);
         self::assertCount(3, $restantes);
+    }
+
+    /**
+     * [Audit 2026-11-10, R2] La rétention suit l'horodatage du NOM (et le
+     * suffixe « -2 », « -3 »… dans la même seconde), pas la date de
+     * modification : un dépôt FTP ou un `touch` ne change pas l'archive
+     * supprimée.
+     */
+    public function testRetentionSuitLHorodatageDuNomPasLaDateDuFichier(): void
+    {
+        $service = $this->service();
+        $planifiees = [];
+        for ($i = 0; $i < 3; $i++) {
+            $planifiees[] = basename($service->creer(SauvegardeService::TYPE_PLANIFIEE));
+        }
+        // Dates de fichier inversées : la plus ancienne paraît la plus récente.
+        foreach ($planifiees as $rang => $nom) {
+            touch($this->sauvegardes . '/' . $nom, time() - $rang * 1000);
+        }
+
+        $supprimees = $service->conserver(SauvegardeService::TYPE_PLANIFIEE, 2);
+
+        self::assertSame([$planifiees[0]], $supprimees);
+    }
+
+    public function testListeTrieeParLeNomEtDateTireeDuNom(): void
+    {
+        $service = $this->service();
+        $ancienne = 'epiclub-sauvegarde-20200101-120000.zip';
+        $recente = 'epiclub-sauvegarde-20250101-120000.zip';
+        $this->ecrire($this->sauvegardes . '/' . $ancienne, 'x');
+        $this->ecrire($this->sauvegardes . '/' . $recente, 'x');
+        touch($this->sauvegardes . '/' . $ancienne, time());
+        touch($this->sauvegardes . '/' . $recente, time() - 86400 * 400);
+
+        $liste = $service->lister();
+
+        self::assertSame([$recente, $ancienne], array_column($liste, 'nom'));
+        self::assertSame(mktime(12, 0, 0, 1, 1, 2020), $liste[1]['date']);
+    }
+
+    /**
+     * [Audit 2026-11-10, R1 et R5] Sauvegarde planifiée (cron) : création,
+     * rétention et purge des téléversements abandonnés sous le MÊME verrou.
+     */
+    public function testCreerAvecMenageAppliqueRetentionEtPurgeSousLeVerrou(): void
+    {
+        $service = $this->service();
+        $planifiees = [];
+        for ($i = 0; $i < 3; $i++) {
+            $planifiees[] = basename($service->creer(SauvegardeService::TYPE_PLANIFIEE));
+        }
+        $abandonnee = $this->sauvegardes . '/televersee-20200101-000000-abcd1234.zip';
+        $this->ecrire($abandonnee, 'x');
+        touch($abandonnee, time() - 2 * 86400);
+
+        $resultat = $service->creerAvecMenage(SauvegardeService::TYPE_PLANIFIEE, 2);
+
+        self::assertFileExists($resultat['chemin']);
+        self::assertSame([$planifiees[1], $planifiees[0]], $resultat['supprimees']);
+        self::assertFileDoesNotExist($abandonnee);
+        self::assertCount(2, array_filter($service->lister(), fn ($a) => $a['type'] === SauvegardeService::TYPE_PLANIFIEE));
+    }
+
+    public function testCreerAvecMenageNeSupprimeRienSiLeVerrouEstPris(): void
+    {
+        $service = $this->service();
+        $planifiees = [];
+        for ($i = 0; $i < 3; $i++) {
+            $planifiees[] = basename($service->creer(SauvegardeService::TYPE_PLANIFIEE));
+        }
+        $verrou = fopen(dirname($this->sauvegardes) . '/epiclub.lock', 'c');
+        flock($verrou, LOCK_EX);
+
+        try {
+            $service->creerAvecMenage(SauvegardeService::TYPE_PLANIFIEE, 1);
+            self::fail('Le verrou aurait dû être refusé.');
+        } catch (\Epiclub\Exception\SauvegardeException) {
+            // attendu
+        } finally {
+            flock($verrou, LOCK_UN);
+            fclose($verrou);
+        }
+        foreach ($planifiees as $nom) {
+            self::assertFileExists($this->sauvegardes . '/' . $nom);
+        }
     }
 
     public function testUneSeuleOperationALaFois(): void

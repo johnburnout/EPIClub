@@ -95,46 +95,42 @@ class RouteProvider
     /**
      * Routes destructives (POST-only) : doivent renvoyer 405 en GET.
      *
+     * [Audit 2026-11-10, R4] Liste construite depuis routes.php : TOUTE
+     * route déclarée sans GET y figure (une liste tenue à la main avait
+     * laissé de côté les routes de sauvegarde, de prêt, de double
+     * authentification…). Un retrait accidentel de la restriction de
+     * méthode est ainsi détecté pour chaque route, présente et future.
+     *
      * @return array<string, array{0:string,1:string}>
      */
     public static function destructiveRoutesProvider(): array
     {
-        $destructiveRouteNames = [
-            'categorie_delete',
-            'fournisseur_delete',
-            'emplacement_delete',
-            'utilisateur_delete',
-            'controle_delete',
-            'equipement_delete',
-            'equipement_dissocier',
-            'equipement_regrouper',
-            'utilisateur_bienvenue',
-            'ticket_traiter',
-            'acquisition_corriger',
-            'acquisition_delete',
-            'acquisition_ligne_delete',
-            'acquisition_valider',
-            'controle_cloturer',
-            'controle_add_equipement',
-            'update_smtp',
-            'test_mail',
-            'admin_update_perform',
-            'admin_update_cleanup',
-        ];
-
-        $routes = self::loadRoutes();
-        $allRoutes = $routes->all();
         $provider = [];
-
-        foreach ($destructiveRouteNames as $name) {
-            if (!isset($allRoutes[$name])) {
+        foreach (self::loadRoutes() as $name => $route) {
+            $methods = $route->getMethods();
+            if ($methods === [] || in_array('GET', $methods, true)) {
                 continue;
             }
-            $route = $allRoutes[$name];
-            $path = $route->getPath();
-            $provider[$name] = [self::concretize($path), $path];
+            $provider[$name] = [self::concretizeRoute($route), $route->getPath()];
         }
 
         return $provider;
+    }
+
+    /**
+     * Chemin concret respectant les contraintes de la route (sinon le
+     * routeur répondrait 404 au lieu de 405).
+     */
+    private static function concretizeRoute(Route $route): string
+    {
+        return preg_replace_callback('/\{([^}]+)\}/', static function (array $m) use ($route): string {
+            $requirement = $route->getRequirement($m[1]);
+            foreach (['1', 'test.txt', 'epiclub-sauvegarde-20260101-000000.zip'] as $value) {
+                if ($requirement === null || preg_match('#^(?:' . $requirement . ')$#', $value)) {
+                    return $value;
+                }
+            }
+            return '1';
+        }, $route->getPath());
     }
 }

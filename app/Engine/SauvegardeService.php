@@ -175,6 +175,27 @@ final class SauvegardeService
         }
     }
 
+    /**
+     * [Audit 2026-11-10, R1 et R5] Sauvegarde en ligne de commande (cron) :
+     * crée l'archive, applique la rétention du type si $garder est donné,
+     * puis purge les téléversements abandonnés — le tout sous le MÊME
+     * verrou, pour qu'aucune restauration ne démarre entre deux étapes.
+     *
+     * @return array{chemin: string, supprimees: string[]}
+     */
+    public function creerAvecMenage(string $type, ?int $garder = null): array
+    {
+        $this->verrouiller('sauvegarde');
+        try {
+            $chemin = $this->creerSansVerrou($type);
+            $supprimees = $garder !== null ? $this->conserver($type, $garder) : [];
+            $this->purgerTeleversements();
+            return ['chemin' => $chemin, 'supprimees' => $supprimees];
+        } finally {
+            $this->deverrouiller();
+        }
+    }
+
     private function creerSansVerrou(string $type, bool $rotation = true): string
     {
         $this->preparerDossier();
@@ -286,15 +307,44 @@ final class SauvegardeService
             if (!is_file($chemin) || is_link($chemin)) {
                 continue;
             }
+            [$date, $rang] = self::horodatage($nom) ?? [(int) filemtime($chemin), 1];
             $liste[] = [
                 'nom'    => $nom,
                 'taille' => (int) filesize($chemin),
-                'date'   => (int) filemtime($chemin),
+                'date'   => $date,
                 'type'   => $this->typeDepuisNom($nom),
+                'rang'   => $rang,
             ];
         }
-        usort($liste, static fn ($a, $b) => [$b['date'], $b['nom']] <=> [$a['date'], $a['nom']]);
-        return $liste;
+        // [Audit 2026-11-10, R2] Ordre de l'horodatage du nom puis du
+        // suffixe « -2 », « -3 »… (même seconde), comme les dumps SQL
+        // (DatabaseBackup::cleanup) : un dépôt FTP ou un `touch` ne change
+        // ni la date affichée ni l'archive supprimée par la rétention.
+        usort($liste, static fn ($a, $b) => [$b['date'], $b['rang'], $b['nom']] <=> [$a['date'], $a['rang'], $a['nom']]);
+        return array_map(static function (array $a): array {
+            unset($a['rang']);
+            return $a;
+        }, $liste);
+    }
+
+    /**
+     * Date (timestamp) et rang (1, puis 2, 3… pour les archives de la même
+     * seconde) tirés du nom d'une archive créée par EPIClub ; null pour un
+     * nom libre (archive déposée par FTP), qui garde sa date de fichier.
+     *
+     * @return array{0: int, 1: int}|null
+     */
+    private static function horodatage(string $nom): ?array
+    {
+        if (preg_match('/^epiclub-sauvegarde-(\d{8}-\d{6})(?:-planifiee|-avant-restauration)?(?:-(\d+))?\.zip$/', $nom, $m)) {
+            $rang = (int) ($m[2] ?? 1);
+        } elseif (preg_match('/^televersee-(\d{8}-\d{6})-[0-9a-f]+\.zip$/', $nom, $m)) {
+            $rang = 1;
+        } else {
+            return null;
+        }
+        $date = \DateTimeImmutable::createFromFormat('!Ymd-His', $m[1]);
+        return $date === false ? null : [$date->getTimestamp(), $rang];
     }
 
     /**
