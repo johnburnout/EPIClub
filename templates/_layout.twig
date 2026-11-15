@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="{{ langue() }}">
 
 	<head>
 		<meta charset="UTF-8">
@@ -17,127 +17,128 @@
 				<hr>
 				<img src="/assets/img/EPIClub.png" class="" width="64" alt="Logo EPIClub">
 				<span class="h1 text-primary align-middle ps-3">
-					<strong>Gestionnaire EPI</strong>
+					<strong>{{ 'Gestionnaire EPI'|trans }}</strong>
 				</span>
 				<hr>
 			</div>
 			<nav class="navbar navbar-expand-lg bg-primary" data-bs-theme="dark">
 				<div class="container-fluid">
-					<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor01" aria-controls="navbarColor01" aria-expanded="false" aria-label="Toggle navigation">
+					<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarColor01" aria-controls="navbarColor01" aria-expanded="false" aria-label="{{ 'Afficher le menu'|trans }}">
 						<span class="navbar-toggler-icon"></span>
 					</button>
 					<div class="collapse navbar-collapse" id="navbarColor01">
 						<ul class="navbar-nav me-auto">
 							<li class="nav-item">
-								<a class="nav-link active" href="/">Tableau de bord
-									<span class="visually-hidden">(current)</span>
+								<a class="nav-link active" href="/">{{ 'Tableau de bord'|trans }}
+									<span class="visually-hidden">({{ 'page actuelle'|trans }})</span>
 								</a>
 							</li>
 							{% if isGranted('ROLE_USER') %}
 							<li class="nav-item">
-								<a class="nav-link" href="/equipements">Liste équipements</a>
+								<a class="nav-link" href="/equipements">{{ 'Liste équipements'|trans }}</a>
 							</li>
 							<!-- Journaux : accessible à tous les utilisateurs connectés -->
 							<li class="nav-item">
-								<a class="nav-link" href="/journaux">📋 Journaux</a>
+								<a class="nav-link" href="/journaux">📋 {{ 'Journaux'|trans }}</a>
 							</li>
 							<!-- Acquisitions : accessible à tous les utilisateurs connectés -->
 							<li class="nav-item">
-								<a class="nav-link" href="/admin/acquisitions">📦 Acquisitions</a>
+								<a class="nav-link" href="/admin/acquisitions">📦 {{ 'Acquisitions'|trans }}</a>
 							</li>
 							{% endif %}
 							{# [2026-10-25] Référentiels en lecture seule (les administrateurs
 							   les trouvent, modifiables, dans le menu Administration) #}
 							{% if isGranted('ROLE_USER') and not isGranted('ROLE_ADMIN') %}
 							<li class="nav-item dropdown">
-								<a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">📚 Référentiels</a>
+								<a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">📚 {{ 'Référentiels'|trans }}</a>
 								<div class="dropdown-menu">
-									<a class="dropdown-item" href="/admin/categories">📂 Catégories</a>
-									<a class="dropdown-item" href="/admin/emplacements">📍 Emplacements</a>
-									<a class="dropdown-item" href="/admin/fournisseurs">🏷️ Fournisseurs</a>
+									<a class="dropdown-item" href="/admin/categories">📂 {{ 'Catégories'|trans }}</a>
+									<a class="dropdown-item" href="/admin/emplacements">📍 {{ 'Emplacements'|trans }}</a>
+									<a class="dropdown-item" href="/admin/fournisseurs">🏷️ {{ 'Fournisseurs'|trans }}</a>
 								</div>
 							</li>
 							{% endif %}
 							{% if isGranted('ROLE_CONTROLLEUR') %}
 							<li class="nav-item dropdown">
-								<a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Contrôles</a>
+								<a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">{{ 'Contrôles'|trans }}</a>
 								<div class="dropdown-menu">
 									{% if _user.controle_en_cours_id is empty or _user.controle_en_cours_id == 0 %}
 									<form method="post" action="/admin/controles/creer" class="m-0">
 										<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-										<button type="submit" class="dropdown-item">➕ Créer un contrôle</button>
+										<button type="submit" class="dropdown-item">➕ {{ 'Créer un contrôle'|trans }}</button>
 									</form>
 									<div class="dropdown-divider"></div>
 									{% endif %}
-									<a class="dropdown-item" href="/controles/scanner">📷 Scanner un équipement</a>
-									<a class="dropdown-item" href="/admin/controles">📋 Voir les contrôles</a>
-									<a class="dropdown-item" href="/journaux">📝 Journaux</a>
+									<a class="dropdown-item" href="/controles/scanner">📷 {{ 'Scanner un équipement'|trans }}</a>
+									<a class="dropdown-item" href="/admin/controles">📋 {{ 'Voir les contrôles'|trans }}</a>
+									<a class="dropdown-item" href="/journaux">📝 {{ 'Journaux'|trans }}</a>
 									<div class="dropdown-divider"></div>
-									<a class="dropdown-item" href="/tickets">📨 Demandes de modification</a>
+									<a class="dropdown-item" href="/tickets">📨 {{ 'Demandes de modification'|trans }}</a>
 								</div>
 							</li>
 							{% endif %}
 							{% if isGranted('ROLE_CONTROLLEUR') and pret_actif() %}
 							<li class="nav-item dropdown">
-								<a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Prêts</a>
+								<a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">{{ 'Prêts'|trans }}</a>
 								<div class="dropdown-menu">
-									<a class="dropdown-item" href="/prets/nouveau">➕ Nouvelle fiche de prêt</a>
+									<a class="dropdown-item" href="/prets/nouveau">➕ {{ 'Nouvelle fiche de prêt'|trans }}</a>
 									<div class="dropdown-divider"></div>
-									<a class="dropdown-item" href="/prets?statut=saisie">✏️ En saisie</a>
-									<a class="dropdown-item" href="/prets?statut=en_cours">🤝 En cours</a>
-									<a class="dropdown-item" href="/prets?retard=1">⏰ En retard</a>
-									<a class="dropdown-item" href="/prets">📋 Toutes les fiches</a>
+									<a class="dropdown-item" href="/prets?statut=saisie">✏️ {{ 'En saisie'|trans }}</a>
+									<a class="dropdown-item" href="/prets?statut=en_cours">🤝 {{ 'En cours'|trans }}</a>
+									<a class="dropdown-item" href="/prets?retard=1">⏰ {{ 'En retard'|trans }}</a>
+									<a class="dropdown-item" href="/prets">📋 {{ 'Toutes les fiches'|trans }}</a>
 								</div>
 							</li>
 							{% endif %}
 							{% if isGranted('ROLE_ADMIN') %}
 								<li class="nav-item dropdown">
-									<a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Administration</a>
+									<a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">{{ 'Administration'|trans }}</a>
 									<div class="dropdown-menu">
 										{# --- Section SUPER_ADMIN uniquement --- #}
 										{% if isGranted('ROLE_SUPER_ADMIN') %}
-											<h6 class="dropdown-header">⚡ Réglages critiques</h6>
-											<a class="dropdown-item" href="/admin/club">🏛️ Club</a>
-											<a class="dropdown-item" href="/admin/system-settings">⚙️ Système (SMTP)</a>
-											<a class="dropdown-item" href="/admin/update">🔄 Mise à jour</a>
-											<a class="dropdown-item" href="/admin/sauvegarde">💾 Sauvegarde / restauration</a>
+											<h6 class="dropdown-header">⚡ {{ 'Réglages critiques'|trans }}</h6>
+											<a class="dropdown-item" href="/admin/club">🏛️ {{ 'Club'|trans }}</a>
+											<a class="dropdown-item" href="/admin/system-settings">⚙️ {{ 'Système (SMTP)'|trans }}</a>
+											<a class="dropdown-item" href="/admin/update">🔄 {{ 'Mise à jour'|trans }}</a>
+											<a class="dropdown-item" href="/admin/sauvegarde">💾 {{ 'Sauvegarde / restauration'|trans }}</a>
 											<div class="dropdown-divider"></div>
 										{% endif %}
 
 										{# --- Section ADMIN (visible aussi pour SUPER_ADMIN via héritage) --- #}
-										<a class="dropdown-item" href="/admin/tableau-de-bord">🏠 Tableau de bord</a>
-										<a class="dropdown-item" href="/admin/utilisateurs">👤 Utilisateurs</a>
-										<a class="dropdown-item" href="/admin/journal-activite">🗒️ Journal d'activité</a>
-										<a class="dropdown-item" href="/admin/fournisseurs">🏷️ Fournisseurs</a>
+										<a class="dropdown-item" href="/admin/tableau-de-bord">🏠 {{ 'Tableau de bord'|trans }}</a>
+										<a class="dropdown-item" href="/admin/utilisateurs">👤 {{ 'Utilisateurs'|trans }}</a>
+										<a class="dropdown-item" href="/admin/journal-activite">🗒️ {{ "Journal d'activité"|trans }}</a>
+										<a class="dropdown-item" href="/admin/fournisseurs">🏷️ {{ 'Fournisseurs'|trans }}</a>
 										<div class="dropdown-divider"></div>
-										<a class="dropdown-item" href="/admin/categories">📂 Catégories</a>
-										<a class="dropdown-item" href="/admin/emplacements">📍 Emplacements</a>
-										<a class="dropdown-item" href="/admin/references">🔢 Référence</a>
+										<a class="dropdown-item" href="/admin/categories">📂 {{ 'Catégories'|trans }}</a>
+										<a class="dropdown-item" href="/admin/emplacements">📍 {{ 'Emplacements'|trans }}</a>
+										<a class="dropdown-item" href="/admin/references">🔢 {{ 'Référence'|trans }}</a>
 										<div class="dropdown-divider"></div>
-										<a class="dropdown-item" href="/admin/acquisitions">📦 Acquisitions</a>
+										<a class="dropdown-item" href="/admin/acquisitions">📦 {{ 'Acquisitions'|trans }}</a>
 									</div>
 								</li>
 							{% endif %}
 							{% if isGranted('ROLE_USER') %}
 							<li class="nav-item">
 								<a class="nav-link" href="/guide" target="_blank">
-									<i class="fas fa-book"></i> Guide
+									<i class="fas fa-book"></i> {{ 'Guide'|trans }}
 								</a>
 							</li>
 							{% endif %}
 						</ul>
 						<div class="d-flex align-items-center">
+							{% include '_selecteur_langue.twig' %}
 							{% if isAuthenticated() %}
 							{% set user = _user %}
 							{% if user %}
 							{% set roleLabels = {
-								'ROLE_USER': 'Utilisateur',
-								'ROLE_CONTROLLEUR': 'Contrôleur',
-								'ROLE_ADMIN': 'Administrateur',
-								'ROLE_SUPER_ADMIN': 'Super Administrateur'
+								'ROLE_USER': 'Utilisateur'|trans,
+								'ROLE_CONTROLLEUR': 'Contrôleur'|trans,
+								'ROLE_ADMIN': 'Administrateur'|trans,
+								'ROLE_SUPER_ADMIN': 'Super Administrateur'|trans
 							} %}
 							{# [migration 020] Double authentification et passkeys #}
-							<a href="/mon-compte/securite" class="btn btn-outline-light me-3" title="Sécurité du compte : double authentification et passkeys">🔐<span class="d-none d-lg-inline"> Sécurité</span></a>
+							<a href="/mon-compte/securite" class="btn btn-outline-light me-3" title="{{ 'Sécurité du compte : double authentification et passkeys'|trans }}">🔐<span class="d-none d-lg-inline"> {{ 'Sécurité'|trans }}</span></a>
 							<span class="me-1 text-white">
 								{{ user.prenom }} {{ user.nom }}
 								<span class="badge bg-light text-dark">{{ roleLabels[user.role]|default(user.role) }}</span>
@@ -145,10 +146,10 @@
 							{% endif %}
 							<form action="/se_deconnecter" method="post" style="display: inline;">
 								<input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
-								<button type="submit" class="btn btn-primary">Déconnexion</button>
+								<button type="submit" class="btn btn-primary">{{ 'Déconnexion'|trans }}</button>
 							</form>
 							{% else %}
-							<a href="/se_connecter" class="btn btn-primary">Connexion</a>
+							<a href="/se_connecter" class="btn btn-primary">{{ 'Connexion'|trans }}</a>
 							{% endif %}
 						</div>
 					</div>
@@ -169,7 +170,7 @@
 				{% for message in messages %}
 				<div class="alert alert-{{ alertClass }} alert-dismissible fade show" role="alert">
 					{{ message }}
-					<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+					<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ 'Fermer'|trans }}"></button>
 				</div>
 				{% endfor %}
 			{% endfor %}
@@ -177,22 +178,21 @@
 			{% set alerteLimiteur = alerte_limiteur() %}
 			{% if alerteLimiteur %}
 				<div class="alert alert-danger" role="alert">
-					<h2 class="h6 alert-heading mb-2">Limiteur de tentatives de connexion indisponible</h2>
+					<h2 class="h6 alert-heading mb-2">{{ 'Limiteur de tentatives de connexion indisponible'|trans }}</h2>
 					<p class="mb-2">
-						Panne constatée depuis le {{ alerteLimiteur.debut|date('d/m/Y à H:i') }}
-						({{ alerteLimiteur.nombre }} fois, dernière le {{ alerteLimiteur.dernier|date('d/m/Y à H:i') }} ;
+						{{ 'Panne constatée depuis le {debut}'|trans({debut: alerteLimiteur.debut|date('d/m/Y à H:i'|trans)}) }}
+						({{ '{nombre} fois, dernière le {dernier}'|trans({nombre: alerteLimiteur.nombre, dernier: alerteLimiteur.dernier|date('d/m/Y à H:i'|trans)}) }} ;
 						{{ alerteLimiteur.sources|join(', ') }}).
-						Pendant la panne, les tentatives de connexion et les demandes de mot de passe oublié
-						ne sont pas limitées (risque de force brute), et la vérification du second facteur est refusée.
+						{{ 'Pendant la panne, les tentatives de connexion et les demandes de mot de passe oublié ne sont pas limitées (risque de force brute), et la vérification du second facteur est refusée.'|trans }}
 					</p>
 					<p class="mb-2">
-						Cause probable : base de données inaccessible ou migration non appliquée
-						(voir la page <a href="/admin/update" class="alert-link">Mise à jour</a>).
+						{{ 'Cause probable : base de données inaccessible ou migration non appliquée'|trans }}
+						({{ 'voir la page'|trans }} <a href="/admin/update" class="alert-link">{{ 'Mise à jour'|trans }}</a>).
 						{% if alerteLimiteur.message %}<br><small class="font-monospace">{{ alerteLimiteur.message }}</small>{% endif %}
 					</p>
 					<form method="post" action="/admin/alerte-limiteur/acquitter" class="mb-0">
 						<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-						<button type="submit" class="btn btn-sm btn-outline-danger">Problème résolu, masquer l'alerte</button>
+						<button type="submit" class="btn btn-sm btn-outline-danger">{{ "Problème résolu, masquer l'alerte"|trans }}</button>
 					</form>
 				</div>
 			{% endif %}
@@ -221,14 +221,14 @@
 					const btn = document.querySelector('[data-qr-action="sauvegarder"][data-equipement-id="' + equipementId + '"]');
 					if (btn) {
 						const originalHtml = btn.innerHTML;
-						btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sauvegarde...';
+						btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + {{ 'Sauvegarde...'|trans|json_encode|raw }};
 						btn.disabled = true;
 					}
 
 					fetch('/qr/save/' + equipementId)
 						.then(response => {
 							if (!response.ok) {
-								throw new Error('Erreur HTTP: ' + response.status);
+								throw new Error({{ 'Erreur HTTP :'|trans|json_encode|raw }} + ' ' + response.status);
 							}
 							return response.json();
 						})
@@ -241,7 +241,7 @@
 
 							if (data.success) {
 								// Afficher un message de succès
-								showNotification('success', 'QR code sauvegardé avec succès !', 'Fichier : ' + data.filename);
+								showNotification('success', {{ 'QR code sauvegardé avec succès !'|trans|json_encode|raw }}, {{ 'Fichier :'|trans|json_encode|raw }} + ' ' + data.filename);
 
 								// Mettre à jour l'image pour utiliser le fichier sauvegardé
 								const img = document.querySelector('#qr-code-image');
@@ -249,7 +249,7 @@
 									img.src = '/qr/view/' + data.filename.replace('.png', '');
 								}
 							} else {
-								showNotification('danger', 'Erreur lors de la sauvegarde', data.error || 'Erreur inconnue');
+								showNotification('danger', {{ 'Erreur lors de la sauvegarde'|trans|json_encode|raw }}, data.error || {{ 'Erreur inconnue'|trans|json_encode|raw }});
 							}
 						})
 						.catch(error => {
@@ -258,7 +258,7 @@
 								btn.innerHTML = originalHtml;
 								btn.disabled = false;
 							}
-							showNotification('danger', 'Erreur', error.message);
+							showNotification('danger', {{ 'Erreur'|trans|json_encode|raw }}, error.message);
 						});
 				}
 
@@ -285,7 +285,7 @@
 									<strong>${title}</strong><br>
 									${message}
 								</div>
-								<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+								<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="${ {{ 'Fermer'|trans|json_encode|raw }} }"></button>
 							</div>
 						`;
 						toastContainer.appendChild(toastEl);
@@ -325,7 +325,7 @@
 					if (navigator.clipboard) {
 						navigator.clipboard.writeText(url)
 							.then(() => {
-								showNotification('success', 'URL copiée !', 'L\'URL du QR code a été copiée dans le presse-papier.');
+								showNotification('success', {{ 'URL copiée !'|trans|json_encode|raw }}, {{ "L'URL du QR code a été copiée dans le presse-papier."|trans|json_encode|raw }});
 							})
 							.catch(() => {
 								// Fallback
@@ -349,9 +349,9 @@
 					textarea.select();
 					try {
 						document.execCommand('copy');
-						showNotification('success', 'URL copiée !', 'L\'URL du QR code a été copiée dans le presse-papier.');
+						showNotification('success', {{ 'URL copiée !'|trans|json_encode|raw }}, {{ "L'URL du QR code a été copiée dans le presse-papier."|trans|json_encode|raw }});
 					} catch (err) {
-						showNotification('danger', 'Erreur', 'Impossible de copier l\'URL.');
+						showNotification('danger', {{ 'Erreur'|trans|json_encode|raw }}, {{ "Impossible de copier l'URL."|trans|json_encode|raw }});
 					}
 					document.body.removeChild(textarea);
 				}

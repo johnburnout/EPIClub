@@ -259,6 +259,20 @@ class UtilisateurManager extends AbstractManager
     /**
      * Met à jour UNIQUEMENT la colonne last_activity
      */
+    /**
+     * [Localisation — migration 022] Langue d'affichage préférée
+     * (fr, en, es, it), retrouvée à chaque connexion. Hors ALLOWED_FIELDS :
+     * seul le sélecteur de langue l'écrit, sur le compte connecté.
+     */
+    public function enregistrerLangue(int $userId, string $langue): void
+    {
+        if (!\Epiclub\Engine\Langue::estDisponible($langue)) {
+            throw new \InvalidArgumentException('Langue non disponible : ' . $langue);
+        }
+        $stmt = $this->db->prepare('UPDATE utilisateur SET langue = :langue WHERE id = :id');
+        $stmt->execute(['langue' => $langue, 'id' => $userId]);
+    }
+
     public function updateLastActivity(int $userId): void
     {
         $sql = "UPDATE utilisateur SET last_activity = NOW() WHERE id = :id";

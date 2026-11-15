@@ -1,8 +1,10 @@
 <?php
 
+use Epiclub\Engine\Langue;
 use Epiclub\Engine\ProxyDeConfiance;
 use Epiclub\Engine\SecurityHeaders;
 use Epiclub\Engine\Session;
+use Epiclub\Engine\Traducteur;
 use Symfony\Component\HttpFoundation\Session\Storage\NativeSessionStorage;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -54,8 +56,17 @@ if (time() - $session->getMetadataBag()->getLastUsed() > Session::SESSION_LIFETI
     exit();
 }
 
-$request->setDefaultLocale('fr');
-$request->setLocale('fr');
+// [Localisation] Langue de la requête : préférence de l'utilisateur
+// connecté, sinon choix fait dans la session, sinon navigateur, sinon
+// français (cf. Langue::resoudre).
+$utilisateurSession = $session->get('user');
+Traducteur::definirLangue(Langue::resoudre(
+    is_array($utilisateurSession) ? ($utilisateurSession['langue'] ?? null) : null,
+    $session->get(Langue::CLE_SESSION),
+    $request->getPreferredLanguage(array_keys(Langue::DISPONIBLES))
+));
+$request->setDefaultLocale(Langue::DEFAUT);
+$request->setLocale(Traducteur::langue());
 
 $context = new RequestContext();
 $context->fromRequest($request);

@@ -10,6 +10,18 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+### Added
+
+- **Interface en anglais, espagnol et italien (1re étape).** Un
+  sélecteur 🌐 dans le bandeau change la langue d'affichage, y compris
+  sur la page de connexion. Pour un utilisateur connecté, le choix est
+  enregistré et retrouvé à chaque connexion ; sinon, la langue du
+  navigateur s'applique, puis le français. Cette étape traduit le bandeau,
+  les menus et l'alerte du limiteur de connexion ; les écrans suivent dans
+  les prochaines versions (un texte pas encore traduit reste en français).
+  Migration : `022_langue_utilisateur.sql` (appliquée automatiquement par
+  la mise à jour intégrée).
+
 ### Changed
 
 - **Codes de secours hachés comme les mots de passe.** Ils passent eux
