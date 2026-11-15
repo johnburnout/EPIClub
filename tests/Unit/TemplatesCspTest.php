@@ -51,7 +51,7 @@ final class TemplatesCspTest extends TestCase
     public function testLeGabaritPrincipalChargeAppJs(): void
     {
         self::assertStringContainsString(
-            '<script src="/assets/js/app.js"></script>',
+            '<script src="/assets/js/app.js?v={{ app_version }}"></script>',
             (string) file_get_contents(dirname(__DIR__, 2) . '/templates/_layout.twig')
         );
     }

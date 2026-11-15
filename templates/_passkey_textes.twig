@@ -1,6 +1,9 @@
 {# [Localisation] Messages de passkey.js dans la langue de la page
-   (à inclure dans le script de la page, avant EpiclubPasskey.init…). #}
-EpiclubPasskey.definirTextes({{ {
+   (à inclure dans le script de la page, avant EpiclubPasskey.init…).
+   [v3.0.2] Garde : un passkey.js d'avant la v3.0.0 resté en cache n'a
+   pas definirTextes ; sans elle, l'appel levait une erreur et la passkey
+   n'était plus proposée. Les messages restent alors en français. #}
+if (typeof EpiclubPasskey.definirTextes === 'function') EpiclubPasskey.definirTextes({{ {
 	annule: 'Opération annulée ou délai dépassé.'|trans,
 	dejaEnregistree: 'Cet appareil a déjà une passkey enregistrée pour ce compte.'|trans,
 	echec: "La passkey n'a pas pu être utilisée."|trans,

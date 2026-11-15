@@ -10,6 +10,23 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v3.0.2] — 2026-11-15
+
+Correctif : passkey de nouveau proposée après la mise à jour.
+
+### Fixed
+
+- **Passkey absente après la mise à jour en v3.0.0.** Le navigateur
+  pouvait garder en cache l'ancien `passkey.js`, sans la fonction
+  ajoutée par la traduction : le script de la page s'arrêtait sur une
+  erreur et le bouton « Se connecter avec une passkey » (ainsi que l'ajout
+  d'une passkey dans « Sécurité du compte ») n'apparaissait plus. Les
+  scripts et feuilles de style de `/assets/` sont désormais chargés avec
+  le numéro de version (`?v=…`), rechargés à chaque mise à jour, et un
+  ancien `passkey.js` en cache ne bloque plus la page (messages alors en
+  français). Contournement immédiat : recharger la page sans le cache
+  (Cmd+Maj+R / Ctrl+F5).
+
 ## [v3.0.1] — 2026-11-15
 
 Suites de l'audit du 2026-11-10 (`docs/audit-2026-11-10.md`), consacré

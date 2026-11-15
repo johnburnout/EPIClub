@@ -113,7 +113,7 @@
 					</div>
 					<div class="col-12 text-danger" id="passkey-erreur" role="alert"></div>
 				</div>
-				<script src="/assets/js/passkey.js"></script>
+				<script src="/assets/js/passkey.js?v={{ app_version }}"></script>
 				<script nonce="{{ csp_nonce }}">
 					{% include '_passkey_textes.twig' %}
 					EpiclubPasskey.initEnregistrement(document.getElementById('passkey-enregistrement'));
