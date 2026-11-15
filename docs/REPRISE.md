@@ -32,7 +32,7 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v3.0.0 | PR #123 à #132 + PR de version | Interface en anglais, espagnol et italien : langue réglée pour le club (personnalisation du tableau de bord, mode automatique = navigateur), e-mails, PDF, exports, installeur et guide traduits (voir « Localisation »). Migration `022_langue_club.sql`. | — |
+| v3.0.0 | PR #123 à #132 + #133 | Interface en anglais, espagnol et italien : langue réglée pour le club (personnalisation du tableau de bord, mode automatique = navigateur), e-mails, PDF, exports, installeur et guide traduits (voir « Localisation »). Migration `022_langue_club.sql`. | `d5f5a30` |
 | v2.12.0 | PR #120 | Audit du 2026-11-08, R1 : releases signées hors ligne avec minisign (`SignatureMinisign`, sodium), `.minisig` exigé par l'updater, `bin/signer-release.sh`. | `37531f3` |
 | v2.11.0 | PR #119 | Audit du 2026-11-08, R4 : bandeau du super-admin et journal « Sécurité » quand le limiteur de tentatives est indisponible (`AlerteLimiteur`, `var/alertes/limiteur.json`). | `2635322` |
 | v2.10.0 | PR #118 | Audit du 2026-11-08, R2 : option `TRUSTED_PROXIES` (reverse proxy) pour l'IP client, HTTPS, cookie `Secure` et HSTS. | `1d044a0` |
@@ -934,7 +934,8 @@ installeur et guide utilisateur ; la CLI reste en français).
 | 10 | Langue réglée pour le club (personnalisation du tableau de bord, `club.langue`) au lieu du sélecteur du bandeau et de la préférence par utilisateur | PR #132 |
 
 Chantier terminé : PR #123 à #132 fusionnées le 2026-11-15 (commits de
-fusion `6e45b86` à `a181da8`), publié en **v3.0.0**.
+fusion `6e45b86` à `a181da8`), publié en **v3.0.0** (PR de version #133, fusion `d5f5a30`, release signée
+et vérifiée le 2026-11-15).
 
 Restent volontairement en français : la ligne de commande (`bin/`), le
 journal d'activité, les messages d'exception des services partagés avec
