@@ -8,9 +8,8 @@ use Epiclub\Engine\Langue;
 use PHPUnit\Framework\TestCase;
 
 /**
- * [Localisation] Choix de la langue : préférence enregistrée de
- * l'utilisateur, sinon choix fait dans la session (visiteur non
- * connecté), sinon langue du navigateur, sinon français.
+ * [Localisation] Choix de la langue : celle réglée pour le club, sinon
+ * (« Automatique ») langue du navigateur, sinon français.
  */
 final class LangueTest extends TestCase
 {
@@ -23,25 +22,20 @@ final class LangueTest extends TestCase
         self::assertFalse(Langue::estDisponible(''));
     }
 
-    public function testPreferenceUtilisateurPrioritaire(): void
+    public function testLangueDuClubPrioritaire(): void
     {
-        self::assertSame('it', Langue::resoudre('it', 'en', 'es'));
+        self::assertSame('it', Langue::resoudre('it', 'es'));
     }
 
-    public function testChoixDeSessionEnsuite(): void
+    public function testAutomatiqueLangueDuNavigateur(): void
     {
-        self::assertSame('en', Langue::resoudre(null, 'en', 'es'));
-    }
-
-    public function testNavigateurEnsuite(): void
-    {
-        self::assertSame('es', Langue::resoudre(null, null, 'es'));
+        self::assertSame('es', Langue::resoudre(null, 'es'));
     }
 
     public function testValeursInvalidesIgnorees(): void
     {
-        self::assertSame('es', Langue::resoudre('de', 'xx', 'es'));
-        self::assertSame('fr', Langue::resoudre(null, null, 'de'));
-        self::assertSame('fr', Langue::resoudre(null, null, null));
+        self::assertSame('es', Langue::resoudre('de', 'es'));
+        self::assertSame('fr', Langue::resoudre(null, 'de'));
+        self::assertSame('fr', Langue::resoudre(null, null));
     }
 }

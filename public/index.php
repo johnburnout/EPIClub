@@ -56,13 +56,15 @@ if (time() - $session->getMetadataBag()->getLastUsed() > Session::SESSION_LIFETI
     exit();
 }
 
-// [Localisation] Langue de la requête : préférence de l'utilisateur
-// connecté, sinon choix fait dans la session, sinon navigateur, sinon
-// français (cf. Langue::resoudre).
-$utilisateurSession = $session->get('user');
+// [Localisation] Langue de la requête : celle réglée pour le club, sinon
+// (« Automatique ») celle du navigateur, sinon français (cf. Langue::resoudre).
+try {
+    $langueClub = (new \Epiclub\Domain\ClubManager())->langue();
+} catch (\Throwable $e) {
+    $langueClub = null; // base indisponible : la page d'erreur reste lisible
+}
 Traducteur::definirLangue(Langue::resoudre(
-    is_array($utilisateurSession) ? ($utilisateurSession['langue'] ?? null) : null,
-    $session->get(Langue::CLE_SESSION),
+    $langueClub,
     $request->getPreferredLanguage(array_keys(Langue::DISPONIBLES))
 ));
 $request->setDefaultLocale(Langue::DEFAUT);

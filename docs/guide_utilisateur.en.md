@@ -272,7 +272,6 @@ Available once the loan is in progress (and once it has ended): borrower, dates,
 - You log in with either your **username** or your **email address**, and your password.
 - From the login page, click **Forgot your password?**.
 - An email with a reset link (valid for 24 hours) is sent.
-- The **🌐** selector in the banner changes the display language (French, English, Spanish, Italian). For a logged-in user, the choice is saved and restored at each login; otherwise the browser's language applies.
 
 ### Two-factor authentication and passkeys (optional)
 
@@ -287,6 +286,11 @@ Every user, whatever their role, can strengthen their account's security from th
 ---
 
 ## 6. Administration
+
+### Interface language
+- **Administration → 🏠 Dashboard → ⚙️ Customise the dashboard**, **"🌐 Interface language"** list: French, English, Spanish or Italian, for **the whole club** (pages, login page, emails, PDFs and exports).
+- **Automatic (browser language)**: everyone sees the application in their browser's language, or in French if it is not offered.
+- The language chosen in the installation wizard becomes the club's language. The command line and the activity log stay in French.
 
 ### Categories
 - Define equipment categories (with the option of marking an item as PPE).

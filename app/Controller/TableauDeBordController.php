@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Epiclub\Controller;
 
+use Epiclub\Engine\Langue;
 use Epiclub\Engine\Traducteur;
 use Epiclub\Domain\ClubManager;
 use Epiclub\Domain\EquipementManager;
@@ -302,6 +303,18 @@ class TableauDeBordController extends AbstractController
                     'alerte_controle_mois' => $dureeControle,
                 ];
                 $club['alerte_controle_actif'] = $maj['alerte_controle_actif'];
+
+                // [Localisation — migration 022] Langue de l'interface :
+                // '' = automatique (navigateur) ; champ absent : inchangée.
+                if ($request->request->has('langue')) {
+                    $langueRaw = (string) $request->request->get('langue');
+                    if ($langueRaw === '' || Langue::estDisponible($langueRaw)) {
+                        $maj['langue'] = $langueRaw === '' ? null : $langueRaw;
+                        $club['langue'] = $maj['langue'];
+                    } else {
+                        $form_errors['langue'] = Traducteur::t("La langue choisie n'est pas proposée.");
+                    }
+                }
                 $aSupprimer = [];
 
                 foreach ([

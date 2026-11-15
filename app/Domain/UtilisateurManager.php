@@ -151,29 +151,6 @@ class UtilisateurManager extends AbstractManager
         return $stmt->fetchAll();
     }
 
-    /**
-     * [Localisation — migration 022] Langue préférée des utilisateurs qui en
-     * ont choisi une (id => langue), pour leur écrire dans cette langue.
-     * Vide si la colonne n'existe pas encore (mise à jour en cours) : les
-     * mails partent alors dans la langue de la requête.
-     *
-     * @return array<int, string>
-     */
-    public function languesPreferees(): array
-    {
-        try {
-            $stmt = $this->db->query('SELECT id, langue FROM utilisateur WHERE langue IS NOT NULL');
-            $langues = [];
-            foreach ($stmt->fetchAll() as $ligne) {
-                $langues[(int) $ligne['id']] = (string) $ligne['langue'];
-            }
-            return $langues;
-        } catch (\PDOException $e) {
-            error_log('[UtilisateurManager] Langues préférées indisponibles : ' . $e->getMessage());
-            return [];
-        }
-    }
-
     /** [2026-10-24] Date du dernier mail de ticket envoyé à la personne. */
     public function marquerMailTicket(int $id, string $maintenant): void
     {
@@ -282,20 +259,6 @@ class UtilisateurManager extends AbstractManager
     /**
      * Met à jour UNIQUEMENT la colonne last_activity
      */
-    /**
-     * [Localisation — migration 022] Langue d'affichage préférée
-     * (fr, en, es, it), retrouvée à chaque connexion. Hors ALLOWED_FIELDS :
-     * seul le sélecteur de langue l'écrit, sur le compte connecté.
-     */
-    public function enregistrerLangue(int $userId, string $langue): void
-    {
-        if (!\Epiclub\Engine\Langue::estDisponible($langue)) {
-            throw new \InvalidArgumentException('Langue non disponible : ' . $langue);
-        }
-        $stmt = $this->db->prepare('UPDATE utilisateur SET langue = :langue WHERE id = :id');
-        $stmt->execute(['langue' => $langue, 'id' => $userId]);
-    }
-
     public function updateLastActivity(int $userId): void
     {
         $sql = "UPDATE utilisateur SET last_activity = NOW() WHERE id = :id";

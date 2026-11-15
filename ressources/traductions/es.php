@@ -3174,4 +3174,14 @@ Fecha: {date}',
     // --- Guide ---
     'Guide non trouvé'
         => 'Guía no encontrada',
+
+    // --- Langue du club ---
+    'Langue de l\'interface'
+        => 'Idioma de la interfaz',
+    'Automatique (langue du navigateur)'
+        => 'Automático (idioma del navegador)',
+    'S\'applique à tous les utilisateurs, à la page de connexion et aux e-mails. En mode automatique, chacun voit l\'application dans la langue de son navigateur (français si elle n\'est pas proposée).'
+        => 'Se aplica a todos los usuarios, a la página de inicio de sesión y a los correos. En modo automático, cada persona ve la aplicación en el idioma de su navegador (francés si no está disponible).',
+    'La langue choisie n\'est pas proposée.'
+        => 'El idioma elegido no está disponible.',
 ];

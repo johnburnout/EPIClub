@@ -270,7 +270,6 @@ Les prêts **en retard** (date de retour prévue dépassée) sont signalés en r
 - On se connecte au choix avec son **identifiant** ou son **adresse mail**, et son mot de passe.
 - Depuis la page de connexion, cliquez sur **Mot de passe oublié**.
 - Un email avec un lien de réinitialisation (valable 24h) est envoyé.
-- Le sélecteur **🌐** du bandeau change la langue d'affichage (français, anglais, espagnol, italien). Pour un utilisateur connecté, le choix est enregistré et retrouvé à chaque connexion ; sinon, la langue du navigateur s'applique.
 
 ### Double authentification et passkeys (facultatif)
 
@@ -285,6 +284,11 @@ Chaque utilisateur, quel que soit son rôle, peut renforcer la sécurité de son
 ---
 
 ## 6. Administration
+
+### Langue de l'interface
+- **Administration → 🏠 Tableau de bord → ⚙️ Personnaliser le tableau de bord**, liste **« 🌐 Langue de l'interface »** : français, anglais, espagnol ou italien, pour **tout le club** (pages, page de connexion, e-mails, PDF et exports).
+- **Automatique (langue du navigateur)** : chacun voit l'application dans la langue de son navigateur, en français si elle n'est pas proposée.
+- La langue choisie dans l'assistant d'installation devient la langue du club. La ligne de commande et le journal d'activité restent en français.
 
 ### Catégories
 - Définir des catégories d'équipements (avec possibilité de marquer un équipement comme EPI).

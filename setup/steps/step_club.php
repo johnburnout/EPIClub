@@ -32,9 +32,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $form_errors = array_merge($form_errors, InstallationService::validerClub($saisie));
 
     if (empty($form_errors)) {
+        // [Localisation] Une langue choisie dans l'installeur (sélecteur)
+        // devient la langue du club ; sinon : automatique (navigateur).
         (new InstallationService(dirname(__DIR__, 2)))->enregistrerClub(
             InstallationService::connexionDepuisConfig(InstallationService::lireConfig(__DIR__ . '/../../.env.local.php')),
-            $saisie
+            $saisie + (isset($_SESSION['setup_langue']) ? ['langue' => $_SESSION['setup_langue']] : [])
         );
 
         header('Location: ?step=categories');

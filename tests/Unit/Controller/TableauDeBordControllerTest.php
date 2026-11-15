@@ -185,6 +185,44 @@ final class TableauDeBordControllerTest extends TestCase
         return [['0'], ['37'], ['-2'], ['abc'], ['2.5'], ['']];
     }
 
+    /**
+     * [Localisation — migration 022] Langue de l'interface du club :
+     * une langue proposée, ou '' pour « Automatique » (null en base).
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('languesDuClub')]
+    public function testReglagesEnregistreLaLangue(string $saisie, ?string $enregistree): void
+    {
+        $this->connecter('ROLE_ADMIN');
+        $this->clubManager->method('findParameters')->willReturn(['id' => 1, 'alerte_renouvellement_mois' => 3, 'langue' => 'en']);
+        $this->clubManager->expects(self::once())
+            ->method('save')
+            ->with(self::callback(static fn (array $maj) => array_key_exists('langue', $maj) && $maj['langue'] === $enregistree));
+
+        $response = $this->controller()->reglages(
+            $this->post('/admin/tableau-de-bord', ['alerte_renouvellement_mois' => '3', 'langue' => $saisie])
+        );
+
+        self::assertSame(302, $response->getStatusCode());
+    }
+
+    public static function languesDuClub(): array
+    {
+        return ['italien' => ['it', 'it'], 'automatique' => ['', null]];
+    }
+
+    public function testReglagesRefuseUneLangueNonProposee(): void
+    {
+        $this->connecter('ROLE_ADMIN');
+        $this->clubManager->method('findParameters')->willReturn(['id' => 1, 'alerte_renouvellement_mois' => 3]);
+        $this->clubManager->expects(self::never())->method('save');
+
+        $response = $this->controller()->reglages(
+            $this->post('/admin/tableau-de-bord', ['alerte_renouvellement_mois' => '3', 'langue' => 'de'])
+        );
+
+        self::assertSame(200, $response->getStatusCode());
+    }
+
     public function testReglagesEnregistreLaDuree(): void
     {
         $this->connecter('ROLE_ADMIN');

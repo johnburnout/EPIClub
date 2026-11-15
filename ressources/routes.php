@@ -101,14 +101,6 @@ $routes->add('test_mail', new Route(
 $routes->add('login',  new Route('/se_connecter',    ['_controller' => 'Epiclub\\Controller\\AppUserAuthController', 'action' => 'login']));
 $routes->add('logout', new Route('/se_deconnecter',  ['_controller' => 'Epiclub\\Controller\\AppUserAuthController', 'action' => 'logout']));
 
-// [Localisation] Public : choix de la langue d'affichage (sélecteur du
-// bandeau, aussi sur la page de connexion).
-$routes->add('langue', new Route(
-    '/langue',
-    ['_controller' => 'Epiclub\\Controller\\LangueController', 'action' => 'choisir'],
-    [], [], '', [], ['POST']
-));
-
 // ROLE_USER : compte utilisateur (création, consultation, mot de passe oublié)
 $routes->add('forgot_password',         new Route('/mot_de_passe_oublie',                 ['_controller' => 'Epiclub\\Controller\\AppUserRegisterController', 'action' => 'forgotPassword']));
 $routes->add('forgot_password_confirm', new Route('/mot_de_passe_oublie/confirmation',    ['_controller' => 'Epiclub\\Controller\\AppUserRegisterController', 'action' => 'forgotPasswordConfirm']));
