@@ -3,6 +3,7 @@
 
 namespace Epiclub\Controller;
 
+use Epiclub\Engine\Traducteur;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\Pagination;
 use Epiclub\Engine\EncryptionService;
@@ -95,13 +96,13 @@ class JournalController extends AbstractController
         // getValidId() : id de route strictement numérique, sinon null.
         $id = $this->getValidId($request);
         if ($id === null) {
-            $this->session->getFlashBag()->add('danger', 'Identifiant du journal manquant');
+            $this->session->getFlashBag()->add('danger', Traducteur::t('Identifiant du journal manquant'));
             return $this->redirectTo('/journaux');
         }
 
         $controle = $this->journalManager->getControleCloture($id);
         if (!$controle) {
-            $this->session->getFlashBag()->add('danger', 'Journal de contrôle non trouvé');
+            $this->session->getFlashBag()->add('danger', Traducteur::t('Journal de contrôle non trouvé'));
             return $this->redirectTo('/journaux');
         }
 
@@ -136,13 +137,13 @@ class JournalController extends AbstractController
         // getValidId() : id de route strictement numérique, sinon null.
         $id = $this->getValidId($request);
         if ($id === null) {
-            $this->session->getFlashBag()->add('danger', 'Identifiant du journal manquant');
+            $this->session->getFlashBag()->add('danger', Traducteur::t('Identifiant du journal manquant'));
             return $this->redirectTo('/journaux');
         }
 
         $controle = $this->journalManager->getControleCloture($id);
         if (!$controle) {
-            $this->session->getFlashBag()->add('danger', 'Journal de contrôle non trouvé');
+            $this->session->getFlashBag()->add('danger', Traducteur::t('Journal de contrôle non trouvé'));
             return $this->redirectTo('/journaux');
         }
 

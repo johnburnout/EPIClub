@@ -2,6 +2,7 @@
 
 namespace Epiclub\Controller;
 
+use Epiclub\Engine\Traducteur;
 use Epiclub\Enum\EquipementStatut;
 use Epiclub\Domain\DureeDeVie;
 use Epiclub\Domain\ControleManager;
@@ -281,12 +282,12 @@ class ControleController extends AbstractController
 
         $user = $this->session->get('user');
         if (!empty($user['controle_en_cours_id'])) {
-            $this->session->getFlashBag()->add('error', 'Vous avez déjà un contrôle en cours. Terminez-le avant d\'en créer un nouveau.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Vous avez déjà un contrôle en cours. Terminez-le avant d\'en créer un nouveau.'));
             return $this->redirectTo('/admin/controles');
         }
 
         $controle = [
-            'libelle' => 'Contrôle du ' . date('d/m/Y H:i'),
+            'libelle' => Traducteur::t('Contrôle du {date}', ['date' => date('d/m/Y H:i')]),
             'date_debut' => date('Y-m-d H:i:s'),
             'date_fin' => null,
             'statut' => 'ouvert',
@@ -304,7 +305,7 @@ class ControleController extends AbstractController
 
         $this->journaliser(JournalActiviteManager::TYPE_CONTROLE, "Création du contrôle n° {$id}", $request);
 
-        $this->session->getFlashBag()->add('success', 'Contrôle créé avec succès.');
+        $this->session->getFlashBag()->add('success', Traducteur::t('Contrôle créé avec succès.'));
         return $this->redirectTo("/admin/controles/edit/$id");
     }
 
@@ -505,7 +506,7 @@ class ControleController extends AbstractController
             is_string($remarqueGenerale) ? $remarqueGenerale : ''
         );
         $controleManager->save($controle);
-        $this->session->getFlashBag()->add('success', 'Remarques générales mises à jour.');
+        $this->session->getFlashBag()->add('success', Traducteur::t('Remarques générales mises à jour.'));
         return $this->redirectTo("/admin/controles/edit/$id");
     }
 
@@ -896,16 +897,16 @@ class ControleController extends AbstractController
 
         $user = $this->session->get('user');
         if (!$this->canEdit($controle, $user)) {
-            $this->session->getFlashBag()->add('error', 'Vous n\'avez pas les droits pour modifier ce contrôle.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Vous n\'avez pas les droits pour modifier ce contrôle.'));
             return $this->redirectTo('/admin/controles');
         }
 
         // [Prêt de matériel] Un matériel prêté n'est pas contrôlable.
         $equipement = $this->equipementManager()->findId($equipement_id);
         if ($equipement && (int) ($equipement['statut'] ?? 0) === EquipementStatut::PRETE->value) {
-            $this->session->getFlashBag()->add('error', sprintf(
-                '%s est prêté : il ne peut être contrôlé qu\'après son retour.',
-                $equipement['reference'] ?? 'Cet équipement'
+            $this->session->getFlashBag()->add('error', Traducteur::t(
+                '{reference} est prêté : il ne peut être contrôlé qu\'après son retour.',
+                ['reference' => $equipement['reference'] ?? Traducteur::t('Cet équipement')]
             ));
             return $this->redirectTo("/admin/controles/edit/$controle_id");
         }
@@ -951,12 +952,12 @@ class ControleController extends AbstractController
         $user = $this->session->get('user');
 
         if (!$this->canEdit($controle, $user)) {
-            $this->session->getFlashBag()->add('error', 'Vous n\'avez pas les droits pour modifier ce contrôle.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Vous n\'avez pas les droits pour modifier ce contrôle.'));
             return $this->redirectTo('/admin/controles');
         }
 
         if ($controle['statut'] === 'cloture') {
-            $this->session->getFlashBag()->add('error', 'Ce contrôle est clôturé, vous ne pouvez pas modifier les lignes.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Ce contrôle est clôturé, vous ne pouvez pas modifier les lignes.'));
             return $this->redirectTo("/admin/controles/edit/{$controle['id']}");
         }
 
@@ -977,7 +978,7 @@ class ControleController extends AbstractController
                     $ligne_id,
                     substr((string) $statutRaw, 0, 50)
                 ));
-                $this->session->getFlashBag()->add('error', 'Statut invalide.');
+                $this->session->getFlashBag()->add('error', Traducteur::t('Statut invalide.'));
                 return $this->redirectTo("/admin/controles/edit/{$controle['id']}");
             }
             
@@ -1013,9 +1014,9 @@ class ControleController extends AbstractController
             // [2026-10-20] Fiche ouverte depuis le scanner → on y revient
             // pour enchaîner les scans.
             if ($retourScanner) {
-                $this->session->getFlashBag()->add('success', sprintf(
-                    'Contrôle de %s enregistré.',
-                    $equipement['reference'] ?? 'l\'équipement'
+                $this->session->getFlashBag()->add('success', Traducteur::t(
+                    'Contrôle de {reference} enregistré.',
+                    ['reference' => $equipement['reference'] ?? Traducteur::t("l'équipement")]
                 ));
                 return $this->redirectTo('/controles/scanner');
             }
@@ -1109,9 +1110,9 @@ class ControleController extends AbstractController
         $user = $this->session->get('user');
         if (!$this->canEdit($controle, $user)) {
             if ($this->isGranted('ROLE_ADMIN') && substr($controle['date_debut'], 0, 10) < date('Y-m-d')) {
-                $this->session->getFlashBag()->add('error', 'Impossible de clôturer : le contrôleur est actuellement en ligne.');
+                $this->session->getFlashBag()->add('error', Traducteur::t('Impossible de clôturer : le contrôleur est actuellement en ligne.'));
             } else {
-                $this->session->getFlashBag()->add('error', 'Vous n\'avez pas les droits pour clôturer ce contrôle.');
+                $this->session->getFlashBag()->add('error', Traducteur::t('Vous n\'avez pas les droits pour clôturer ce contrôle.'));
             }
             return $this->redirectTo('/admin/controles');
         }
@@ -1122,7 +1123,7 @@ class ControleController extends AbstractController
         // Vérifier si des équipements sont encore "à contrôler"
         foreach ($lignes as $ligne) {
             if ($ligne['statut'] === 'a_controler') {
-                $this->session->getFlashBag()->add('error', 'Impossible de clôturer : des équipements sont encore marqués "À contrôler".');
+                $this->session->getFlashBag()->add('error', Traducteur::t('Impossible de clôturer : des équipements sont encore marqués "À contrôler".'));
                 return $this->redirectTo("/admin/controles/edit/$id");
             }
         }
@@ -1261,7 +1262,7 @@ class ControleController extends AbstractController
             $this->session->set('user', $user);
         }
 
-        $this->session->getFlashBag()->add('success', 'Contrôle clôturé avec succès (remarques chiffrées).');
+        $this->session->getFlashBag()->add('success', Traducteur::t('Contrôle clôturé avec succès (remarques chiffrées).'));
         return $this->redirectTo('/admin/controles');
     }
 
@@ -1291,7 +1292,7 @@ class ControleController extends AbstractController
         $controle = $controleManager->findId($id);
 
         if (!$controle) {
-            $this->session->getFlashBag()->add('error', 'Contrôle non trouvé.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Contrôle non trouvé.'));
             return $this->redirectTo('/admin/controles');
         }
 
@@ -1303,7 +1304,7 @@ class ControleController extends AbstractController
         if (!$isOwner && !$isAdmin) {
             $this->session->getFlashBag()->add(
                 'error',
-                "Vous n'avez pas les droits pour supprimer ce contrôle."
+                Traducteur::t('Vous n\'avez pas les droits pour supprimer ce contrôle.')
             );
             return $this->redirectTo('/admin/controles');
         }
@@ -1312,7 +1313,7 @@ class ControleController extends AbstractController
         if ($controle['statut'] === 'cloture') {
             $this->session->getFlashBag()->add(
                 'error',
-                "Impossible de supprimer un contrôle clôturé (l'historique doit être conservé)."
+                Traducteur::t('Impossible de supprimer un contrôle clôturé (l\'historique doit être conservé).')
             );
             return $this->redirectTo("/admin/controles/edit/{$id}");
         }
@@ -1345,7 +1346,7 @@ class ControleController extends AbstractController
 
             $this->journaliser(JournalActiviteManager::TYPE_CONTROLE, "Suppression du contrôle n° {$id} (non clôturé)", $request);
 
-            $this->session->getFlashBag()->add('success', "Le contrôle a été supprimé.");
+            $this->session->getFlashBag()->add('success', Traducteur::t('Le contrôle a été supprimé.'));
             return $this->redirectTo('/admin/controles');
         } catch (\Throwable $e) {
             error_log(sprintf(
@@ -1357,7 +1358,7 @@ class ControleController extends AbstractController
             ));
             $this->session->getFlashBag()->add(
                 'error',
-                'Une erreur est survenue lors de la suppression. Merci de réessayer.'
+                Traducteur::t('Une erreur est survenue lors de la suppression. Merci de réessayer.')
             );
             return $this->redirectTo("/admin/controles/edit/{$id}");
         }

@@ -1024,4 +1024,240 @@ return [
     // --- Équipements (libellés de champ) ---
     'Date de fin d\'utilisation'
         => 'Fecha de fin de uso',
+
+    // --- Contrôles et journaux ---
+    ' : ajouté au contrôle.'
+        => ': añadido a la inspección.',
+    ' : déjà dans le contrôle.'
+        => ': ya está en la inspección.',
+    '(certains équipements sont encore marqués « À contrôler »)'
+        => '(algunos equipos siguen marcados «Por inspeccionar»)',
+    '(déjà présent)'
+        => '(ya presente)',
+    '(non modifiable)'
+        => '(no modificable)',
+    '{reference} est prêté : il ne peut être contrôlé qu\'après son retour.'
+        => '{reference} está prestado: solo puede inspeccionarse tras su devolución.',
+    '<strong>⚠️ Attention :</strong> Vous modifiez un contrôle qui ne vous appartient pas (contrôleur : {controleur_nom}). Vous pouvez le modifier car il date d\'au moins la veille.'
+        => '<strong>⚠️ Atención:</strong> Está modificando una inspección que no es suya (inspector: {controleur_nom}). Puede modificarla porque es de ayer o anterior.',
+    '<strong>🔒 Lecture seule :</strong> Ce contrôle est clôturé, vous ne pouvez pas le modifier.'
+        => '<strong>🔒 Solo lectura:</strong> Esta inspección está cerrada, no puede modificarla.',
+    '<strong>ℹ️ Lecture seule :</strong> Ce contrôle est ouvert mais vous ne disposez pas des droits pour le modifier.'
+        => '<strong>ℹ️ Solo lectura:</strong> Esta inspección está abierta pero no tiene permisos para modificarla.',
+    '<strong>Caméra indisponible :</strong> le navigateur n\'autorise la caméra que sur une page servie en <strong>HTTPS</strong> (ou en localhost). Demandez à l\'administrateur d\'activer HTTPS sur le serveur du club — le scan par l\'appareil photo natif du téléphone reste possible en attendant.'
+        => '<strong>Cámara no disponible:</strong> el navegador solo permite la cámara en una página servida por <strong>HTTPS</strong> (o en localhost). Pida al administrador que active HTTPS en el servidor del club; mientras tanto, puede escanear con la cámara del propio teléfono.',
+    '<strong>Contrôleur :</strong> {controleur_nom}'
+        => '<strong>Inspector:</strong> {controleur_nom}',
+    '<strong>Début :</strong> {date_debut}'
+        => '<strong>Inicio:</strong> {date_debut}',
+    '<strong>Équipement :</strong> {reference} - {libelle}'
+        => '<strong>Equipo:</strong> {reference} - {libelle}',
+    'Admin'
+        => 'Admin',
+    'Affichage de {controles} contrôles sur {total} (page {page}/{totalPages})'
+        => 'Mostrando {controles} inspecciones de {total} (página {page}/{totalPages})',
+    'Affichage de {equipements_disponibles} équipements sur {total} (page {page}/{totalPages})'
+        => 'Mostrando {equipements_disponibles} equipos de {total} (página {page}/{totalPages})',
+    'Affichage de {journaux} journaux sur {total} (page {page}/{totalPages})'
+        => 'Mostrando {journaux} registros de {total} (página {page}/{totalPages})',
+    'Affichage de {lignes} lignes sur {total} (page {page}/{totalPages})'
+        => 'Mostrando {lignes} filas de {total} (página {page}/{totalPages})',
+    'Ajouter des équipements'
+        => 'Añadir equipos',
+    'Année'
+        => 'Año',
+    'Aucun contrôle ouvert : le scan vous mènera à la fiche de l\'équipement.'
+        => 'Ninguna inspección abierta: el escaneo le llevará a la ficha del equipo.',
+    'Aucun équipement ajouté à ce contrôle.'
+        => 'Ningún equipo añadido a esta inspección.',
+    'Aucun équipement contrôlé dans ce journal'
+        => 'Ningún equipo inspeccionado en este registro',
+    'Aucun équipement disponible à ajouter.'
+        => 'Ningún equipo disponible para añadir.',
+    'Aucun journal de contrôle disponible'
+        => 'Ningún registro de inspección disponible',
+    'Aucune photo disponible'
+        => 'Ninguna foto disponible',
+    'Avec remarques'
+        => 'Con observaciones',
+    'Ce contrôle est clôturé, vous ne pouvez pas modifier les lignes.'
+        => 'Esta inspección está cerrada, no puede modificar las líneas.',
+    'Ces remarques seront affichées dans le journal du contrôle.'
+        => 'Estas observaciones se mostrarán en el registro de la inspección.',
+    'Cet équipement'
+        => 'Este equipo',
+    'Clôturé'
+        => 'Cerrada',
+    'Clôturer'
+        => 'Cerrar',
+    'Clôturer ce contrôle ?'
+        => '¿Cerrar esta inspección?',
+    'Clôturer ce contrôle ? Les remarques seront chiffrées et le contrôle ne sera plus modifiable.'
+        => '¿Cerrar esta inspección? Las observaciones se cifrarán y la inspección ya no podrá modificarse.',
+    'Clôturer le contrôle'
+        => 'Cerrar la inspección',
+    'Contrôle : {libelle}'
+        => 'Inspección: {libelle}',
+    'Contrôle clôturé avec succès (remarques chiffrées).'
+        => 'Inspección cerrada correctamente (observaciones cifradas).',
+    'Contrôle créé avec succès.'
+        => 'Inspección creada correctamente.',
+    'Contrôle de {reference} enregistré.'
+        => 'Inspección de {reference} guardada.',
+    'Contrôle du {date}'
+        => 'Inspección del {date}',
+    'Contrôle KO'
+        => 'Inspección KO',
+    'Contrôle non trouvé.'
+        => 'Inspección no encontrada.',
+    'Contrôle OK'
+        => 'Inspección OK',
+    'Contrôle ouvert : <strong>{libelle}</strong> — chaque équipement scanné est ajouté au contrôle et sa <strong>fiche contrôle</strong> s\'ouvre ; après enregistrement, vous revenez ici pour scanner le suivant.'
+        => 'Inspección abierta: <strong>{libelle}</strong> — cada equipo escaneado se añade a la inspección y se abre su <strong>ficha de inspección</strong>; tras guardar, vuelve aquí para escanear el siguiente.',
+    'Contrôler'
+        => 'Inspeccionar',
+    'Contrôleur :'
+        => 'Inspector:',
+    'Créé par :'
+        => 'Creado por:',
+    'Date de début'
+        => 'Fecha de inicio',
+    'Date début'
+        => 'Fecha inicio',
+    'Date début :'
+        => 'Fecha inicio:',
+    'Date du contrôle'
+        => 'Fecha de la inspección',
+    'Date fin'
+        => 'Fecha fin',
+    'Date fin :'
+        => 'Fecha fin:',
+    'Début'
+        => 'Inicio',
+    'Des équipements sont encore à contrôler'
+        => 'Todavía hay equipos por inspeccionar',
+    'Des équipements sont encore marqués « À contrôler »'
+        => 'Algunos equipos siguen marcados «Por inspeccionar»',
+    'Désignation'
+        => 'Designación',
+    'Égaré (matériel introuvable)'
+        => 'Extraviado (material no encontrado)',
+    'Élément textile remplacé'
+        => 'Elemento textil reemplazado',
+    'En ligne'
+        => 'En línea',
+    'Enregistrer les remarques'
+        => 'Guardar las observaciones',
+    'Équipement en maintenance avec élément textile remplaçable. Avec le statut <strong>OK</strong>, la date de fin d\'utilisation deviendra, à la clôture du contrôle, la date du contrôle + 10 ans (dernier jour du mois).'
+        => 'Equipo en mantenimiento con elemento textil reemplazable. Con el estado <strong>OK</strong>, al cerrar la inspección la fecha de fin de uso pasará a ser la fecha de la inspección + 10 años (último día del mes).',
+    'Équipements'
+        => 'Equipos',
+    'Équipements contrôlés'
+        => 'Equipos inspeccionados',
+    'Équipements déjà dans le contrôle'
+        => 'Equipos ya incluidos en la inspección',
+    'Équipements scannés pendant cette session :'
+        => 'Equipos escaneados durante esta sesión:',
+    'Erreur lors du scan.'
+        => 'Error al escanear.',
+    'Erreur réseau — vérifiez la connexion et réessayez.'
+        => 'Error de red — compruebe la conexión e inténtelo de nuevo.',
+    'Filtrer'
+        => 'Filtrar',
+    'Fin'
+        => 'Fin',
+    'ID'
+        => 'ID',
+    'Identifiant du journal manquant'
+        => 'Falta el identificador del registro',
+    'Impossible d\'accéder à la caméra. Vérifiez les autorisations du navigateur.'
+        => 'No se puede acceder a la cámara. Compruebe los permisos del navegador.',
+    'Impossible de clôturer : des équipements sont encore marqués "À contrôler".'
+        => 'No se puede cerrar: algunos equipos siguen marcados "Por inspeccionar".',
+    'Impossible de clôturer : le contrôleur est actuellement en ligne.'
+        => 'No se puede cerrar: el inspector está conectado en este momento.',
+    'Impossible de supprimer un contrôle clôturé (l\'historique doit être conservé).'
+        => 'No se puede eliminar una inspección cerrada (hay que conservar el historial).',
+    'Informations du contrôle'
+        => 'Información de la inspección',
+    'Jamais'
+        => 'Nunca',
+    'Jeton de sécurité invalide, rechargez la page.'
+        => 'Token de seguridad no válido, recargue la página.',
+    'Journal de contrôle #{id}'
+        => 'Registro de inspección n.º {id}',
+    'Journal de contrôle non trouvé'
+        => 'Registro de inspección no encontrado',
+    'Journaux de contrôle'
+        => 'Registros de inspección',
+    'KO'
+        => 'KO',
+    'l\'équipement'
+        => 'el equipo',
+    'Le contrôle a été supprimé.'
+        => 'La inspección se ha eliminado.',
+    'Le contrôleur est actuellement en ligne'
+        => 'El inspector está conectado en este momento',
+    'Lecture seule'
+        => 'Solo lectura',
+    'Liste des contrôles'
+        => 'Lista de inspecciones',
+    'Liste des équipements disponibles (non encore ajoutés à ce contrôle)'
+        => 'Lista de equipos disponibles (aún no añadidos a esta inspección)',
+    'Modifiable par admin (contrôle d\'avant-hier ou plus)'
+        => 'Modificable por un admin (inspección de anteayer o anterior)',
+    'Modifié par admin'
+        => 'Modificado por un admin',
+    'Modifier (admin)'
+        => 'Modificar (admin)',
+    'Modifier la ligne de contrôle'
+        => 'Modificar la línea de inspección',
+    'OK'
+        => 'OK',
+    'Ouvert'
+        => 'Abierta',
+    'Ouverture de la fiche…'
+        => 'Abriendo la ficha…',
+    'Pagination disponibles'
+        => 'Paginación de disponibles',
+    'Pagination lignes'
+        => 'Paginación de líneas',
+    'QR code invalide.'
+        => 'Código QR no válido.',
+    'Remarques générales'
+        => 'Observaciones generales',
+    'Remarques générales :'
+        => 'Observaciones generales:',
+    'Remarques générales mises à jour.'
+        => 'Observaciones generales actualizadas.',
+    'Retour au scanner'
+        => 'Volver al escáner',
+    'Scanner — contrôle « {libelle} »'
+        => 'Escáner — inspección «{libelle}»',
+    'Supprimer ce contrôle ?&#10;&#10;Toutes les lignes saisies seront perdues. Cette action est irréversible.'
+        => '¿Eliminar esta inspección?&#10;&#10;Se perderán todas las líneas introducidas. Esta acción es irreversible.',
+    'Supprimer le contrôle'
+        => 'Eliminar la inspección',
+    'Supprimer le contrôle « {libelle} » ?&#10;&#10;Toutes les lignes saisies seront perdues. Cette action est irréversible.'
+        => '¿Eliminar la inspección «{libelle}»?&#10;&#10;Se perderán todas las líneas introducidas. Esta acción es irreversible.',
+    'Terminer — ouvrir la fiche contrôle'
+        => 'Terminar — abrir la ficha de inspección',
+    'Tous les emplacements'
+        => 'Todas las ubicaciones',
+    'Toutes les catégories'
+        => 'Todas las categorías',
+    'Une erreur est survenue lors de la suppression. Merci de réessayer.'
+        => 'Se ha producido un error al eliminar. Inténtelo de nuevo.',
+    'Voir / Modifier'
+        => 'Ver / Modificar',
+    'Voir le PDF'
+        => 'Ver el PDF',
+    'Vous avez déjà un contrôle en cours. Terminez-le avant d\'en créer un nouveau.'
+        => 'Ya tiene una inspección en curso. Termínela antes de crear otra.',
+    'Vous n\'avez pas les droits pour clôturer ce contrôle.'
+        => 'No tiene permisos para cerrar esta inspección.',
+    'Vous n\'avez pas les droits pour modifier ce contrôle.'
+        => 'No tiene permisos para modificar esta inspección.',
+    'Vous n\'avez pas les droits pour supprimer ce contrôle.'
+        => 'No tiene permisos para eliminar esta inspección.',
 ];

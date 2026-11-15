@@ -903,8 +903,9 @@ installeur et guide utilisateur ; la CLI reste en français).
 |---|---|---|
 | 1 | Infrastructure, sélecteur, bandeau (`_layout.twig`) | PR #123 |
 | 2 | Connexion, double authentification, mot de passe oublié, sécurité du compte (+ `passkey.js`) | PR #124 |
-| 3 | Équipements (liste, fiche, formulaire, modification groupée), `EquipementStatut`, `DissociationLot`, `RegroupementLot` | PR en cours |
-| 4+ | Contrôles, acquisitions, prêts, administration, autres enums, emails, PDF/CSV/étiquettes | à faire |
+| 3 | Équipements (liste, fiche, formulaire, modification groupée), `EquipementStatut`, `DissociationLot`, `RegroupementLot` | PR #125 |
+| 4 | Contrôles (liste, saisie, ligne, scanner), journaux de contrôle, `ControleLigneStatut` | PR en cours |
+| 5+ | Acquisitions, prêts, administration, autres enums, emails, PDF/CSV/étiquettes | à faire |
 | — | Installeur (`setup/`), guide (`docs/guide_utilisateur.md`) | à faire |
 
 ## Règles de travail établies

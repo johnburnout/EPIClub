@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Epiclub\Enum;
 
+use Epiclub\Engine\Traducteur;
+
 /**
  * Statuts possibles d'une ligne de contrôle.
  *
@@ -33,11 +35,11 @@ enum ControleLigneStatut: string
     public function label(): string
     {
         return match ($this) {
-            self::A_CONTROLER  => 'À contrôler',
-            self::CONTROLE_OK  => 'Contrôle OK',
-            self::CONTROLE_KO  => 'Contrôle KO',
-            self::HORS_SERVICE => 'Hors service',
-            self::EGARE        => 'Égaré',
+            self::A_CONTROLER  => Traducteur::t('À contrôler'),
+            self::CONTROLE_OK  => Traducteur::t('Contrôle OK'),
+            self::CONTROLE_KO  => Traducteur::t('Contrôle KO'),
+            self::HORS_SERVICE => Traducteur::t('Hors service'),
+            self::EGARE        => Traducteur::t('Égaré'),
         };
     }
 

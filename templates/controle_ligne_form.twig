@@ -1,30 +1,30 @@
 {% extends "_layout.twig" %}
 
 {% block body %}
-    <h3>Modifier la ligne de contrôle</h3>
+    <h3>{{ 'Modifier la ligne de contrôle'|trans }}</h3>
     <hr>
 
-    <p><strong>Équipement :</strong> {{ ligne.reference }} - {{ ligne.libelle }}</p>
+    <p>{{ '<strong>Équipement :</strong> {reference} - {libelle}'|trans({reference: (ligne.reference)|e, libelle: (ligne.libelle)|e})|raw }}</p>
 
     {# ⬇️ AFFICHAGE DE LA PHOTO #}
     {% if ligne.photo is defined and ligne.photo is not empty %}
         <div class="mb-3">
-            <img src="{{ ligne.photo }}" alt="Photo de l'équipement" style="max-width: 100px; max-height: 100px;" class="img-thumbnail">
+            <img src="{{ ligne.photo }}" alt="{{ "Photo de l'équipement"|trans }}" style="max-width: 100px; max-height: 100px;" class="img-thumbnail">
         </div>
     {% else %}
-        <p class="text-muted small">Aucune photo disponible</p>
+        <p class="text-muted small">{{ 'Aucune photo disponible'|trans }}</p>
     {% endif %}
 
     <form method="post">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <div class="mb-3">
-            <label for="statut" class="form-label">Statut</label>
+            <label for="statut" class="form-label">{{ 'Statut'|trans }}</label>
             <select name="statut" id="statut" class="form-select">
-                <option value="a_controler" {% if ligne.statut == 'a_controler' %}selected{% endif %}>À contrôler</option>
-                <option value="controle_ok" {% if ligne.statut == 'controle_ok' %}selected{% endif %}>OK</option>
-                <option value="controle_ko" {% if ligne.statut == 'controle_ko' %}selected{% endif %}>KO</option>
-                <option value="hors_service" {% if ligne.statut == 'hors_service' %}selected{% endif %}>Hors service</option>
-                <option value="egare" {% if ligne.statut == 'egare' %}selected{% endif %}>Égaré (matériel introuvable)</option>
+                <option value="a_controler" {% if ligne.statut == 'a_controler' %}selected{% endif %}>{{ 'À contrôler'|trans }}</option>
+                <option value="controle_ok" {% if ligne.statut == 'controle_ok' %}selected{% endif %}>{{ 'OK'|trans }}</option>
+                <option value="controle_ko" {% if ligne.statut == 'controle_ko' %}selected{% endif %}>{{ 'KO'|trans }}</option>
+                <option value="hors_service" {% if ligne.statut == 'hors_service' %}selected{% endif %}>{{ 'Hors service'|trans }}</option>
+                <option value="egare" {% if ligne.statut == 'egare' %}selected{% endif %}>{{ 'Égaré (matériel introuvable)'|trans }}</option>
             </select>
         </div>
 
@@ -32,31 +32,28 @@
         <div class="mb-3 form-check border rounded p-2 ps-5 bg-light">
             <input type="checkbox" class="form-check-input" id="textile_remplace" name="textile_remplace" value="1"
                 {% if ligne.textile_remplace|default(false) %}checked{% endif %}>
-            <label class="form-check-label" for="textile_remplace"><strong>Élément textile remplacé</strong></label>
+            <label class="form-check-label" for="textile_remplace"><strong>{{ 'Élément textile remplacé'|trans }}</strong></label>
             <small class="form-text text-muted d-block">
-                Équipement en maintenance avec élément textile remplaçable. Avec le statut <strong>OK</strong>,
-                la date de fin d'utilisation deviendra, à la clôture du contrôle, la date du contrôle + 10 ans
-                (dernier jour du mois).
-            </small>
+                {{ "Équipement en maintenance avec élément textile remplaçable. Avec le statut <strong>OK</strong>, la date de fin d'utilisation deviendra, à la clôture du contrôle, la date du contrôle + 10 ans (dernier jour du mois)."|trans|raw }} </small>
         </div>
         {% endif %}
 
         <div class="mb-3">
-            <label for="date_controle" class="form-label">Date du contrôle</label>
+            <label for="date_controle" class="form-label">{{ 'Date du contrôle'|trans }}</label>
             <input type="datetime-local" name="date_controle" id="date_controle" class="form-control"
                 value="{{ ligne.date_controle ? ligne.date_controle|date('Y-m-d\\TH:i') : '' }}">
         </div>
 
         <div class="mb-3">
-            <label for="remarque" class="form-label">Remarque</label>
+            <label for="remarque" class="form-label">{{ 'Remarque'|trans }}</label>
             <textarea name="remarque" id="remarque" class="form-control" rows="3">{{ ligne.remarque }}</textarea>
         </div>
 
-        <button type="submit" class="btn btn-primary">Enregistrer</button>
+        <button type="submit" class="btn btn-primary">{{ 'Enregistrer'|trans }}</button>
         {% if retour_scanner|default(false) %}
-            <a href="/controles/scanner" class="btn btn-secondary">Retour au scanner</a>
+            <a href="/controles/scanner" class="btn btn-secondary">{{ 'Retour au scanner'|trans }}</a>
         {% else %}
-            <a href="/admin/controles/edit/{{ ligne.controle_id }}" class="btn btn-secondary">Annuler</a>
+            <a href="/admin/controles/edit/{{ ligne.controle_id }}" class="btn btn-secondary">{{ 'Annuler'|trans }}</a>
         {% endif %}
     </form>
 {% endblock %}
