@@ -3,16 +3,16 @@
 {% extends "_layout.twig" %}
 
 {% block body %}
-	<h3>📋 Journaux de contrôle</h3>
+	<h3>📋 {{ 'Journaux de contrôle'|trans }}</h3>
     <hr>
 
     <!-- Filtres + Tri + Limite -->
     <form method="get" class="mb-3">
         <div class="row g-3">
             <div class="col-md-3">
-                <label for="controleur" class="form-label">Contrôleur</label>
+                <label for="controleur" class="form-label">{{ 'Contrôleur'|trans }}</label>
                 <select name="controleur" id="controleur" class="form-select">
-                    <option value="">Tous</option>
+                    <option value="">{{ 'Tous'|trans }}</option>
                     {% for controleur in controleurs|tri_alpha(['prenom', 'nom']) %}
                     <option value="{{ controleur.id }}" {% if filtres.controleur_id == controleur.id %}selected{% endif %}>
                         {{ controleur.prenom }} {{ controleur.nom }}
@@ -22,9 +22,9 @@
             </div>
             
             <div class="col-md-2">
-                <label for="annee" class="form-label">Année</label>
+                <label for="annee" class="form-label">{{ 'Année'|trans }}</label>
                 <select name="annee" id="annee" class="form-select">
-                    <option value="">Toutes</option>
+                    <option value="">{{ 'Toutes'|trans }}</option>
                     {% for annee in annees %}
                     <option value="{{ annee }}" {% if filtres.annee == annee %}selected{% endif %}>
                         {{ annee }}
@@ -34,25 +34,25 @@
             </div>
             
             <div class="col-md-2">
-                <label for="order_by" class="form-label">Trier par</label>
+                <label for="order_by" class="form-label">{{ 'Trier par'|trans }}</label>
                 <select name="order_by" id="order_by" class="form-select">
-                    <option value="date_debut" {% if filtres.order_by == 'date_debut' %}selected{% endif %}>Date de début</option>
-                    <option value="date_fin" {% if filtres.order_by == 'date_fin' %}selected{% endif %}>Date de fin</option>
-                    <option value="controleur" {% if filtres.order_by == 'controleur' %}selected{% endif %}>Contrôleur</option>
+                    <option value="date_debut" {% if filtres.order_by == 'date_debut' %}selected{% endif %}>{{ 'Date de début'|trans }}</option>
+                    <option value="date_fin" {% if filtres.order_by == 'date_fin' %}selected{% endif %}>{{ 'Date de fin'|trans }}</option>
+                    <option value="controleur" {% if filtres.order_by == 'controleur' %}selected{% endif %}>{{ 'Contrôleur'|trans }}</option>
                 </select>
             </div>
             
             <div class="col-md-2">
-                <label for="order_dir" class="form-label">Ordre</label>
+                <label for="order_dir" class="form-label">{{ 'Ordre'|trans }}</label>
                 <select name="order_dir" id="order_dir" class="form-select">
-                    <option value="asc" {% if filtres.order_dir == 'asc' %}selected{% endif %}>Croissant</option>
-                    <option value="desc" {% if filtres.order_dir == 'desc' %}selected{% endif %}>Décroissant</option>
+                    <option value="asc" {% if filtres.order_dir == 'asc' %}selected{% endif %}>{{ 'Croissant'|trans }}</option>
+                    <option value="desc" {% if filtres.order_dir == 'desc' %}selected{% endif %}>{{ 'Décroissant'|trans }}</option>
                 </select>
             </div>
             
             {% if pagination.total > 10 %}
             <div class="col-md-2">
-                <label for="limit" class="form-label">Lignes par page</label>
+                <label for="limit" class="form-label">{{ 'Lignes par page'|trans }}</label>
                 <select name="limit" id="limit" class="form-select" data-auto-submit>
                     <option value="10" {% if filtres.limit == 10 %}selected{% endif %}>10</option>
                     <option value="25" {% if filtres.limit == 25 %}selected{% endif %}>25</option>
@@ -63,7 +63,7 @@
             {% endif %}
             
             <div class="col-md-1 d-flex align-items-end">
-                <button type="submit" class="btn btn-secondary w-100">Filtrer</button>
+                <button type="submit" class="btn btn-secondary w-100">{{ 'Filtrer'|trans }}</button>
             </div>
         </div>
     </form>
@@ -73,13 +73,13 @@
     <table class="table table-striped">
 		<thead>
 			<tr>
-				<th>ID</th>
-				<th>Contrôleur</th>
-				<th>Date début</th>
-				<th>Date fin</th>
-				<th>Équipements</th>
-				<th>Remarques</th>
-				<th>Actions</th>
+				<th>{{ 'ID'|trans }}</th>
+				<th>{{ 'Contrôleur'|trans }}</th>
+				<th>{{ 'Date début'|trans }}</th>
+				<th>{{ 'Date fin'|trans }}</th>
+				<th>{{ 'Équipements'|trans }}</th>
+				<th>{{ 'Remarques'|trans }}</th>
+				<th>{{ 'Actions'|trans }}</th>
 			</tr>
 		</thead>
         <tbody>
@@ -100,19 +100,19 @@
                     </td>
                     <td>
                         {% if controle.hash_remarques %}
-                            <span class="badge bg-warning text-dark">Avec remarques</span>
+                            <span class="badge bg-warning text-dark">{{ 'Avec remarques'|trans }}</span>
                         {% else %}
                             <span class="text-muted">-</span>
                         {% endif %}
                     </td>
                     <td>
-                        <a href="/journaux/{{ controle.id }}" class="btn btn-sm btn-primary">Voir</a>
+                        <a href="/journaux/{{ controle.id }}" class="btn btn-sm btn-primary">{{ 'Voir'|trans }}</a>
                     </td>
                 </tr>
             {% else %}
                 <tr>
                     <td colspan="7" class="text-center text-muted py-4">
-                        <i>Aucun journal de contrôle disponible</i>
+                        <i>{{ 'Aucun journal de contrôle disponible'|trans }}</i>
                     </td>
                 </tr>
             {% endfor %}
@@ -123,28 +123,28 @@
     {% if pagination.total > 10 %}
     <div class="row mt-3">
         <div class="col-md-12">
-            <nav aria-label="Pagination">
+            <nav aria-label="{{ 'Pagination'|trans }}">
                 <ul class="pagination">
                     {% if pagination.hasPrevious %}
-                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.first }}">Premier</a></li>
-                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.previous }}">Précédent</a></li>
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.first }}">{{ 'Premier'|trans }}</a></li>
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.previous }}">{{ 'Précédent'|trans }}</a></li>
                     {% else %}
-                    <li class="page-item disabled"><span class="page-link">Premier</span></li>
-                    <li class="page-item disabled"><span class="page-link">Précédent</span></li>
+                    <li class="page-item disabled"><span class="page-link">{{ 'Premier'|trans }}</span></li>
+                    <li class="page-item disabled"><span class="page-link">{{ 'Précédent'|trans }}</span></li>
                     {% endif %}
                     
-                    <li class="page-item disabled"><span class="page-link">Page {{ pagination.page }} sur {{ pagination.totalPages }}</span></li>
+                    <li class="page-item disabled"><span class="page-link">{{ 'Page {page} sur {totalPages}'|trans({page: pagination.page, totalPages: pagination.totalPages}) }}</span></li>
                     
                     {% if pagination.hasNext %}
-                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.next }}">Suivant</a></li>
-                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.last }}">Dernier</a></li>
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.next }}">{{ 'Suivant'|trans }}</a></li>
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.last }}">{{ 'Dernier'|trans }}</a></li>
                     {% else %}
-                    <li class="page-item disabled"><span class="page-link">Suivant</span></li>
-                    <li class="page-item disabled"><span class="page-link">Dernier</span></li>
+                    <li class="page-item disabled"><span class="page-link">{{ 'Suivant'|trans }}</span></li>
+                    <li class="page-item disabled"><span class="page-link">{{ 'Dernier'|trans }}</span></li>
                     {% endif %}
                 </ul>
             </nav>
-            <p class="text-muted">Affichage de {{ journaux|length }} journaux sur {{ pagination.total }} (page {{ pagination.page }}/{{ pagination.totalPages }})</p>
+            <p class="text-muted">{{ 'Affichage de {journaux} journaux sur {total} (page {page}/{totalPages})'|trans({journaux: (journaux|length), total: pagination.total, page: pagination.page, totalPages: pagination.totalPages}) }}</p>
         </div>
     </div>
     {% endif %}

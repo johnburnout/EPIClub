@@ -3,28 +3,23 @@
 {% block body %}
 
 	{% if controle %}
-		<h3>📷 Scanner — contrôle « {{ controle.libelle }} »</h3>
+		<h3>📷 {{ 'Scanner — contrôle « {libelle} »'|trans({libelle: controle.libelle}) }}</h3>
 	{% else %}
-		<h3>📷 Scanner un équipement</h3>
+		<h3>📷 {{ 'Scanner un équipement'|trans }}</h3>
 	{% endif %}
 	<hr>
 
 	<div id="scanner-alerte-https" class="alert alert-danger" style="display:none; max-width: 40rem;">
-		<strong>Caméra indisponible :</strong> le navigateur n'autorise la caméra que sur une
-		page servie en <strong>HTTPS</strong> (ou en localhost). Demandez à l'administrateur
-		d'activer HTTPS sur le serveur du club — le scan par l'appareil photo natif du
-		téléphone reste possible en attendant.
+		{{ "<strong>Caméra indisponible :</strong> le navigateur n'autorise la caméra que sur une page servie en <strong>HTTPS</strong> (ou en localhost). Demandez à l'administrateur d'activer HTTPS sur le serveur du club — le scan par l'appareil photo natif du téléphone reste possible en attendant."|trans|raw }}
 	</div>
 
 	{% if controle %}
 		<div class="alert alert-info" style="max-width: 40rem;">
-			Contrôle ouvert : <strong>{{ controle.libelle }}</strong> — chaque équipement
-			scanné est ajouté au contrôle et sa <strong>fiche contrôle</strong> s'ouvre ;
-			après enregistrement, vous revenez ici pour scanner le suivant.
+			{{ "Contrôle ouvert : <strong>{libelle}</strong> — chaque équipement scanné est ajouté au contrôle et sa <strong>fiche contrôle</strong> s'ouvre ; après enregistrement, vous revenez ici pour scanner le suivant."|trans({libelle: (controle.libelle)|e})|raw }}
 		</div>
 	{% else %}
 		<div class="alert alert-info" style="max-width: 40rem;">
-			Aucun contrôle ouvert : le scan vous mènera à la fiche de l'équipement.
+			{{ "Aucun contrôle ouvert : le scan vous mènera à la fiche de l'équipement."|trans }}
 		</div>
 	{% endif %}
 
@@ -35,10 +30,10 @@
 	<div id="scan-messages" class="mt-3" style="max-width: 40rem;"></div>
 
 	{% if controle %}
-		<h6 class="mt-3">Équipements scannés pendant cette session :</h6>
+		<h6 class="mt-3">{{ 'Équipements scannés pendant cette session :'|trans }}</h6>
 		<ul id="scan-liste" class="list-group" style="max-width: 40rem;"></ul>
 		<div class="mt-3">
-			<a href="/admin/controles/edit/{{ controle.id }}" class="btn btn-primary">✅ Terminer — ouvrir la fiche contrôle</a>
+			<a href="/admin/controles/edit/{{ controle.id }}" class="btn btn-primary">✅ {{ 'Terminer — ouvrir la fiche contrôle'|trans }}</a>
 		</div>
 	{% endif %}
 
@@ -131,27 +126,27 @@
 						bip(data.statut === 'ajoute');
 						afficher(data.statut === 'ajoute' ? 'success' : 'warning',
 							(data.statut === 'ajoute' ? '✅ ' : '⚠️ ') + data.reference + ' — ' + data.libelle
-							+ (data.statut === 'ajoute' ? ' : ajouté au contrôle.' : ' : déjà dans le contrôle.')
-							+ ' Ouverture de la fiche…');
+							+ (data.statut === 'ajoute' ? {{ ' : ajouté au contrôle.'|trans|json_encode|raw }} : {{ ' : déjà dans le contrôle.'|trans|json_encode|raw }})
+							+ ' ' + {{ 'Ouverture de la fiche…'|trans|json_encode|raw }});
 						scanner.stop().catch(() => {}).finally(() => { window.location.href = data.redirect; });
 						return;
 					}
 					if (data.statut === 'ajoute') {
 						bip(true);
-						afficher('success', '✅ ' + data.reference + ' — ' + data.libelle + ' : ajouté au contrôle.');
+						afficher('success', '✅ ' + data.reference + ' — ' + data.libelle + {{ ' : ajouté au contrôle.'|trans|json_encode|raw }});
 						ajouterALaListe('✅ ' + data.reference + ' — ' + data.libelle, false);
 					} else if (data.statut === 'deja') {
 						bip(false);
-						afficher('warning', '⚠️ ' + data.reference + ' — ' + data.libelle + ' : déjà dans le contrôle.');
-						ajouterALaListe('⚠️ ' + data.reference + ' — ' + data.libelle + ' (déjà présent)', true);
+						afficher('warning', '⚠️ ' + data.reference + ' — ' + data.libelle + {{ ' : déjà dans le contrôle.'|trans|json_encode|raw }});
+						ajouterALaListe('⚠️ ' + data.reference + ' — ' + data.libelle + ' ' + {{ '(déjà présent)'|trans|json_encode|raw }}, true);
 					} else {
 						bip(false);
-						afficher('danger', '❌ ' + (data.message || 'Erreur lors du scan.'));
+						afficher('danger', '❌ ' + (data.message || {{ 'Erreur lors du scan.'|trans|json_encode|raw }}));
 					}
 				})
 				.catch(() => {
 					bip(false);
-					afficher('danger', '❌ Erreur réseau — vérifiez la connexion et réessayez.');
+					afficher('danger', '❌ ' + {{ 'Erreur réseau — vérifiez la connexion et réessayez.'|trans|json_encode|raw }});
 				})
 				.finally(() => { enCours = false; });
 		}
@@ -163,7 +158,7 @@
 			onScanSuccess,
 			undefined // erreurs de lecture frame à frame : ignorées
 		).catch(() => {
-			afficher('danger', 'Impossible d\'accéder à la caméra. Vérifiez les autorisations du navigateur.');
+			afficher('danger', {{ "Impossible d'accéder à la caméra. Vérifiez les autorisations du navigateur."|trans|json_encode|raw }});
 		});
 	})();
 	</script>

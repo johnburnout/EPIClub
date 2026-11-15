@@ -1024,4 +1024,240 @@ return [
     // --- Équipements (libellés de champ) ---
     'Date de fin d\'utilisation'
         => 'End-of-use date',
+
+    // --- Contrôles et journaux ---
+    ' : ajouté au contrôle.'
+        => ': added to the inspection.',
+    ' : déjà dans le contrôle.'
+        => ': already in the inspection.',
+    '(certains équipements sont encore marqués « À contrôler »)'
+        => '(some items are still marked “To inspect”)',
+    '(déjà présent)'
+        => '(already present)',
+    '(non modifiable)'
+        => '(cannot be changed)',
+    '{reference} est prêté : il ne peut être contrôlé qu\'après son retour.'
+        => '{reference} is on loan: it can only be inspected after it is returned.',
+    '<strong>⚠️ Attention :</strong> Vous modifiez un contrôle qui ne vous appartient pas (contrôleur : {controleur_nom}). Vous pouvez le modifier car il date d\'au moins la veille.'
+        => '<strong>⚠️ Warning:</strong> You are editing an inspection that is not yours (inspector: {controleur_nom}). You can edit it because it dates from yesterday or earlier.',
+    '<strong>🔒 Lecture seule :</strong> Ce contrôle est clôturé, vous ne pouvez pas le modifier.'
+        => '<strong>🔒 Read only:</strong> This inspection is closed, you cannot edit it.',
+    '<strong>ℹ️ Lecture seule :</strong> Ce contrôle est ouvert mais vous ne disposez pas des droits pour le modifier.'
+        => '<strong>ℹ️ Read only:</strong> This inspection is open but you do not have the rights to edit it.',
+    '<strong>Caméra indisponible :</strong> le navigateur n\'autorise la caméra que sur une page servie en <strong>HTTPS</strong> (ou en localhost). Demandez à l\'administrateur d\'activer HTTPS sur le serveur du club — le scan par l\'appareil photo natif du téléphone reste possible en attendant.'
+        => '<strong>Camera unavailable:</strong> the browser only allows the camera on a page served over <strong>HTTPS</strong> (or on localhost). Ask the administrator to enable HTTPS on the club\'s server — in the meantime you can still scan with the phone\'s own camera app.',
+    '<strong>Contrôleur :</strong> {controleur_nom}'
+        => '<strong>Inspector:</strong> {controleur_nom}',
+    '<strong>Début :</strong> {date_debut}'
+        => '<strong>Start:</strong> {date_debut}',
+    '<strong>Équipement :</strong> {reference} - {libelle}'
+        => '<strong>Item:</strong> {reference} - {libelle}',
+    'Admin'
+        => 'Admin',
+    'Affichage de {controles} contrôles sur {total} (page {page}/{totalPages})'
+        => 'Showing {controles} inspections out of {total} (page {page}/{totalPages})',
+    'Affichage de {equipements_disponibles} équipements sur {total} (page {page}/{totalPages})'
+        => 'Showing {equipements_disponibles} items out of {total} (page {page}/{totalPages})',
+    'Affichage de {journaux} journaux sur {total} (page {page}/{totalPages})'
+        => 'Showing {journaux} logs out of {total} (page {page}/{totalPages})',
+    'Affichage de {lignes} lignes sur {total} (page {page}/{totalPages})'
+        => 'Showing {lignes} rows out of {total} (page {page}/{totalPages})',
+    'Ajouter des équipements'
+        => 'Add items',
+    'Année'
+        => 'Year',
+    'Aucun contrôle ouvert : le scan vous mènera à la fiche de l\'équipement.'
+        => 'No open inspection: scanning will take you to the item\'s record.',
+    'Aucun équipement ajouté à ce contrôle.'
+        => 'No item added to this inspection.',
+    'Aucun équipement contrôlé dans ce journal'
+        => 'No item inspected in this log',
+    'Aucun équipement disponible à ajouter.'
+        => 'No item available to add.',
+    'Aucun journal de contrôle disponible'
+        => 'No inspection log available',
+    'Aucune photo disponible'
+        => 'No photo available',
+    'Avec remarques'
+        => 'With remarks',
+    'Ce contrôle est clôturé, vous ne pouvez pas modifier les lignes.'
+        => 'This inspection is closed, you cannot edit its rows.',
+    'Ces remarques seront affichées dans le journal du contrôle.'
+        => 'These remarks will be shown in the inspection log.',
+    'Cet équipement'
+        => 'This item',
+    'Clôturé'
+        => 'Closed',
+    'Clôturer'
+        => 'Close',
+    'Clôturer ce contrôle ?'
+        => 'Close this inspection?',
+    'Clôturer ce contrôle ? Les remarques seront chiffrées et le contrôle ne sera plus modifiable.'
+        => 'Close this inspection? The remarks will be encrypted and the inspection can no longer be edited.',
+    'Clôturer le contrôle'
+        => 'Close the inspection',
+    'Contrôle : {libelle}'
+        => 'Inspection: {libelle}',
+    'Contrôle clôturé avec succès (remarques chiffrées).'
+        => 'Inspection closed successfully (remarks encrypted).',
+    'Contrôle créé avec succès.'
+        => 'Inspection created successfully.',
+    'Contrôle de {reference} enregistré.'
+        => 'Inspection of {reference} saved.',
+    'Contrôle du {date}'
+        => 'Inspection of {date}',
+    'Contrôle KO'
+        => 'Inspection failed',
+    'Contrôle non trouvé.'
+        => 'Inspection not found.',
+    'Contrôle OK'
+        => 'Inspection OK',
+    'Contrôle ouvert : <strong>{libelle}</strong> — chaque équipement scanné est ajouté au contrôle et sa <strong>fiche contrôle</strong> s\'ouvre ; après enregistrement, vous revenez ici pour scanner le suivant.'
+        => 'Open inspection: <strong>{libelle}</strong> — each scanned item is added to the inspection and its <strong>inspection form</strong> opens; after saving, you come back here to scan the next one.',
+    'Contrôler'
+        => 'Inspect',
+    'Contrôleur :'
+        => 'Inspector:',
+    'Créé par :'
+        => 'Created by:',
+    'Date de début'
+        => 'Start date',
+    'Date début'
+        => 'Start date',
+    'Date début :'
+        => 'Start date:',
+    'Date du contrôle'
+        => 'Inspection date',
+    'Date fin'
+        => 'End date',
+    'Date fin :'
+        => 'End date:',
+    'Début'
+        => 'Start',
+    'Des équipements sont encore à contrôler'
+        => 'Some items still need inspecting',
+    'Des équipements sont encore marqués « À contrôler »'
+        => 'Some items are still marked “To inspect”',
+    'Désignation'
+        => 'Description',
+    'Égaré (matériel introuvable)'
+        => 'Lost (item cannot be found)',
+    'Élément textile remplacé'
+        => 'Textile component replaced',
+    'En ligne'
+        => 'Online',
+    'Enregistrer les remarques'
+        => 'Save remarks',
+    'Équipement en maintenance avec élément textile remplaçable. Avec le statut <strong>OK</strong>, la date de fin d\'utilisation deviendra, à la clôture du contrôle, la date du contrôle + 10 ans (dernier jour du mois).'
+        => 'Item under maintenance with a replaceable textile component. With the <strong>OK</strong> status, the end-of-use date will become, when the inspection is closed, the inspection date + 10 years (last day of the month).',
+    'Équipements'
+        => 'Items',
+    'Équipements contrôlés'
+        => 'Inspected items',
+    'Équipements déjà dans le contrôle'
+        => 'Items already in the inspection',
+    'Équipements scannés pendant cette session :'
+        => 'Items scanned during this session:',
+    'Erreur lors du scan.'
+        => 'Error while scanning.',
+    'Erreur réseau — vérifiez la connexion et réessayez.'
+        => 'Network error — check the connection and try again.',
+    'Filtrer'
+        => 'Filter',
+    'Fin'
+        => 'End',
+    'ID'
+        => 'ID',
+    'Identifiant du journal manquant'
+        => 'Missing log identifier',
+    'Impossible d\'accéder à la caméra. Vérifiez les autorisations du navigateur.'
+        => 'Cannot access the camera. Check the browser permissions.',
+    'Impossible de clôturer : des équipements sont encore marqués "À contrôler".'
+        => 'Cannot close: some items are still marked "To inspect".',
+    'Impossible de clôturer : le contrôleur est actuellement en ligne.'
+        => 'Cannot close: the inspector is currently online.',
+    'Impossible de supprimer un contrôle clôturé (l\'historique doit être conservé).'
+        => 'A closed inspection cannot be deleted (the history must be kept).',
+    'Informations du contrôle'
+        => 'Inspection details',
+    'Jamais'
+        => 'Never',
+    'Jeton de sécurité invalide, rechargez la page.'
+        => 'Invalid security token, reload the page.',
+    'Journal de contrôle #{id}'
+        => 'Inspection log #{id}',
+    'Journal de contrôle non trouvé'
+        => 'Inspection log not found',
+    'Journaux de contrôle'
+        => 'Inspection logs',
+    'KO'
+        => 'Failed',
+    'l\'équipement'
+        => 'the item',
+    'Le contrôle a été supprimé.'
+        => 'The inspection has been deleted.',
+    'Le contrôleur est actuellement en ligne'
+        => 'The inspector is currently online',
+    'Lecture seule'
+        => 'Read only',
+    'Liste des contrôles'
+        => 'Inspections',
+    'Liste des équipements disponibles (non encore ajoutés à ce contrôle)'
+        => 'Available items (not yet added to this inspection)',
+    'Modifiable par admin (contrôle d\'avant-hier ou plus)'
+        => 'Editable by an admin (inspection from two days ago or earlier)',
+    'Modifié par admin'
+        => 'Edited by an admin',
+    'Modifier (admin)'
+        => 'Edit (admin)',
+    'Modifier la ligne de contrôle'
+        => 'Edit the inspection row',
+    'OK'
+        => 'OK',
+    'Ouvert'
+        => 'Open',
+    'Ouverture de la fiche…'
+        => 'Opening the record…',
+    'Pagination disponibles'
+        => 'Available items pagination',
+    'Pagination lignes'
+        => 'Rows pagination',
+    'QR code invalide.'
+        => 'Invalid QR code.',
+    'Remarques générales'
+        => 'General remarks',
+    'Remarques générales :'
+        => 'General remarks:',
+    'Remarques générales mises à jour.'
+        => 'General remarks updated.',
+    'Retour au scanner'
+        => 'Back to the scanner',
+    'Scanner — contrôle « {libelle} »'
+        => 'Scanner — inspection “{libelle}”',
+    'Supprimer ce contrôle ?&#10;&#10;Toutes les lignes saisies seront perdues. Cette action est irréversible.'
+        => 'Delete this inspection?&#10;&#10;All entered rows will be lost. This cannot be undone.',
+    'Supprimer le contrôle'
+        => 'Delete the inspection',
+    'Supprimer le contrôle « {libelle} » ?&#10;&#10;Toutes les lignes saisies seront perdues. Cette action est irréversible.'
+        => 'Delete the inspection “{libelle}”?&#10;&#10;All entered rows will be lost. This cannot be undone.',
+    'Terminer — ouvrir la fiche contrôle'
+        => 'Finish — open the inspection form',
+    'Tous les emplacements'
+        => 'All locations',
+    'Toutes les catégories'
+        => 'All categories',
+    'Une erreur est survenue lors de la suppression. Merci de réessayer.'
+        => 'An error occurred while deleting. Please try again.',
+    'Voir / Modifier'
+        => 'View / Edit',
+    'Voir le PDF'
+        => 'View PDF',
+    'Vous avez déjà un contrôle en cours. Terminez-le avant d\'en créer un nouveau.'
+        => 'You already have an inspection in progress. Finish it before creating a new one.',
+    'Vous n\'avez pas les droits pour clôturer ce contrôle.'
+        => 'You do not have the rights to close this inspection.',
+    'Vous n\'avez pas les droits pour modifier ce contrôle.'
+        => 'You do not have the rights to edit this inspection.',
+    'Vous n\'avez pas les droits pour supprimer ce contrôle.'
+        => 'You do not have the rights to delete this inspection.',
 ];

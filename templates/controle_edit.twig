@@ -1,45 +1,43 @@
 {% extends "_layout.twig" %}
 
 {% block body %}
-<h3>Contrôle : {{ controle.libelle }}</h3>
+<h3>{{ 'Contrôle : {libelle}'|trans({libelle: controle.libelle}) }}</h3>
 <hr>
 
 {% if readonly %}
 <div class="alert alert-info">
     {% if controle.statut == 'cloture' %}
-    <strong>🔒 Lecture seule :</strong> Ce contrôle est clôturé, vous ne pouvez pas le modifier.
+    {{ '<strong>🔒 Lecture seule :</strong> Ce contrôle est clôturé, vous ne pouvez pas le modifier.'|trans|raw }}
     {% else %}
-    <strong>ℹ️ Lecture seule :</strong> Ce contrôle est ouvert mais vous ne disposez pas des droits pour le modifier.
+    {{ '<strong>ℹ️ Lecture seule :</strong> Ce contrôle est ouvert mais vous ne disposez pas des droits pour le modifier.'|trans|raw }}
     {% endif %}
 </div>
 {% endif %}
 
 {% if isAdminEdit and not readonly %}
     <div class="alert alert-warning">
-        <strong>⚠️ Attention :</strong> Vous modifiez un contrôle qui ne vous appartient pas 
-        (contrôleur : {{ controle.controleur_nom ?? controle.controleur_id }}). 
-        Vous pouvez le modifier car il date d'au moins la veille.
+        {{ "<strong>⚠️ Attention :</strong> Vous modifiez un contrôle qui ne vous appartient pas (contrôleur : {controleur_nom}). Vous pouvez le modifier car il date d'au moins la veille."|trans({controleur_nom: (controle.controleur_nom ?? controle.controleur_id)|e})|raw }}
     </div>
 {% endif %}
 
 <div class="row mb-3">
     <div class="col-md-4">
-        <strong>Début :</strong> {{ controle.date_debut|date('d/m/Y H:i') }}
+        {{ '<strong>Début :</strong> {date_debut}'|trans({date_debut: (controle.date_debut|date('d/m/Y H:i'))|e})|raw }}
     </div>
     <div class="col-md-4">
-        <strong>Statut :</strong>
+        <strong>{{ 'Statut :'|trans }}</strong>
         {% if controle.statut == 'ouvert' %}
-        <span class="badge bg-primary">Ouvert</span>
+        <span class="badge bg-primary">{{ 'Ouvert'|trans }}</span>
         {% elseif controle.statut == 'en_cours' %}
-        <span class="badge bg-warning">En cours</span>
+        <span class="badge bg-warning">{{ 'En cours'|trans }}</span>
         {% elseif controle.statut == 'cloture' %}
-        <span class="badge bg-success">Clôturé</span>
+        <span class="badge bg-success">{{ 'Clôturé'|trans }}</span>
         {% endif %}
     </div>
     <div class="col-md-4">
-        <strong>Contrôleur :</strong> {{ controle.controleur_nom ?? controle.controleur_id }}
+        {{ '<strong>Contrôleur :</strong> {controleur_nom}'|trans({controleur_nom: (controle.controleur_nom ?? controle.controleur_id)|e})|raw }}
         {% if isAdminEdit %}
-            <span class="badge bg-warning text-dark">Modifié par admin</span>
+            <span class="badge bg-warning text-dark">{{ 'Modifié par admin'|trans }}</span>
         {% endif %}
     </div>
 </div>
@@ -48,7 +46,7 @@
 {% if readonly and controle.hash_remarques %}
 <div class="row mt-3">
     <div class="col-md-12">
-        <strong>Remarques générales :</strong>
+        <strong>{{ 'Remarques générales :'|trans }}</strong>
         <p class="mb-0">{{ controle.hash_remarques }}</p>
     </div>
 </div>
@@ -61,16 +59,16 @@
     <form method="post" class="mb-4">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <div class="mb-3">
-            <label for="remarques_generales" class="form-label">Remarques générales</label>
+            <label for="remarques_generales" class="form-label">{{ 'Remarques générales'|trans }}</label>
             <textarea name="remarques_generales" id="remarques_generales" class="form-control" rows="3">{{ controle.hash_remarques ?? '' }}</textarea>
-            <small class="text-muted">Ces remarques seront affichées dans le journal du contrôle.</small>
+            <small class="text-muted">{{ 'Ces remarques seront affichées dans le journal du contrôle.'|trans }}</small>
         </div>
-        <button type="submit" class="btn btn-primary">Enregistrer les remarques</button>
+        <button type="submit" class="btn btn-primary">{{ 'Enregistrer les remarques'|trans }}</button>
     </form>
     <hr>
 
-    <h4>Ajouter des équipements</h4>
-    <p>Liste des équipements disponibles (non encore ajoutés à ce contrôle)</p>
+    <h4>{{ 'Ajouter des équipements'|trans }}</h4>
+    <p>{{ 'Liste des équipements disponibles (non encore ajoutés à ce contrôle)'|trans }}</p>
 
     <!-- Filtres, tri et limite pour la liste des équipements disponibles -->
     <form method="get" class="mb-3">
@@ -78,9 +76,9 @@
         <!-- LIGNE 1 : Filtres -->
         <div class="row g-3">
             <div class="col-md-2">
-                <label for="categorie" class="form-label">Catégorie</label>
+                <label for="categorie" class="form-label">{{ 'Catégorie'|trans }}</label>
                 <select name="categorie" id="categorie" class="form-select">
-                    <option value="">Toutes les catégories</option>
+                    <option value="">{{ 'Toutes les catégories'|trans }}</option>
                     {% for categorie in categories|tri_alpha('libelle') %}
                     <option value="{{ categorie.id }}" {% if filtres.categorie_id == categorie.id %}selected{% endif %}>
                         {{ categorie.libelle }}
@@ -89,10 +87,10 @@
                 </select>
             </div>
             <div class="col-md-2">
-                <label for="emplacement" class="form-label">Emplacement</label>
+                <label for="emplacement" class="form-label">{{ 'Emplacement'|trans }}</label>
                 <select name="emplacement" id="emplacement" class="form-select">
-                    <option value="">Tous les emplacements</option>
-                    <option value="null" {% if filtres.emplacement_id == 'null' %}selected{% endif %}>Non défini</option>
+                    <option value="">{{ 'Tous les emplacements'|trans }}</option>
+                    <option value="null" {% if filtres.emplacement_id == 'null' %}selected{% endif %}>{{ 'Non défini'|trans }}</option>
                     {% for emplacement in emplacements|tri_alpha('libelle') %}
                     <option value="{{ emplacement.id }}" {% if filtres.emplacement_id == emplacement.id %}selected{% endif %}>
                         {{ emplacement.libelle }}
@@ -101,52 +99,52 @@
                 </select>
             </div>
             <div class="col-md-1">
-                <label for="epi" class="form-label">EPI</label>
+                <label for="epi" class="form-label">{{ 'EPI'|trans }}</label>
                 <select name="epi" id="epi" class="form-select">
-                    <option value="">Tous</option>
-                    <option value="1" {% if filtres.epi == '1' %}selected{% endif %}>Oui</option>
-                    <option value="0" {% if filtres.epi == '0' %}selected{% endif %}>Non</option>
+                    <option value="">{{ 'Tous'|trans }}</option>
+                    <option value="1" {% if filtres.epi == '1' %}selected{% endif %}>{{ 'Oui'|trans }}</option>
+                    <option value="0" {% if filtres.epi == '0' %}selected{% endif %}>{{ 'Non'|trans }}</option>
                 </select>
             </div>
             <div class="col-md-2">
-                <label for="en_service" class="form-label">Statut</label>
+                <label for="en_service" class="form-label">{{ 'Statut'|trans }}</label>
                 <select name="en_service" id="en_service" class="form-select">
-                    <option value="">Tous</option>
-                    <option value="oui" {% if filtres.en_service == 'oui' %}selected{% endif %}>En service</option>
-                    <option value="non" {% if filtres.en_service == 'non' %}selected{% endif %}>Hors service</option>
+                    <option value="">{{ 'Tous'|trans }}</option>
+                    <option value="oui" {% if filtres.en_service == 'oui' %}selected{% endif %}>{{ 'En service'|trans }}</option>
+                    <option value="non" {% if filtres.en_service == 'non' %}selected{% endif %}>{{ 'Hors service'|trans }}</option>
                 </select>
             </div>
             <!-- FILTRE : Dernier contrôle -->
             <div class="col-md-2">
-                <label for="dernier_controle" class="form-label">Dernier contrôle</label>
+                <label for="dernier_controle" class="form-label">{{ 'Dernier contrôle'|trans }}</label>
                 <select name="dernier_controle" id="dernier_controle" class="form-select">
-                    <option value="">Tous</option>
-                    <option value="plus_1_an" {% if filtres.dernier_controle == 'plus_1_an' %}selected{% endif %}>Plus d'un an</option>
-                    <option value="moins_1_an" {% if filtres.dernier_controle == 'moins_1_an' %}selected{% endif %}>Moins d'un an</option>
+                    <option value="">{{ 'Tous'|trans }}</option>
+                    <option value="plus_1_an" {% if filtres.dernier_controle == 'plus_1_an' %}selected{% endif %}>{{ "Plus d'un an"|trans }}</option>
+                    <option value="moins_1_an" {% if filtres.dernier_controle == 'moins_1_an' %}selected{% endif %}>{{ "Moins d'un an"|trans }}</option>
                 </select>
             </div>
         </div>
         <!-- LIGNE 2 : Tri, limite et bouton -->
         <div class="row g-3 mt-2">
             <div class="col-md-2">
-                <label for="order_by" class="form-label">Trier par</label>
+                <label for="order_by" class="form-label">{{ 'Trier par'|trans }}</label>
                 <select name="order_by" id="order_by" class="form-select">
-                    <option value="reference" {% if filtres.order_by == 'reference' %}selected{% endif %}>Référence</option>
-                    <option value="libelle" {% if filtres.order_by == 'libelle' %}selected{% endif %}>Nom</option>
-                    <option value="categorie" {% if filtres.order_by == 'categorie' %}selected{% endif %}>Catégorie</option>
-                    <option value="date_dernier_controle" {% if filtres.order_by == 'date_dernier_controle' %}selected{% endif %}>Dernier contrôle</option>
+                    <option value="reference" {% if filtres.order_by == 'reference' %}selected{% endif %}>{{ 'Référence'|trans }}</option>
+                    <option value="libelle" {% if filtres.order_by == 'libelle' %}selected{% endif %}>{{ 'Nom'|trans }}</option>
+                    <option value="categorie" {% if filtres.order_by == 'categorie' %}selected{% endif %}>{{ 'Catégorie'|trans }}</option>
+                    <option value="date_dernier_controle" {% if filtres.order_by == 'date_dernier_controle' %}selected{% endif %}>{{ 'Dernier contrôle'|trans }}</option>
                 </select>
             </div>
             <div class="col-md-2">
-                <label for="order_dir" class="form-label">Ordre</label>
+                <label for="order_dir" class="form-label">{{ 'Ordre'|trans }}</label>
                 <select name="order_dir" id="order_dir" class="form-select">
-                    <option value="asc" {% if filtres.order_dir == 'asc' %}selected{% endif %}>Croissant</option>
-                    <option value="desc" {% if filtres.order_dir == 'desc' %}selected{% endif %}>Décroissant</option>
+                    <option value="asc" {% if filtres.order_dir == 'asc' %}selected{% endif %}>{{ 'Croissant'|trans }}</option>
+                    <option value="desc" {% if filtres.order_dir == 'desc' %}selected{% endif %}>{{ 'Décroissant'|trans }}</option>
                 </select>
             </div>
             {% if pagination.total > 10 %}
             <div class="col-md-2">
-                <label for="limit" class="form-label">Lignes par page</label>
+                <label for="limit" class="form-label">{{ 'Lignes par page'|trans }}</label>
                 <select name="limit" id="limit" class="form-select" data-auto-submit>
                     <option value="10" {% if filtres.limit == 10 %}selected{% endif %}>10</option>
                     <option value="25" {% if filtres.limit == 25 %}selected{% endif %}>25</option>
@@ -156,7 +154,7 @@
             </div>
             {% endif %}
             <div class="col-md-2 d-flex align-items-end">
-                <button type="submit" class="btn btn-secondary w-100">Appliquer</button>
+                <button type="submit" class="btn btn-secondary w-100">{{ 'Appliquer'|trans }}</button>
             </div>
         </div>
     </form>
@@ -166,14 +164,14 @@
     <table class="table table-striped">
         <thead>
             <tr>
-                <th>Référence</th>
-                <th>Nom</th>
-                <th>Photo</th>
-                <th>Catégorie</th>
-                <th>EPI</th>
-                <th>Emplacement</th>
-                <th>Dernier contrôle</th>
-                <th>Actions</th>
+                <th>{{ 'Référence'|trans }}</th>
+                <th>{{ 'Nom'|trans }}</th>
+                <th>{{ 'Photo'|trans }}</th>
+                <th>{{ 'Catégorie'|trans }}</th>
+                <th>{{ 'EPI'|trans }}</th>
+                <th>{{ 'Emplacement'|trans }}</th>
+                <th>{{ 'Dernier contrôle'|trans }}</th>
+                <th>{{ 'Actions'|trans }}</th>
             </tr>
         </thead>
         <tbody>
@@ -183,7 +181,7 @@
                 <td>{{ equipement.libelle }}</td>
                 <td>
                     {% if equipement.photo %}
-                        <img src="{{ equipement.photo }}" alt="Photo" style="max-width: 50px; max-height: 50px;" class="img-thumbnail">
+                        <img src="{{ equipement.photo }}" alt="{{ 'Photo'|trans }}" style="max-width: 50px; max-height: 50px;" class="img-thumbnail">
                     {% else %}
                         <span class="text-muted">—</span>
                     {% endif %}
@@ -191,26 +189,26 @@
                 <td>{{ equipement.categorie.libelle|default('N/A') }}</td>
                 <td>
                     {% if equipement.categorie and equipement.categorie.est_epi %}
-                    <span class="badge bg-success">EPI</span>
+                    <span class="badge bg-success">{{ 'EPI'|trans }}</span>
                     {% elseif equipement.categorie and not equipement.categorie.est_epi %}
-                    <span class="badge bg-secondary">Non EPI</span>
+                    <span class="badge bg-secondary">{{ 'Non EPI'|trans }}</span>
                     {% else %}
-                    <span class="badge bg-secondary">Non défini</span>
+                    <span class="badge bg-secondary">{{ 'Non défini'|trans }}</span>
                     {% endif %}
                 </td>
-                <td>{{ equipement.emplacement.libelle|default('Non défini') }}</td>
+                <td>{{ equipement.emplacement.libelle|default('Non défini'|trans) }}</td>
                 <td>
                     {% if equipement.date_dernier_controle %}
                         {{ equipement.date_dernier_controle|date('d/m/Y') }}
                     {% else %}
-                        <span class="text-muted">Jamais</span>
+                        <span class="text-muted">{{ 'Jamais'|trans }}</span>
                     {% endif %}
                 </td>
                 <td>
                     <form method="post" action="/admin/controles/add-equipement/{{ controle.id }}" style="display: inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                         <input type="hidden" name="equipement_id" value="{{ equipement.id }}">
-                        <button type="submit" class="btn btn-sm btn-success">Contrôler</button>
+                        <button type="submit" class="btn btn-sm btn-success">{{ 'Contrôler'|trans }}</button>
                     </form>
                 </td>
             </tr>
@@ -222,39 +220,39 @@
     {% if pagination.total > 10 %}
     <div class="row mt-3">
         <div class="col-md-12">
-            <nav aria-label="Pagination disponibles">
+            <nav aria-label="{{ 'Pagination disponibles'|trans }}">
                 <ul class="pagination">
                     {% if pagination.hasPrevious %}
-                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.first }}">Premier</a></li>
-                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.previous }}">Précédent</a></li>
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.first }}">{{ 'Premier'|trans }}</a></li>
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.previous }}">{{ 'Précédent'|trans }}</a></li>
                     {% else %}
-                    <li class="page-item disabled"><span class="page-link">Premier</span></li>
-                    <li class="page-item disabled"><span class="page-link">Précédent</span></li>
+                    <li class="page-item disabled"><span class="page-link">{{ 'Premier'|trans }}</span></li>
+                    <li class="page-item disabled"><span class="page-link">{{ 'Précédent'|trans }}</span></li>
                     {% endif %}
                     
-                    <li class="page-item disabled"><span class="page-link">Page {{ pagination.page }} sur {{ pagination.totalPages }}</span></li>
+                    <li class="page-item disabled"><span class="page-link">{{ 'Page {page} sur {totalPages}'|trans({page: pagination.page, totalPages: pagination.totalPages}) }}</span></li>
                     
                     {% if pagination.hasNext %}
-                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.next }}">Suivant</a></li>
-                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.last }}">Dernier</a></li>
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.next }}">{{ 'Suivant'|trans }}</a></li>
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.last }}">{{ 'Dernier'|trans }}</a></li>
                     {% else %}
-                    <li class="page-item disabled"><span class="page-link">Suivant</span></li>
-                    <li class="page-item disabled"><span class="page-link">Dernier</span></li>
+                    <li class="page-item disabled"><span class="page-link">{{ 'Suivant'|trans }}</span></li>
+                    <li class="page-item disabled"><span class="page-link">{{ 'Dernier'|trans }}</span></li>
                     {% endif %}
                 </ul>
             </nav>
-            <p class="text-muted">Affichage de {{ equipements_disponibles|length }} équipements sur {{ pagination.total }} (page {{ pagination.page }}/{{ pagination.totalPages }})</p>
+            <p class="text-muted">{{ 'Affichage de {equipements_disponibles} équipements sur {total} (page {page}/{totalPages})'|trans({equipements_disponibles: (equipements_disponibles|length), total: pagination.total, page: pagination.page, totalPages: pagination.totalPages}) }}</p>
         </div>
     </div>
     {% endif %}
 
     {% else %}
-    <p class="text-muted">Aucun équipement disponible à ajouter.</p>
+    <p class="text-muted">{{ 'Aucun équipement disponible à ajouter.'|trans }}</p>
     {% endif %}
     <hr>
 {% endif %} {# fin du bloc "non readonly" #}
 
-<h4>Équipements déjà dans le contrôle</h4>
+<h4>{{ 'Équipements déjà dans le contrôle'|trans }}</h4>
 
 <!-- Sélecteur de limite (pagination) pour la liste des lignes -->
 {% if lignes_pagination.total > 10 %}
@@ -262,7 +260,7 @@
     <input type="hidden" name="section" value="lignes">
     <div class="row g-3">
         <div class="col-md-2">
-            <label for="lignes_limit" class="form-label">Lignes par page</label>
+            <label for="lignes_limit" class="form-label">{{ 'Lignes par page'|trans }}</label>
             <select name="lignes_limit" id="lignes_limit" class="form-select" data-auto-submit>
                 <option value="10" {% if lignes_filtres.limit == 10 %}selected{% endif %}>10</option>
                 <option value="25" {% if lignes_filtres.limit == 25 %}selected{% endif %}>25</option>
@@ -278,12 +276,12 @@
 <table class="table table-striped">
     <thead>
         <tr>
-            <th>Équipement</th>
-            <th>Photo</th>
-            <th>Statut</th>
-            <th>Remarque</th>
-            <th>Date contrôle</th>
-            <th>Actions</th>
+            <th>{{ 'Équipement'|trans }}</th>
+            <th>{{ 'Photo'|trans }}</th>
+            <th>{{ 'Statut'|trans }}</th>
+            <th>{{ 'Remarque'|trans }}</th>
+            <th>{{ 'Date contrôle'|trans }}</th>
+            <th>{{ 'Actions'|trans }}</th>
         </tr>
     </thead>
     <tbody>
@@ -292,31 +290,31 @@
             <td>{{ ligne.reference }} - {{ ligne.libelle }}</td>
             <td>
                 {% if ligne.photo %}
-                    <img src="{{ ligne.photo }}" alt="Photo" style="max-width: 50px; max-height: 50px;" class="img-thumbnail">
+                    <img src="{{ ligne.photo }}" alt="{{ 'Photo'|trans }}" style="max-width: 50px; max-height: 50px;" class="img-thumbnail">
                 {% else %}
                     <span class="text-muted">—</span>
                 {% endif %}
             </td>
             <td>
                 {% if ligne.statut == 'a_controler' %}
-                <span class="badge bg-secondary">À contrôler</span>
+                <span class="badge bg-secondary">{{ 'À contrôler'|trans }}</span>
                 {% elseif ligne.statut == 'controle_ok' %}
-                <span class="badge bg-success">OK</span>
+                <span class="badge bg-success">{{ 'OK'|trans }}</span>
                 {% elseif ligne.statut == 'controle_ko' %}
-                <span class="badge bg-danger">KO</span>
+                <span class="badge bg-danger">{{ 'KO'|trans }}</span>
                 {% elseif ligne.statut == 'hors_service' %}
-                <span class="badge bg-dark">Hors service</span>
+                <span class="badge bg-dark">{{ 'Hors service'|trans }}</span>
                 {% elseif ligne.statut == 'egare' %}
-                <span class="badge bg-secondary">Égaré</span>
+                <span class="badge bg-secondary">{{ 'Égaré'|trans }}</span>
                 {% endif %}
             </td>
             <td>{{ ligne.remarque|default('-') }}</td>
             <td>{{ ligne.date_controle ? ligne.date_controle|date('d/m/Y H:i') : '-' }}</td>
             <td>
                 {% if not readonly %}
-                    <a href="/admin/controles/update-ligne/{{ ligne.id }}" class="btn btn-sm btn-warning">Modifier</a>
+                    <a href="/admin/controles/update-ligne/{{ ligne.id }}" class="btn btn-sm btn-warning">{{ 'Modifier'|trans }}</a>
                 {% else %}
-                    <span class="text-muted">Lecture seule</span>
+                    <span class="text-muted">{{ 'Lecture seule'|trans }}</span>
                 {% endif %}
             </td>
         </tr>
@@ -328,51 +326,51 @@
 {% if lignes_pagination.total > 10 %}
 <div class="row mt-3">
     <div class="col-md-12">
-        <nav aria-label="Pagination lignes">
+        <nav aria-label="{{ 'Pagination lignes'|trans }}">
             <ul class="pagination">
                 {% if lignes_pagination.hasPrevious %}
-                <li class="page-item"><a class="page-link" href="{{ lignes_paginationUrls.first }}">Premier</a></li>
-                <li class="page-item"><a class="page-link" href="{{ lignes_paginationUrls.previous }}">Précédent</a></li>
+                <li class="page-item"><a class="page-link" href="{{ lignes_paginationUrls.first }}">{{ 'Premier'|trans }}</a></li>
+                <li class="page-item"><a class="page-link" href="{{ lignes_paginationUrls.previous }}">{{ 'Précédent'|trans }}</a></li>
                 {% else %}
-                <li class="page-item disabled"><span class="page-link">Premier</span></li>
-                <li class="page-item disabled"><span class="page-link">Précédent</span></li>
+                <li class="page-item disabled"><span class="page-link">{{ 'Premier'|trans }}</span></li>
+                <li class="page-item disabled"><span class="page-link">{{ 'Précédent'|trans }}</span></li>
                 {% endif %}
                 
-                <li class="page-item disabled"><span class="page-link">Page {{ lignes_pagination.page }} sur {{ lignes_pagination.totalPages }}</span></li>
+                <li class="page-item disabled"><span class="page-link">{{ 'Page {page} sur {totalPages}'|trans({page: lignes_pagination.page, totalPages: lignes_pagination.totalPages}) }}</span></li>
                 
                 {% if lignes_pagination.hasNext %}
-                <li class="page-item"><a class="page-link" href="{{ lignes_paginationUrls.next }}">Suivant</a></li>
-                <li class="page-item"><a class="page-link" href="{{ lignes_paginationUrls.last }}">Dernier</a></li>
+                <li class="page-item"><a class="page-link" href="{{ lignes_paginationUrls.next }}">{{ 'Suivant'|trans }}</a></li>
+                <li class="page-item"><a class="page-link" href="{{ lignes_paginationUrls.last }}">{{ 'Dernier'|trans }}</a></li>
                 {% else %}
-                <li class="page-item disabled"><span class="page-link">Suivant</span></li>
-                <li class="page-item disabled"><span class="page-link">Dernier</span></li>
+                <li class="page-item disabled"><span class="page-link">{{ 'Suivant'|trans }}</span></li>
+                <li class="page-item disabled"><span class="page-link">{{ 'Dernier'|trans }}</span></li>
                 {% endif %}
             </ul>
         </nav>
-        <p class="text-muted">Affichage de {{ lignes|length }} lignes sur {{ lignes_pagination.total }} (page {{ lignes_pagination.page }}/{{ lignes_pagination.totalPages }})</p>
+        <p class="text-muted">{{ 'Affichage de {lignes} lignes sur {total} (page {page}/{totalPages})'|trans({lignes: (lignes|length), total: lignes_pagination.total, page: lignes_pagination.page, totalPages: lignes_pagination.totalPages}) }}</p>
     </div>
 </div>
 {% endif %}
 
 {% else %}
-<p class="text-muted">Aucun équipement ajouté à ce contrôle.</p>
+<p class="text-muted">{{ 'Aucun équipement ajouté à ce contrôle.'|trans }}</p>
 {% endif %}
 
 <div class="mt-3">
-    <a href="/admin/controles" class="btn btn-secondary">Retour à la liste</a>
+    <a href="/admin/controles" class="btn btn-secondary">{{ 'Retour à la liste'|trans }}</a>
     
     {% if controle.statut != 'cloture' %}
         {% if hasPending %}
-            <button class="btn btn-success" disabled title="Des équipements sont encore à contrôler">
-                Clôturer le contrôle
+            <button class="btn btn-success" disabled title="{{ 'Des équipements sont encore à contrôler'|trans }}">
+                {{ 'Clôturer le contrôle'|trans }}
             </button>
-            <span class="text-muted ms-2">(certains équipements sont encore marqués « À contrôler »)</span>
+            <span class="text-muted ms-2">{{ '(certains équipements sont encore marqués « À contrôler »)'|trans }}</span>
         {% else %}
             <form method="post" action="/admin/controles/cloturer/{{ controle.id }}" style="display:inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 <button type="submit" class="btn btn-success"
-                        data-confirm="Clôturer ce contrôle ? Les remarques seront chiffrées et le contrôle ne sera plus modifiable.">
-                    Clôturer le contrôle
+                        data-confirm="{{ 'Clôturer ce contrôle ? Les remarques seront chiffrées et le contrôle ne sera plus modifiable.'|trans }}">
+                    {{ 'Clôturer le contrôle'|trans }}
                 </button>
             </form>
         {% endif %}
@@ -381,8 +379,8 @@
     <form method="post" action="/admin/controles/supprimer/{{ controle.id }}" style="display:inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <button type="submit" class="btn btn-danger"
-                data-confirm="⚠️ Supprimer ce contrôle ?&#10;&#10;Toutes les lignes saisies seront perdues. Cette action est irréversible.">
-            🗑️ Supprimer le contrôle
+                data-confirm="⚠️ {{ 'Supprimer ce contrôle ?&#10;&#10;Toutes les lignes saisies seront perdues. Cette action est irréversible.'|trans|raw }}">
+            🗑️ {{ 'Supprimer le contrôle'|trans }}
         </button>
     </form>
     {% endif %}

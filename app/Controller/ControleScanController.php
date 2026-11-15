@@ -2,6 +2,7 @@
 
 namespace Epiclub\Controller;
 
+use Epiclub\Engine\Traducteur;
 use Epiclub\Domain\ControleLigneManager;
 use Epiclub\Domain\ControleManager;
 use Epiclub\Domain\EquipementManager;
@@ -79,7 +80,7 @@ class ControleScanController extends AbstractController
             $this->validateCsrf($request);
         } catch (\Throwable) {
             return new JsonResponse(
-                ['statut' => 'erreur', 'message' => 'Jeton de sécurité invalide, rechargez la page.'],
+                ['statut' => 'erreur', 'message' => Traducteur::t('Jeton de sécurité invalide, rechargez la page.')],
                 Response::HTTP_FORBIDDEN
             );
         }
@@ -87,7 +88,7 @@ class ControleScanController extends AbstractController
         $equipementId = $request->request->get('equipement_id');
         if (!is_string($equipementId) || !ctype_digit($equipementId)) {
             return new JsonResponse(
-                ['statut' => 'erreur', 'message' => 'QR code invalide.'],
+                ['statut' => 'erreur', 'message' => Traducteur::t('QR code invalide.')],
                 Response::HTTP_BAD_REQUEST
             );
         }
@@ -97,7 +98,7 @@ class ControleScanController extends AbstractController
         if (!$equipement) {
             return new JsonResponse([
                 'statut' => 'introuvable',
-                'message' => 'Équipement non trouvé.',
+                'message' => Traducteur::t('Équipement non trouvé.'),
             ]);
         }
 
@@ -119,7 +120,7 @@ class ControleScanController extends AbstractController
         if ((int) ($equipement['statut'] ?? 0) === \Epiclub\Enum\EquipementStatut::PRETE->value) {
             return new JsonResponse([
                 'statut' => 'erreur',
-                'message' => sprintf('%s est prêté : il ne peut être contrôlé qu\'après son retour.', $equipement['reference']),
+                'message' => Traducteur::t('{reference} est prêté : il ne peut être contrôlé qu\'après son retour.', ['reference' => $equipement['reference']]),
             ]);
         }
 

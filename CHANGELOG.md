@@ -30,6 +30,11 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
   dissociation et regroupement de lots) et modification groupée, avec
   leurs messages, les libellés de statut et les scripts de la page. Les
   exports PDF, CSV et étiquettes suivront avec les autres documents.
+- **Contrôles traduits (4e étape).** Liste et saisie des contrôles,
+  fiche de contrôle d'un équipement, scanner, journaux de contrôle, avec
+  leurs messages et les libellés de statut des lignes. Le libellé
+  automatique d'un nouveau contrôle (« Contrôle du … ») est rédigé dans
+  la langue de son créateur.
 
 ### Fixed
 
