@@ -9,6 +9,7 @@ use Epiclub\Domain\LoginThrottleManager;
 use Epiclub\Domain\UtilisateurManager;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\MotDePasse;
+use Epiclub\Engine\Traducteur;
 use Epiclub\Exception\MailDeliveryException;
 use Epiclub\Engine\MailerService;
 use Epiclub\Engine\MailerServiceInterface;
@@ -97,13 +98,13 @@ class AppUserRegisterController extends AbstractController
             $email = (string) $request->request->get('email', '');
 
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                $form_errors['email'] = 'Veuillez entrer une adresse mail valide.';
+                $form_errors['email'] = Traducteur::t('Veuillez entrer une adresse mail valide.');
             }
 
             if (empty($form_errors) && $this->demandeResetLimitee($request->getClientIp())) {
                 // Quota dépassé : même réponse que d'habitude, aucun mail.
                 error_log('[forgotPassword] Demandes trop nombreuses depuis cette IP — ignorée.');
-                $this->session->getFlashBag()->add('info', self::MESSAGE_RESET);
+                $this->session->getFlashBag()->add('info', Traducteur::t(self::MESSAGE_RESET));
                 return new RedirectResponse('/mot_de_passe_oublie/confirmation');
             }
 
@@ -113,7 +114,7 @@ class AppUserRegisterController extends AbstractController
 
                 // Anti-énumération : on ne révèle jamais si l'email existe.
                 if (!$user) {
-                    $this->session->getFlashBag()->add('info', self::MESSAGE_RESET);
+                    $this->session->getFlashBag()->add('info', Traducteur::t(self::MESSAGE_RESET));
                     return new RedirectResponse('/mot_de_passe_oublie/confirmation');
                 }
 
@@ -123,7 +124,7 @@ class AppUserRegisterController extends AbstractController
                     $lastSent = new \DateTime($user['reset_email_sent_at']);
                     $diff = $now->getTimestamp() - $lastSent->getTimestamp();
                     if ($diff < self::RESET_EMAIL_TIMEOUT_SECONDS) {
-                        $this->session->getFlashBag()->add('info', self::MESSAGE_RESET);
+                        $this->session->getFlashBag()->add('info', Traducteur::t(self::MESSAGE_RESET));
                         return new RedirectResponse('/mot_de_passe_oublie/confirmation');
                     }
                 }
@@ -176,7 +177,7 @@ class AppUserRegisterController extends AbstractController
                     error_log('[forgotPassword] Club email is not configured — no reset email sent.');
                 }
 
-                $this->session->getFlashBag()->add('info', self::MESSAGE_RESET);
+                $this->session->getFlashBag()->add('info', Traducteur::t(self::MESSAGE_RESET));
                 return new RedirectResponse('/mot_de_passe_oublie/confirmation');
             }
         }
@@ -196,7 +197,7 @@ class AppUserRegisterController extends AbstractController
         $token = $request->query->get('token') ?: $request->request->get('token');
 
         if (!is_string($token) || $token === '') {
-            $this->session->getFlashBag()->add('error', 'Token manquant.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Token manquant.'));
             return new RedirectResponse('/');
         }
 
@@ -205,7 +206,7 @@ class AppUserRegisterController extends AbstractController
         $utilisateur = $utilisateurManager->findByResetToken($token);
 
         if (!$utilisateur) {
-            $this->session->getFlashBag()->add('error', 'Lien de réinitialisation invalide ou expiré.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Lien de réinitialisation invalide ou expiré.'));
             return new RedirectResponse('/');
         }
 
@@ -216,7 +217,7 @@ class AppUserRegisterController extends AbstractController
             if ($now > $expires) {
                 $utilisateurManager->clearResetToken((int) $utilisateur['id']);
                 
-                $this->session->getFlashBag()->add('error', 'Le lien a expiré.');
+                $this->session->getFlashBag()->add('error', Traducteur::t('Le lien a expiré.'));
                 return new RedirectResponse('/');
             }
         }
@@ -234,11 +235,11 @@ class AppUserRegisterController extends AbstractController
             $confirmPassword = (string) $request->request->get('confirm_password', '');
 
             if (empty($password)) {
-                $form_errors['password'] = 'Le mot de passe est obligatoire.';
+                $form_errors['password'] = Traducteur::t('Le mot de passe est obligatoire.');
             } elseif ($error = UtilisateurManager::validatePassword($password)) {
                 $form_errors['password'] = $error;
             } elseif ($password !== $confirmPassword) {
-                $form_errors['confirm_password'] = 'Les mots de passe ne correspondent pas.';
+                $form_errors['confirm_password'] = Traducteur::t('Les mots de passe ne correspondent pas.');
             }
 
             if (empty($form_errors)) {
@@ -251,7 +252,7 @@ class AppUserRegisterController extends AbstractController
                 );
                 $utilisateurManager->clearResetToken((int) $utilisateur['id']);
 
-                $this->session->getFlashBag()->add('success', 'Votre mot de passe a ete reinitialise avec succes.');
+                $this->session->getFlashBag()->add('success', Traducteur::t('Votre mot de passe a ete reinitialise avec succes.'));
                 return new RedirectResponse('/se_connecter');
             }
         }

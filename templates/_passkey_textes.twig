@@ -1,0 +1,9 @@
+{# [Localisation] Messages de passkey.js dans la langue de la page
+   (à inclure dans le script de la page, avant EpiclubPasskey.init…). #}
+EpiclubPasskey.definirTextes({{ {
+	annule: 'Opération annulée ou délai dépassé.'|trans,
+	dejaEnregistree: 'Cet appareil a déjà une passkey enregistrée pour ce compte.'|trans,
+	echec: "La passkey n'a pas pu être utilisée."|trans,
+	erreur: 'Erreur'|trans,
+	nonPrisEnCharge: 'Ce navigateur ne prend pas en charge les passkeys.'|trans
+}|json_encode|raw }});

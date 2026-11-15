@@ -53,7 +53,7 @@ final class CataloguesTraductionTest extends TestCase
             }
         }
 
-        $code = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(self::RACINE . '/app'));
+        $code = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(realpath(self::RACINE . '/app')));
         foreach ($code as $fichier) {
             if (!$fichier->isFile() || $fichier->getExtension() !== 'php') {
                 continue;
@@ -78,6 +78,18 @@ final class CataloguesTraductionTest extends TestCase
                         ? str_replace(["\\'", '\\\\'], ["'", '\\'], $texte)
                         : stripcslashes($texte);
                     $textes[$texte] = $fichier->getFilename();
+                }
+                // Traducteur::t(self::CONSTANTE) : classe déduite du chemin (PSR-4).
+                if (
+                    is_array($jeton) && $jeton[0] === T_STRING && $jeton[1] === 'Traducteur'
+                    && is_array($jetons[$i + 2] ?? null) && $jetons[$i + 2][1] === 't'
+                    && ($jetons[$i + 3] ?? null) === '('
+                    && is_array($jetons[$i + 4] ?? null) && strtolower($jetons[$i + 4][1]) === 'self'
+                    && is_array($jetons[$i + 6] ?? null) && $jetons[$i + 6][0] === T_STRING
+                ) {
+                    $relatif = substr($fichier->getPathname(), strlen(realpath(self::RACINE . '/app')) + 1, -4);
+                    $classe = 'Epiclub\\' . str_replace('/', '\\', $relatif);
+                    $textes[(new \ReflectionClassConstant($classe, $jetons[$i + 6][1]))->getValue()] = $fichier->getFilename();
                 }
             }
         }

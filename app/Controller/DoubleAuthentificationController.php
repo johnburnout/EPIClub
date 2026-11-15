@@ -17,6 +17,7 @@ use Epiclub\Engine\AbstractController;
 use Epiclub\Engine\AppUserAuthenticator;
 use Epiclub\Engine\PasskeyService;
 use Epiclub\Engine\Totp;
+use Epiclub\Engine\Traducteur;
 use Epiclub\Exception\AccessDeniedException;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -107,7 +108,7 @@ class DoubleAuthentificationController extends AbstractController
     {
         $enAttente = $this->connexionEnAttente();
         if ($enAttente === null) {
-            $this->session->getFlashBag()->add('note', 'Votre connexion a expiré : saisissez de nouveau votre identifiant et votre mot de passe.');
+            $this->session->getFlashBag()->add('note', Traducteur::t('Votre connexion a expiré : saisissez de nouveau votre identifiant et votre mot de passe.'));
             return new RedirectResponse('/se_connecter');
         }
 
@@ -127,10 +128,12 @@ class DoubleAuthentificationController extends AbstractController
             $attente = $this->attenteOuPanne($cle);
 
             if ($attente === null) {
-                $erreur = self::MESSAGE_LIMITEUR_INDISPONIBLE;
+                $erreur = Traducteur::t(self::MESSAGE_LIMITEUR_INDISPONIBLE);
             } elseif ($attente > 0) {
                 $minutes = (int) ceil($attente / 60);
-                $erreur = sprintf('Trop de codes incorrects. Réessayez dans %d minute%s.', $minutes, $minutes > 1 ? 's' : '');
+                $erreur = $minutes > 1
+                    ? Traducteur::t('Trop de codes incorrects. Réessayez dans {minutes} minutes.', ['minutes' => $minutes])
+                    : Traducteur::t('Trop de codes incorrects. Réessayez dans 1 minute.');
             } else {
                 $saisie = trim((string) $request->request->get('code', ''));
                 $moyen = $this->verifierCode($manager, (int) $utilisateur['id'], $etat, $saisie);
@@ -141,9 +144,9 @@ class DoubleAuthentificationController extends AbstractController
                         $restants = count($etat['codes_secours']) - 1;
                         $this->session->getFlashBag()->add(
                             $restants <= 2 ? 'warning' : 'info',
-                            sprintf(
-                                'Connexion avec un code de secours : il vous en reste %d. Pensez à en générer de nouveaux (Sécurité du compte).',
-                                $restants
+                            Traducteur::t(
+                                'Connexion avec un code de secours : il vous en reste {restants}. Pensez à en générer de nouveaux (Sécurité du compte).',
+                                ['restants' => $restants]
                             )
                         );
                     }
@@ -151,7 +154,7 @@ class DoubleAuthentificationController extends AbstractController
                 }
 
                 $this->limiter(fn (LoginThrottleManager $t) => $t->enregistrerEchec($cle, self::SEUIL_SECOND_FACTEUR));
-                $erreur = 'Code incorrect.';
+                $erreur = Traducteur::t('Code incorrect.');
                 $this->journaliser(
                     JournalActiviteManager::TYPE_CONNEXION,
                     'Échec de connexion : code de double authentification incorrect',
@@ -216,7 +219,7 @@ class DoubleAuthentificationController extends AbstractController
         if ($enAttente !== null) {
             $autorisees = $this->doubleAuthentification()->identifiantsPasskeys($enAttente['id']);
             if ($autorisees === []) {
-                return $this->erreurJson('Aucune passkey n\'est enregistrée pour ce compte.', 400);
+                return $this->erreurJson(Traducteur::t('Aucune passkey n\'est enregistrée pour ce compte.'), 400);
             }
         }
 
@@ -246,13 +249,13 @@ class DoubleAuthentificationController extends AbstractController
         // Usage unique du challenge, réussite ou échec.
         $this->session->remove(self::SESSION_CEREMONIE_CONNEXION);
         if (!is_array($ceremonie) || ($ceremonie['expire'] ?? 0) < $this->maintenant()) {
-            return $this->erreurJson('Délai dépassé : recommencez.', 400);
+            return $this->erreurJson(Traducteur::t('Délai dépassé : recommencez.'), 400);
         }
 
         $donnees = $this->corpsJson($request);
         $credentialId = $donnees['id'] ?? null;
         if (!is_string($credentialId) || $credentialId === '') {
-            return $this->erreurJson('Réponse de la passkey incomplète.', 400);
+            return $this->erreurJson(Traducteur::t('Réponse de la passkey incomplète.'), 400);
         }
 
         $manager = $this->doubleAuthentification();
@@ -265,7 +268,7 @@ class DoubleAuthentificationController extends AbstractController
         if ($passkey === null
             || ($attendu !== null && ($enAttente === null || $enAttente['id'] !== $attendu || $passkey['utilisateur_id'] !== $attendu))
         ) {
-            return $this->erreurJson('Cette passkey n\'est pas enregistrée pour ce compte.', 401);
+            return $this->erreurJson(Traducteur::t('Cette passkey n\'est pas enregistrée pour ce compte.'), 401);
         }
 
         $handle = $donnees['userHandle'] ?? null;
@@ -276,13 +279,13 @@ class DoubleAuthentificationController extends AbstractController
                 $proprietaire = null;
             }
             if ($proprietaire !== $passkey['utilisateur_id']) {
-                return $this->erreurJson('Cette passkey n\'est pas enregistrée pour ce compte.', 401);
+                return $this->erreurJson(Traducteur::t('Cette passkey n\'est pas enregistrée pour ce compte.'), 401);
             }
         }
 
         $utilisateur = $this->utilisateurManager()->findId($passkey['utilisateur_id']);
         if (!is_array($utilisateur)) {
-            return $this->erreurJson('Compte introuvable.', 401);
+            return $this->erreurJson(Traducteur::t('Compte introuvable.'), 401);
         }
 
         try {
@@ -298,7 +301,7 @@ class DoubleAuthentificationController extends AbstractController
         } catch (\RuntimeException $e) {
             error_log('[DoubleAuthentification] ' . $e->getMessage());
             $this->journaliser(JournalActiviteManager::TYPE_CONNEXION, 'Échec de connexion : passkey refusée', $request, $utilisateur);
-            return $this->erreurJson('La passkey n\'a pas pu être vérifiée.', 401);
+            return $this->erreurJson(Traducteur::t('La passkey n\'a pas pu être vérifiée.'), 401);
         }
 
         $manager->passkeyUtilisee($passkey['id'], $compteur);
@@ -417,10 +420,10 @@ class DoubleAuthentificationController extends AbstractController
                 $this->session->remove(self::SESSION_TOTP_EN_PREPARATION);
                 $this->premierFacteur($manager, $moi['id'], $etat);
                 $this->journaliser(JournalActiviteManager::TYPE_CONNEXION, 'Double authentification : application activée', $request);
-                $this->session->getFlashBag()->add('success', 'Application d\'authentification activée : elle vous sera demandée à chaque connexion.');
+                $this->session->getFlashBag()->add('success', Traducteur::t('Application d\'authentification activée : elle vous sera demandée à chaque connexion.'));
                 return new RedirectResponse('/mon-compte/securite');
             }
-            $erreur = 'Code incorrect : vérifiez l\'heure de votre téléphone et saisissez le code affiché.';
+            $erreur = Traducteur::t('Code incorrect : vérifiez l\'heure de votre téléphone et saisissez le code affiché.');
         }
 
         $uri = Totp::uri($secret, (string) ($moi['username'] ?? ''), $this->emetteur());
@@ -444,7 +447,7 @@ class DoubleAuthentificationController extends AbstractController
         $manager->desactiverTotp($moi['id']);
         $this->retirerCodesSiPlusAucunFacteur($manager, $moi['id']);
         $this->journaliser(JournalActiviteManager::TYPE_CONNEXION, 'Double authentification : application désactivée', $request);
-        $this->session->getFlashBag()->add('success', 'Application d\'authentification désactivée.');
+        $this->session->getFlashBag()->add('success', Traducteur::t('Application d\'authentification désactivée.'));
         return new RedirectResponse('/mon-compte/securite');
     }
 
@@ -458,7 +461,7 @@ class DoubleAuthentificationController extends AbstractController
         $moi = $this->utilisateurConnecte();
         $manager = $this->doubleAuthentification();
         if (!$manager->estConfiguree($moi['id'])) {
-            $this->session->getFlashBag()->add('warning', 'Activez d\'abord une application d\'authentification ou une passkey.');
+            $this->session->getFlashBag()->add('warning', Traducteur::t('Activez d\'abord une application d\'authentification ou une passkey.'));
             return new RedirectResponse('/mon-compte/securite');
         }
         $this->session->set(self::SESSION_CODES_A_AFFICHER, $manager->genererCodesSecours($moi['id']));
@@ -506,7 +509,7 @@ class DoubleAuthentificationController extends AbstractController
         $ceremonie = $this->session->get(self::SESSION_CEREMONIE_ENREGISTREMENT);
         $this->session->remove(self::SESSION_CEREMONIE_ENREGISTREMENT);
         if (!is_array($ceremonie) || ($ceremonie['expire'] ?? 0) < $this->maintenant()) {
-            return $this->erreurJson('Délai dépassé : recommencez.', 400);
+            return $this->erreurJson(Traducteur::t('Délai dépassé : recommencez.'), 400);
         }
 
         $donnees = $this->corpsJson($request);
@@ -518,12 +521,12 @@ class DoubleAuthentificationController extends AbstractController
             );
         } catch (\RuntimeException $e) {
             error_log('[DoubleAuthentification] ' . $e->getMessage());
-            return $this->erreurJson('La passkey n\'a pas pu être enregistrée.', 400);
+            return $this->erreurJson(Traducteur::t('La passkey n\'a pas pu être enregistrée.'), 400);
         }
 
         $nom = mb_substr(trim(preg_replace('/[\x00-\x1F\x7F]+/u', ' ', (string) ($donnees['nom'] ?? '')) ?? ''), 0, 64);
         if ($nom === '') {
-            $nom = 'Passkey du ' . date('d/m/Y', $this->maintenant());
+            $nom = Traducteur::t('Passkey du {date}', ['date' => date('d/m/Y', $this->maintenant())]);
         }
 
         $manager = $this->doubleAuthentification();
@@ -532,13 +535,13 @@ class DoubleAuthentificationController extends AbstractController
             $manager->ajouterPasskey($moi['id'], $passkey['credential_id'], $passkey['cle_publique'], $passkey['compteur'], $nom);
         } catch (\PDOException $e) {
             if ($e->getCode() === '23000') {
-                return $this->erreurJson('Cette passkey est déjà enregistrée.', 409);
+                return $this->erreurJson(Traducteur::t('Cette passkey est déjà enregistrée.'), 409);
             }
             throw $e;
         }
         $this->premierFacteur($manager, $moi['id'], $etat);
         $this->journaliser(JournalActiviteManager::TYPE_CONNEXION, sprintf('Double authentification : passkey « %s » ajoutée', $nom), $request);
-        $this->session->getFlashBag()->add('success', sprintf('Passkey « %s » enregistrée.', $nom));
+        $this->session->getFlashBag()->add('success', Traducteur::t('Passkey « {nom} » enregistrée.', ['nom' => $nom]));
 
         return new JsonResponse(['redirect' => '/mon-compte/securite']);
     }
@@ -556,7 +559,7 @@ class DoubleAuthentificationController extends AbstractController
         if ($id !== null && $manager->supprimerPasskey($moi['id'], $id)) {
             $this->retirerCodesSiPlusAucunFacteur($manager, $moi['id']);
             $this->journaliser(JournalActiviteManager::TYPE_CONNEXION, 'Double authentification : passkey supprimée', $request);
-            $this->session->getFlashBag()->add('success', 'Passkey supprimée.');
+            $this->session->getFlashBag()->add('success', Traducteur::t('Passkey supprimée.'));
         }
         return new RedirectResponse('/mon-compte/securite');
     }
@@ -608,7 +611,7 @@ class DoubleAuthentificationController extends AbstractController
         if ($this->confirmationRecente()) {
             return null;
         }
-        $this->session->getFlashBag()->add('warning', 'Confirmez votre mot de passe pour modifier la double authentification.');
+        $this->session->getFlashBag()->add('warning', Traducteur::t('Confirmez votre mot de passe pour modifier la double authentification.'));
         return new RedirectResponse('/mon-compte/securite');
     }
 
@@ -621,10 +624,10 @@ class DoubleAuthentificationController extends AbstractController
         $cle = 'confirm-2fa:' . $moi['id'];
         $attente = $this->attenteOuPanne($cle);
         if ($attente === null) {
-            return self::MESSAGE_LIMITEUR_INDISPONIBLE;
+            return Traducteur::t(self::MESSAGE_LIMITEUR_INDISPONIBLE);
         }
         if ($attente > 0) {
-            return sprintf('Trop de tentatives. Réessayez dans %d minute(s).', (int) ceil($attente / 60));
+            return Traducteur::t('Trop de tentatives. Réessayez dans {minutes} minute(s).', ['minutes' => (int) ceil($attente / 60)]);
         }
 
         $enBase = $this->utilisateurManager()->findId($moi['id']);
@@ -636,7 +639,7 @@ class DoubleAuthentificationController extends AbstractController
         }
 
         $this->limiter(fn (LoginThrottleManager $t) => $t->enregistrerEchec($cle, self::SEUIL_CONFIRMATION));
-        return 'Mot de passe incorrect.';
+        return Traducteur::t('Mot de passe incorrect.');
     }
 
     /**
@@ -648,14 +651,14 @@ class DoubleAuthentificationController extends AbstractController
         try {
             $this->validateCsrf($request);
         } catch (AccessDeniedException) {
-            return $this->erreurJson('Session expirée : rechargez la page.', 403);
+            return $this->erreurJson(Traducteur::t('Session expirée : rechargez la page.'), 403);
         }
         if ($reglages) {
             if (!$this->isGranted('ROLE_USER')) {
-                return $this->erreurJson('Accès refusé.', 403);
+                return $this->erreurJson(Traducteur::t('Accès refusé.'), 403);
             }
             if (!$this->confirmationRecente()) {
-                return $this->erreurJson('Confirmez de nouveau votre mot de passe (rechargez la page).', 403);
+                return $this->erreurJson(Traducteur::t('Confirmez de nouveau votre mot de passe (rechargez la page).'), 403);
             }
         }
         return null;
@@ -723,16 +726,14 @@ class DoubleAuthentificationController extends AbstractController
         try {
             $service = $this->passkeyService();
         } catch (\RuntimeException $e) {
-            return $e->getMessage() . ' (adresse ROOT_URL des réglages système).';
+            return $e->getMessage() . ' ' . Traducteur::t('(adresse ROOT_URL des réglages système).');
         }
         // Schéma, hôte et port : la passkey est refusée au moindre écart.
         $adresse = strtolower($request->getSchemeAndHttpHost());
         if ($adresse !== $service->origine()) {
-            return sprintf(
-                'Les passkeys sont liées à l\'adresse du site déclarée dans ROOT_URL (%s), mais vous naviguez sur %s. '
-                . 'Ouvrez le site par son adresse officielle, ou corrigez ROOT_URL dans les réglages système.',
-                $service->origine(),
-                $adresse
+            return Traducteur::t(
+                'Les passkeys sont liées à l\'adresse du site déclarée dans ROOT_URL ({origine}), mais vous naviguez sur {adresse}. Ouvrez le site par son adresse officielle, ou corrigez ROOT_URL dans les réglages système.',
+                ['origine' => $service->origine(), 'adresse' => $adresse]
             );
         }
         return null;

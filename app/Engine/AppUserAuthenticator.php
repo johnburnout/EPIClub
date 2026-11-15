@@ -119,11 +119,9 @@ class AppUserAuthenticator
         if ($attente > 0) {
             $this->compteVise = $this->projection($this->trouverCompte($username));
             $minutes = (int) ceil($attente / 60);
-            $this->error = sprintf(
-                'Trop de tentatives de connexion. Réessayez dans %d minute%s.',
-                $minutes,
-                $minutes > 1 ? 's' : ''
-            );
+            $this->error = $minutes > 1
+                ? Traducteur::t('Trop de tentatives de connexion. Réessayez dans {minutes} minutes.', ['minutes' => $minutes])
+                : Traducteur::t('Trop de tentatives de connexion. Réessayez dans 1 minute.');
             return false;
         }
 
@@ -166,7 +164,7 @@ class AppUserAuthenticator
             }
         });
 
-        $this->error = "Identifiants incorrects";
+        $this->error = Traducteur::t('Identifiants incorrects');
 
         return false;
     }
