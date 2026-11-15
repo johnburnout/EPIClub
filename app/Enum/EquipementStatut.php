@@ -2,6 +2,8 @@
 
 namespace Epiclub\Enum;
 
+use Epiclub\Engine\Traducteur;
+
 /**
  * Statut métier d'un équipement (colonne `club_equipement.statut` TINYINT).
  *
@@ -21,11 +23,11 @@ enum EquipementStatut: int
     public function label(): string
     {
         return match ($this) {
-            self::DISPONIBLE     => 'Disponible',
-            self::EN_MAINTENANCE => 'En maintenance',
-            self::HORS_SERVICE   => 'Hors service',
-            self::PRETE          => 'Prêté',
-            self::EGARE          => 'Égaré',
+            self::DISPONIBLE     => Traducteur::t('Disponible'),
+            self::EN_MAINTENANCE => Traducteur::t('En maintenance'),
+            self::HORS_SERVICE   => Traducteur::t('Hors service'),
+            self::PRETE          => Traducteur::t('Prêté'),
+            self::EGARE          => Traducteur::t('Égaré'),
         };
     }
 
@@ -80,9 +82,9 @@ enum EquipementStatut: int
     public function messageAttribution(): string
     {
         return match ($this) {
-            self::PRETE => "Le statut « Prêté » est attribué par la validation d'un prêt.",
-            self::EGARE => "Le statut « Égaré » ne peut être attribué qu'à l'issue d'un contrôle ou du retour d'un prêt.",
-            default     => "Le statut « Hors service » ne peut être attribué qu'à l'issue d'un contrôle.",
+            self::PRETE => Traducteur::t("Le statut « Prêté » est attribué par la validation d'un prêt."),
+            self::EGARE => Traducteur::t("Le statut « Égaré » ne peut être attribué qu'à l'issue d'un contrôle ou du retour d'un prêt."),
+            default     => Traducteur::t("Le statut « Hors service » ne peut être attribué qu'à l'issue d'un contrôle."),
         };
     }
 
@@ -92,9 +94,9 @@ enum EquipementStatut: int
     public function messageLevee(): string
     {
         return match ($this) {
-            self::PRETE => "Cet équipement est prêté : son statut changera à la vérification du retour du prêt.",
-            self::EGARE => "Cet équipement est égaré : seul un contrôle peut lever ce statut.",
-            default     => "Cet équipement est hors service : seul un contrôle peut lever ce statut.",
+            self::PRETE => Traducteur::t('Cet équipement est prêté : son statut changera à la vérification du retour du prêt.'),
+            self::EGARE => Traducteur::t('Cet équipement est égaré : seul un contrôle peut lever ce statut.'),
+            default     => Traducteur::t('Cet équipement est hors service : seul un contrôle peut lever ce statut.'),
         };
     }
 

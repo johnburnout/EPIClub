@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Epiclub\Domain;
 
+use Epiclub\Engine\Traducteur;
 use Epiclub\Enum\EquipementStatut;
 
 /**
@@ -44,14 +45,14 @@ final class DissociationLot
     public static function erreurEquipement(array $equipement): ?string
     {
         if ((int) ($equipement['nombre_initial'] ?? 1) < 2 || (int) ($equipement['nombre'] ?? 1) < 2) {
-            return 'Seul un lot d\'au moins 2 éléments restants peut être dissocié.';
+            return Traducteur::t('Seul un lot d\'au moins 2 éléments restants peut être dissocié.');
         }
         if (!empty($equipement['controle_en_cours'])) {
-            return 'Cet équipement est dans un contrôle en cours : dissociation impossible avant sa clôture.';
+            return Traducteur::t('Cet équipement est dans un contrôle en cours : dissociation impossible avant sa clôture.');
         }
         $statut = EquipementStatut::tryFrom((int) ($equipement['statut'] ?? 0));
         if ($statut !== null && $statut->estReserve()) {
-            return sprintf('Un équipement au statut « %s » ne peut pas être dissocié.', $statut->label());
+            return Traducteur::t('Un équipement au statut « {statut} » ne peut pas être dissocié.', ['statut' => $statut->label()]);
         }
         return null;
     }
@@ -66,23 +67,22 @@ final class DissociationLot
     {
         $morceaux = preg_split('/[\s,;+]+/', trim($saisie), -1, PREG_SPLIT_NO_EMPTY) ?: [];
         if (count($morceaux) < 2) {
-            return 'Indiquez au moins deux parties (ex. « 4, 3, 3 »).';
+            return Traducteur::t('Indiquez au moins deux parties (ex. « 4, 3, 3 »).');
         }
         if (count($morceaux) > self::PARTIES_MAX) {
-            return sprintf('Au plus %d parties.', self::PARTIES_MAX);
+            return Traducteur::t('Au plus {max} parties.', ['max' => self::PARTIES_MAX]);
         }
         $parties = [];
         foreach ($morceaux as $morceau) {
             if (!ctype_digit($morceau) || (int) $morceau < 1) {
-                return sprintf('« %s » n\'est pas une taille de partie valide (entier ≥ 1).', $morceau);
+                return Traducteur::t('« {saisie} » n\'est pas une taille de partie valide (entier ≥ 1).', ['saisie' => $morceau]);
             }
             $parties[] = (int) $morceau;
         }
         if (array_sum($parties) !== $nombre) {
-            return sprintf(
-                'La somme des parties (%d) doit être égale au nombre actuel d\'éléments du lot (%d).',
-                array_sum($parties),
-                $nombre
+            return Traducteur::t(
+                'La somme des parties ({somme}) doit être égale au nombre actuel d\'éléments du lot ({nombre}).',
+                ['somme' => array_sum($parties), 'nombre' => $nombre]
             );
         }
         return $parties;

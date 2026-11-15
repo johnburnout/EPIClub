@@ -50,7 +50,7 @@ abstract class AbstractController
         $this->renderer->addFunction(new TwigFunction('statut_equipement', function ($statut) {
             $enum = is_numeric($statut) ? \Epiclub\Enum\EquipementStatut::tryFrom((int) $statut) : null;
             return $enum === null
-                ? ['libelle' => 'Inconnu', 'couleur' => '#6c757d', 'badge' => 'secondary', 'reserve' => false]
+                ? ['libelle' => Traducteur::t('Inconnu'), 'couleur' => '#6c757d', 'badge' => 'secondary', 'reserve' => false]
                 : ['libelle' => $enum->label(), 'couleur' => $enum->couleur(), 'badge' => $enum->badge(), 'reserve' => $enum->estReserve()];
         }));
 

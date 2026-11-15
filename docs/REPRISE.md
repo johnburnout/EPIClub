@@ -891,14 +891,20 @@ installeur et guide utilisateur ; la CLI reste en français).
   par le garde-fou (classe déduite du chemin PSR-4).
 - Pluriels : deux clés et un `if` (« 1 minute » / « {minutes} minutes »).
 - Le journal d'activité (texte stocké en base) reste en français.
+- Textes dans une expression Twig (`|default('…')`, `? '…' : '…'`,
+  `{% set x = {…: '…'} %}`, arguments de macro) : à marquer à la main
+  (`'…'|trans`), le marquage automatique ne les voit pas.
+- Texte avec balises de mise en forme (`<strong>`, `<code>`…) : une seule
+  clé, rendue avec `|raw` ; ses paramètres passent par `|e`.
 - Scripts statiques : messages par défaut en français, remplacés via un
   gabarit partiel (ex. `_passkey_textes.twig` → `EpiclubPasskey.definirTextes`).
 
 | Étape | Contenu | État |
 |---|---|---|
 | 1 | Infrastructure, sélecteur, bandeau (`_layout.twig`) | PR #123 |
-| 2 | Connexion, double authentification, mot de passe oublié, sécurité du compte (+ `passkey.js`) | PR en cours |
-| 3+ | Équipements, contrôles, acquisitions, prêts, administration, enums, emails, PDF | à faire |
+| 2 | Connexion, double authentification, mot de passe oublié, sécurité du compte (+ `passkey.js`) | PR #124 |
+| 3 | Équipements (liste, fiche, formulaire, modification groupée), `EquipementStatut`, `DissociationLot`, `RegroupementLot` | PR en cours |
+| 4+ | Contrôles, acquisitions, prêts, administration, autres enums, emails, PDF/CSV/étiquettes | à faire |
 | — | Installeur (`setup/`), guide (`docs/guide_utilisateur.md`) | à faire |
 
 ## Règles de travail établies

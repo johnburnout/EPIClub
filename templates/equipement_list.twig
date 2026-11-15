@@ -1,16 +1,15 @@
 {% extends "_layout.twig" %}
 
 {% block body %}
-	<h3>Equipements</h3>
+	<h3>{{ 'Equipements'|trans }}</h3>
     <hr>
 
     {% if filtres.fin_avant %}
     <div class="alert alert-warning d-flex flex-wrap justify-content-between align-items-center gap-2">
         <span>
-            ⚠️ <strong>Équipements à renouveler</strong> : date de fin d'utilisation au plus tard le
-            {{ filtres.fin_avant|date('d/m/Y') }} (y compris les équipements déjà échus).
+            ⚠️ {{ "<strong>Équipements à renouveler</strong> : date de fin d'utilisation au plus tard le {fin_avant} (y compris les équipements déjà échus)."|trans({fin_avant: (filtres.fin_avant|date('d/m/Y'))|e})|raw }}
         </span>
-        <a href="/equipements" class="btn btn-sm btn-outline-secondary">Retirer ce filtre</a>
+        <a href="/equipements" class="btn btn-sm btn-outline-secondary">{{ 'Retirer ce filtre'|trans }}</a>
     </div>
     {% endif %}
 
@@ -18,18 +17,17 @@
     {% if filtres.non_verifie_avant|default(null) %}
     <div class="alert alert-warning d-flex flex-wrap justify-content-between align-items-center gap-2">
         <span>
-            🔎 <strong>EPI non vérifiés</strong> : dernier contrôle (ou, à défaut, mise en service)
-            antérieur au {{ filtres.non_verifie_avant|date('d/m/Y') }}, hors équipements « Hors service » et « Égaré ».
+            🔎 {{ '<strong>EPI non vérifiés</strong> : dernier contrôle (ou, à défaut, mise en service) antérieur au {non_verifie_avant}, hors équipements « Hors service » et « Égaré ».'|trans({non_verifie_avant: (filtres.non_verifie_avant|date('d/m/Y'))|e})|raw }}
         </span>
-        <a href="/equipements" class="btn btn-sm btn-outline-secondary">Retirer ce filtre</a>
+        <a href="/equipements" class="btn btn-sm btn-outline-secondary">{{ 'Retirer ce filtre'|trans }}</a>
     </div>
     {% endif %}
 
     {# [2026-10-25] Équipements d'un fournisseur (depuis la liste des fournisseurs) #}
     {% if fournisseur_filtre|default(null) %}
     <div class="alert alert-info d-flex flex-wrap justify-content-between align-items-center gap-2">
-        <span>🏷️ Équipements du fournisseur <strong>{{ fournisseur_filtre.nom }}</strong></span>
-        <a href="/equipements" class="btn btn-sm btn-outline-secondary">Retirer ce filtre</a>
+        <span>🏷️ {{ 'Équipements du fournisseur <strong>{nom}</strong>'|trans({nom: (fournisseur_filtre.nom)|e})|raw }}</span>
+        <a href="/equipements" class="btn btn-sm btn-outline-secondary">{{ 'Retirer ce filtre'|trans }}</a>
     </div>
     {% endif %}
 
@@ -47,9 +45,9 @@
         <!-- LIGNE 1 : Filtres -->
         <div class="row g-3">
             <div class="col-md-2">
-                <label for="categorie" class="form-label">Catégorie</label>
+                <label for="categorie" class="form-label">{{ 'Catégorie'|trans }}</label>
                 <select name="categorie" id="categorie" class="form-select">
-                    <option value="">Toutes</option>
+                    <option value="">{{ 'Toutes'|trans }}</option>
                     {% for categorie in categories|tri_alpha('libelle') %}
                     <option value="{{ categorie.id }}" {% if filtres.categorie_id == categorie.id %}selected{% endif %}>
                         {{ categorie.libelle }}
@@ -59,10 +57,10 @@
             </div>
             
             <div class="col-md-2">
-                <label for="emplacement" class="form-label">Emplacement</label>
+                <label for="emplacement" class="form-label">{{ 'Emplacement'|trans }}</label>
                 <select name="emplacement" id="emplacement" class="form-select">
-                    <option value="">Tous</option>
-                    <option value="null" {% if filtres.emplacement_id == 'null' %}selected{% endif %}>Non défini</option>
+                    <option value="">{{ 'Tous'|trans }}</option>
+                    <option value="null" {% if filtres.emplacement_id == 'null' %}selected{% endif %}>{{ 'Non défini'|trans }}</option>
                     {% for emplacement in emplacements|tri_alpha('libelle') %}
                     <option value="{{ emplacement.id }}" {% if filtres.emplacement_id == emplacement.id %}selected{% endif %}>
                         {{ emplacement.libelle }}
@@ -72,35 +70,35 @@
             </div>
             
             <div class="col-md-1">
-                <label for="epi" class="form-label">EPI</label>
+                <label for="epi" class="form-label">{{ 'EPI'|trans }}</label>
                 <select name="epi" id="epi" class="form-select">
-                    <option value="">Tous</option>
-                    <option value="1" {% if filtres.epi == '1' %}selected{% endif %}>Oui</option>
-                    <option value="0" {% if filtres.epi == '0' %}selected{% endif %}>Non</option>
+                    <option value="">{{ 'Tous'|trans }}</option>
+                    <option value="1" {% if filtres.epi == '1' %}selected{% endif %}>{{ 'Oui'|trans }}</option>
+                    <option value="0" {% if filtres.epi == '0' %}selected{% endif %}>{{ 'Non'|trans }}</option>
                 </select>
             </div>
             
             <div class="col-md-2">
-                <label for="en_service" class="form-label">Statut</label>
+                <label for="en_service" class="form-label">{{ 'Statut'|trans }}</label>
                 <select name="en_service" id="en_service" class="form-select">
-                    <option value="">Tous</option>
-                    <option value="oui" {% if filtres.en_service == 'oui' %}selected{% endif %}>En service</option>
-                    <option value="non" {% if filtres.en_service == 'non' %}selected{% endif %}>Hors service</option>
+                    <option value="">{{ 'Tous'|trans }}</option>
+                    <option value="oui" {% if filtres.en_service == 'oui' %}selected{% endif %}>{{ 'En service'|trans }}</option>
+                    <option value="non" {% if filtres.en_service == 'non' %}selected{% endif %}>{{ 'Hors service'|trans }}</option>
                 </select>
             </div>
             <!-- Recherche (référence ou libellé) -->
             <div class="col-md-3">
-                <label for="q" class="form-label">Recherche</label>
+                <label for="q" class="form-label">{{ 'Recherche'|trans }}</label>
                 <input type="search" name="q" id="q" value="{{ filtres.q }}" maxlength="100"
-                       class="form-control" placeholder="Libellé ou référence">
+                       class="form-control" placeholder="{{ 'Libellé ou référence'|trans }}">
             </div>
             <!-- Filtre Dernier contrôle -->
             <div class="col-md-2">
-                <label for="dernier_controle" class="form-label">Dernier contrôle</label>
+                <label for="dernier_controle" class="form-label">{{ 'Dernier contrôle'|trans }}</label>
                 <select name="dernier_controle" id="dernier_controle" class="form-select">
-                    <option value="">Tous</option>
-                    <option value="plus_1_an" {% if filtres.dernier_controle == 'plus_1_an' %}selected{% endif %}>Plus d'un an</option>
-                    <option value="moins_1_an" {% if filtres.dernier_controle == 'moins_1_an' %}selected{% endif %}>Moins d'un an</option>
+                    <option value="">{{ 'Tous'|trans }}</option>
+                    <option value="plus_1_an" {% if filtres.dernier_controle == 'plus_1_an' %}selected{% endif %}>{{ "Plus d'un an"|trans }}</option>
+                    <option value="moins_1_an" {% if filtres.dernier_controle == 'moins_1_an' %}selected{% endif %}>{{ "Moins d'un an"|trans }}</option>
                 </select>
             </div>
         </div>
@@ -108,25 +106,25 @@
         <!-- LIGNE 2 : Tri, limite et boutons -->
         <div class="row g-3 mt-2">
             <div class="col-md-2">
-                <label for="order_by" class="form-label">Trier par</label>
+                <label for="order_by" class="form-label">{{ 'Trier par'|trans }}</label>
                 <select name="order_by" id="order_by" class="form-select">
-                    <option value="categorie" {% if filtres.order_by == 'categorie' %}selected{% endif %}>Catégorie</option>
-                    <option value="date_fin" {% if filtres.order_by == 'date_fin' %}selected{% endif %}>Date de fin</option>
-                    <option value="date_dernier_controle" {% if filtres.order_by == 'date_dernier_controle' %}selected{% endif %}>Dernier contrôle</option>
+                    <option value="categorie" {% if filtres.order_by == 'categorie' %}selected{% endif %}>{{ 'Catégorie'|trans }}</option>
+                    <option value="date_fin" {% if filtres.order_by == 'date_fin' %}selected{% endif %}>{{ 'Date de fin'|trans }}</option>
+                    <option value="date_dernier_controle" {% if filtres.order_by == 'date_dernier_controle' %}selected{% endif %}>{{ 'Dernier contrôle'|trans }}</option>
                 </select>
             </div>
             
             <div class="col-md-2">
-                <label for="order_dir" class="form-label">Ordre</label>
+                <label for="order_dir" class="form-label">{{ 'Ordre'|trans }}</label>
                 <select name="order_dir" id="order_dir" class="form-select">
-                    <option value="asc" {% if filtres.order_dir == 'asc' %}selected{% endif %}>Croissant</option>
-                    <option value="desc" {% if filtres.order_dir == 'desc' %}selected{% endif %}>Décroissant</option>
+                    <option value="asc" {% if filtres.order_dir == 'asc' %}selected{% endif %}>{{ 'Croissant'|trans }}</option>
+                    <option value="desc" {% if filtres.order_dir == 'desc' %}selected{% endif %}>{{ 'Décroissant'|trans }}</option>
                 </select>
             </div>
             
             {% if pagination.total > 10 %}
             <div class="col-md-2">
-                <label for="limit" class="form-label">Lignes par page</label>
+                <label for="limit" class="form-label">{{ 'Lignes par page'|trans }}</label>
                 <select name="limit" id="limit" class="form-select" data-auto-submit>
                     <option value="10" {% if filtres.limit == 10 %}selected{% endif %}>10</option>
                     <option value="25" {% if filtres.limit == 25 %}selected{% endif %}>25</option>
@@ -138,17 +136,17 @@
             
             <!-- Boutons : Appliquer + Menu Export -->
             <div class="col-md-4 d-flex align-items-end gap-2">
-                <button type="submit" name="action" value="filter" class="btn btn-secondary">Appliquer</button>
+                <button type="submit" name="action" value="filter" class="btn btn-secondary">{{ 'Appliquer'|trans }}</button>
                 <div class="input-group">
                     <select name="export_type" class="form-select" style="max-width: 180px;">
-                        <option value="pdf">PDF</option>
-                        <option value="excel">Excel (photos + QR)</option>
-                        <option value="etiquettes">Étiquettes</option>
-                        <option value="donnees_excel">Excel (données)</option>
-                        <option value="donnees_csv">CSV (données)</option>
+                        <option value="pdf">{{ 'PDF'|trans }}</option>
+                        <option value="excel">{{ 'Excel (photos + QR)'|trans }}</option>
+                        <option value="etiquettes">{{ 'Étiquettes'|trans }}</option>
+                        <option value="donnees_excel">{{ 'Excel (données)'|trans }}</option>
+                        <option value="donnees_csv">{{ 'CSV (données)'|trans }}</option>
                     </select>
                     <button type="submit" name="action" value="export" class="btn btn-primary" formtarget="_blank">
-                        <i class="fas fa-file-export"></i> Exporter
+                        <i class="fas fa-file-export"></i> {{ 'Exporter'|trans }}
                     </button>
                 </div>
             </div>
@@ -165,15 +163,15 @@
     <form method="post" action="/prets/ajouter" id="form-pret" class="d-flex flex-wrap align-items-center gap-2 mb-3">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
         <input type="hidden" name="retour" value="/equipements{{ retour_query ? '?' ~ retour_query : '' }}">
-        <select name="pret_id" class="form-select" style="max-width: 22rem;" aria-label="Prêt en saisie">
+        <select name="pret_id" class="form-select" style="max-width: 22rem;" aria-label="{{ 'Prêt en saisie'|trans }}">
             {% for p in prets_en_saisie %}
-                <option value="{{ p.id }}">Prêt n° {{ p.id }} — {{ p.emprunteur_prenom }} {{ p.emprunteur_nom }}</option>
+                <option value="{{ p.id }}">{{ 'Prêt n° {id} — {emprunteur_prenom} {emprunteur_nom}'|trans({id: p.id, emprunteur_prenom: p.emprunteur_prenom, emprunteur_nom: p.emprunteur_nom}) }}</option>
             {% endfor %}
         </select>
         <button type="submit" id="btn-pret" class="btn btn-outline-primary" disabled>
-            🤝 Ajouter la sélection au prêt (<span class="nb-coches-pret">0</span>)
+            🤝 {{ 'Ajouter la sélection au prêt ('|trans }}<span class="nb-coches-pret">0</span>)
         </button>
-        <span class="small text-body-secondary">Seul le matériel disponible (hors contrôle, non périmé) est ajouté.</span>
+        <span class="small text-body-secondary">{{ 'Seul le matériel disponible (hors contrôle, non périmé) est ajouté.'|trans }}</span>
     </form>
     {% endif %}
     {% if photoGroupee %}
@@ -182,11 +180,10 @@
           class="d-flex flex-wrap align-items-center gap-3 mb-3">
         <input type="hidden" name="retour" value="{{ retour_query }}">
         <button type="submit" id="btn-selection" class="btn btn-primary" disabled>
-            ✏️ Modifier la sélection (<span id="nb-coches">0</span>)
+            ✏️ {{ 'Modifier la sélection ('|trans }}<span id="nb-coches">0</span>)
         </button>
         <span class="small text-body-secondary">
-            Cochez les équipements à modifier ensemble (statut, emplacement, dates, photo…).
-            Astuce : filtrez puis augmentez « Lignes par page » pour tout cocher d'un coup.
+            {{ "Cochez les équipements à modifier ensemble (statut, emplacement, dates, photo…). Astuce : filtrez puis augmentez « Lignes par page » pour tout cocher d'un coup."|trans }}
         </span>
     </form>
     {% endif %}
@@ -197,19 +194,19 @@
 				{% if selection %}
 				<th style="width: 2rem;">
 					<input type="checkbox" class="form-check-input" id="tout-cocher"
-					       title="Tout cocher / décocher" aria-label="Tout cocher">
+					       title="{{ 'Tout cocher / décocher'|trans }}" aria-label="{{ 'Tout cocher'|trans }}">
 				</th>
 				{% endif %}
-				<th>Référence</th>
-				<th>Nom</th>
-				<th>Photo</th>
-				<th>Catégorie</th>
-				<th>EPI</th>
-				<th>Emplacement</th>
-				<th>Mise en service</th>
-				<th>Fin d'utilisation</th>
-				<th>Statut</th>
-				<th>Actions</th>
+				<th>{{ 'Référence'|trans }}</th>
+				<th>{{ 'Nom'|trans }}</th>
+				<th>{{ 'Photo'|trans }}</th>
+				<th>{{ 'Catégorie'|trans }}</th>
+				<th>{{ 'EPI'|trans }}</th>
+				<th>{{ 'Emplacement'|trans }}</th>
+				<th>{{ 'Mise en service'|trans }}</th>
+				<th>{{ "Fin d'utilisation"|trans }}</th>
+				<th>{{ 'Statut'|trans }}</th>
+				<th>{{ 'Actions'|trans }}</th>
 			</tr>
 		</thead>
         <tbody>
@@ -219,21 +216,21 @@
                     <td>
                         <input type="checkbox" class="form-check-input case-equipement" name="ids[]"
                                value="{{ equipement.id }}" {% if photoGroupee %}form="form-selection"{% else %}form="form-pret"{% endif %}
-                               aria-label="Sélectionner {{ equipement.reference }}">
+                               aria-label="{{ 'Sélectionner {reference}'|trans({reference: equipement.reference}) }}">
                     </td>
                     {% endif %}
                     <td>{{ equipement.reference }}</td>
                     <td>
                         {{ equipement.libelle }}
                         {% if equipement.nombre_initial is defined and equipement.nombre_initial > 1 %}
-                            <span class="badge bg-info text-dark" title="Lot : {{ equipement.nombre }} élément(s) restant(s) sur {{ equipement.nombre_initial }} initiaux">
-                                Lot : {{ equipement.nombre }}/{{ equipement.nombre_initial }}
+                            <span class="badge bg-info text-dark" title="{{ 'Lot : {nombre} élément(s) restant(s) sur {nombre_initial} initiaux'|trans({nombre: equipement.nombre, nombre_initial: equipement.nombre_initial}) }}">
+                                {{ 'Lot : {nombre}/{nombre_initial}'|trans({nombre: equipement.nombre, nombre_initial: equipement.nombre_initial}) }}
                             </span>
                         {% endif %}
                     </td>
                     <td>
                         {% if equipement.photo %}
-                            <img src="{{ equipement.photo }}" alt="Photo" style="max-width: 50px; max-height: 50px;" class="img-thumbnail">
+                            <img src="{{ equipement.photo }}" alt="{{ 'Photo'|trans }}" style="max-width: 50px; max-height: 50px;" class="img-thumbnail">
                         {% else %}
                             <span class="text-muted">—</span>
                         {% endif %}
@@ -241,14 +238,14 @@
                     <td>{{ equipement.categorie.libelle|default('N/A') }}</td>
                     <td>
                         {% if equipement.categorie and equipement.categorie.est_epi %}
-                            <span class="badge bg-success">EPI</span>
+                            <span class="badge bg-success">{{ 'EPI'|trans }}</span>
                         {% elseif equipement.categorie and not equipement.categorie.est_epi %}
-                            <span class="badge bg-secondary">Non EPI</span>
+                            <span class="badge bg-secondary">{{ 'Non EPI'|trans }}</span>
                         {% else %}
-                            <span class="badge bg-secondary">Non défini</span>
+                            <span class="badge bg-secondary">{{ 'Non défini'|trans }}</span>
                         {% endif %}
                     </td>
-                    <td>{{ equipement.emplacement.libelle|default('Non défini') }}</td>
+                    <td>{{ equipement.emplacement.libelle|default('Non défini'|trans) }}</td>
                     <td>
                         {% if equipement.date_mise_en_service %}
                             {{ equipement.date_mise_en_service|date("d/m/Y") }}
@@ -261,7 +258,7 @@
                         <a href="#" 
                             data-alert="Date de fin d'utilisation : {% if equipement.date_fin_utilisation %}{{ equipement.date_fin_utilisation|date('d/m/Y') }}{% else %}Non définie{% endif %}" 
                             style="text-decoration: none; color: inherit;">
-                            Toujours en service
+                            {{ 'Toujours en service'|trans }}
                         </a>
                         {% else %}
                         {{ equipement.date_fin_utilisation|date("d/m/Y") }}
@@ -278,17 +275,17 @@
                         {% endif %}
                     </td>
                     <td>
-                        <a href="/equipements/equipement-{{ equipement.id }}" class="btn btn-sm btn-primary">Voir</a>
+                        <a href="/equipements/equipement-{{ equipement.id }}" class="btn btn-sm btn-primary">{{ 'Voir'|trans }}</a>
                         {% if isGranted('ROLE_CONTROLLEUR') %}
-                        <a href="/equipements/equipement_modification-{{ equipement.id }}" class="btn btn-sm btn-warning">Modifier</a>
+                        <a href="/equipements/equipement_modification-{{ equipement.id }}" class="btn btn-sm btn-warning">{{ 'Modifier'|trans }}</a>
                         {% endif %}
                         {% if isGranted('ROLE_ADMIN') and not equipement.controle_en_cours and (equipement.statut == 2
                               or (equipement.statut == 4 and equipement.date_egare|default(null) and date_limite_egare|default(null) and equipement.date_egare|date('Y-m-d') <= date_limite_egare)) %}
                         <form method="post" action="/equipements/equipement_supprimer-{{ equipement.id }}" style="display:inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                             <button type="submit" class="btn btn-sm btn-danger"
-                                data-confirm="Confirmer la suppression de « {{ equipement.reference }} » ?">
-                                Supprimer
+                                data-confirm="{{ 'Confirmer la suppression de « {reference} » ?'|trans({reference: equipement.reference}) }}">
+                                {{ 'Supprimer'|trans }}
                             </button>
                         </form>
                         {% endif %}
@@ -302,28 +299,28 @@
     {% if pagination.total > 10 %}
     <div class="row mt-3">
         <div class="col-md-12">
-            <nav aria-label="Pagination">
+            <nav aria-label="{{ 'Pagination'|trans }}">
                 <ul class="pagination">
                     {% if pagination.hasPrevious %}
-                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.first }}">Premier</a></li>
-                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.previous }}">Précédent</a></li>
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.first }}">{{ 'Premier'|trans }}</a></li>
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.previous }}">{{ 'Précédent'|trans }}</a></li>
                     {% else %}
-                    <li class="page-item disabled"><span class="page-link">Premier</span></li>
-                    <li class="page-item disabled"><span class="page-link">Précédent</span></li>
+                    <li class="page-item disabled"><span class="page-link">{{ 'Premier'|trans }}</span></li>
+                    <li class="page-item disabled"><span class="page-link">{{ 'Précédent'|trans }}</span></li>
                     {% endif %}
                     
-                    <li class="page-item disabled"><span class="page-link">Page {{ pagination.page }} sur {{ pagination.totalPages }}</span></li>
+                    <li class="page-item disabled"><span class="page-link">{{ 'Page {page} sur {totalPages}'|trans({page: pagination.page, totalPages: pagination.totalPages}) }}</span></li>
                     
                     {% if pagination.hasNext %}
-                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.next }}">Suivant</a></li>
-                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.last }}">Dernier</a></li>
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.next }}">{{ 'Suivant'|trans }}</a></li>
+                    <li class="page-item"><a class="page-link" href="{{ paginationUrls.last }}">{{ 'Dernier'|trans }}</a></li>
                     {% else %}
-                    <li class="page-item disabled"><span class="page-link">Suivant</span></li>
-                    <li class="page-item disabled"><span class="page-link">Dernier</span></li>
+                    <li class="page-item disabled"><span class="page-link">{{ 'Suivant'|trans }}</span></li>
+                    <li class="page-item disabled"><span class="page-link">{{ 'Dernier'|trans }}</span></li>
                     {% endif %}
                 </ul>
             </nav>
-            <p class="text-muted">Affichage de {{ equipements|length }} équipements sur {{ pagination.total }} (page {{ pagination.page }}/{{ pagination.totalPages }})</p>
+            <p class="text-muted">{{ 'Affichage de {equipements} équipements sur {total} (page {page}/{totalPages})'|trans({equipements: (equipements|length), total: pagination.total, page: pagination.page, totalPages: pagination.totalPages}) }}</p>
         </div>
     </div>
     {% endif %}

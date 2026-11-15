@@ -1,9 +1,9 @@
 {% extends "_layout.twig" %}
 
 {% block body %}
-	<h3>Équipement</h3>
+	<h3>{{ 'Équipement'|trans }}</h3>
 	<hr>
-	<a href="/tableau_de_bord" class="btn btn-primary">Tableau de bord</a>
+	<a href="/tableau_de_bord" class="btn btn-primary">{{ 'Tableau de bord'|trans }}</a>
 	<hr>
 
 	{# [2026-10-24] Barre au-dessus du formulaire : roue dentée (super-admin) /
@@ -26,8 +26,8 @@
 	{% set regroupement = regroupement|default({candidats: [], erreur: null}) %}
 	{% set regroupement_visible = isGranted('ROLE_ADMIN') and equipement.id is defined and equipement.id and regroupement.candidats is not empty %}
 	{% if (dissociation_visible or regroupement_visible) and not ref_cat_modifiable %}
-		{% set libelle_lot = dissociation_visible and regroupement_visible ? 'Dissocier ou regrouper'
-			: (dissociation_visible ? 'Dissocier le lot' : 'Regrouper en lot') %}
+		{% set libelle_lot = dissociation_visible and regroupement_visible ? 'Dissocier ou regrouper'|trans
+			: (dissociation_visible ? 'Dissocier le lot'|trans : 'Regrouper en lot'|trans) %}
 		<div class="mb-2 text-end">
 			<button type="button" class="btn btn-outline-secondary btn-sm" id="afficher-lot"
 			        aria-pressed="false" title="{{ libelle_lot }}" data-libelle="{{ libelle_lot }}">
@@ -39,9 +39,9 @@
 		<div class="mb-2 text-end">
 			<button type="button" class="btn btn-outline-secondary btn-sm" id="deverrouiller-ref-cat"
 			        aria-pressed="{{ ref_cat_ouvert ? 'true' : 'false' }}" aria-controls="categorie reference"
-			        title="Modification de la référence, de la catégorie et du lot">
+			        title="{{ 'Modification de la référence, de la catégorie et du lot'|trans }}">
 				<i class="fas fa-cog"></i>
-				<span>{{ ref_cat_ouvert ? 'Annuler la modification de la référence, de la catégorie et du lot' : 'Modifier la référence, la catégorie et le lot (dissocier, regrouper)' }}</span>
+				<span>{{ ref_cat_ouvert ? 'Annuler la modification de la référence, de la catégorie et du lot'|trans : 'Modifier la référence, la catégorie et le lot (dissocier, regrouper)'|trans }}</span>
 			</button>
 		</div>
 	{% endif %}
@@ -51,7 +51,7 @@
 	{% if dissociation_visible %}
 		<div class="card mt-2 mb-3 border-warning carte-lot {% if not ref_cat_ouvert %}d-none{% endif %}" id="carte-dissociation">
 			<div class="card-body">
-				<h5 class="card-title"><i class="fas fa-object-ungroup"></i> Dissocier le lot</h5>
+				<h5 class="card-title"><i class="fas fa-object-ungroup"></i> {{ 'Dissocier le lot'|trans }}</h5>
 				{% if dissociation_erreur %}
 					<p class="text-muted mb-0">{{ dissociation_erreur }}</p>
 				{% else %}
@@ -60,22 +60,19 @@
 					      data-references-modifiables="{{ references_dissociation_modifiables ? '1' : '0' }}">
 						<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 						<p class="small">
-							Le lot compte <strong>{{ equipement.nombre }}</strong> élément(s) restant(s). Indiquez la taille de chaque
-							partie, séparées par des virgules : la <strong>première</strong> reste à l'équipement
-							<strong>{{ equipement.reference }}</strong> (avec son historique), chacune des autres devient un
-							<strong>nouvel équipement</strong> (lot ou équipement individuel), avec les mêmes caractéristiques.
+							{{ "Le lot compte <strong>{nombre}</strong> élément(s) restant(s). Indiquez la taille de chaque partie, séparées par des virgules : la <strong>première</strong> reste à l'équipement <strong>{reference}</strong> (avec son historique), chacune des autres devient un <strong>nouvel équipement</strong> (lot ou équipement individuel), avec les mêmes caractéristiques."|trans({nombre: (equipement.nombre)|e, reference: (equipement.reference)|e})|raw }}
 							{% if not references_dissociation_modifiables %}
-								Leurs références sont attribuées automatiquement selon le modèle de référence.
+								{{ 'Leurs références sont attribuées automatiquement selon le modèle de référence.'|trans }}
 							{% endif %}
 						</p>
 						<div class="mb-2">
-							<label for="repartition" class="form-label">Répartition</label>
+							<label for="repartition" class="form-label">{{ 'Répartition'|trans }}</label>
 							<div class="input-group">
 								<input type="text" class="form-control" name="repartition" id="repartition"
-								       placeholder="ex. {{ equipement.nombre > 2 ? (equipement.nombre - 2) ~ ', 1, 1' : '1, 1' }}"
+								       placeholder="{{ 'ex. {nombre}'|trans({nombre: (equipement.nombre > 2 ? (equipement.nombre - 2) ~ ', 1, 1' : '1, 1')}) }}"
 								       autocomplete="off" data-nombre="{{ equipement.nombre }}">
 								<button type="button" class="btn btn-outline-secondary" id="repartition-individuels">
-									En équipements individuels
+									{{ 'En équipements individuels'|trans }}
 								</button>
 							</div>
 							<div class="form-text" id="repartition-statut" aria-live="polite"></div>
@@ -83,12 +80,12 @@
 						<div id="dissociation-references" class="mb-2"></div>
 						<div class="mb-3 p-2 border border-warning rounded">
 							<label for="confirmation_dissociation" class="form-label">
-								Pour confirmer la dissociation, saisissez <code>{{ mot_confirmation_dissociation }}</code>
+								{{ 'Pour confirmer la dissociation, saisissez <code>{mot_confirmation_dissociation}</code>'|trans({mot_confirmation_dissociation: (mot_confirmation_dissociation)|e})|raw }}
 							</label>
 							<input type="text" class="form-control" name="confirmation_dissociation" id="confirmation_dissociation"
 							       autocomplete="off" spellcheck="false" data-mot="{{ mot_confirmation_dissociation }}">
 						</div>
-						<button type="submit" class="btn btn-warning">Dissocier le lot</button>
+						<button type="submit" class="btn btn-warning">{{ 'Dissocier le lot'|trans }}</button>
 					</form>
 				{% endif %}
 			</div>
@@ -100,23 +97,20 @@
 	{% if regroupement_visible %}
 		<div class="card mt-2 mb-3 border-warning carte-lot {% if not ref_cat_ouvert %}d-none{% endif %}" id="carte-regroupement">
 			<div class="card-body">
-				<h5 class="card-title"><i class="fas fa-object-group"></i> Regrouper en lot</h5>
+				<h5 class="card-title"><i class="fas fa-object-group"></i> {{ 'Regrouper en lot'|trans }}</h5>
 				{% if regroupement.erreur %}
-					<p class="text-muted mb-0">Cet équipement ne peut pas être regroupé ({{ regroupement.erreur }}).</p>
+					<p class="text-muted mb-0">{{ 'Cet équipement ne peut pas être regroupé ({erreur}).'|trans({erreur: regroupement.erreur}) }}</p>
 				{% else %}
 					<form method="post" action="/equipements/equipement_regrouper-{{ equipement.id }}" id="form-regroupement"
 					      data-nombre="{{ equipement.nombre|default(1) }}" data-nombre-initial="{{ ni_actuel }}">
 						<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 						<p class="small">
-							Équipements identiques (même libellé, même catégorie, même acquisition). Ceux que vous cochez sont
-							<strong>associés à {{ equipement.reference }}</strong>, qui garde sa référence, ses dates, son emplacement
-							et son historique ; leurs éléments s'ajoutent au lot et ils sont <strong>archivés</strong>
-							(leur historique est conservé). Pensez à retirer leurs étiquettes.
+							{{ "Équipements identiques (même libellé, même catégorie, même acquisition). Ceux que vous cochez sont <strong>associés à {reference}</strong>, qui garde sa référence, ses dates, son emplacement et son historique ; leurs éléments s'ajoutent au lot et ils sont <strong>archivés</strong> (leur historique est conservé). Pensez à retirer leurs étiquettes."|trans({reference: (equipement.reference)|e})|raw }}
 						</p>
 						<div class="table-responsive">
 							<table class="table table-sm align-middle">
 								<thead>
-									<tr><th></th><th>Référence</th><th>Éléments</th><th>Emplacement</th><th>Mise en service</th><th>Fin d'utilisation</th></tr>
+									<tr><th></th><th>{{ 'Référence'|trans }}</th><th>{{ 'Éléments'|trans }}</th><th>{{ 'Emplacement'|trans }}</th><th>{{ 'Mise en service'|trans }}</th><th>{{ "Fin d'utilisation"|trans }}</th></tr>
 								</thead>
 								<tbody>
 									{% for c in regroupement.candidats %}
@@ -130,7 +124,7 @@
 											</td>
 											<td>
 												<label for="regrouper_{{ c.id }}">{{ c.reference }}</label>
-												{% if c.erreur_regroupement %}<div class="small">Impossible : {{ c.erreur_regroupement }}</div>{% endif %}
+												{% if c.erreur_regroupement %}<div class="small">{{ 'Impossible : {erreur_regroupement}'|trans({erreur_regroupement: c.erreur_regroupement}) }}</div>{% endif %}
 											</td>
 											<td>{{ c.nombre|default(1) }}{% if c.nombre_initial|default(1) > 1 %} / {{ c.nombre_initial }}{% endif %}</td>
 											<td class="{{ c.emplacement_id != equipement.emplacement_id ? 'text-warning' : '' }}">{{ emplacement_c ? emplacement_c.libelle : '—' }}</td>
@@ -141,16 +135,16 @@
 								</tbody>
 							</table>
 						</div>
-						<p class="small text-muted">En orange : valeur différente de {{ equipement.reference }} (celle de {{ equipement.reference }} est conservée).</p>
+						<p class="small text-muted">{{ 'En orange : valeur différente de {reference} (celle de {reference2} est conservée).'|trans({reference: equipement.reference, reference2: equipement.reference}) }}</p>
 						<div class="form-text mb-2" id="regroupement-statut" aria-live="polite"></div>
 						<div class="mb-3 p-2 border border-warning rounded">
 							<label for="confirmation_regroupement" class="form-label">
-								Pour confirmer le regroupement, saisissez <code>{{ mot_confirmation_regroupement }}</code>
+								{{ 'Pour confirmer le regroupement, saisissez <code>{mot_confirmation_regroupement}</code>'|trans({mot_confirmation_regroupement: (mot_confirmation_regroupement)|e})|raw }}
 							</label>
 							<input type="text" class="form-control" name="confirmation_regroupement" id="confirmation_regroupement"
 							       autocomplete="off" spellcheck="false" data-mot="{{ mot_confirmation_regroupement }}">
 						</div>
-						<button type="submit" class="btn btn-warning">Regrouper en lot</button>
+						<button type="submit" class="btn btn-warning">{{ 'Regrouper en lot'|trans }}</button>
 					</form>
 				{% endif %}
 			</div>
@@ -164,7 +158,7 @@
 		{% set emplacement_seul = emplacement_seul|default(false) %}
 		{% if emplacement_seul %}
 			<div class="alert alert-info">
-				<i class="fas fa-info-circle"></i> En tant que contrôleur, vous pouvez modifier uniquement l'<strong>emplacement</strong> de cet équipement.
+				<i class="fas fa-info-circle"></i> {{ "En tant que contrôleur, vous pouvez modifier uniquement l'<strong>emplacement</strong> de cet équipement."|trans|raw }}
 			</div>
 		{% endif %}
 
@@ -184,7 +178,7 @@
 		<!-- Catégorie : définie à l'acquisition, modifiable par un super-administrateur
 		     (saisie comme une ligne d'acquisition, référence proposée + mot de confirmation) -->
 		<div class="mb-3">
-			<label for="categorie">Catégorie</label>
+			<label for="categorie">{{ 'Catégorie'|trans }}</label>
 			{% if isGranted('ROLE_SUPER_ADMIN') and equipement.id is defined and equipement.id %}
 				<input type="text" class="form-control {% if form_errors.categorie_libelle is defined %}is-invalid{% endif %}"
 				       name="categorie_libelle" id="categorie" list="categories"
@@ -200,15 +194,14 @@
 					<div class="invalid-feedback">{{ form_errors.categorie_libelle }}</div>
 				{% endif %}
 				<div class="form-text" id="categorie-statut" aria-live="polite"></div>
-				<small class="text-muted">Définie lors de l'acquisition ; modifiable par un super-administrateur. Une catégorie inconnue est créée.</small>
+				<small class="text-muted">{{ "Définie lors de l'acquisition ; modifiable par un super-administrateur. Une catégorie inconnue est créée."|trans }}</small>
 				<div id="bloc-confirmation-categorie" class="mt-2 p-2 border border-warning rounded {% if categorie_saisie is null and form_errors.confirmation_categorie is not defined %}d-none{% endif %}">
 					<div class="small mb-2">
 						<i class="fas fa-exclamation-triangle text-warning"></i>
-						L'équipement quitte la catégorie <strong>{{ equipement.categorie.libelle }}</strong> ;
-						une référence libre dans la nouvelle catégorie est proposée ci-dessous.
+						{{ "L'équipement quitte la catégorie <strong>{libelle}</strong> ; une référence libre dans la nouvelle catégorie est proposée ci-dessous."|trans({libelle: (equipement.categorie.libelle)|e})|raw }}
 					</div>
 					<label for="confirmation_categorie" class="form-label">
-						Pour confirmer le changement, saisissez <code>{{ mot_confirmation_categorie }}</code>
+						{{ 'Pour confirmer le changement, saisissez <code>{mot_confirmation_categorie}</code>'|trans({mot_confirmation_categorie: (mot_confirmation_categorie)|e})|raw }}
 					</label>
 					<input type="text" class="form-control {% if form_errors.confirmation_categorie is defined %}is-invalid{% endif %}"
 					       name="confirmation_categorie" id="confirmation_categorie"
@@ -219,23 +212,23 @@
 				</div>
 			{% else %}
 				<input type="text" class="form-control" id="categorie" value="{{ equipement.categorie.libelle }}" readonly disabled>
-				<small class="text-muted">La catégorie est définie lors de l'acquisition.</small>
+				<small class="text-muted">{{ "La catégorie est définie lors de l'acquisition."|trans }}</small>
 			{% endif %}
 		</div>
 
 		<!-- EPI (lecture seule) -->
 		<div class="mb-3">
-			<label for="est_epi">EPI</label>
+			<label for="est_epi">{{ 'EPI'|trans }}</label>
 			<input type="text" class="form-control" id="est_epi" 
 			       value="{% if equipement.categorie and equipement.categorie.est_epi %}Oui{% else %}Non{% endif %}" 
 			       readonly disabled>
-			<small class="text-muted">Le statut EPI est défini par la catégorie de l'équipement.</small>
+			<small class="text-muted">{{ "Le statut EPI est défini par la catégorie de l'équipement."|trans }}</small>
 		</div>
 
 		<!-- Référence : définie à l'acquisition, modifiable par un super-administrateur
 		     (unicité vérifiée à la volée + mot de confirmation, revérifiés côté serveur) -->
 		<div class="mb-3">
-			<label for="reference">Référence</label>
+			<label for="reference">{{ 'Référence'|trans }}</label>
 			{% if isGranted('ROLE_SUPER_ADMIN') and equipement.id is defined and equipement.id %}
 				<input type="text" class="form-control {% if form_errors.reference is defined %}is-invalid{% endif %}"
 				       name="reference" id="reference" value="{{ reference_saisie ?? equipement.reference }}"
@@ -245,15 +238,14 @@
 					<div class="invalid-feedback">{{ form_errors.reference }}</div>
 				{% endif %}
 				<div class="form-text" id="reference-statut" aria-live="polite"></div>
-				<small class="text-muted">Définie lors de l'acquisition ; modifiable par un super-administrateur.</small>
+				<small class="text-muted">{{ "Définie lors de l'acquisition ; modifiable par un super-administrateur."|trans }}</small>
 				<div id="bloc-confirmation-reference" class="mt-2 p-2 border border-warning rounded {% if reference_saisie is null and form_errors.confirmation_reference is not defined %}d-none{% endif %}">
 					<div class="small mb-2">
 						<i class="fas fa-exclamation-triangle text-warning"></i>
-						Les étiquettes et fiches déjà imprimées portent l'ancienne référence
-						<strong>{{ equipement.reference }}</strong> ; le QR code reste valable.
+						{{ "Les étiquettes et fiches déjà imprimées portent l'ancienne référence <strong>{reference}</strong> ; le QR code reste valable."|trans({reference: (equipement.reference)|e})|raw }}
 					</div>
 					<label for="confirmation_reference" class="form-label">
-						Pour confirmer le changement, saisissez <code>{{ mot_confirmation_reference }}</code>
+						{{ 'Pour confirmer le changement, saisissez <code>{mot_confirmation_reference}</code>'|trans({mot_confirmation_reference: (mot_confirmation_reference)|e})|raw }}
 					</label>
 					<input type="text" class="form-control {% if form_errors.confirmation_reference is defined %}is-invalid{% endif %}"
 					       name="confirmation_reference" id="confirmation_reference"
@@ -264,31 +256,31 @@
 				</div>
 			{% else %}
 				<input type="text" class="form-control" id="reference" value="{{ equipement.reference }}" readonly disabled>
-				<small class="text-muted">La référence est définie lors de l'acquisition.</small>
+				<small class="text-muted">{{ "La référence est définie lors de l'acquisition."|trans }}</small>
 			{% endif %}
 		</div>
 
 		<!-- Libellé : défini à l'acquisition, modifiable par un administrateur -->
 		<div class="mb-3">
-			<label for="libelle">Libellé</label>
+			<label for="libelle">{{ 'Libellé'|trans }}</label>
 			{% if isGranted('ROLE_ADMIN') %}
 				<input type="text" class="form-control {% if form_errors.libelle is defined %}is-invalid{% endif %}"
 				       name="libelle" id="libelle" value="{{ equipement.libelle }}" maxlength="255" required>
 				{% if form_errors.libelle is defined %}
 					<div class="invalid-feedback">{{ form_errors.libelle }}</div>
 				{% endif %}
-				<small class="text-muted">Défini lors de l'acquisition ; modifiable par un administrateur.</small>
+				<small class="text-muted">{{ "Défini lors de l'acquisition ; modifiable par un administrateur."|trans }}</small>
 			{% else %}
 				<input type="text" class="form-control" id="libelle" value="{{ equipement.libelle }}" readonly disabled>
-				<small class="text-muted">Le libellé est défini lors de l'acquisition.</small>
+				<small class="text-muted">{{ "Le libellé est défini lors de l'acquisition."|trans }}</small>
 			{% endif %}
 		</div>
 
 		<!-- Date d'achat (lecture seule) -->
 		<div class="mb-3">
-			<label for="date_achat">Date d'achat</label>
+			<label for="date_achat">{{ "Date d'achat"|trans }}</label>
 			<input type="text" class="form-control" id="date_achat" value="{{ equipement.date_achat ? equipement.date_achat|date('d/m/Y') : 'Non renseignée' }}" readonly disabled>
-			<small class="text-muted">La date d'achat est définie lors de l'acquisition.</small>
+			<small class="text-muted">{{ "La date d'achat est définie lors de l'acquisition."|trans }}</small>
 		</div>
 
 		<!-- Lot : nombre d'éléments (modifiable, plafonné au nombre initial).
@@ -302,34 +294,34 @@
 				<div class="form-check">
 					<input type="checkbox" class="form-check-input" name="lot" value="1" id="lot"
 					       data-initial="{{ ni_actuel > 1 ? '1' : '0' }}" {% if est_lot %}checked{% endif %} {% if not ref_cat_ouvert %}disabled{% endif %}>
-					<label class="form-check-label" for="lot">Lot</label>
+					<label class="form-check-label" for="lot">{{ 'Lot'|trans }}</label>
 				</div>
-				<small class="text-muted">Plusieurs éléments identiques sous une même référence. Décocher ramène le nombre initial et le nombre actuel à 1.</small>
+				<small class="text-muted">{{ 'Plusieurs éléments identiques sous une même référence. Décocher ramène le nombre initial et le nombre actuel à 1.'|trans }}</small>
 			</div>
 			<div class="mb-3 {% if not est_lot %}d-none{% endif %}" id="bloc-nombre-initial">
-				<label for="nombre_initial">Nombre initial du lot</label>
+				<label for="nombre_initial">{{ 'Nombre initial du lot'|trans }}</label>
 				<input type="number" class="form-control {% if form_errors.nombre_initial is defined %}is-invalid{% endif %}"
 				       id="nombre_initial" name="nombre_initial" min="2" max="{{ lot_max }}"
 				       value="{{ ni_affiche }}" data-initial="{{ ni_actuel }}" {% if not ref_cat_ouvert or not est_lot %}disabled{% endif %}>
 				{% if form_errors.nombre_initial is defined %}
 					<div class="invalid-feedback">{{ form_errors.nombre_initial }}</div>
 				{% endif %}
-				<small class="text-muted">Nombre d'éléments du lot à la création ; modifiable par un super-administrateur.</small>
+				<small class="text-muted">{{ "Nombre d'éléments du lot à la création ; modifiable par un super-administrateur."|trans }}</small>
 			</div>
 		{% elseif ni_actuel > 1 %}
 			<div class="mb-3">
-				<label>Nombre initial du lot</label>
+				<label>{{ 'Nombre initial du lot'|trans }}</label>
 				<input type="text" class="form-control" value="{{ ni_actuel }}" readonly disabled>
-				<small class="text-muted">Nombre d'éléments du lot à la création — non modifiable.</small>
+				<small class="text-muted">{{ "Nombre d'éléments du lot à la création — non modifiable."|trans }}</small>
 			</div>
 		{% endif %}
 		{% if ni_actuel > 1 or ref_cat_modifiable %}
 			<div class="mb-3 {% if not est_lot %}d-none{% endif %}" id="bloc-nombre">
-				<label for="nombre">Nombre actuel d'éléments</label>
+				<label for="nombre">{{ "Nombre actuel d'éléments"|trans }}</label>
 				<input type="number" class="form-control {% if form_errors.nombre is defined and form_errors.nombre %}is-invalid{% endif %}"
 				       id="nombre" name="nombre" min="1" max="{{ est_lot ? (ni_affiche > 1 ? ni_affiche : ni_actuel) : 1 }}"
 				       value="{{ equipement.nombre|default(1) }}" data-initial="{{ equipement.nombre|default(1) }}">
-				<small class="text-muted">Entre 1 et le nombre initial du lot.</small>
+				<small class="text-muted">{{ 'Entre 1 et le nombre initial du lot.'|trans }}</small>
 				{% if form_errors.nombre is defined and form_errors.nombre %}
 					<div class="invalid-feedback d-block">{{ form_errors.nombre }}</div>
 				{% endif %}
@@ -338,11 +330,11 @@
 
 		<!-- Date de mise en service : date de facture, modifiable une seule fois -->
 		<div class="mb-3">
-			<label for="date_mise_en_service">Date de mise en service</label>
+			<label for="date_mise_en_service">{{ 'Date de mise en service'|trans }}</label>
 			{% if date_mes_verrouillee %}
 				<input type="date" class="form-control" id="date_mise_en_service"
 				       value="{{ equipement.date_mise_en_service }}" readonly disabled>
-				<small class="text-muted">🔒 Cette date a déjà été modifiée une fois et ne peut plus l'être.</small>
+				<small class="text-muted">🔒 {{ "Cette date a déjà été modifiée une fois et ne peut plus l'être."|trans }}</small>
 			{% else %}
 				<input type="date" class="form-control {% if form_errors.date_mise_en_service is defined %}is-invalid{% endif %}"
 				       name="date_mise_en_service" id="date_mise_en_service"
@@ -353,12 +345,11 @@
 					<div class="invalid-feedback">{{ form_errors.date_mise_en_service }}</div>
 				{% endif %}
 				<small class="text-muted">
-					Par défaut, la date de la facture.
+					{{ 'Par défaut, la date de la facture.'|trans }}
 					{% if isGranted('ROLE_SUPER_ADMIN') %}
-						Super-administrateur : modifiable à tout moment{% if date_facture %}, mais pas avant le {{ date_facture|date('d/m/Y') }}{% endif %}.
+						{{ 'Super-administrateur : modifiable à tout moment'|trans }}{% if date_facture %}{{ ', mais pas avant le {date_facture}'|trans({date_facture: (date_facture|date('d/m/Y'))}) }}{% endif %}.
 					{% else %}
-						⚠️ Elle ne peut être modifiée qu'<strong>une seule fois</strong>{% if date_facture %},
-						et pas avant le {{ date_facture|date('d/m/Y') }}{% endif %}.
+						⚠️ {{ "Elle ne peut être modifiée qu'<strong>une seule fois</strong>"|trans|raw }}{% if date_facture %}{{ ', et pas avant le {date_facture}'|trans({date_facture: (date_facture|date('d/m/Y'))}) }}{% endif %}.
 					{% endif %}
 				</small>
 			{% endif %}
@@ -367,35 +358,30 @@
 		<!-- Durée maximum d'utilisation (héritée de la catégorie, modifiable) -->
 		<div class="mb-3 form-check">
 			<input type="checkbox" id="duree_max_utilisation" name="duree_max_utilisation" class="form-check-input" {% if equipement.duree_max_utilisation %}checked{% endif %}>
-			<label class="form-check-label" for="duree_max_utilisation">Durée maximum d'utilisation</label>
+			<label class="form-check-label" for="duree_max_utilisation">{{ "Durée maximum d'utilisation"|trans }}</label>
 			<small class="form-text text-muted d-block">
-				Cocher si le fabricant limite la durée de vie de cet équipement (généralement 10 ans) :
-				la date de fin d'utilisation ci-dessous fait alors office de date de péremption.
-			</small>
+				{{ "Cocher si le fabricant limite la durée de vie de cet équipement (généralement 10 ans) : la date de fin d'utilisation ci-dessous fait alors office de date de péremption."|trans }} </small>
 		</div>
 
 		<!-- Élément textile remplaçable (hérité de la catégorie, modifiable) -->
 		<div class="mb-3 form-check">
 			<input type="checkbox" id="textile_remplacable" name="textile_remplacable" class="form-check-input" {% if equipement.textile_remplacable|default(false) %}checked{% endif %}>
-			<label class="form-check-label" for="textile_remplacable">Élément textile remplaçable</label>
+			<label class="form-check-label" for="textile_remplacable">{{ 'Élément textile remplaçable'|trans }}</label>
 			<small class="form-text text-muted d-block">
-				Passez l'équipement « En maintenance » pour changer son élément textile : au contrôle suivant, le
-				contrôleur indique le remplacement et met le statut à OK ; la date de fin d'utilisation devient
-				alors la date du contrôle + 10 ans (fin de mois).
-			</small>
+				{{ "Passez l'équipement « En maintenance » pour changer son élément textile : au contrôle suivant, le contrôleur indique le remplacement et met le statut à OK ; la date de fin d'utilisation devient alors la date du contrôle + 10 ans (fin de mois)."|trans }} </small>
 		</div>
 
 		<!-- Date de fin d'utilisation (modifiable si vide) -->
 		<div class="mb-3">
-			<label for="date_fin_utilisation">Date de fin d'utilisation (péremption)</label>
+			<label for="date_fin_utilisation">{{ "Date de fin d'utilisation (péremption)"|trans }}</label>
 			{% if equipement.date_fin_utilisation %}
 				<input type="date" class="form-control" id="date_fin_utilisation" 
 				       value="{{ equipement.date_fin_utilisation }}" readonly disabled>
-				<small class="text-muted">Cette date est déjà renseignée et ne peut plus être modifiée.</small>
+				<small class="text-muted">{{ 'Cette date est déjà renseignée et ne peut plus être modifiée.'|trans }}</small>
 				<input type="hidden" name="date_fin_utilisation" value="{{ equipement.date_fin_utilisation }}">
 			{% else %}
 				<input type="date" class="form-control" name="date_fin_utilisation" id="date_fin_utilisation">
-				<small class="text-muted">Laisser vide si l'équipement est toujours en service.</small>
+				<small class="text-muted">{{ "Laisser vide si l'équipement est toujours en service."|trans }}</small>
 			{% endif %}
 		</div>
 
@@ -403,9 +389,9 @@
 
 		<!-- Emplacement (modifiable, y compris par un contrôleur) -->
 		<div class="mb-3">
-			<label for="emplacement_id">Emplacement</label>
+			<label for="emplacement_id">{{ 'Emplacement'|trans }}</label>
 			<select id="emplacement_id" name="emplacement_id" class="form-control">
-				<option value="">-- Aucun emplacement --</option>
+				<option value="">-- {{ 'Aucun emplacement --'|trans }}</option>
 				{% for emplacement in emplacements|tri_alpha('libelle') %}
 					<option value="{{ emplacement.id }}" {% if equipement.emplacement_id == emplacement.id %}selected{% endif %}>
 						{{ emplacement.libelle }}
@@ -418,15 +404,15 @@
 
 		<!-- Statut : les statuts réservés (Hors service, Prêté, Égaré) ne sont attribués / levés que par un contrôle ou un prêt -->
 		<div class="mb-3">
-			<label for="statut">Statut</label>
+			<label for="statut">{{ 'Statut'|trans }}</label>
 			{% set statut_actuel = equipement.statut is defined and equipement.statut is not null ? statut_equipement(equipement.statut) : null %}
 			{% if statut_actuel and statut_actuel.reserve %}
 			<input type="hidden" name="statut" value="{{ equipement.statut }}">
 			<input type="text" class="form-control {% if form_errors.statut is defined %}is-invalid{% endif %}" id="statut" value="{{ statut_actuel.libelle }}" disabled>
 			{% if equipement.statut == 3 %}
-			<small class="text-muted">Matériel prêté : son statut changera à la vérification du retour du prêt.</small>
+			<small class="text-muted">{{ 'Matériel prêté : son statut changera à la vérification du retour du prêt.'|trans }}</small>
 			{% else %}
-			<small class="text-muted">Statut fixé par un contrôle{% if equipement.statut == 4 %} ou un prêt{% endif %} : seul un nouveau contrôle peut le lever.</small>
+			<small class="text-muted">{{ 'Statut fixé par un contrôle'|trans }}{% if equipement.statut == 4 %} {{ 'ou un prêt'|trans }}{% endif %} {{ ': seul un nouveau contrôle peut le lever.'|trans }}</small>
 			{% endif %}
 			{% else %}
 			<select class="form-select {% if form_errors.statut is defined %}is-invalid{% endif %}" name="statut" id="statut">
@@ -434,7 +420,7 @@
 				<option value="{{ value }}" {% if equipement.statut is defined and equipement.statut == value %}selected{% endif %}>{{ name }}</option>
 				{% endfor %}
 			</select>
-			<small class="text-muted">« Hors service » et « Égaré » s'attribuent à l'issue d'un contrôle ; « Prêté » par un prêt.</small>
+			<small class="text-muted">{{ "« Hors service » et « Égaré » s'attribuent à l'issue d'un contrôle ; « Prêté » par un prêt."|trans }}</small>
 			{% endif %}
 			{% if form_errors.statut is defined %}
 			<div class="invalid-feedback d-block">{{ form_errors.statut }}</div>
@@ -443,25 +429,25 @@
 
 		<!-- Remarques (modifiable) -->
 		<div class="mb-3">
-			<label for="remarques">Remarques</label>
+			<label for="remarques">{{ 'Remarques'|trans }}</label>
 			<textarea class="form-control" name="remarques" id="remarques" rows="3">{{ equipement.remarques }}</textarea>
 		</div>
 
 		<!-- Lien vers la notice du fabricant (facultatif) -->
 		<div class="mb-3">
-			<label for="notice_url">Lien vers la notice</label>
+			<label for="notice_url">{{ 'Lien vers la notice'|trans }}</label>
 			<input type="url" class="form-control {% if form_errors.notice_url is defined %}is-invalid{% endif %}"
 			       name="notice_url" id="notice_url" maxlength="2048" placeholder="https://"
 			       value="{{ notice_saisie ?? equipement.notice_url|default('') }}">
 			{% if form_errors.notice_url is defined %}
 				<div class="invalid-feedback">{{ form_errors.notice_url }}</div>
 			{% endif %}
-			<small class="text-muted">Adresse de la notice du fabricant (PDF ou page web). Laisser vide si aucune.</small>
+			<small class="text-muted">{{ 'Adresse de la notice du fabricant (PDF ou page web). Laisser vide si aucune.'|trans }}</small>
 		</div>
 
 		{# ⬇️ NOUVEAU CHAMP : PHOTO #}
 		<div class="mb-3">
-			<label for="photo">Photo de l'équipement</label>
+			<label for="photo">{{ "Photo de l'équipement"|trans }}</label>
 			<input type="file" 
 				class="form-control {% if form_errors.photo is defined and form_errors.photo %}is-invalid{% endif %}" 
 				name="photo" 
@@ -474,8 +460,8 @@
 			{# Afficher un aperçu si une photo existe déjà #}
 			{% if equipement.photo is defined and equipement.photo is not empty %}
 				<div class="mt-2">
-					<img src="{{ equipement.photo }}" alt="Photo actuelle" style="max-width: 200px; max-height: 200px;" class="img-thumbnail">
-					<p class="text-muted small mt-1">Photo actuelle (remplacée si vous en téléchargez une nouvelle).</p>
+					<img src="{{ equipement.photo }}" alt="{{ 'Photo actuelle'|trans }}" style="max-width: 200px; max-height: 200px;" class="img-thumbnail">
+					<p class="text-muted small mt-1">{{ 'Photo actuelle (remplacée si vous en téléchargez une nouvelle).'|trans }}</p>
 				</div>
 			{% endif %}
 		</div>
@@ -483,8 +469,8 @@
 
 		</fieldset>
 
-		<button type="submit" class="btn btn-primary">Enregistrer</button>
-		<a href="{% if equipement.id is defined and equipement.id %}/equipements/equipement-{{ equipement.id }}{% else %}/equipements{% endif %}" class="btn btn-secondary">Annuler</a>
+		<button type="submit" class="btn btn-primary">{{ 'Enregistrer'|trans }}</button>
+		<a href="{% if equipement.id is defined and equipement.id %}/equipements/equipement-{{ equipement.id }}{% else %}/equipements{% endif %}" class="btn btn-secondary">{{ 'Annuler'|trans }}</a>
 	</form>
 
 	<!-- Modal -->
@@ -492,20 +478,20 @@
 		<div class="modal-dialog">
 			<div class="modal-content">
 				<div class="modal-header">
-					<h1 class="modal-title fs-5" id="categorieModalFormLabel">Nouvelle catégorie</h1>
-					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+					<h1 class="modal-title fs-5" id="categorieModalFormLabel">{{ 'Nouvelle catégorie'|trans }}</h1>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ 'Fermer'|trans }}"></button>
 				</div>
 				<div class="modal-body">
 					<form id="add_epi_categorie">
 						<div class="mb-3">
-							<label for="libelle">Nom</label>
+							<label for="libelle">{{ 'Nom'|trans }}</label>
 							<input type="text" class="form-control" name="libelle" id="libelle" required>
 						</div>
 					</form>
 				</div>
 				<div class="modal-footer">
-					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-					<button type="button" class="btn btn-primary" id="add_category_submit">Save changes</button>
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{{ 'Fermer'|trans }}</button>
+					<button type="button" class="btn btn-primary" id="add_category_submit">{{ 'Enregistrer'|trans }}</button>
 				</div>
 			</div>
 		</div>
@@ -524,7 +510,7 @@
 			champ.form.addEventListener('submit', function (e) {
 				const initiale = champ.dataset.initiale || '';
 				if (champ.value !== '' && champ.value !== initiale
-					&& !confirm('La date de mise en service ne pourra plus être modifiée ensuite. Confirmer ?')) {
+					&& !confirm({{ 'La date de mise en service ne pourra plus être modifiée ensuite. Confirmer ?'|trans|json_encode|raw }})) {
 					e.preventDefault();
 				}
 			});
@@ -571,7 +557,7 @@
 					.catch(() => {
 						if (numero !== requete) return;
 						disponible = null;
-						afficher('text-danger', 'Vérification impossible, réessayez.');
+						afficher('text-danger', {{ 'Vérification impossible, réessayez.'|trans|json_encode|raw }});
 					});
 			}
 			function surSaisie() {
@@ -593,8 +579,8 @@
 				if (disponible !== true) {
 					e.preventDefault();
 					afficher('text-danger', disponible === false
-						? '✖ Choisissez une référence disponible.'
-						: 'Vérification de la référence en cours, réessayez dans un instant.');
+						? '✖ ' + {{ 'Choisissez une référence disponible.'|trans|json_encode|raw }}
+						: {{ 'Vérification de la référence en cours, réessayez dans un instant.'|trans|json_encode|raw }});
 					champ.focus();
 				} else if (confirmation.value.trim() !== motAttendu) {
 					e.preventDefault();
@@ -654,7 +640,7 @@
 			function suggerer() {
 				const libelle = champ.value.trim();
 				const numero = ++requete;
-				afficher('text-muted', 'Recherche d\'une référence libre…');
+				afficher('text-muted', {{ "Recherche d'une référence libre…"|trans|json_encode|raw }});
 				fetch('/equipements/reference-suggestion?' + new URLSearchParams({ id: champ.dataset.equipementId, categorie: libelle }),
 					{ headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
 					.then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
@@ -662,17 +648,17 @@
 						if (numero !== requete) return; // réponse obsolète
 						if (epi) epi.value = data.est_epi === false ? 'Non' : 'Oui';
 						if (!data.reference) {
-							afficher('text-danger', 'Aucune référence proposée pour cette catégorie.');
+							afficher('text-danger', {{ 'Aucune référence proposée pour cette catégorie.'|trans|json_encode|raw }});
 							return;
 						}
 						afficher(data.nouvelle ? 'text-warning' : 'text-muted',
-							(data.nouvelle ? 'Nouvelle catégorie : elle sera créée à l\'enregistrement. ' : '')
-							+ 'Référence proposée (' + data.annee + ') : ' + data.reference);
+							(data.nouvelle ? {{ "Nouvelle catégorie : elle sera créée à l'enregistrement."|trans|json_encode|raw }} + ' ' : '')
+							+ {{ 'Référence proposée ({annee}) : {reference}'|trans|json_encode|raw }}.replace('{annee}', data.annee).replace('{reference}', data.reference));
 						proposerReference(data.reference);
 					})
 					.catch(() => {
 						if (numero !== requete) return;
-						afficher('text-danger', 'Proposition de référence impossible, réessayez.');
+						afficher('text-danger', {{ 'Proposition de référence impossible, réessayez.'|trans|json_encode|raw }});
 					});
 			}
 			function surSaisie() {
@@ -688,7 +674,7 @@
 				bloc.classList.remove('d-none');
 				if (champ.value.trim() === '') {
 					requete++;
-					afficher('text-danger', 'La catégorie est obligatoire.');
+					afficher('text-danger', {{ 'La catégorie est obligatoire.'|trans|json_encode|raw }});
 					return;
 				}
 				minuterie = setTimeout(suggerer, 400);
@@ -758,8 +744,8 @@
 				nombreInitial.disabled = !ouvrir || !lot.checked;
 				bouton.setAttribute('aria-pressed', ouvrir ? 'true' : 'false');
 				libelle.textContent = ouvrir
-					? 'Annuler la modification de la référence, de la catégorie et du lot'
-					: 'Modifier la référence, la catégorie et le lot (dissocier, regrouper)';
+					? {{ 'Annuler la modification de la référence, de la catégorie et du lot'|trans|json_encode|raw }}
+					: {{ 'Modifier la référence, la catégorie et le lot (dissocier, regrouper)'|trans|json_encode|raw }};
 				// Cartes « Dissocier le lot » / « Regrouper en lot » : affichées avec la roue dentée.
 				document.querySelectorAll('.carte-lot').forEach(function (carte) {
 					carte.classList.toggle('d-none', !ouvrir);
@@ -849,11 +835,11 @@
 			// Même règle que DissociationLot::parties()
 			function analyser(texte) {
 				const morceaux = texte.trim().split(/[\s,;+]+/).filter(m => m !== '');
-				if (morceaux.length < 2) return 'Indiquez au moins deux parties.';
-				if (morceaux.some(m => !/^\d+$/.test(m) || parseInt(m, 10) < 1)) return 'Chaque partie doit être un entier ≥ 1.';
+				if (morceaux.length < 2) return {{ 'Indiquez au moins deux parties.'|trans|json_encode|raw }};
+				if (morceaux.some(m => !/^\d+$/.test(m) || parseInt(m, 10) < 1)) return {{ 'Chaque partie doit être un entier ≥ 1.'|trans|json_encode|raw }};
 				const tailles = morceaux.map(m => parseInt(m, 10));
 				const somme = tailles.reduce((a, b) => a + b, 0);
-				if (somme !== nombre) return 'Somme des parties : ' + somme + ' ; elle doit être égale à ' + nombre + '.';
+				if (somme !== nombre) return {{ 'Somme des parties : {somme} ; elle doit être égale à {nombre}.'|trans|json_encode|raw }}.replace('{somme}', somme).replace('{nombre}', nombre);
 				return tailles;
 			}
 			function doublons() {
@@ -868,14 +854,14 @@
 				if (!modifiables) {
 					ligne.disponible = valeur !== '';
 					afficher(ligne.statut, valeur !== '' ? 'text-muted' : 'text-danger', valeur !== ''
-						? 'Attribuée automatiquement.'
-						: 'Aucune référence proposée : demandez à un super-administrateur.');
+						? {{ 'Attribuée automatiquement.'|trans|json_encode|raw }}
+						: {{ 'Aucune référence proposée : demandez à un super-administrateur.'|trans|json_encode|raw }});
 					return;
 				}
-				if (valeur === '') { afficher(ligne.statut, 'text-danger', 'La référence est obligatoire.'); return; }
+				if (valeur === '') { afficher(ligne.statut, 'text-danger', {{ 'La référence est obligatoire.'|trans|json_encode|raw }}); return; }
 				if (doublons()[valeur] > 1) {
 					ligne.disponible = false;
-					afficher(ligne.statut, 'text-danger', '✖ Référence saisie deux fois.');
+					afficher(ligne.statut, 'text-danger', '✖ ' + {{ 'Référence saisie deux fois.'|trans|json_encode|raw }});
 					return;
 				}
 				afficher(ligne.statut, 'text-muted', 'Vérification…');
@@ -890,7 +876,7 @@
 					})
 					.catch(() => {
 						if (numero !== ligne.requete) return;
-						afficher(ligne.statut, 'text-danger', 'Vérification impossible, réessayez.');
+						afficher(ligne.statut, 'text-danger', {{ 'Vérification impossible, réessayez.'|trans|json_encode|raw }});
 					});
 			}
 			function verifierTout() {
@@ -947,14 +933,16 @@
 					return;
 				}
 				parties = resultat;
-				afficher(statut, 'text-success', '✔ ' + parties[0] + ' élément(s) restent sur l\'équipement actuel ; '
-					+ (parties.length - 1) + ' nouvel(s) équipement(s).');
+				afficher(statut, 'text-success', '✔ ' + {{ "{restants} élément(s) restent sur l'équipement actuel ; {nouveaux} nouvel(s) équipement(s)."|trans|json_encode|raw }}
+					.replace('{restants}', parties[0]).replace('{nouveaux}', parties.length - 1));
 				while (lignes.length > parties.length - 1) lignes.pop().bloc.remove();
 				while (lignes.length < parties.length - 1) lignes.push(creerLigne());
 				lignes.forEach((ligne, i) => {
 					const taille = parties[i + 1];
-					ligne.label.textContent = 'Nouvel équipement ' + (i + 1) + ' — '
-						+ (taille > 1 ? 'lot de ' + taille + ' éléments' : 'équipement individuel') + ' : référence';
+					ligne.label.textContent = (taille > 1
+						? {{ 'Nouvel équipement {numero} — lot de {taille} éléments : référence'|trans|json_encode|raw }}
+						: {{ 'Nouvel équipement {numero} — équipement individuel : référence'|trans|json_encode|raw }})
+						.replace('{numero}', i + 1).replace('{taille}', taille);
 				});
 				proposer();
 			}
@@ -991,7 +979,7 @@
 				const enAttente = lignes.find(l => l.disponible !== true);
 				if (enAttente) {
 					e.preventDefault();
-					if (enAttente.disponible === null) afficher(enAttente.statut, 'text-danger', 'Vérification en cours, réessayez dans un instant.');
+					if (enAttente.disponible === null) afficher(enAttente.statut, 'text-danger', {{ 'Vérification en cours, réessayez dans un instant.'|trans|json_encode|raw }});
 					enAttente.input.focus();
 					return;
 				}
@@ -1050,8 +1038,8 @@
 				}
 				const somme = (cle) => liste.reduce((t, c) => t + parseInt(c.dataset[cle], 10), parseInt(form.dataset[cle], 10));
 				statut.className = 'form-text mb-2 text-success';
-				statut.textContent = '✔ Lot obtenu : ' + somme('nombre') + ' élément(s) (nombre initial ' + somme('nombreInitial')
-					+ ') ; ' + liste.length + ' équipement(s) archivé(s).';
+				statut.textContent = '✔ ' + {{ 'Lot obtenu : {nombre} élément(s) (nombre initial {initial}) ; {archives} équipement(s) archivé(s).'|trans|json_encode|raw }}
+					.replace('{nombre}', somme('nombre')).replace('{initial}', somme('nombreInitial')).replace('{archives}', liste.length);
 			}
 			choix.forEach(c => c.addEventListener('change', resumer));
 			confirmation.addEventListener('input', () => confirmation.classList.remove('is-invalid'));
@@ -1065,7 +1053,7 @@
 				if (coches().length === 0) {
 					e.preventDefault();
 					statut.className = 'form-text mb-2 text-danger';
-					statut.textContent = 'Cochez au moins un équipement à regrouper.';
+					statut.textContent = {{ 'Cochez au moins un équipement à regrouper.'|trans|json_encode|raw }};
 					return;
 				}
 				if (confirmation.value.trim() !== confirmation.dataset.mot) {

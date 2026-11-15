@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Epiclub\Domain;
 
+use Epiclub\Engine\Traducteur;
 use Epiclub\Enum\EquipementStatut;
 
 /**
@@ -45,17 +46,17 @@ final class RegroupementLot
     public static function erreurEquipement(array $equipement, bool $dansPretOuvert, ?array $depart = null): ?string
     {
         if (!empty($equipement['controle_en_cours'])) {
-            return 'contrôle en cours';
+            return Traducteur::t('contrôle en cours');
         }
         if ($dansPretOuvert) {
-            return 'inscrit sur un prêt';
+            return Traducteur::t('inscrit sur un prêt');
         }
         $statut = EquipementStatut::tryFrom((int) ($equipement['statut'] ?? 0));
         if ($statut !== null && $statut->estReserve()) {
-            return sprintf('statut « %s »', $statut->label());
+            return Traducteur::t('statut « {statut} »', ['statut' => $statut->label()]);
         }
         if ($depart !== null && (int) ($equipement['statut'] ?? 0) !== (int) ($depart['statut'] ?? 0)) {
-            return 'statut différent';
+            return Traducteur::t('statut différent');
         }
         return null;
     }
