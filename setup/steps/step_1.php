@@ -44,7 +44,7 @@ if ($canProceed && $_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['submit
     // [#107] CSRF : l'installeur est servi sur toutes les URLs
     // pré-install, un site tiers ne doit pas pouvoir forger ce POST.
     if (!setup_csrf_is_valid($_POST['csrf_token'] ?? null)) {
-        $errors[] = 'Erreur de sécurité : jeton CSRF invalide ou expiré. Rechargez la page et réessayez.';
+        $errors[] = \Epiclub\Engine\Traducteur::t('Erreur de sécurité : jeton CSRF invalide ou expiré. Rechargez la page et réessayez.');
     }
 
     $siteName = trim($_POST['site_name'] ?? '');
@@ -72,27 +72,27 @@ $rootUrl  = $existing['ROOT_URL'] ?? '';
 
 <?php require __DIR__ . '/../includes/header.php'; ?>
 
-<h1>Configuration initiale</h1>
+<h1><?= setup_t('Configuration initiale') ?></h1>
 <hr>
 
 <?php if (!empty($prereq_errors)): ?>
     <div class="alert alert-danger">
-        <h4>❌ Prérequis système non satisfaits</h4>
-        <p>L'installation ne peut pas continuer tant que ces problèmes ne sont pas résolus :</p>
+        <h4>❌ <?= setup_t('Prérequis système non satisfaits') ?></h4>
+        <p><?= setup_t('L\'installation ne peut pas continuer tant que ces problèmes ne sont pas résolus :') ?></p>
         <ul>
             <?php foreach ($prereq_errors as $error): ?>
                 <li><?= htmlspecialchars($error) ?></li>
             <?php endforeach; ?>
         </ul>
         <p class="mb-0">
-            Après correction, <a href="">rechargez cette page</a>.
+            <?= setup_t('Après correction,') ?> <a href=""><?= setup_t('rechargez cette page') ?></a>.
         </p>
     </div>
 <?php endif; ?>
 
 <?php if (!empty($prereq_warnings)): ?>
     <div class="alert alert-warning">
-        <h4>⚠️ Avertissements</h4>
+        <h4>⚠️ <?= setup_t('Avertissements') ?></h4>
         <ul class="mb-0">
             <?php foreach ($prereq_warnings as $warning): ?>
                 <li><?= htmlspecialchars($warning) ?></li>
@@ -114,25 +114,25 @@ $rootUrl  = $existing['ROOT_URL'] ?? '';
 <?php if ($canProceed): ?>
     <form method="post" action="">
         <div class="mb-3">
-            <label for="site_name" class="form-label">Nom du site *</label>
+            <label for="site_name" class="form-label"><?= setup_t('Nom du site *') ?></label>
             <input type="text" class="form-control" name="site_name" id="site_name"
                    value="<?= htmlspecialchars($siteName) ?>" required>
         </div>
 
         <div class="mb-3">
-            <label for="root_url" class="form-label">URL racine du site *</label>
+            <label for="root_url" class="form-label"><?= setup_t('URL racine du site *') ?></label>
             <input type="url" class="form-control" name="root_url" id="root_url"
                    placeholder="https://votre-domaine.com"
                    value="<?= htmlspecialchars($rootUrl) ?>" required>
-            <small class="text-muted">L'adresse complète à partir de laquelle votre site sera accessible.</small>
+            <small class="text-muted"><?= setup_t('L\'adresse complète à partir de laquelle votre site sera accessible.') ?></small>
         </div>
 
-        <button type="submit" name="submit_step1" class="btn btn-primary">Suivant</button>
+        <button type="submit" name="submit_step1" class="btn btn-primary"><?= setup_t('Suivant') ?></button>
         <?= setup_csrf_field() ?>
     </form>
 <?php else: ?>
     <p class="text-muted">
-        Corrigez les prérequis ci-dessus, puis rechargez cette page pour continuer.
+        <?= setup_t('Corrigez les prérequis ci-dessus, puis rechargez cette page pour continuer.') ?>
     </p>
 <?php endif; ?>
 

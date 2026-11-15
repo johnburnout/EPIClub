@@ -3020,4 +3020,158 @@ Fecha: {date}',
         => 'Su contraseña se la comunica el administrador que creó la cuenta. También puede elegir una usted mismo con <a href="{lien}">«¿Ha olvidado su contraseña?»</a>.',
     'Vous avez demandé la réinitialisation de votre mot de passe.'
         => 'Ha solicitado restablecer su contraseña.',
+
+    // --- Installeur ---
+    '<strong>Supprimez immédiatement le dossier <code>setup/</code></strong> de votre serveur (via FTP, SSH, ou votre panneau d\'administration).'
+        => '<strong>Elimine inmediatamente la carpeta <code>setup/</code></strong> de su servidor (por FTP, SSH o su panel de administración).',
+    '12 caractères minimum.'
+        => '12 caracteres como mínimo.',
+    'Accéder au site'
+        => 'Acceder al sitio',
+    'Action obligatoire'
+        => 'Acción obligatoria',
+    'Activité inconnue : {activite} (attendu : {liste}).'
+        => 'Actividad desconocida: {activite} (se espera: {liste}).',
+    'Activité principale'
+        => 'Actividad principal',
+    'Adresse mail du club *'
+        => 'Correo electrónico del club *',
+    'Adresse serveur *'
+        => 'Dirección del servidor *',
+    'Après correction,'
+        => 'Tras corregirlo,',
+    'Avertissements'
+        => 'Advertencias',
+    'Catégories d\'équipements'
+        => 'Categorías de equipos',
+    'Cette étape est <strong>facultative</strong>. Si vous laissez le domaine vide, les envois de mail seront désactivés. Vous pourrez configurer SMTP plus tard dans l\'administration.'
+        => 'Este paso es <strong>opcional</strong>. Si deja el dominio vacío, el envío de correos quedará desactivado. Podrá configurar SMTP más adelante en la administración.',
+    'Configuration initiale'
+        => 'Configuración inicial',
+    'Configuration SMTP'
+        => 'Configuración SMTP',
+    'Connexion impossible à la base de données. Vérifiez l\'hôte, le nom d\'utilisateur et le mot de passe.'
+        => 'No se puede conectar con la base de datos. Compruebe el host, el usuario y la contraseña.',
+    'Corrigez les prérequis ci-dessus, puis rechargez cette page pour continuer.'
+        => 'Corrija los requisitos anteriores y recargue esta página para continuar.',
+    'Créer les catégories sélectionnées'
+        => 'Crear las categorías seleccionadas',
+    'Créez le compte super administrateur. Ce compte aura tous les droits. Choisissez un mot de passe robuste et unique.'
+        => 'Cree la cuenta de superadministrador. Esta cuenta tendrá todos los permisos. Elija una contraseña robusta y única.',
+    'Domaine SMTP'
+        => 'Dominio SMTP',
+    'En cas d\'oubli, l\'application affichera une erreur 503 sur les pages non installées.'
+        => 'Si lo olvida, la aplicación mostrará un error 503 en las páginas no instaladas.',
+    'EPI ?'
+        => '¿EPI?',
+    'Epiclub - Installation'
+        => 'Epiclub - Instalación',
+    'Erreur de sécurité : jeton CSRF invalide ou expiré. Rechargez la page et réessayez.'
+        => 'Error de seguridad: token CSRF no válido o caducado. Recargue la página e inténtelo de nuevo.',
+    'Erreur lors de l\'installation : {erreur}'
+        => 'Error durante la instalación: {erreur}',
+    'Ex: smtp.free.fr, smtp.gmail.com. Laissez vide pour désactiver.'
+        => 'Ej.: smtp.free.fr, smtp.gmail.com. Deje vacío para desactivar.',
+    'Hôte MySQL. Peut inclure un port (ex: localhost:3306).'
+        => 'Host MySQL. Puede incluir un puerto (ej.: localhost:3306).',
+    'Installation en cours'
+        => 'Instalación en curso',
+    'Installation terminée !'
+        => '¡Instalación terminada!',
+    'L\'adresse complète à partir de laquelle votre site sera accessible.'
+        => 'La dirección completa desde la que se podrá acceder a su sitio.',
+    'L\'adresse du serveur contient des caractères invalides.'
+        => 'La dirección del servidor contiene caracteres no válidos.',
+    'L\'adresse du serveur est requise.'
+        => 'La dirección del servidor es obligatoria.',
+    'L\'adresse email du club est requise et doit être valide.'
+        => 'El correo electrónico del club es obligatorio y debe ser válido.',
+    'L\'application est installée avec succès !'
+        => '¡La aplicación se ha instalado correctamente!',
+    'L\'extension PHP « {extension} » est requise mais non installée. Sur Debian/Ubuntu : sudo apt install php-{paquet}'
+        => 'La extensión PHP «{extension}» es necesaria pero no está instalada. En Debian/Ubuntu: sudo apt install php-{paquet}',
+    'L\'installation ne peut pas continuer tant que ces problèmes ne sont pas résolus :'
+        => 'La instalación no puede continuar mientras estos problemas no se resuelvan:',
+    'L\'URL racine doit être une URL valide (ex: https://mon-site.com).'
+        => 'La URL raíz debe ser una URL válida (ej.: https://mi-sitio.com).',
+    'L\'URL racine du site est requise.'
+        => 'La URL raíz del sitio es obligatoria.',
+    'La base « {base} » contient déjà {tables} table(s). L\'installation ne peut pas continuer. Pour réinstaller, supprimez la base manuellement et relancez l\'installateur.'
+        => 'La base de datos «{base}» ya contiene {tables} tabla(s). La instalación no puede continuar. Para reinstalar, elimine la base de datos manualmente y vuelva a ejecutar el instalador.',
+    'La limite PHP « {cle} » est à {actuel} alors que {requis} est recommandé. Les uploads de factures jusqu\'à 10 Mo pourraient échouer. Ajustez-la dans php.ini, .user.ini, ou depuis votre panneau d\'hébergement.'
+        => 'El límite PHP «{cle}» está en {actuel} cuando se recomienda {requis}. La subida de facturas de hasta 10 MB podría fallar. Ajústelo en php.ini, .user.ini o desde su panel de alojamiento.',
+    'Laissez vide si l\'utilisateur n\'a pas de mot de passe.'
+        => 'Deje vacío si el usuario no tiene contraseña.',
+    'Le mot de passe doit contenir au moins 12 caractères.'
+        => 'La contraseña debe tener al menos 12 caracteres.',
+    'Le nom d\'utilisateur contient des caractères invalides.'
+        => 'El nombre de usuario contiene caracteres no válidos.',
+    'Le nom d\'utilisateur est requis.'
+        => 'El nombre de usuario es obligatorio.',
+    'Le nom d\'utilisateur est trop long (32 caractères max).'
+        => 'El nombre de usuario es demasiado largo (32 caracteres como máximo).',
+    'Le nom d\'utilisateur SMTP est requis.'
+        => 'El usuario SMTP es obligatorio.',
+    'Le nom de la base est requis.'
+        => 'El nombre de la base de datos es obligatorio.',
+    'Le nom de la base est trop long (64 caractères max).'
+        => 'El nombre de la base de datos es demasiado largo (64 caracteres como máximo).',
+    'Le nom de la base ne peut contenir que des lettres, chiffres et underscores.'
+        => 'El nombre de la base de datos solo puede contener letras, cifras y guiones bajos.',
+    'Le nom du club est requis.'
+        => 'El nombre del club es obligatorio.',
+    'Le nom du site est requis.'
+        => 'El nombre del sitio es obligatorio.',
+    'Le nom est requis.'
+        => 'El apellido es obligatorio.',
+    'Le port SMTP doit être un nombre.'
+        => 'El puerto SMTP debe ser un número.',
+    'Le prénom est requis.'
+        => 'El nombre es obligatorio.',
+    'Les deux mots de passe ne correspondent pas.'
+        => 'Las dos contraseñas no coinciden.',
+    'Lettres, chiffres et underscores uniquement.'
+        => 'Solo letras, cifras y guiones bajos.',
+    'localhost ou 127.0.0.1:3306'
+        => 'localhost o 127.0.0.1:3306',
+    'Logo EPIClub'
+        => 'Logotipo de EPIClub',
+    'N° téléphone'
+        => 'N.º de teléfono',
+    'Nom d\'utilisateur'
+        => 'Nombre de usuario',
+    'Nom de la base *'
+        => 'Nombre de la base de datos *',
+    'Nom du club *'
+        => 'Nombre del club *',
+    'Nom du site *'
+        => 'Nombre del sitio *',
+    'non définie'
+        => 'no definida',
+    'Passer cette étape'
+        => 'Omitir este paso',
+    'PHP {requis} ou supérieur est requis (version actuelle : {actuelle}).'
+        => 'Se requiere PHP {requis} o superior (versión actual: {actuelle}).',
+    'Port'
+        => 'Puerto',
+    'Prérequis système non satisfaits'
+        => 'Requisitos del sistema no cumplidos',
+    'rechargez cette page'
+        => 'recargue esta página',
+    'Tant que ce dossier existe, EPIClub est vulnérable.'
+        => 'Mientras exista esta carpeta, EPIClub es vulnerable.',
+    'Un compte administrateur existe déjà. Pour modifier le compte principal, connectez-vous à l\'application.'
+        => 'Ya existe una cuenta de administrador. Para modificar la cuenta principal, inicie sesión en la aplicación.',
+    'Une adresse email valide est requise.'
+        => 'Se requiere un correo electrónico válido.',
+    'URL racine du site *'
+        => 'URL raíz del sitio *',
+    'Voici une liste de catégories préparée pour l\'activité <strong>{activite}</strong>. Décochez celles dont vous n\'avez pas besoin — vous pourrez toutes les modifier ou en ajouter ensuite dans <em>Administration → Catégories</em>.'
+        => 'Esta es una lista de categorías preparada para la actividad <strong>{activite}</strong>. Desmarque las que no necesite — podrá modificarlas todas o añadir otras más adelante en <em>Administración → Categorías</em>.',
+    'Vous pouvez maintenant accéder à votre site.'
+        => 'Ya puede acceder a su sitio.',
+
+    // --- Guide ---
+    'Guide non trouvé'
+        => 'Guía no encontrada',
 ];

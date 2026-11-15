@@ -46,6 +46,26 @@ final class GuideControllerTest extends TestCase
         self::assertNotSame('', trim($response->getContent()));
     }
 
+    /**
+     * [Localisation] Le guide s'affiche dans la langue de l'utilisateur
+     * quand sa traduction existe, en français sinon.
+     */
+    public function testGuideDansLaLangueDeLUtilisateur(): void
+    {
+        $controller = new TestableGuideController($this->mockSession(true));
+        try {
+            \Epiclub\Engine\Traducteur::definirLangue('it');
+            $italien = (string) $controller->index(Request::create('/guide', 'GET'))->getContent();
+        } finally {
+            \Epiclub\Engine\Traducteur::definirLangue('fr');
+        }
+        $francais = (string) $controller->index(Request::create('/guide', 'GET'))->getContent();
+
+        self::assertStringContainsString('Guida', $italien);
+        self::assertStringContainsString("Guide d'utilisation", html_entity_decode($francais, ENT_QUOTES));
+        self::assertStringNotContainsString("Guide d'utilisation", html_entity_decode($italien, ENT_QUOTES));
+    }
+
     public function testGuideEchappeHtmlBrut(): void
     {
         // [SÉCURITÉ — audit C12] Un Markdown contenant du HTML brut

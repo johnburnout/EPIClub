@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // [#107] CSRF : rejette les POST forgés cross-site — cette étape
     // crée le compte SUPER_ADMIN, cible n°1 du détournement d'install.
     if (!setup_csrf_is_valid($_POST['csrf_token'] ?? null)) {
-        $form_errors[] = 'Erreur de sécurité : jeton CSRF invalide ou expiré. Rechargez la page et réessayez.';
+        $form_errors[] = \Epiclub\Engine\Traducteur::t('Erreur de sécurité : jeton CSRF invalide ou expiré. Rechargez la page et réessayez.');
     }
 
     $saisie = [
@@ -74,12 +74,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 require __DIR__ . '/../includes/header.php';
 ?>
 
-<h1>Administrateur</h1>
+<h1><?= setup_t('Administrateur') ?></h1>
 <hr>
 
 <p class="text-muted">
-    Créez le compte super administrateur. Ce compte aura tous les droits.
-    Choisissez un mot de passe robuste et unique.
+    <?= setup_t('Créez le compte super administrateur. Ce compte aura tous les droits. Choisissez un mot de passe robuste et unique.') ?>
 </p>
 
 <?php if (!empty($form_errors)): ?>
@@ -94,31 +93,31 @@ require __DIR__ . '/../includes/header.php';
 
 <form method="post">
     <div class="mb-3">
-        <label for="nom" class="form-label">Nom</label>
+        <label for="nom" class="form-label"><?= setup_t('Nom') ?></label>
         <input type="text" class="form-control" name="nom" id="nom" value="<?= htmlspecialchars($admin['nom']); ?>" required>
     </div>
     <div class="mb-3">
-        <label for="prenom" class="form-label">Prénom</label>
+        <label for="prenom" class="form-label"><?= setup_t('Prénom') ?></label>
         <input type="text" class="form-control" name="prenom" id="prenom" value="<?= htmlspecialchars($admin['prenom']); ?>" required>
     </div>
     <div class="mb-3">
-        <label for="username" class="form-label">Nom d'utilisateur</label>
+        <label for="username" class="form-label"><?= setup_t('Nom d\'utilisateur') ?></label>
         <input type="text" class="form-control" name="username" id="username" value="<?= htmlspecialchars($admin['username']); ?>" required>
     </div>
     <div class="mb-3">
-        <label for="email" class="form-label">Adresse mail</label>
+        <label for="email" class="form-label"><?= setup_t('Adresse mail') ?></label>
         <input type="email" class="form-control" name="email" id="email" value="<?= htmlspecialchars($admin['email']); ?>" required>
     </div>
     <div class="mb-3">
-        <label for="password" class="form-label">Mot de passe</label>
+        <label for="password" class="form-label"><?= setup_t('Mot de passe') ?></label>
         <input type="password" class="form-control" name="password" id="password" minlength="12" required>
-        <small class="text-muted">12 caractères minimum.</small>
+        <small class="text-muted"><?= setup_t('12 caractères minimum.') ?></small>
     </div>
     <div class="mb-3">
-        <label for="password_confirm" class="form-label">Confirmer le mot de passe</label>
+        <label for="password_confirm" class="form-label"><?= setup_t('Confirmer le mot de passe') ?></label>
         <input type="password" class="form-control" name="password_confirm" id="password_confirm" minlength="12" required>
     </div>
-    <button type="submit" class="btn btn-primary">Valider</button>
+    <button type="submit" class="btn btn-primary"><?= setup_t('Valider') ?></button>
     <?= setup_csrf_field() ?>
 </form>
 

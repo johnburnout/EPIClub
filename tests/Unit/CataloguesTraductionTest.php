@@ -53,7 +53,10 @@ final class CataloguesTraductionTest extends TestCase
             }
         }
 
-        $code = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(realpath(self::RACINE . '/app')));
+        // app/ et l'installeur (setup/, fonctions setup_t / setup_html).
+        $code = new \AppendIterator();
+        $code->append(new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(realpath(self::RACINE . '/app'))));
+        $code->append(new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator(realpath(self::RACINE . '/setup'))));
         foreach ($code as $fichier) {
             if (!$fichier->isFile() || $fichier->getExtension() !== 'php') {
                 continue;
@@ -78,6 +81,16 @@ final class CataloguesTraductionTest extends TestCase
                         ? str_replace(["\\'", '\\\\'], ["'", '\\'], $texte)
                         : stripcslashes($texte);
                     $textes[$texte] = $fichier->getFilename();
+                }
+                if (
+                    is_array($jeton) && $jeton[0] === T_STRING && in_array($jeton[1], ['setup_t', 'setup_html'], true)
+                    && ($jetons[$i + 1] ?? null) === '('
+                    && is_array($jetons[$i + 2] ?? null) && $jetons[$i + 2][0] === T_CONSTANT_ENCAPSED_STRING
+                    && !(is_array($jetons[$i - 1] ?? null) && $jetons[$i - 1][0] === T_FUNCTION)
+                ) {
+                    $litteral = $jetons[$i + 2][1];
+                    $texte = substr($litteral, 1, -1);
+                    $textes[$litteral[0] === "'" ? str_replace(["\\'", '\\\\'], ["'", '\\'], $texte) : stripcslashes($texte)] = $fichier->getFilename();
                 }
                 // Traducteur::t(self::CONSTANTE) : classe déduite du chemin (PSR-4).
                 if (

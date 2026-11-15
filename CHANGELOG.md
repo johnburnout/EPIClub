@@ -54,6 +54,17 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
   part dans la langue choisie par son destinataire ; à défaut (nouveau
   compte, préférence non choisie), dans celle de la personne qui le
   déclenche.
+- **Installeur et guide traduits (9e et dernière étape).** L'assistant
+  d'installation suit la langue du navigateur et propose un sélecteur de
+  langue ; le guide utilisateur existe en anglais, espagnol et italien
+  (`docs/guide_utilisateur.<langue>.md`, le français servant à défaut).
+  La ligne de commande et le journal d'activité restent en français.
+
+### Fixed
+
+- Installeur, étape « Base de données » : les messages d'erreur sont
+  échappés à l'affichage (ils l'étaient à la construction, de façon
+  inégale).
 
 ### Fixed
 

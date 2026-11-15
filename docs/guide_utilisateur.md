@@ -270,6 +270,7 @@ Les prêts **en retard** (date de retour prévue dépassée) sont signalés en r
 - On se connecte au choix avec son **identifiant** ou son **adresse mail**, et son mot de passe.
 - Depuis la page de connexion, cliquez sur **Mot de passe oublié**.
 - Un email avec un lien de réinitialisation (valable 24h) est envoyé.
+- Le sélecteur **🌐** du bandeau change la langue d'affichage (français, anglais, espagnol, italien). Pour un utilisateur connecté, le choix est enregistré et retrouvé à chaque connexion ; sinon, la langue du navigateur s'applique.
 
 ### Double authentification et passkeys (facultatif)
 
