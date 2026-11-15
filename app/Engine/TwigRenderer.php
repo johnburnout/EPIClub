@@ -53,6 +53,12 @@ class TwigRenderer extends Environment
         // {% for c in categories|tri_alpha('libelle') %} (cf. TriAlphabetique).
         $this->addFilter(new TwigFilter('tri_alpha', [TriAlphabetique::class, 'trier']));
 
+        // [Localisation] {{ 'Texte français'|trans }} (cf. Traducteur),
+        // langue courante (<html lang>) et langues proposées (sélecteur).
+        $this->addFilter(Traducteur::filtreTwig());
+        $this->addFunction(new TwigFunction('langue', [Traducteur::class, 'langue']));
+        $this->addGlobal('langues_disponibles', Langue::DISPONIBLES);
+
         // Variables globales
         if ($this->session->has('user')) {
             $this->addGlobal('_user', $this->session->get('user'));

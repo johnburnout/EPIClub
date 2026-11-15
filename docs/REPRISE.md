@@ -868,6 +868,32 @@ croisées avec `app/bootstrap.php` et `app/Engine/EnvironmentFileParser`.
 
 ---
 
+## Localisation (chantier en cours)
+
+Interface traduite en anglais, espagnol et italien, une PR par groupe
+d'écrans (périmètre décidé le 2026-11-15 : interface web, emails, PDF,
+installeur et guide utilisateur ; la CLI reste en français).
+
+- **Clés = texte français.** `{{ 'Texte'|trans }}` dans les gabarits,
+  `Traducteur::t('Texte')` dans le code ; paramètres entre accolades :
+  `{{ 'Bonjour {nom}'|trans({nom: x}) }}`. Le français n'a pas de
+  catalogue ; un texte absent d'un catalogue reste affiché en français.
+- **Catalogues** : `ressources/traductions/{en,es,it}.php`. Toute chaîne
+  marquée doit y figurer dans les trois langues, avec les mêmes
+  paramètres : `tests/Unit/CataloguesTraductionTest.php` échoue sinon.
+- **Langue de la requête** (`public/index.php`, `Langue::resoudre`) :
+  `utilisateur.langue` (migration 022, lue dans la session à la
+  connexion), puis choix de session (`POST /langue`, `LangueController`),
+  puis `Accept-Language`, puis `fr`. En CLI et en test : `fr`.
+- Dans un `<script>` : `{{ 'Texte'|trans|json_encode|raw }}`.
+- Formats de date : clé dédiée (`'d/m/Y à H:i'|trans`).
+
+| Étape | Contenu | État |
+|---|---|---|
+| 1 | Infrastructure, sélecteur, bandeau (`_layout.twig`) | PR en cours |
+| 2+ | Écrans par groupe, messages flash, enums, emails, PDF | à faire |
+| — | Installeur (`setup/`), guide (`docs/guide_utilisateur.md`) | à faire |
+
 ## Règles de travail établies
 
 - **Iso-comportement strict (avec exception fix de bug documenté)** :
