@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-11-09 (audit du 2026-11-08 : durcissements v2.9.2, reverse proxy R2 v2.10.0, alerte du limiteur R4 v2.11.0, releases signées R1 v2.12.0 : audit entièrement traité)
-**Version courante** : v2.12.0
+**Dernière mise à jour** : 2026-11-15 (localisation en anglais, espagnol et italien, PR #123 à #132 : v3.0.0)
+**Version courante** : v3.0.0
 **Branche** : `main` ; chaque changement passe par une branche et une PR (voir « Règles de travail »)
 
 > **Note canal bêta** : l'endpoint GitHub `/releases/latest` ignore les
@@ -32,6 +32,7 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
+| v3.0.0 | PR #123 à #132 + PR de version | Interface en anglais, espagnol et italien : langue réglée pour le club (personnalisation du tableau de bord, mode automatique = navigateur), e-mails, PDF, exports, installeur et guide traduits (voir « Localisation »). Migration `022_langue_club.sql`. | — |
 | v2.12.0 | PR #120 | Audit du 2026-11-08, R1 : releases signées hors ligne avec minisign (`SignatureMinisign`, sodium), `.minisig` exigé par l'updater, `bin/signer-release.sh`. | `37531f3` |
 | v2.11.0 | PR #119 | Audit du 2026-11-08, R4 : bandeau du super-admin et journal « Sécurité » quand le limiteur de tentatives est indisponible (`AlerteLimiteur`, `var/alertes/limiteur.json`). | `2635322` |
 | v2.10.0 | PR #118 | Audit du 2026-11-08, R2 : option `TRUSTED_PROXIES` (reverse proxy) pour l'IP client, HTTPS, cookie `Secure` et HSTS. | `1d044a0` |
@@ -930,10 +931,10 @@ installeur et guide utilisateur ; la CLI reste en français).
 | 7 | Administration : tableau de bord, club, utilisateurs, référentiels, tickets, journal d'activité, système, mise à jour, sauvegarde, page QR ; `UserRole`, `DemandeModification`, `JournalActiviteManager::libellesTypes()` | PR #129 |
 | 8 | Documents : e-mails, PDF, CSV/Excel, étiquettes, en-tête de l'export du journal | PR #130 |
 | 9 | Installeur (`setup/` : `setup_t`, `setup_html`, `setup_langue`), guide (`docs/guide_utilisateur.<langue>.md`) | PR #131 |
-| 10 | Langue réglée pour le club (personnalisation du tableau de bord, `club.langue`) au lieu du sélecteur du bandeau et de la préférence par utilisateur | PR en cours |
+| 10 | Langue réglée pour le club (personnalisation du tableau de bord, `club.langue`) au lieu du sélecteur du bandeau et de la préférence par utilisateur | PR #132 |
 
-Chantier complet une fois la PR de l'étape 10 fusionnée : release **v3.0.0**
-(les entrées « [Unreleased] » du CHANGELOG passent sous [v3.0.0]).
+Chantier terminé : PR #123 à #132 fusionnées le 2026-11-15 (commits de
+fusion `6e45b86` à `a181da8`), publié en **v3.0.0**.
 
 Restent volontairement en français : la ligne de commande (`bin/`), le
 journal d'activité, les messages d'exception des services partagés avec

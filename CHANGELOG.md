@@ -10,64 +10,39 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v3.0.0] — 2026-11-15
+
+EPIClub parle désormais anglais, espagnol et italien.
+
 ### Added
 
-- **Interface en anglais, espagnol et italien.** La langue se règle pour
-  tout le club dans **Administration → Tableau de bord → Personnaliser le
-  tableau de bord** (« Langue de l'interface ») : pages, page de connexion,
-  e-mails, PDF et exports. Le mode **Automatique** (par défaut) suit la
-  langue du navigateur de chacun, puis le français. Un texte pas encore
-  traduit reste en français. Migration : `022_langue_club.sql` (appliquée
+- **Interface en anglais, espagnol et italien.** Toute l'application est
+  traduite : connexion et sécurité du compte, équipements, contrôles et
+  scanner, acquisitions et import Excel / CSV, prêts, tableau de bord et
+  administration, avec leurs messages et les textes affichés par les
+  scripts des pages.
+- **Langue réglée pour le club.** Un administrateur la choisit dans
+  **Administration → Tableau de bord → Personnaliser le tableau de bord**
+  (« 🌐 Langue de l'interface ») ; elle vaut pour tous les utilisateurs, la
+  page de connexion, les e-mails, les PDF et les exports. Le mode
+  **Automatique** (par défaut) suit la langue du navigateur de chacun,
+  puis le français. Migration : `022_langue_club.sql` (appliquée
   automatiquement par la mise à jour intégrée).
-- **Connexion et compte traduits (2e étape).** Pages de connexion, double
-  authentification, mot de passe oublié et réinitialisation, sécurité du
-  compte (application d'authentification, passkeys, codes de secours),
-  avec leurs messages et ceux des passkeys dans le navigateur. Le journal
-  d'activité reste rédigé en français.
-- **Équipements traduits (3e étape).** Liste, fiche, formulaire (dont
-  dissociation et regroupement de lots) et modification groupée, avec
-  leurs messages, les libellés de statut et les scripts de la page. Les
-  exports PDF, CSV et étiquettes suivront avec les autres documents.
-- **Contrôles traduits (4e étape).** Liste et saisie des contrôles,
-  fiche de contrôle d'un équipement, scanner, journaux de contrôle, avec
-  leurs messages et les libellés de statut des lignes. Le libellé
-  automatique d'un nouveau contrôle (« Contrôle du … ») est rédigé dans
-  la langue de son créateur.
-- **Acquisitions traduites (5e étape).** Liste, saisie, fiche (correction
-  de la référence et de la date comprise), lignes et import Excel / CSV
-  (correspondance des colonnes, rapport d'import), avec leurs messages.
-- **Prêts traduits (6e étape).** Liste, fiche, scanner, validation et
-  signature, vérification du retour, avec leurs messages et les libellés
-  de statut et d'état de retour.
-- **Administration traduite (7e étape).** Tableau de bord et ses
-  réglages, club, utilisateurs, catégories, emplacements, fournisseurs,
-  modèle de référence, demandes de modification, journal d'activité,
-  paramètres système, mise à jour, sauvegarde et restauration, page du
-  QR code, avec leurs messages et les libellés de rôles. Le journal
-  d'activité reste rédigé en français.
-- **Documents traduits (8e étape).** E-mails (mot de passe oublié, compte
-  créé, demande de modification, test SMTP), PDF (fiche et liste des
+- **Documents traduits** : e-mails (mot de passe oublié, compte créé,
+  demande de modification, test SMTP), PDF (fiche et liste des
   équipements, étiquettes, fiche de prêt, journal de contrôle), exports
-  CSV et Excel, en-tête de l'export du journal d'activité, dans la langue
-  de l'interface.
-- **Installeur et guide traduits (9e et dernière étape).** L'assistant
-  d'installation suit la langue du navigateur et propose un sélecteur de
-  langue (la langue choisie devient celle du club) ; le guide utilisateur existe en anglais, espagnol et italien
-  (`docs/guide_utilisateur.<langue>.md`, le français servant à défaut).
-  La ligne de commande et le journal d'activité restent en français.
+  CSV et Excel, en-tête de l'export du journal d'activité.
+- **Installeur traduit** : l'assistant suit la langue du navigateur et
+  propose un sélecteur ; la langue choisie devient celle du club.
+- **Guide utilisateur en anglais, espagnol et italien**
+  (`docs/guide_utilisateur.<langue>.md`), affiché selon la langue, le
+  français servant à défaut.
 
-### Fixed
-
-- Installeur, étape « Base de données » : les messages d'erreur sont
-  échappés à l'affichage (ils l'étaient à la construction, de façon
-  inégale).
-
-### Fixed
-
-- La fenêtre « Nouvelle catégorie » du formulaire d'équipement affichait
-  ses boutons en anglais (« Close », « Save changes »).
-- Modification groupée d'un seul équipement : « Appliquer à l'équipement »
-  au lieu de « Appliquer aux 1 équipement ».
+Restent en français : la ligne de commande (`bin/`), les entrées du
+journal d'activité (texte enregistré) et les catégories proposées à
+l'installation (données). Le libellé automatique d'un nouveau contrôle
+(« Contrôle du … ») est rédigé dans la langue de l'interface au moment de
+sa création.
 
 ### Changed
 
@@ -75,6 +50,17 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
   aussi par `MotDePasse` (bcrypt coût 12, fixé explicitement). Aucun effet
   visible : avec PHP 8.4 et plus, le hachage par défaut utilisait déjà ce
   coût, et les codes déjà émis restent valides.
+
+### Fixed
+
+- La fenêtre « Nouvelle catégorie » du formulaire d'équipement et les
+  alertes de la page système affichaient des boutons en anglais
+  (« Close », « Save changes »).
+- Modification groupée d'un seul équipement : « Appliquer à l'équipement »
+  au lieu de « Appliquer aux 1 équipement ».
+- Installeur, étape « Base de données » : les messages d'erreur sont
+  échappés à l'affichage (ils l'étaient à la construction, de façon
+  inégale).
 
 ## [v2.12.0] — 2026-11-09
 
