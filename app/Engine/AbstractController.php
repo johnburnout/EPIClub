@@ -60,6 +60,12 @@ abstract class AbstractController
             return $this->isGranted('ROLE_SUPER_ADMIN') ? $this->alerteLimiteur()->etat() : null;
         }));
 
+        // [2026-11-15] Lien « Retour à la liste » : la liste avec ses
+        // filtres mémorisés (cf. FiltresListe).
+        $this->renderer->addFunction(new TwigFunction('url_liste', function (string $url) {
+            return FiltresListe::url($this->session, $url);
+        }));
+
         $this->updateLastActivity();
     }
 
@@ -202,7 +208,8 @@ abstract class AbstractController
 
     public function redirectTo(string $route, int $status = 302, array $headers = []): Response
     {
-        return new RedirectResponse($route, $status, $headers);
+        // [2026-11-15] Retour vers une liste : ses filtres sont repris.
+        return new RedirectResponse(FiltresListe::url($this->session, $route), $status, $headers);
     }
 
     /**

@@ -80,7 +80,7 @@
 		<div class="form-actions d-flex gap-2">
 			<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 			<button type="submit" class="btn btn-primary">{{ 'Enregistrer'|trans }}</button>
-			<a href="/admin/utilisateurs" class="btn btn-secondary">{{ 'Retour à la liste'|trans }}</a>
+			<a href="{{ url_liste('/admin/utilisateurs') }}" class="btn btn-secondary">{{ 'Retour à la liste'|trans }}</a>
 			{# [2026-10-24] Formulaire séparé (attribut `form`), comme la suppression. #}
 			<button type="submit" form="bienvenue-utilisateur-form" class="btn btn-outline-secondary"
 			        title="{{ 'Identifiant, rôle et lien de connexion — jamais le mot de passe'|trans }}"

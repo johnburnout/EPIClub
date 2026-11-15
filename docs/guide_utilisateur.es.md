@@ -200,6 +200,8 @@ Una de ellas hace la modificación y cierra el ticket (**«Modificación hecha»
 ### 2.5 Consultar / Exportar
 - **Paginación** (todas las listas: equipos, adquisiciones, inspecciones, registros, préstamos y material prestado, datos de referencia, usuarios, solicitudes): solo aparece si hay **más de 10 elementos**; entonces se eligen 10, 25, 50 o 100 filas por página. Con 10 elementos o menos, todo se muestra en una sola página.
 
+- **Filtros conservados**: después de consultar, modificar o inspeccionar una ficha, la vuelta a la lista (botón **«Volver a la lista»**, **«Cancelar»** o guardado) recupera su búsqueda, filtros, orden y página; lo mismo ocurre con la ficha de una inspección. Abrir la lista desde el menú, **«Quitar este filtro»** o **«Restablecer»** vuelve a la lista completa.
+
 - **Ficha individual**: desde la lista, hacer clic en **«Ver»** para consultar toda la información (incluido el historial de inspecciones y la factura asociada).
 - **PDF individual**: desde la ficha, hacer clic en **«PDF»**.
 - **PDF de lista / Excel (fotos + QR) / Etiquetas**: desde la lista, usar el menú desplegable **«Exportar»**.
@@ -212,6 +214,7 @@ Una de ellas hace la modificación y cierra el ticket (**«Modificación hecha»
 ### Crear una inspección
 - Reservado a los usuarios con el rol **Inspector**.
 - Desde la ficha de un equipo, haga clic en **Iniciar una inspección**.
+- **Lote**: la ficha de inspección de un lote indica el número de elementos restantes y el número inicial, para verificar cada elemento.
 
 ### Escanear un código QR
 - El código QR de un equipo lleva a su ficha o a una inspección en curso.

@@ -19,6 +19,6 @@
 			<input type="text" id="image" name="image" value="{{ emplacement.image }}" class="form-control">
 		</div>
 		<button type="submit" class="btn btn-primary">{{ 'Enregistrer'|trans }}</button>
-		<a href="/admin/emplacements" class="btn btn-secondary">{{ 'Annuler'|trans }}</a>
+		<a href="{{ url_liste('/admin/emplacements') }}" class="btn btn-secondary">{{ 'Annuler'|trans }}</a>
 	</form>
 {% endblock %}

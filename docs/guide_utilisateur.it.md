@@ -200,6 +200,8 @@ Una di loro fa la modifica e poi chiude il ticket (**«Modifica fatta»**), oppu
 ### 2.5 Consultare / Esportare
 - **Paginazione** (tutti gli elenchi: attrezzature, acquisizioni, ispezioni, registri, prestiti e materiale prestato, dati di riferimento, utenti, richieste): compare solo se ci sono **più di 10 elementi**; si scelgono allora 10, 25, 50 o 100 righe per pagina. Con 10 elementi o meno, tutto è mostrato su una sola pagina.
 
+- **Filtri conservati**: dopo la consultazione, la modifica o l'ispezione di una scheda, il ritorno all'elenco (pulsante **«Torna all'elenco»**, **«Annulla»** o salvataggio) ritrova la ricerca, i filtri, l'ordinamento e la pagina; lo stesso vale per la scheda di un'ispezione. Aprire l'elenco dal menu, **«Rimuovi questo filtro»** o **«Reimposta»** riparte dall'elenco completo.
+
 - **Scheda individuale**: dall'elenco, cliccare su **«Vedi»** per consultare tutte le informazioni (compreso lo storico delle ispezioni e la fattura associata).
 - **PDF individuale**: dalla scheda, cliccare su **«PDF»**.
 - **PDF elenco / Excel (foto + QR) / Etichette**: dall'elenco, usare il menu a tendina **«Esporta»**.
@@ -212,6 +214,7 @@ Una di loro fa la modifica e poi chiude il ticket (**«Modifica fatta»**), oppu
 ### Creare un'ispezione
 - Riservato agli utenti con il ruolo **Ispettore**.
 - Dalla scheda di un'attrezzatura, cliccare su **Avvia un'ispezione**.
+- **Lotto**: la scheda d'ispezione di un lotto indica il numero di elementi rimanenti e il numero iniziale, per verificare ogni elemento.
 
 ### Scansionare un codice QR
 - Il codice QR di un'attrezzatura porta alla sua scheda o a un'ispezione in corso.

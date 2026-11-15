@@ -31,7 +31,7 @@
 		</div>
 
 		<div class="form-actions d-flex gap-2 mt-3">
-			<a href="/admin/fournisseurs" class="btn btn-secondary">{{ 'Retour à la liste'|trans }}</a>
+			<a href="{{ url_liste('/admin/fournisseurs') }}" class="btn btn-secondary">{{ 'Retour à la liste'|trans }}</a>
 			{% if nb_equipements > 0 %}
 			<a href="/equipements?fournisseur={{ fournisseur.id }}" class="btn btn-primary">📋 {{ nb_equipements > 1 ? 'Voir les {nombre} équipements'|trans({nombre: nb_equipements}) : "Voir l'équipement"|trans }}</a>
 			{% else %}
@@ -51,7 +51,7 @@
 		</div>
 	{% else %}
 		<p>{{ 'Fournisseur non trouvé.'|trans }}</p>
-		<a href="/admin/fournisseurs" class="btn btn-secondary">{{ 'Retour à la liste'|trans }}</a>
+		<a href="{{ url_liste('/admin/fournisseurs') }}" class="btn btn-secondary">{{ 'Retour à la liste'|trans }}</a>
 	{% endif %}
 
 {% endblock %}

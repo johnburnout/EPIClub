@@ -18,7 +18,7 @@
 				{% if emplacement.description %}{{ emplacement.description }}{% else %}<em>{{ 'Non renseignée'|trans }}</em>{% endif %}
 			</div>
 			<div class="mb-3 d-flex flex-wrap gap-2">
-				<a href="/admin/emplacements" class="btn btn-secondary">{{ 'Retour à la liste'|trans }}</a>
+				<a href="{{ url_liste('/admin/emplacements') }}" class="btn btn-secondary">{{ 'Retour à la liste'|trans }}</a>
 				{% if nb_equipements > 0 %}
 				<a href="/equipements?emplacement={{ emplacement.id }}" class="btn btn-primary">📋 {{ nb_equipements > 1 ? 'Voir les {nombre} équipements'|trans({nombre: nb_equipements}) : "Voir l'équipement"|trans }}</a>
 				{% else %}

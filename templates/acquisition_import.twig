@@ -44,7 +44,7 @@
 
 			<div class="form-actions">
 				<button type="submit" class="btn btn-primary">{{ 'Analyser le fichier'|trans }}</button>
-				<a href="/admin/acquisitions" class="btn btn-secondary">{{ 'Retour aux acquisitions'|trans }}</a>
+				<a href="{{ url_liste('/admin/acquisitions') }}" class="btn btn-secondary">{{ 'Retour aux acquisitions'|trans }}</a>
 			</div>
 		</form>
 	{% endif %}
@@ -515,7 +515,7 @@
 		{% endif %}
 
 		<div class="mt-3">
-			<a href="/admin/acquisitions" class="btn btn-primary">{{ 'Voir les acquisitions'|trans }}</a>
+			<a href="{{ url_liste('/admin/acquisitions') }}" class="btn btn-primary">{{ 'Voir les acquisitions'|trans }}</a>
 			<a href="/admin/acquisitions/import" class="btn btn-secondary">{{ 'Nouvel import'|trans }}</a>
 		</div>
 	{% endif %}

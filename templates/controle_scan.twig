@@ -33,7 +33,7 @@
 		<h6 class="mt-3">{{ 'Équipements scannés pendant cette session :'|trans }}</h6>
 		<ul id="scan-liste" class="list-group" style="max-width: 40rem;"></ul>
 		<div class="mt-3">
-			<a href="/admin/controles/edit/{{ controle.id }}" class="btn btn-primary">✅ {{ 'Terminer — ouvrir la fiche contrôle'|trans }}</a>
+			<a href="{{ url_liste('/admin/controles/edit/' ~ controle.id) }}" class="btn btn-primary">✅ {{ 'Terminer — ouvrir la fiche contrôle'|trans }}</a>
 		</div>
 	{% endif %}
 

@@ -10,6 +10,22 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v3.1.0] — 2026-11-15
+
+Lot sur la fiche contrôle et filtres des listes conservés.
+
+### Added
+
+- **Lot sur la fiche contrôle.** La fiche contrôle d'un équipement en lot
+  indique le nombre d'éléments restants et le nombre initial.
+- **Filtres des listes conservés.** Après la consultation, la
+  modification ou le contrôle d'une fiche, le retour à la liste
+  (« Retour à la liste », « Annuler », enregistrement) retrouve sa
+  recherche, ses filtres, son tri et sa page ; de même pour la fiche d'un
+  contrôle. La liste ouverte depuis le menu, « Retirer ce filtre » ou
+  « Réinitialiser » repart de la liste complète (`FiltresListe`, filtres
+  gardés dans la session).
+
 ## [v3.0.2] — 2026-11-15
 
 Correctif : passkey de nouveau proposée après la mise à jour.
@@ -2906,6 +2922,10 @@ sur le nombre de requêtes — instanciation en dur de
 `FournisseurManager` / `UtilisateurManager`).
 
 ## [Unreleased]
+
+## [v3.1.0] — 2026-11-15
+
+Lot sur la fiche contrôle et filtres des listes conservés.
 
 ## [0.18.10] — 2026-10-13
 

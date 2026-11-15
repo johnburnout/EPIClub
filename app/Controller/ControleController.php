@@ -1034,6 +1034,9 @@ class ControleController extends AbstractController
             $ligne['reference'] = $equipement['reference'] ?? '';
             $ligne['libelle'] = $equipement['libelle'] ?? '';
             $ligne['photo'] = $equipement['photo'] ?? null;
+            // [2026-11-15] Lot : nombre d'éléments à contrôler.
+            $ligne['nombre'] = (int) ($equipement['nombre'] ?? 1);
+            $ligne['nombre_initial'] = (int) ($equipement['nombre_initial'] ?? 1);
         }
 
         return $this->render('controle_ligne_form.twig', [

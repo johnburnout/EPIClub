@@ -8,6 +8,6 @@
 		<h5>{{ 'Emprunteur'|trans }}</h5>
 		{% include 'prets/_emprunteur.twig' with {mode: 'tout'} %}
 		<button type="submit" class="btn btn-primary">{{ 'Créer la fiche'|trans }}</button>
-		<a href="/prets" class="btn btn-secondary">{{ 'Annuler'|trans }}</a>
+		<a href="{{ url_liste('/prets') }}" class="btn btn-secondary">{{ 'Annuler'|trans }}</a>
 	</form>
 {% endblock %}

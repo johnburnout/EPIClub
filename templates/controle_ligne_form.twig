@@ -6,6 +6,14 @@
 
     <p>{{ '<strong>Équipement :</strong> {reference} - {libelle}'|trans({reference: (ligne.reference)|e, libelle: (ligne.libelle)|e})|raw }}</p>
 
+    {# [2026-11-15] Lot : nombre d'éléments à contrôler #}
+    {% if ligne.nombre_initial|default(1) > 1 %}
+        <div class="alert alert-info py-2">
+            <i class="fas fa-layer-group"></i>
+            {{ '<strong>Lot :</strong> {nombre} élément(s) restant(s) sur {nombre_initial} initiaux'|trans({nombre: (ligne.nombre)|e, nombre_initial: (ligne.nombre_initial)|e})|raw }}
+        </div>
+    {% endif %}
+
     {# ⬇️ AFFICHAGE DE LA PHOTO #}
     {% if ligne.photo is defined and ligne.photo is not empty %}
         <div class="mb-3">
@@ -53,7 +61,7 @@
         {% if retour_scanner|default(false) %}
             <a href="/controles/scanner" class="btn btn-secondary">{{ 'Retour au scanner'|trans }}</a>
         {% else %}
-            <a href="/admin/controles/edit/{{ ligne.controle_id }}" class="btn btn-secondary">{{ 'Annuler'|trans }}</a>
+            <a href="{{ url_liste('/admin/controles/edit/' ~ ligne.controle_id) }}" class="btn btn-secondary">{{ 'Annuler'|trans }}</a>
         {% endif %}
     </form>
 {% endblock %}

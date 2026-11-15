@@ -248,12 +248,12 @@
 		<div class="mt-3">
 			{% if acquisition.id == false %}
 				<button type="submit" class="btn btn-primary" name="action" value="create">{{ 'Enregistrer et saisir les lignes'|trans }}</button>
-				<a href="/admin/acquisitions" class="btn btn-secondary">{{ 'Annuler'|trans }}</a>
+				<a href="{{ url_liste('/admin/acquisitions') }}" class="btn btn-secondary">{{ 'Annuler'|trans }}</a>
 			{% else %}
 				<button type="submit" class="btn btn-primary" name="action" value="update" {% if is_readonly %}disabled{% endif %}>
 					💾 {{ 'Enregistrer les modifications'|trans }}
 				</button>
-				<a href="/admin/acquisitions" class="btn btn-secondary">{{ 'Retour à la liste'|trans }}</a>
+				<a href="{{ url_liste('/admin/acquisitions') }}" class="btn btn-secondary">{{ 'Retour à la liste'|trans }}</a>
 				<a href="/admin/acquisitions/acquisition-{{ acquisition.id }}" class="btn btn-info">{{ 'Voir la fiche'|trans }}</a>
 			{% endif %}
 		</div>

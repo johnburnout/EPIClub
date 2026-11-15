@@ -71,7 +71,7 @@
 		</div>
 	{% endif %}
 
-	<a href="/tickets" class="btn btn-secondary">{{ 'Toutes les demandes'|trans }}</a>
+	<a href="{{ url_liste('/tickets') }}" class="btn btn-secondary">{{ 'Toutes les demandes'|trans }}</a>
 {% endblock %}
 
 {% block javascripts %}

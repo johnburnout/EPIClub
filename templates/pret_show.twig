@@ -15,7 +15,7 @@
 			{% if s == 'en_cours' and not pret.signature %}
 				<a href="/prets/pret-{{ pret.id }}/valider" class="btn btn-outline-primary">✍️ {{ 'Faire signer'|trans }}</a>
 			{% endif %}
-			<a href="/prets" class="btn btn-secondary">{{ 'Retour à la liste'|trans }}</a>
+			<a href="{{ url_liste('/prets') }}" class="btn btn-secondary">{{ 'Retour à la liste'|trans }}</a>
 		</div>
 	</div>
 	<hr>

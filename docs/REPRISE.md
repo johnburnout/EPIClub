@@ -1,7 +1,7 @@
 # EPIClub — Fichier de reprise
 
-**Dernière mise à jour** : 2026-11-15 (localisation en anglais, espagnol et italien, PR #123 à #132 : v3.0.0 ; audit du 2026-11-10 traité : v3.0.1 ; passkey et cache des scripts : v3.0.2)
-**Version courante** : v3.0.2
+**Dernière mise à jour** : 2026-11-15 (localisation en anglais, espagnol et italien, PR #123 à #132 : v3.0.0 ; audit du 2026-11-10 traité : v3.0.1 ; passkey et cache des scripts : v3.0.2 ; lot sur la fiche contrôle et filtres des listes conservés : v3.1.0)
+**Version courante** : v3.1.0
 **Branche** : `main` ; chaque changement passe par une branche et une PR (voir « Règles de travail »)
 
 > **Note canal bêta** : l'endpoint GitHub `/releases/latest` ignore les
@@ -32,6 +32,7 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
+| v3.1.0 | PR à venir | Fiche contrôle d'un lot : nombre d'éléments restants / initial. Filtres des listes conservés (`FiltresListe` : requête de chaque liste et de la fiche d'un contrôle mémorisée en session par `public/index.php`, reprise par `AbstractController::redirectTo` et la fonction Twig `url_liste`, effacée par la liste ouverte sans paramètre). Dissociation depuis la fiche contrôle écartée (décision du 2026-11-15). | — |
 | v3.0.2 | PR #137 | Passkey absente après la mise à jour en v3.0.0 : ancien `passkey.js` en cache sans `definirTextes()`. Scripts et feuilles de style de `/assets/` chargés avec `?v={{ app_version }}` (`TemplatesAssetsVersionTest`), appel de `definirTextes()` gardé. | `39c67be` |
 | v3.0.1 | PR #135 + #136 | Audit du 2026-11-10 (sauvegarde et nettoyage), R1 à R7 : rétention par l'horodatage du nom, `creerAvecMenage()` (rétention et purge des téléversements sous le verrou), toutes les routes POST-only testées (405), notes base dédiée / Nginx / espace disque. | `2b2d3b1` |
 | v3.0.0 | PR #123 à #132 + #133 | Interface en anglais, espagnol et italien : langue réglée pour le club (personnalisation du tableau de bord, mode automatique = navigateur), e-mails, PDF, exports, installeur et guide traduits (voir « Localisation »). Migration `022_langue_club.sql`. | `d5f5a30` |
@@ -895,6 +896,9 @@ installeur et guide utilisateur ; la CLI reste en français).
 - Fichiers statiques : toujours `src="/assets/…?v={{ app_version }}"` (garde-fou
   `TemplatesAssetsVersionTest`) ; un fichier JS modifié sans version dans
   l'URL reste en cache chez les utilisateurs (incident passkey de la v3.0.0).
+- Lien de retour vers une liste : `{{ url_liste('/chemin') }}` (filtres repris) ; liens du menu,
+  « Retirer ce filtre » et « Réinitialiser » sans `url_liste` (ils repartent de la liste complète).
+  Nouvelle liste filtrable : l'ajouter à `FiltresListe::LISTES`.
 - Formats de date : clé dédiée (`'d/m/Y à H:i'|trans`).
 - Constantes de message : `Traducteur::t(self::MESSAGE_…)` est reconnu
   par le garde-fou (classe déduite du chemin PSR-4).
