@@ -7,6 +7,16 @@
 (function () {
 	'use strict';
 
+	// [Localisation] Messages par défaut (français), remplacés par ceux de
+	// la langue de la page via definirTextes() (cf. _passkey_textes.twig).
+	var textes = {
+		annule: 'Opération annulée ou délai dépassé.',
+		dejaEnregistree: 'Cet appareil a déjà une passkey enregistrée pour ce compte.',
+		echec: 'La passkey n\'a pas pu être utilisée.',
+		erreur: 'Erreur',
+		nonPrisEnCharge: 'Ce navigateur ne prend pas en charge les passkeys.'
+	};
+
 	function versOctets(base64url) {
 		var base64 = base64url.replace(/-/g, '+').replace(/_/g, '/');
 		while (base64.length % 4) {
@@ -47,19 +57,19 @@
 			donnees = {};
 		}
 		if (!reponse.ok) {
-			throw new Error(donnees.erreur || 'Erreur ' + reponse.status);
+			throw new Error(donnees.erreur || textes.erreur + ' ' + reponse.status);
 		}
 		return donnees;
 	}
 
 	function messageErreur(erreur) {
 		if (erreur && erreur.name === 'NotAllowedError') {
-			return 'Opération annulée ou délai dépassé.';
+			return textes.annule;
 		}
 		if (erreur && erreur.name === 'InvalidStateError') {
-			return 'Cet appareil a déjà une passkey enregistrée pour ce compte.';
+			return textes.dejaEnregistree;
 		}
-		return (erreur && erreur.message) || 'La passkey n\'a pas pu être utilisée.';
+		return (erreur && erreur.message) || textes.echec;
 	}
 
 	/** Connexion (sans mot de passe, ou second facteur après le mot de passe). */
@@ -119,6 +129,15 @@
 	window.EpiclubPasskey = {
 		disponible: disponible,
 
+		/** Remplace les messages par défaut (objet partiel accepté). */
+		definirTextes: function (traductions) {
+			Object.keys(traductions || {}).forEach(function (cle) {
+				if (typeof traductions[cle] === 'string' && cle in textes) {
+					textes[cle] = traductions[cle];
+				}
+			});
+		},
+
 		/** Bloc contenant #passkey-bouton (data-csrf, data-redirect) et #passkey-erreur. */
 		initConnexion: function (bloc) {
 			if (!bloc || !disponible()) {
@@ -140,7 +159,7 @@
 			var bouton = bloc.querySelector('#passkey-ajouter');
 			if (!disponible()) {
 				bouton.disabled = true;
-				zoneErreur.textContent = 'Ce navigateur ne prend pas en charge les passkeys.';
+				zoneErreur.textContent = textes.nonPrisEnCharge;
 				return;
 			}
 			brancher(bouton, zoneErreur, function () {

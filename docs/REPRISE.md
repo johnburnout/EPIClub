@@ -887,11 +887,18 @@ installeur et guide utilisateur ; la CLI reste en français).
   puis `Accept-Language`, puis `fr`. En CLI et en test : `fr`.
 - Dans un `<script>` : `{{ 'Texte'|trans|json_encode|raw }}`.
 - Formats de date : clé dédiée (`'d/m/Y à H:i'|trans`).
+- Constantes de message : `Traducteur::t(self::MESSAGE_…)` est reconnu
+  par le garde-fou (classe déduite du chemin PSR-4).
+- Pluriels : deux clés et un `if` (« 1 minute » / « {minutes} minutes »).
+- Le journal d'activité (texte stocké en base) reste en français.
+- Scripts statiques : messages par défaut en français, remplacés via un
+  gabarit partiel (ex. `_passkey_textes.twig` → `EpiclubPasskey.definirTextes`).
 
 | Étape | Contenu | État |
 |---|---|---|
-| 1 | Infrastructure, sélecteur, bandeau (`_layout.twig`) | PR en cours |
-| 2+ | Écrans par groupe, messages flash, enums, emails, PDF | à faire |
+| 1 | Infrastructure, sélecteur, bandeau (`_layout.twig`) | PR #123 |
+| 2 | Connexion, double authentification, mot de passe oublié, sécurité du compte (+ `passkey.js`) | PR en cours |
+| 3+ | Équipements, contrôles, acquisitions, prêts, administration, enums, emails, PDF | à faire |
 | — | Installeur (`setup/`), guide (`docs/guide_utilisateur.md`) | à faire |
 
 ## Règles de travail établies

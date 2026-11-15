@@ -2,47 +2,42 @@
 
 {% block body %}
 
-	<h3>🔐 Sécurité du compte</h3>
+	<h3>🔐 {{ 'Sécurité du compte'|trans }}</h3>
 	<hr>
 
 	<p>
-		La double authentification est <strong>facultative</strong>. Une fois activée, une
-		connexion par mot de passe demande en plus un code de votre application
-		d'authentification ou votre passkey. Une passkey permet aussi de se connecter
-		<strong>sans mot de passe</strong>.
+		{{ "La double authentification est <strong>facultative</strong>. Une fois activée, une connexion par mot de passe demande en plus un code de votre application d'authentification ou votre passkey. Une passkey permet aussi de se connecter <strong>sans mot de passe</strong>."|trans|raw }}
 	</p>
 
 	{% if codes_a_afficher is not empty %}
 		<div class="alert alert-warning">
-			<h5>Vos codes de secours</h5>
+			<h5>{{ 'Vos codes de secours'|trans }}</h5>
 			<p>
-				Notez-les ou imprimez-les et conservez-les en lieu sûr : ils ne seront
-				<strong>plus jamais affichés</strong>. Chacun permet une seule connexion si vous
-				n'avez plus accès à votre téléphone ou à votre passkey.
+				{{ "Notez-les ou imprimez-les et conservez-les en lieu sûr : ils ne seront <strong>plus jamais affichés</strong>. Chacun permet une seule connexion si vous n'avez plus accès à votre téléphone ou à votre passkey."|trans|raw }}
 			</p>
 			<div class="row row-cols-2 row-cols-md-5 g-2 font-monospace fs-5 mb-2">
 				{% for code in codes_a_afficher %}
 					<div class="col">{{ code }}</div>
 				{% endfor %}
 			</div>
-			<button type="button" class="btn btn-sm btn-outline-dark" data-print>🖨️ Imprimer</button>
+			<button type="button" class="btn btn-sm btn-outline-dark" data-print>🖨️ {{ 'Imprimer'|trans }}</button>
 		</div>
 	{% endif %}
 
 	{% if not confirmee %}
 		<div class="card mb-4">
 			<div class="card-body">
-				<h5 class="card-title">Confirmez votre mot de passe</h5>
-				<p class="card-text">Pour modifier ces réglages, confirmez votre identité (valable 10 minutes).</p>
+				<h5 class="card-title">{{ 'Confirmez votre mot de passe'|trans }}</h5>
+				<p class="card-text">{{ 'Pour modifier ces réglages, confirmez votre identité (valable 10 minutes).'|trans }}</p>
 				{% if erreur %}<div class="alert alert-danger">{{ erreur }}</div>{% endif %}
 				<form method="post" class="row g-2 align-items-end">
 					<div class="col-sm-6">
-						<label for="mot_de_passe" class="form-label">Mot de passe</label>
+						<label for="mot_de_passe" class="form-label">{{ 'Mot de passe'|trans }}</label>
 						<input type="password" id="mot_de_passe" name="mot_de_passe" class="form-control" required autocomplete="current-password" autofocus>
 					</div>
 					<div class="col-sm-auto">
 						<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-						<button type="submit" class="btn btn-primary">Confirmer</button>
+						<button type="submit" class="btn btn-primary">{{ 'Confirmer'|trans }}</button>
 					</div>
 				</form>
 			</div>
@@ -51,24 +46,23 @@
 
 	<div class="card mb-4">
 		<div class="card-body">
-			<h5 class="card-title">📱 Application d'authentification</h5>
+			<h5 class="card-title">📱 {{ "Application d'authentification"|trans }}</h5>
 			{% if application %}
-				<p><span class="badge bg-success">Activée</span> depuis le {{ application|date('d/m/Y') }}.</p>
+				<p><span class="badge bg-success">{{ 'Activée'|trans }}</span> {{ 'depuis le {date}.'|trans({date: application|date('d/m/Y')}) }}</p>
 				{% if confirmee %}
 					<form method="post" action="/mon-compte/securite/application/desactiver"
-					      data-confirm="Désactiver l'application d'authentification ?">
+					      data-confirm="{{ "Désactiver l'application d'authentification ?"|trans }}">
 						<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-						<button type="submit" class="btn btn-outline-danger btn-sm">Désactiver</button>
+						<button type="submit" class="btn btn-outline-danger btn-sm">{{ 'Désactiver'|trans }}</button>
 					</form>
 				{% endif %}
 			{% else %}
 				<p>
-					<span class="badge bg-secondary">Non activée</span>
-					Codes à 6 chiffres générés par une application de votre téléphone
-					(Google Authenticator, Microsoft Authenticator, Aegis, FreeOTP, 2FAS, Bitwarden…).
+					<span class="badge bg-secondary">{{ 'Non activée'|trans }}</span>
+					{{ 'Codes à 6 chiffres générés par une application de votre téléphone (Google Authenticator, Microsoft Authenticator, Aegis, FreeOTP, 2FAS, Bitwarden…).'|trans }}
 				</p>
 				{% if confirmee %}
-					<a href="/mon-compte/securite/application" class="btn btn-primary btn-sm">Activer</a>
+					<a href="/mon-compte/securite/application" class="btn btn-primary btn-sm">{{ 'Activer'|trans }}</a>
 				{% endif %}
 			{% endif %}
 		</div>
@@ -78,14 +72,13 @@
 		<div class="card-body">
 			<h5 class="card-title">🔑 Passkeys</h5>
 			<p>
-				Une passkey est gardée par votre téléphone, votre ordinateur, votre gestionnaire de
-				mots de passe ou une clé de sécurité, et déverrouillée par empreinte, visage ou code.
+				{{ 'Une passkey est gardée par votre téléphone, votre ordinateur, votre gestionnaire de mots de passe ou une clé de sécurité, et déverrouillée par empreinte, visage ou code.'|trans }}
 			</p>
 			{% if passkeys is empty %}
-				<p class="text-muted">Aucune passkey enregistrée.</p>
+				<p class="text-muted">{{ 'Aucune passkey enregistrée.'|trans }}</p>
 			{% else %}
 				<table class="table table-sm align-middle">
-					<thead><tr><th>Nom</th><th>Ajoutée le</th><th>Dernière utilisation</th><th></th></tr></thead>
+					<thead><tr><th>{{ 'Nom'|trans }}</th><th>{{ 'Ajoutée le'|trans }}</th><th>{{ 'Dernière utilisation'|trans }}</th><th></th></tr></thead>
 					<tbody>
 						{% for passkey in passkeys %}
 							<tr>
@@ -95,9 +88,9 @@
 								<td class="text-end">
 									{% if confirmee %}
 										<form method="post" action="/mon-compte/securite/passkey/supprimer-{{ passkey.id }}"
-										      data-confirm="Supprimer la passkey « {{ passkey.nom }} » ?">
+										      data-confirm="{{ 'Supprimer la passkey « {nom} » ?'|trans({nom: passkey.nom}) }}">
 											<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-											<button type="submit" class="btn btn-outline-danger btn-sm">Supprimer</button>
+											<button type="submit" class="btn btn-outline-danger btn-sm">{{ 'Supprimer'|trans }}</button>
 										</form>
 									{% endif %}
 								</td>
@@ -112,16 +105,17 @@
 			{% elseif confirmee %}
 				<div id="passkey-enregistrement" class="row g-2 align-items-end">
 					<div class="col-sm-6">
-						<label for="passkey-nom" class="form-label">Nom de la nouvelle passkey</label>
-						<input type="text" id="passkey-nom" class="form-control" maxlength="64" placeholder="ex. Téléphone de Jean">
+						<label for="passkey-nom" class="form-label">{{ 'Nom de la nouvelle passkey'|trans }}</label>
+						<input type="text" id="passkey-nom" class="form-control" maxlength="64" placeholder="{{ 'ex. Téléphone de Jean'|trans }}">
 					</div>
 					<div class="col-sm-auto">
-						<button type="button" class="btn btn-primary" id="passkey-ajouter" data-csrf="{{ csrf_token }}">Ajouter une passkey</button>
+						<button type="button" class="btn btn-primary" id="passkey-ajouter" data-csrf="{{ csrf_token }}">{{ 'Ajouter une passkey'|trans }}</button>
 					</div>
 					<div class="col-12 text-danger" id="passkey-erreur" role="alert"></div>
 				</div>
 				<script src="/assets/js/passkey.js"></script>
 				<script nonce="{{ csp_nonce }}">
+					{% include '_passkey_textes.twig' %}
 					EpiclubPasskey.initEnregistrement(document.getElementById('passkey-enregistrement'));
 				</script>
 			{% endif %}
@@ -131,13 +125,13 @@
 	{% if application or passkeys is not empty %}
 		<div class="card mb-4">
 			<div class="card-body">
-				<h5 class="card-title">🧾 Codes de secours</h5>
-				<p>Il vous reste <strong>{{ codes_restants }}</strong> code{{ codes_restants > 1 ? 's' : '' }} de secours.</p>
+				<h5 class="card-title">🧾 {{ 'Codes de secours'|trans }}</h5>
+				<p>{% if codes_restants > 1 %}{{ 'Il vous reste <strong>{n}</strong> codes de secours.'|trans({n: codes_restants})|raw }}{% else %}{{ 'Il vous reste <strong>{n}</strong> code de secours.'|trans({n: codes_restants})|raw }}{% endif %}</p>
 				{% if confirmee %}
 					<form method="post" action="/mon-compte/securite/codes-secours"
-					      data-confirm="Générer de nouveaux codes ? Les anciens ne fonctionneront plus.">
+					      data-confirm="{{ 'Générer de nouveaux codes ? Les anciens ne fonctionneront plus.'|trans }}">
 						<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-						<button type="submit" class="btn btn-outline-primary btn-sm">Générer de nouveaux codes</button>
+						<button type="submit" class="btn btn-outline-primary btn-sm">{{ 'Générer de nouveaux codes'|trans }}</button>
 					</form>
 				{% endif %}
 			</div>

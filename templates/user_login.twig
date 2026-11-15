@@ -15,7 +15,7 @@
 				<hr>
 				<img src="/assets/img/EPIClub.png" class="" width="64" alt="Logo EPIClub">
 				<span class="h1 text-primary align-middle ps-3">
-					<strong>Gestionnaire EPI</strong>
+					<strong>{{ 'Gestionnaire EPI'|trans }}</strong>
 				</span>
 				<hr>
 			</div>
@@ -28,11 +28,11 @@
 				{% for message in messages %}
 					<div class="alert alert-{{ label }} alert-dismissible fade show" role="alert">
 						{{ message }}
-						<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+						<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="{{ 'Fermer'|trans }}"></button>
 					</div>
 				{% endfor %}
 			{% endfor %}
-			<h3>Identification</h3>
+			<h3>{{ 'Identification'|trans }}</h3>
 			<hr>
 
 			{% if null != error_autentification %}
@@ -41,14 +41,14 @@
 
 			<form method="post">
 				<div class="mb-3">
-					<label for="username">Identifiant ou email :</label>
+					<label for="username">{{ 'Identifiant ou email :'|trans }}</label>
 					<input type="text" class="form-control {% if form_errors.username %} is-invalid{% endif %}" id="username" name="username" required autofocus autocomplete="username">
 					{% if form_errors.username %}
 						<div class="invalid-feedback">{{ form_errors.username }}</div>
 					{% endif %}
 				</div>
 				<div class="mb-3">
-					<label for="password">Mot de passe :</label>
+					<label for="password">{{ 'Mot de passe :'|trans }}</label>
 					<input type="password" class="form-control {% if form_errors.password %} is-invalid{% endif %}" id="password" name="password" required>
 					{% if form_errors.password %}
 						<div class="invalid-feedback">{{ form_errors.password }}</div>
@@ -56,8 +56,8 @@
 				</div>
 				<div class="mb-3">
 					<input type="hidden" name="csrf_token" value="{{ csrf_token }}"/>
-					<button type="submit" class="btn btn-primary">Me connecter</button>
-					<a href="/mot_de_passe_oublie">Mot de passe oublié ?</a>
+					<button type="submit" class="btn btn-primary">{{ 'Me connecter'|trans }}</button>
+					<a href="/mot_de_passe_oublie">{{ 'Mot de passe oublié ?'|trans }}</a>
 				</div>
 			</form>
 
@@ -68,12 +68,13 @@
 				<hr>
 				<button type="button" class="btn btn-outline-primary" id="passkey-bouton"
 				        data-csrf="{{ csrf_token }}" data-redirect="{{ redirect|default('') }}">
-					🔑 Se connecter avec une passkey
+					🔑 {{ 'Se connecter avec une passkey'|trans }}
 				</button>
 				<div class="text-danger mt-2" id="passkey-erreur" role="alert"></div>
 			</div>
 			<script src="/assets/js/passkey.js"></script>
 			<script nonce="{{ csp_nonce }}">
+				{% include '_passkey_textes.twig' %}
 				EpiclubPasskey.initConnexion(document.getElementById('passkey-connexion'));
 			</script>
 		</main>

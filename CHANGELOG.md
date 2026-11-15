@@ -21,6 +21,11 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
   les prochaines versions (un texte pas encore traduit reste en français).
   Migration : `022_langue_utilisateur.sql` (appliquée automatiquement par
   la mise à jour intégrée).
+- **Connexion et compte traduits (2e étape).** Pages de connexion, double
+  authentification, mot de passe oublié et réinitialisation, sécurité du
+  compte (application d'authentification, passkeys, codes de secours),
+  avec leurs messages et ceux des passkeys dans le navigateur. Le journal
+  d'activité reste rédigé en français.
 
 ### Changed
 

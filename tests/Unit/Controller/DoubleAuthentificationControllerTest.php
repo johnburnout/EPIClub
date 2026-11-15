@@ -84,7 +84,8 @@ final class DoubleAuthentificationControllerTest extends TestCase
         $reponse = $c->verification(Request::create('/se_connecter/verification'));
 
         self::assertSame(200, $reponse->getStatusCode());
-        self::assertStringContainsString('application d\'authentification', (string) $reponse->getContent());
+        // Texte affiché : les apostrophes traduites sortent échappées (&#039;).
+        self::assertStringContainsString('application d\'authentification', html_entity_decode((string) $reponse->getContent(), ENT_QUOTES));
         self::assertFalse($this->session->has('user'));
     }
 

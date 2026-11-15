@@ -5,6 +5,7 @@ namespace Epiclub\Controller;
 use Epiclub\Engine\AbstractController;
 use Epiclub\Domain\JournalActiviteManager;
 use Epiclub\Engine\AppUserAuthenticator;
+use Epiclub\Engine\Traducteur;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -57,15 +58,15 @@ class AppUserAuthController extends AbstractController
                 // Token invalide : régénérer pour éviter les rejeux
                 $this->session->set('csrf_token', bin2hex(random_bytes(32)));
                 $csrf_error = true;
-                $error_autentification = 'Erreur de sécurité : Token CSRF invalide. Veuillez réessayer.';
+                $error_autentification = Traducteur::t('Erreur de sécurité : Token CSRF invalide. Veuillez réessayer.');
             }
             
             if (!$csrf_error) {
                 if (!$request->request->has('username')) {
-                    $form_errors['username'] = "L'identifiant ou l'email est requis.";
+                    $form_errors['username'] = Traducteur::t("L'identifiant ou l'email est requis.");
                 }
                 if (!$request->request->has('password')) {
-                    $form_errors['password'] = "Le mot de passe est requis.";
+                    $form_errors['password'] = Traducteur::t('Le mot de passe est requis.');
                 }
                 
                 if (empty($form_errors)) {
