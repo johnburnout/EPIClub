@@ -247,7 +247,7 @@
 
 	<!-- BOUTONS D'ACTION -->
 	<div class="mt-3">
-		<a href="/admin/acquisitions" class="btn btn-secondary">{{ 'Retour à la liste'|trans }}</a>
+		<a href="{{ url_liste('/admin/acquisitions') }}" class="btn btn-secondary">{{ 'Retour à la liste'|trans }}</a>
 		
 		<!-- BOUTON VALIDER -->
 		{% if not acquisition.est_validee and acquisition.lignes and acquisition.lignes|length > 0 %}

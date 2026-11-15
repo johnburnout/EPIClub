@@ -41,7 +41,7 @@
 				{{ categorie.description }}
 			</div>
 			<div class="mb-3 d-flex gap-2">
-				<a href="/admin/categories" class="btn btn-secondary">{{ 'Retour à la liste'|trans }}</a>
+				<a href="{{ url_liste('/admin/categories') }}" class="btn btn-secondary">{{ 'Retour à la liste'|trans }}</a>
 				{% if nb_equipements > 0 %}
 				<a href="/equipements?categorie={{ categorie.id }}" class="btn btn-primary">📋 {{ nb_equipements > 1 ? 'Voir les {nombre} équipements'|trans({nombre: nb_equipements}) : "Voir l'équipement"|trans }}</a>
 				{% else %}

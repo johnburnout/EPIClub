@@ -360,7 +360,7 @@
 		{# --- Fin historique --- #}
 
 			<div class="mt-3 d-flex flex-wrap gap-2">
-				<a href="/equipements" class="btn btn-secondary">
+				<a href="{{ url_liste('/equipements') }}" class="btn btn-secondary">
 					<i class="fas fa-arrow-left"></i> {{ 'Retour à la liste'|trans }}
 				</a>
 				{% if isGranted('ROLE_CONTROLLEUR') %}
@@ -410,7 +410,7 @@
 		<div class="alert alert-warning">
 			<i class="fas fa-exclamation-triangle"></i> {{ 'Équipement non trouvé.'|trans }}
 		</div>
-		<a href="/equipements" class="btn btn-secondary">{{ 'Retour à la liste'|trans }}</a>
+		<a href="{{ url_liste('/equipements') }}" class="btn btn-secondary">{{ 'Retour à la liste'|trans }}</a>
 	{% endif %}
 
 {% endblock %}

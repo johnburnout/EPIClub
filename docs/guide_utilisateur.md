@@ -198,6 +198,8 @@ L'une d'elles fait la modification puis clôt le ticket (**« Modification faite
 ### 2.5 Consulter / Exporter
 - **Pagination** (toutes les listes : équipements, acquisitions, contrôles, journaux, prêts et matériel prêté, référentiels, utilisateurs, demandes) : elle n'apparaît que s'il y a **plus de 10 éléments** ; on choisit alors 10, 25, 50 ou 100 lignes par page. À 10 éléments ou moins, tout est affiché sur une seule page.
 
+- **Filtres conservés** : après la consultation, la modification ou le contrôle d'une fiche, le retour à la liste (bouton **« Retour à la liste »**, **« Annuler »** ou enregistrement) retrouve sa recherche, ses filtres, son tri et sa page, de même pour la fiche d'un contrôle. Ouvrir la liste depuis le menu, **« Retirer ce filtre »** ou **« Réinitialiser »** repart de la liste complète.
+
 - **Fiche individuelle** : depuis la liste, cliquer sur **« Voir »** pour consulter toutes les informations (y compris l’historique des contrôles et la facture associée).
 - **PDF individuel** : depuis la fiche, cliquer sur **« PDF »**.
 - **PDF liste / Excel (photos + QR) / Étiquettes** : depuis la liste, utiliser le menu déroulant **« Exporter »**.
@@ -210,6 +212,7 @@ L'une d'elles fait la modification puis clôt le ticket (**« Modification faite
 ### Créer un contrôle
 - Réservé aux utilisateurs avec le rôle **Contrôleur**.
 - Depuis la fiche d'un équipement, cliquez sur **Démarrer un contrôle**.
+- **Lot** : la fiche contrôle d'un lot indique le nombre d'éléments restants et le nombre initial, pour vérifier chaque élément.
 
 ### Scanner un QR Code
 - Le QR Code d'un équipement redirige vers la fiche ou vers un contrôle en cours.

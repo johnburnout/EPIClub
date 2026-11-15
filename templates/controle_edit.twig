@@ -357,7 +357,7 @@
 {% endif %}
 
 <div class="mt-3">
-    <a href="/admin/controles" class="btn btn-secondary">{{ 'Retour à la liste'|trans }}</a>
+    <a href="{{ url_liste('/admin/controles') }}" class="btn btn-secondary">{{ 'Retour à la liste'|trans }}</a>
     
     {% if controle.statut != 'cloture' %}
         {% if hasPending %}

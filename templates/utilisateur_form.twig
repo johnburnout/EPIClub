@@ -77,7 +77,7 @@
 			<button type="submit" class="btn btn-primary">
 				{% if is_edit_mode %}{{ 'Enregistrer'|trans }}{% else %}{{ "Créer l'utilisateur"|trans }}{% endif %}
 			</button>
-			<a href="/admin/utilisateurs" class="btn btn-secondary">{{ 'Annuler'|trans }}</a>
+			<a href="{{ url_liste('/admin/utilisateurs') }}" class="btn btn-secondary">{{ 'Annuler'|trans }}</a>
 		</div>
 	</form>
 

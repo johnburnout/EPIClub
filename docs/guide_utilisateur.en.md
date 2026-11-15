@@ -200,6 +200,8 @@ One of them makes the change then closes the ticket (**"Change made"**), or **re
 ### 2.5 View / Export
 - **Pagination** (all lists: items, purchases, inspections, logs, loans and loaned equipment, reference data, users, requests): it only appears when there are **more than 10 entries**; you then choose 10, 25, 50 or 100 rows per page. With 10 entries or fewer, everything is shown on a single page.
 
+- **Filters kept**: after viewing, editing or inspecting a record, going back to the list (**"Back to the list"**, **"Cancel"** or saving) restores its search, filters, sort order and page; the same applies to an inspection's page. Opening the list from the menu, **"Remove this filter"** or **"Reset"** starts again from the full list.
+
 - **Individual record**: from the list, click **"View"** to see all the information (including the inspection history and the related invoice).
 - **Individual PDF**: from the record, click **"PDF"**.
 - **List PDF / Excel (photos + QR) / Labels**: from the list, use the **"Export"** drop-down menu.
@@ -212,6 +214,7 @@ One of them makes the change then closes the ticket (**"Change made"**), or **re
 ### Create an inspection
 - Reserved for users with the **Inspector** role.
 - From an item's record, click **Start an inspection**.
+- **Batch**: the inspection record of a batch shows the number of remaining items and the initial number, so that each item is checked.
 
 ### Scan a QR code
 - An item's QR code leads to its record or to an ongoing inspection.

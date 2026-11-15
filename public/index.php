@@ -126,4 +126,7 @@ try {
     );
 }
 
+// [2026-11-15] Filtres des listes repris au retour vers la liste.
+\Epiclub\Engine\FiltresListe::memoriser($session, $request, $response);
+
 SecurityHeaders::apply($response, $enHttps)->send();

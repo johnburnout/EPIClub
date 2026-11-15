@@ -470,7 +470,7 @@
 		</fieldset>
 
 		<button type="submit" class="btn btn-primary">{{ 'Enregistrer'|trans }}</button>
-		<a href="{% if equipement.id is defined and equipement.id %}/equipements/equipement-{{ equipement.id }}{% else %}/equipements{% endif %}" class="btn btn-secondary">{{ 'Annuler'|trans }}</a>
+		<a href="{% if equipement.id is defined and equipement.id %}/equipements/equipement-{{ equipement.id }}{% else %}{{ url_liste('/equipements') }}{% endif %}" class="btn btn-secondary">{{ 'Annuler'|trans }}</a>
 	</form>
 
 	<!-- Modal -->
