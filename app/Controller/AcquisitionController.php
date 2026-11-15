@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Epiclub\Controller;
 
+use Epiclub\Engine\Traducteur;
 use Epiclub\Domain\AcquisitionLigneManager;
 use Epiclub\Domain\AcquisitionManager;
 use Epiclub\Domain\AcquisitionValidator;
@@ -384,10 +385,9 @@ class AcquisitionController extends AbstractController
             // que la vraie cause est un fichier trop gros. On traite ce cas
             // en priorité pour afficher un message utile.
             if ($this->isPostTruncated($request)) {
-                $form_errors['facture_document'] = sprintf(
-                    'Le fichier est trop volumineux pour être traité par le serveur (limite PHP : %s). '
-                    . 'Réduisez la taille du fichier ou augmentez post_max_size.',
-                    ini_get('post_max_size')
+                $form_errors['facture_document'] = Traducteur::t(
+                    'Le fichier est trop volumineux pour être traité par le serveur (limite PHP : {limite}). Réduisez la taille du fichier ou augmentez post_max_size.',
+                    ['limite' => ini_get('post_max_size')]
                 );
             } else {
                 // [SÉCURITÉ] Vérification CSRF avant tout traitement (y compris upload facture).
@@ -456,11 +456,11 @@ class AcquisitionController extends AbstractController
         // [ROBUSTESSE] Vérifier l'unicité de la référence AVANT l'insert
         $factureReference = $acquisition['facture_reference'];
         if ($factureReference === '') {
-            $formErrors['facture_reference'] = 'La référence de facture est obligatoire.';
+            $formErrors['facture_reference'] = Traducteur::t('La référence de facture est obligatoire.');
         } else {
             $acquisitionManager = $this->acquisitionManager();
             if ($acquisitionManager->findOneByCriteria(['facture_reference' => $factureReference])) {
-                $formErrors['facture_reference'] = 'Cette référence de facture existe déjà. Merci d\'en choisir une autre.';
+                $formErrors['facture_reference'] = Traducteur::t('Cette référence de facture existe déjà. Merci d\'en choisir une autre.');
             }
         }
         
@@ -495,13 +495,13 @@ class AcquisitionController extends AbstractController
                 );
                 $this->session->getFlashBag()->add(
                     'success',
-                    '✅ Acquisition créée avec succès. Vous pouvez maintenant ajouter des lignes.'
+                    Traducteur::t('✅ Acquisition créée avec succès. Vous pouvez maintenant ajouter des lignes.')
                 );
                 return new HandlerResult(
                     $this->redirectTo("/admin/acquisitions/acquisition_modification-$id")
                 );
             }
-            $formErrors['general'] = 'Erreur lors de la création de l\'acquisition.';
+            $formErrors['general'] = Traducteur::t('Erreur lors de la création de l\'acquisition.');
             return new HandlerResult(null, $acquisition, $formErrors);
         } catch (\Throwable $e) {
             error_log(sprintf(
@@ -510,7 +510,7 @@ class AcquisitionController extends AbstractController
                 $e->getFile(),
                 $e->getLine()
             ));
-            $formErrors['general'] = 'Une erreur est survenue lors de la création. Merci de réessayer.';
+            $formErrors['general'] = Traducteur::t('Une erreur est survenue lors de la création. Merci de réessayer.');
             return new HandlerResult(null, $acquisition, $formErrors);
         }
     }
@@ -528,13 +528,13 @@ class AcquisitionController extends AbstractController
         // [ROBUSTESSE] Cast explicite de l'id
         $id = (int) $request->get('id');
         if ($id <= 0) {
-            $this->session->getFlashBag()->add('error', 'Acquisition invalide.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Acquisition invalide.'));
             return $this->redirectTo('/admin/acquisitions');
         }
         
         $acquisition = $acquisitionManager->findId($id);
         if (!$acquisition) {
-            $this->session->getFlashBag()->add('error', 'Acquisition non trouvée.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Acquisition non trouvée.'));
             return $this->redirectTo('/admin/acquisitions');
         }
         
@@ -545,10 +545,9 @@ class AcquisitionController extends AbstractController
         if ($request->getMethod() === 'POST') {
             // [ROBUSTESSE] Détection d'un POST tronqué par post_max_size (cf. create()).
             if ($this->isPostTruncated($request)) {
-                $form_errors['facture_document'] = sprintf(
-                    'Le fichier est trop volumineux pour être traité par le serveur (limite PHP : %s). '
-                    . 'Réduisez la taille du fichier ou augmentez post_max_size.',
-                    ini_get('post_max_size')
+                $form_errors['facture_document'] = Traducteur::t(
+                    'Le fichier est trop volumineux pour être traité par le serveur (limite PHP : {limite}). Réduisez la taille du fichier ou augmentez post_max_size.',
+                    ['limite' => ini_get('post_max_size')]
                 );
             } else {
                 // [SÉCURITÉ] Vérification CSRF avant tout traitement (y compris upload facture).
@@ -634,11 +633,11 @@ class AcquisitionController extends AbstractController
         
         // [ROBUSTESSE] Vérifier l'unicité de la référence AVANT l'update
         if ($factureReference === '') {
-            $formErrors['facture_reference'] = 'La référence de facture est obligatoire.';
+            $formErrors['facture_reference'] = Traducteur::t('La référence de facture est obligatoire.');
         } else {
             $existing = $acquisitionManager->findOneByCriteria(['facture_reference' => $factureReference]);
             if ($existing && (int) $existing['id'] !== (int) $acquisition['id']) {
-                $formErrors['facture_reference'] = 'Cette référence de facture est déjà utilisée par une autre acquisition.';
+                $formErrors['facture_reference'] = Traducteur::t('Cette référence de facture est déjà utilisée par une autre acquisition.');
             }
         }
         
@@ -685,7 +684,7 @@ class AcquisitionController extends AbstractController
                 'Modification de l\'' . JournalActiviteManager::libelleAcquisition($acquisition),
                 $request
             );
-            $this->session->getFlashBag()->add('success', '✅ Acquisition mise à jour avec succès.');
+            $this->session->getFlashBag()->add('success', Traducteur::t('✅ Acquisition mise à jour avec succès.'));
             return new HandlerResult(
                 $this->redirectTo("/admin/acquisitions/acquisition_modification-{$acquisition['id']}")
             );
@@ -698,7 +697,7 @@ class AcquisitionController extends AbstractController
                 $e->getFile(),
                 $e->getLine()
             ));
-            $formErrors['general'] = 'Une erreur est survenue lors de la mise à jour. Merci de réessayer.';
+            $formErrors['general'] = Traducteur::t('Une erreur est survenue lors de la mise à jour. Merci de réessayer.');
             return new HandlerResult(null, $acquisition, $formErrors);
         }
     }
@@ -739,7 +738,7 @@ class AcquisitionController extends AbstractController
         $formErrors = [];
         
         if ($ligne['reference'] === '') {
-            $formErrors['ligne_reference'] = 'Veuillez remplir les champs de la ligne.';
+            $formErrors['ligne_reference'] = Traducteur::t('Veuillez remplir les champs de la ligne.');
             return new HandlerResult(null, $acquisition, $formErrors, $ligneData);
         }
         
@@ -773,7 +772,7 @@ class AcquisitionController extends AbstractController
                 JournalActiviteManager::libelleAcquisition($acquisition),
                 self::libelleLigne($ligne)
             ), $request);
-            $this->session->getFlashBag()->add('success', '✅ Ligne ajoutée avec succès.');
+            $this->session->getFlashBag()->add('success', Traducteur::t('✅ Ligne ajoutée avec succès.'));
             return new HandlerResult(
                 $this->redirectTo("/admin/acquisitions/acquisition_modification-{$acquisition['id']}")
             );
@@ -781,7 +780,7 @@ class AcquisitionController extends AbstractController
             // [ROBUSTESSE] Race condition : la pré-vérification
             // findByReference() a passé, mais la contrainte UNIQUE
             // a rejeté l'INSERT. On affiche l'erreur sur le bon champ.
-            $formErrors['ligne_reference'] = 'Cette référence existe déjà. Veuillez en saisir une autre.';
+            $formErrors['ligne_reference'] = Traducteur::t('Cette référence existe déjà. Veuillez en saisir une autre.');
             return new HandlerResult(null, $acquisition, $formErrors, $ligneData);
         } catch (\Throwable $e) {
             error_log(sprintf(
@@ -791,7 +790,7 @@ class AcquisitionController extends AbstractController
                 $e->getFile(),
                 $e->getLine()
             ));
-            $formErrors['ligne_general'] = 'Une erreur est survenue lors de l\'ajout de la ligne.';
+            $formErrors['ligne_general'] = Traducteur::t('Une erreur est survenue lors de l\'ajout de la ligne.');
             return new HandlerResult(null, $acquisition, $formErrors, $ligneData);
         }
     }
@@ -820,7 +819,7 @@ class AcquisitionController extends AbstractController
 
         $fichier = $request->files->get('facture_document');
         if (!$fichier) {
-            $this->session->getFlashBag()->add('error', 'Veuillez choisir un fichier de facture.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Veuillez choisir un fichier de facture.'));
             return new HandlerResult($redirect());
         }
 
@@ -828,7 +827,7 @@ class AcquisitionController extends AbstractController
         try {
             $newFacture = $uploader->upload($fichier);
             if ($newFacture === null) {
-                $this->session->getFlashBag()->add('error', 'Veuillez choisir un fichier de facture.');
+                $this->session->getFlashBag()->add('error', Traducteur::t('Veuillez choisir un fichier de facture.'));
                 return new HandlerResult($redirect());
             }
 
@@ -850,7 +849,7 @@ class AcquisitionController extends AbstractController
                 'Facture téléversée pour l\'' . JournalActiviteManager::libelleAcquisition($acquisition),
                 $request
             );
-            $this->session->getFlashBag()->add('success', '✅ La facture a été téléversée.');
+            $this->session->getFlashBag()->add('success', Traducteur::t('✅ La facture a été téléversée.'));
             return new HandlerResult($redirect());
         } catch (FactureUploadException $e) {
             $this->session->getFlashBag()->add('error', $e->getMessage());
@@ -865,7 +864,7 @@ class AcquisitionController extends AbstractController
             ));
             $this->session->getFlashBag()->add(
                 'error',
-                'Une erreur est survenue lors du téléversement. Merci de réessayer.'
+                Traducteur::t('Une erreur est survenue lors du téléversement. Merci de réessayer.')
             );
             return new HandlerResult($redirect());
         }
@@ -883,14 +882,14 @@ class AcquisitionController extends AbstractController
         // [ROBUSTESSE] Cast explicite de l'id
         $id = (int) $request->get('id');
         if ($id <= 0) {
-            $this->session->getFlashBag()->add('error', 'Acquisition invalide.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Acquisition invalide.'));
             return $this->redirectTo('/admin/acquisitions');
         }
         
         $acquisitionManager = $this->acquisitionManager();
         $acquisition = $acquisitionManager->findId($id);
         if (!$acquisition) {
-            $this->session->getFlashBag()->add('error', 'Acquisition non trouvée.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Acquisition non trouvée.'));
             return $this->redirectTo('/admin/acquisitions');
         }
         
@@ -926,7 +925,7 @@ class AcquisitionController extends AbstractController
         if ($acquisition['est_validee']) {
             $this->session->getFlashBag()->add(
                 'error',
-                "Impossible de supprimer une acquisition validée. Elle contient des équipements générés."
+                Traducteur::t("Impossible de supprimer une acquisition validée. Elle contient des équipements générés.")
             );
             return new HandlerResult(
                 $this->redirectTo("/admin/acquisitions/acquisition-{$id}")
@@ -940,7 +939,7 @@ class AcquisitionController extends AbstractController
             if ($ligne['equipements_generes'] == 1) {
                 $this->session->getFlashBag()->add(
                     'error',
-                    "Impossible de supprimer cette acquisition : certaines lignes ont généré des équipements."
+                    Traducteur::t("Impossible de supprimer cette acquisition : certaines lignes ont généré des équipements.")
                 );
                 return new HandlerResult(
                     $this->redirectTo("/admin/acquisitions/acquisition_modification-{$id}")
@@ -981,7 +980,7 @@ class AcquisitionController extends AbstractController
             ));
             $this->session->getFlashBag()->add(
                 'error',
-                'Une erreur est survenue lors de la suppression. Merci de réessayer.'
+                Traducteur::t('Une erreur est survenue lors de la suppression. Merci de réessayer.')
             );
             return new HandlerResult(
                 $this->redirectTo("/admin/acquisitions/acquisition-{$id}")
@@ -1053,13 +1052,13 @@ class AcquisitionController extends AbstractController
         }
         $existante = $this->acquisitionManager()->findOneByCriteria(['facture_reference' => $reference]);
         if ($existante && (int) $existante['id'] === $id) {
-            return new JsonResponse(['disponible' => false, 'message' => 'C\'est la référence actuelle.']);
+            return new JsonResponse(['disponible' => false, 'message' => Traducteur::t('C\'est la référence actuelle.')]);
         }
         return new JsonResponse([
             'disponible' => !$existante,
             'message' => $existante
-                ? 'Cette référence de facture est déjà utilisée par une autre acquisition.'
-                : 'Référence disponible.',
+                ? Traducteur::t('Cette référence de facture est déjà utilisée par une autre acquisition.')
+                : Traducteur::t('Référence disponible.'),
         ]);
     }
 
@@ -1076,7 +1075,7 @@ class AcquisitionController extends AbstractController
         $id = (int) $request->get('id');
         $acquisition = $id > 0 ? $this->acquisitionManager()->findId($id) : null;
         if (!$acquisition) {
-            $this->session->getFlashBag()->add('error', 'Acquisition non trouvée.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Acquisition non trouvée.'));
             return $this->redirectTo('/admin/acquisitions');
         }
         $flash = $this->session->getFlashBag();
@@ -1092,27 +1091,27 @@ class AcquisitionController extends AbstractController
         $erreur = null;
         $modifs = [];
         if (!$referenceChangee && !$dateChangee) {
-            $flash->add('note', 'Aucune modification : la référence et la date sont inchangées.');
+            $flash->add('note', Traducteur::t('Aucune modification : la référence et la date sont inchangées.'));
             return $this->redirectTo($fiche);
         }
         if ($referenceChangee) {
             $erreur = CorrectionAcquisition::erreurReference($reference);
             if ($erreur === null
                 && trim((string) $request->request->get('confirmation_reference', '')) !== CorrectionAcquisition::MOT_CONFIRMATION_REFERENCE) {
-                $erreur = sprintf('Pour changer la référence, saisissez le mot %s (en majuscules).', CorrectionAcquisition::MOT_CONFIRMATION_REFERENCE);
+                $erreur = Traducteur::t('Pour changer la référence, saisissez le mot {mot} (en majuscules).', ['mot' => CorrectionAcquisition::MOT_CONFIRMATION_REFERENCE]);
             }
             if ($erreur === null) {
                 $existante = $this->acquisitionManager()->findOneByCriteria(['facture_reference' => $reference]);
                 if ($existante && (int) $existante['id'] !== $id) {
-                    $erreur = sprintf('La référence de facture « %s » est déjà utilisée par une autre acquisition.', $reference);
+                    $erreur = Traducteur::t('La référence de facture « {reference} » est déjà utilisée par une autre acquisition.', ['reference' => $reference]);
                 }
             }
         }
         if ($erreur === null && $dateChangee) {
             if (!CorrectionAcquisition::dateValide($date)) {
-                $erreur = 'Date de facture invalide.';
+                $erreur = Traducteur::t('Date de facture invalide.');
             } elseif (trim((string) $request->request->get('confirmation_date', '')) !== CorrectionAcquisition::MOT_CONFIRMATION_DATE) {
-                $erreur = sprintf('Pour changer la date, saisissez le mot %s (en majuscules).', CorrectionAcquisition::MOT_CONFIRMATION_DATE);
+                $erreur = Traducteur::t('Pour changer la date, saisissez le mot {mot} (en majuscules).', ['mot' => CorrectionAcquisition::MOT_CONFIRMATION_DATE]);
             } else {
                 $lignes = CorrectionAcquisition::classer($this->equipementManager()->findByAcquisition($id), $ancienneDate);
                 $resultat = CorrectionAcquisition::nouvellesDates(
@@ -1140,7 +1139,7 @@ class AcquisitionController extends AbstractController
             if ((string) $e->getCode() !== '23000') {
                 throw $e;
             }
-            $flash->add('error', sprintf('La référence de facture « %s » vient d\'être utilisée par une autre acquisition : rien n\'a été modifié.', $reference));
+            $flash->add('error', Traducteur::t('La référence de facture « {reference} » vient d\'être utilisée par une autre acquisition : rien n\'a été modifié.', ['reference' => $reference]));
             return $this->redirectTo($fiche);
         }
 
@@ -1149,12 +1148,17 @@ class AcquisitionController extends AbstractController
             '[AcquisitionController] Acquisition id=%d corrigée : référence « %s » → « %s », date %s → %s, %d équipement(s) réalignés (utilisateur id=%s)',
             $id, $ancienneReference, $reference, $ancienneDate, $date, count($modifs), $user['id'] ?? '?'
         ));
+        // Journal en français ; message affiché dans la langue de l'utilisateur.
         $details = [];
+        $detailsAffiches = [];
         if ($referenceChangee) {
             $details[] = sprintf('référence « %s » → « %s »', $ancienneReference, $reference);
+            $detailsAffiches[] = Traducteur::t('référence « {ancienne} » → « {nouvelle} »', ['ancienne' => $ancienneReference, 'nouvelle' => $reference]);
         }
         if ($dateChangee) {
-            $details[] = sprintf('date %s → %s', date('d/m/Y', (int) strtotime($ancienneDate)), date('d/m/Y', (int) strtotime($date)));
+            $dates = ['ancienne' => date('d/m/Y', (int) strtotime($ancienneDate)), 'nouvelle' => date('d/m/Y', (int) strtotime($date))];
+            $details[] = sprintf('date %s → %s', $dates['ancienne'], $dates['nouvelle']);
+            $detailsAffiches[] = Traducteur::t('date {ancienne} → {nouvelle}', $dates);
         }
         $this->journaliser(JournalActiviteManager::TYPE_ACQUISITION, sprintf(
             'Correction de l\'%s : %s%s',
@@ -1162,8 +1166,9 @@ class AcquisitionController extends AbstractController
             implode(', ', $details),
             $modifs ? sprintf(' ; dates de %d équipement(s) mises à jour', count($modifs)) : ''
         ), $request);
-        $flash->add('success', 'Acquisition modifiée : ' . implode(', ', $details)
-            . ($modifs ? sprintf(' ; dates de %d équipement(s) mises à jour.', count($modifs)) : '.'));
+        $flash->add('success', $modifs
+            ? Traducteur::t('Acquisition modifiée : {details} ; dates de {nombre} équipement(s) mises à jour.', ['details' => implode(', ', $detailsAffiches), 'nombre' => count($modifs)])
+            : Traducteur::t('Acquisition modifiée : {details}.', ['details' => implode(', ', $detailsAffiches)]));
         return $this->redirectTo($fiche);
     }
 
@@ -1179,12 +1184,12 @@ class AcquisitionController extends AbstractController
         $acquisition = $acquisitionManager->findId($id);
 
         if (!$acquisition) {
-            $this->session->getFlashBag()->add('error', 'Acquisition non trouvée.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Acquisition non trouvée.'));
             return $this->redirectTo('/admin/acquisitions');
         }
 
         if ($acquisition['est_validee']) {
-            $this->session->getFlashBag()->add('error', 'Cette acquisition est déjà validée.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Cette acquisition est déjà validée.'));
             return $this->redirectTo("/admin/acquisitions/acquisition-{$id}");
         }
 

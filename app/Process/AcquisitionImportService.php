@@ -2,6 +2,7 @@
 
 namespace Epiclub\Process;
 
+use Epiclub\Engine\Traducteur;
 use Epiclub\Domain\DureeDeVie;
 use Epiclub\Domain\AcquisitionLigneManager;
 use Epiclub\Domain\AcquisitionManager;
@@ -87,6 +88,28 @@ class AcquisitionImportService
         'fournisseur' => 'Fournisseur',
     ];
 
+    /**
+     * [Localisation] Libellés de CHAMPS dans la langue de l'utilisateur
+     * (écran d'analyse, messages). Mêmes clés, même ordre que CHAMPS.
+     *
+     * @return array<string, string>
+     */
+    public static function libellesChamps(): array
+    {
+        return [
+            'ignorer' => Traducteur::t('(ignorer cette colonne)'),
+            'designation' => Traducteur::t('Désignation *'),
+            'categorie' => Traducteur::t('Catégorie (code ou libellé) *'),
+            'nombre' => Traducteur::t('Nombre / stock max (> 1 → lot)'),
+            'nombre_actuel' => Traducteur::t('Stock actuel (≤ stock max)'),
+            'reference' => Traducteur::t('Référence équipement (vide → auto)'),
+            'date_achat' => Traducteur::t("Date d'achat"),
+            'date_peremption' => Traducteur::t('Date de péremption'),
+            'facture_reference' => Traducteur::t('Référence facture'),
+            'fournisseur' => Traducteur::t('Fournisseur'),
+        ];
+    }
+
     /** Champs obligatoires dans la correspondance. */
     public const CHAMPS_REQUIS = ['designation', 'categorie'];
 
@@ -104,8 +127,7 @@ class AcquisitionImportService
     ];
 
     /** Message : EPI à durée de vie limitée sans date d'achat. */
-    public const MESSAGE_DATE_ACHAT_LIMITEE =
-        "Date d'achat obligatoire pour un EPI à durée de vie limitée.";
+    public const MESSAGE_DATE_ACHAT_LIMITEE = "Date d'achat obligatoire pour un EPI à durée de vie limitée.";
 
     /** Durée de vie par défaut (années) d'un EPI à durée limitée. */
     public const DUREE_VIE_LIMITEE_ANS = DureeDeVie::ANS;
@@ -195,11 +217,11 @@ class AcquisitionImportService
 
         $lignes = $this->lireFichier($cheminFichier);
         if ($lignes === null) {
-            $analyse['erreur_globale'] = "Le fichier n'a pas pu être lu (format Excel ou CSV attendu).";
+            $analyse['erreur_globale'] = Traducteur::t("Le fichier n'a pas pu être lu (format Excel ou CSV attendu).");
             return $analyse;
         }
         if ($lignes === []) {
-            $analyse['erreur_globale'] = 'Le fichier est vide.';
+            $analyse['erreur_globale'] = Traducteur::t('Le fichier est vide.');
             return $analyse;
         }
 
@@ -220,14 +242,14 @@ class AcquisitionImportService
             $mapping[$index] = $champ;
             $analyse['colonnes'][] = [
                 'index' => $index,
-                'entete' => trim((string) $entete) !== '' ? (string) $entete : '(colonne ' . ($index + 1) . ')',
+                'entete' => trim((string) $entete) !== '' ? (string) $entete : Traducteur::t('(colonne {numero})', ['numero' => $index + 1]),
                 'champ' => $champ,
                 'exemples' => [],
             ];
         }
 
         if ($analyse['colonnes'] === []) {
-            $analyse['erreur_globale'] = "Le fichier est vide ou sa ligne d'en-tête est inexploitable.";
+            $analyse['erreur_globale'] = Traducteur::t("Le fichier est vide ou sa ligne d'en-tête est inexploitable.");
             return $analyse;
         }
 
@@ -371,20 +393,20 @@ class AcquisitionImportService
         $champs = array_filter($mapping, static fn($c) => $c !== 'ignorer');
         foreach (self::CHAMPS_REQUIS as $requis) {
             if (!in_array($requis, $champs, true)) {
-                $rapport['erreur_globale'] = sprintf(
-                    'Correspondance incomplète : le champ « %s » doit être associé à une colonne.',
-                    self::CHAMPS[$requis]
+                $rapport['erreur_globale'] = Traducteur::t(
+                    'Correspondance incomplète : le champ « {champ} » doit être associé à une colonne.',
+                    ['champ' => self::libellesChamps()[$requis]]
                 );
                 return $rapport;
             }
         }
         if (count($champs) !== count(array_unique($champs))) {
-            $rapport['erreur_globale'] = 'Correspondance invalide : un même champ est associé à plusieurs colonnes.';
+            $rapport['erreur_globale'] = Traducteur::t('Correspondance invalide : un même champ est associé à plusieurs colonnes.');
             return $rapport;
         }
         if ($lignesSelectionnees !== null) {
             if ($lignesSelectionnees === []) {
-                $rapport['erreur_globale'] = "Aucune ligne n'a été sélectionnée pour l'import.";
+                $rapport['erreur_globale'] = Traducteur::t("Aucune ligne n'a été sélectionnée pour l'import.");
                 return $rapport;
             }
             $lignesSelectionnees = array_fill_keys(array_map('intval', $lignesSelectionnees), true);
@@ -392,11 +414,11 @@ class AcquisitionImportService
 
         $lignes = $this->lireFichier($cheminFichier);
         if ($lignes === null) {
-            $rapport['erreur_globale'] = "Le fichier n'a pas pu être lu (format Excel ou CSV attendu).";
+            $rapport['erreur_globale'] = Traducteur::t("Le fichier n'a pas pu être lu (format Excel ou CSV attendu).");
             return $rapport;
         }
         if ($lignes === []) {
-            $rapport['erreur_globale'] = 'Le fichier est vide.';
+            $rapport['erreur_globale'] = Traducteur::t('Le fichier est vide.');
             return $rapport;
         }
         $idxEntete = $this->detecterLigneEntete($lignes);
@@ -448,7 +470,7 @@ class AcquisitionImportService
             // (décision produit 2026-10-20)
             $limitee = $this->categorieLimitee($donnees['categorie'], $choixCategories, $categorieImposee);
             if ($limitee && $donnees['date_achat'] === null) {
-                $rapport['lignes_en_erreur'][] = ['ligne' => $numero, 'message' => self::MESSAGE_DATE_ACHAT_LIMITEE];
+                $rapport['lignes_en_erreur'][] = ['ligne' => $numero, 'message' => Traducteur::t(self::MESSAGE_DATE_ACHAT_LIMITEE)];
                 continue;
             }
 
@@ -481,7 +503,7 @@ class AcquisitionImportService
                     || ($donnees['fournisseur'] !== '' && $groupes[$cle]['fournisseur'] !== $donnees['fournisseur'])) {
                     $rapport['lignes_en_erreur'][] = [
                         'ligne' => $numero,
-                        'message' => "Date d'achat ou fournisseur incohérent avec les autres lignes de la facture « {$donnees['facture_reference']} ».",
+                        'message' => Traducteur::t("Date d'achat ou fournisseur incohérent avec les autres lignes de la facture « {facture} ».", ['facture' => $donnees['facture_reference']]),
                     ];
                     continue;
                 }
@@ -495,10 +517,9 @@ class AcquisitionImportService
         // Note de rapport : groupe par date à fournisseurs multiples
         foreach ($groupes as $groupe) {
             if ($groupe['par_date'] && count($groupe['fournisseurs_vus']) > 1) {
-                $rapport['notes'][] = sprintf(
-                    'Groupe « %s » : plusieurs fournisseurs détectés, « %s » retenu.',
-                    $groupe['facture_reference'],
-                    $groupe['fournisseur']
+                $rapport['notes'][] = Traducteur::t(
+                    'Groupe « {groupe} » : plusieurs fournisseurs détectés, « {fournisseur} » retenu.',
+                    ['groupe' => $groupe['facture_reference'], 'fournisseur' => $groupe['fournisseur']]
                 );
             }
         }
@@ -527,7 +548,7 @@ class AcquisitionImportService
         if ($this->acquisitionManager()->findOneByCriteria(['facture_reference' => $factureReference])) {
             $rapport['groupes_ignores'][] = [
                 'facture_reference' => $factureReference,
-                'raison' => 'Une acquisition avec cette référence de facture existe déjà.',
+                'raison' => Traducteur::t('Une acquisition avec cette référence de facture existe déjà.'),
             ];
             return;
         }
@@ -592,7 +613,7 @@ class AcquisitionImportService
             error_log('[AcquisitionImportService] Groupe « ' . $factureReference . ' »: ' . $e->getMessage());
             $rapport['groupes_ignores'][] = [
                 'facture_reference' => $factureReference,
-                'raison' => "Erreur lors de l'import du groupe (détail en journal serveur).",
+                'raison' => Traducteur::t("Erreur lors de l'import du groupe (détail en journal serveur)."),
             ];
         }
     }
@@ -730,9 +751,9 @@ class AcquisitionImportService
         if ($existante) {
             $id = (int) $existante['id'];
             if (!in_array($id, $this->categoriesCreees, true)) {
-                $this->notesCategories[] = sprintf(
-                    'Catégorie « %s » : une catégorie de ce nom existe déjà, elle a été utilisée.',
-                    $libelle
+                $this->notesCategories[] = Traducteur::t(
+                    'Catégorie « {categorie} » : une catégorie de ce nom existe déjà, elle a été utilisée.',
+                    ['categorie' => $libelle]
                 );
             }
             $this->categoriesCreees[$valeur] = $id;
@@ -749,16 +770,14 @@ class AcquisitionImportService
         $code = $this->referenceGenerator()->normalize(trim($code));
         if ($code !== '') {
             if (preg_match('/^[A-Z0-9]{2,8}$/', $code) !== 1) {
-                $this->notesCategories[] = sprintf(
-                    'Catégorie « %s » : code « %s » invalide (2 à 8 lettres ou chiffres), code attribué automatiquement.',
-                    $libelle,
-                    $code
+                $this->notesCategories[] = Traducteur::t(
+                    'Catégorie « {categorie} » : code « {code} » invalide (2 à 8 lettres ou chiffres), code attribué automatiquement.',
+                    ['categorie' => $libelle, 'code' => $code]
                 );
             } elseif ($manager->findOneByCriteria(['code' => $code])) {
-                $this->notesCategories[] = sprintf(
-                    'Catégorie « %s » : le code « %s » est déjà utilisé, code attribué automatiquement.',
-                    $libelle,
-                    $code
+                $this->notesCategories[] = Traducteur::t(
+                    'Catégorie « {categorie} » : le code « {code} » est déjà utilisé, code attribué automatiquement.',
+                    ['categorie' => $libelle, 'code' => $code]
                 );
             } else {
                 $donnees['code'] = $code;
@@ -914,7 +933,7 @@ class AcquisitionImportService
             }
             if ($ligne['conforme'] && $ligne['date_achat'] === '') {
                 $ligne['conforme'] = false;
-                $ligne['raison'] = self::MESSAGE_DATE_ACHAT_LIMITEE;
+                $ligne['raison'] = Traducteur::t(self::MESSAGE_DATE_ACHAT_LIMITEE);
                 $analyse['lignes_non_conformes'][] = [
                     'ligne' => $ligne['ligne'],
                     'raison' => $ligne['raison'],
@@ -1152,32 +1171,32 @@ class AcquisitionImportService
     private function validerLigne(array $d): ?string
     {
         if ($d['designation'] === '') {
-            return 'La désignation est obligatoire.';
+            return Traducteur::t('La désignation est obligatoire.');
         }
         if ($d['categorie'] === '') {
-            return 'La catégorie est obligatoire.';
+            return Traducteur::t('La catégorie est obligatoire.');
         }
         if ($d['date_achat'] === false) {
-            return "La date d'achat est invalide (formats acceptés : AAAA-MM-JJ, JJ/MM/AAAA, ou année seule).";
+            return Traducteur::t("La date d'achat est invalide (formats acceptés : AAAA-MM-JJ, JJ/MM/AAAA, ou année seule).");
         }
         if ($d['date_peremption'] === false) {
-            return 'La date de péremption est invalide (formats acceptés : AAAA-MM-JJ, JJ/MM/AAAA, ou année seule).';
+            return Traducteur::t('La date de péremption est invalide (formats acceptés : AAAA-MM-JJ, JJ/MM/AAAA, ou année seule).');
         }
         if ($d['nombre'] !== null && $d['nombre'] !== ''
             && (!ctype_digit($d['nombre']) || (int) $d['nombre'] < 1)) {
-            return 'Le nombre doit être un entier supérieur ou égal à 1.';
+            return Traducteur::t('Le nombre doit être un entier supérieur ou égal à 1.');
         }
         $actuel = $d['nombre_actuel'] ?? null;
         if ($actuel !== null && $actuel !== '') {
             if (!ctype_digit($actuel) || (int) $actuel < 1) {
-                return 'Le stock actuel doit être un entier supérieur ou égal à 1.';
+                return Traducteur::t('Le stock actuel doit être un entier supérieur ou égal à 1.');
             }
             if ($d['nombre'] !== null && $d['nombre'] !== '' && (int) $actuel > (int) $d['nombre']) {
-                return 'Le stock actuel ne peut pas dépasser le nombre (stock max).';
+                return Traducteur::t('Le stock actuel ne peut pas dépasser le nombre (stock max).');
             }
         }
         if (mb_strlen($d['reference']) > 32) {
-            return 'La référence dépasse 32 caractères.';
+            return Traducteur::t('La référence dépasse 32 caractères.');
         }
         return null;
     }

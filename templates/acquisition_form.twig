@@ -2,7 +2,7 @@
 
 {% block body %}
 	<hr>
-	<h3>Acquisition</h3>
+	<h3>{{ 'Acquisition'|trans }}</h3>
 	<hr>
 
 	{% if acquisition.id %}
@@ -31,7 +31,7 @@
 	<form method="post" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 		<div class="mb-3">
-			<label for="fournisseur_nom">Fournisseur</label>
+			<label for="fournisseur_nom">{{ 'Fournisseur'|trans }}</label>
 			<input type="text" class="form-control" list="fournisseurs" name="fournisseur_nom" id="fournisseur_nom" value="{{ acquisition.fournisseur.nom }}" required {{ is_readonly }}/>
 			<datalist id="fournisseurs">
 				{% for fournisseur in fournisseurs|tri_alpha('nom') %}
@@ -41,7 +41,7 @@
 		</div>
 
 		<div class="mb-3">
-			<label for="facture_reference">Référence facture</label>
+			<label for="facture_reference">{{ 'Référence facture'|trans }}</label>
 			<input type="text" 
 			       class="form-control {% if form_errors.facture_reference %}is-invalid{% endif %}" 
 			       name="facture_reference" 
@@ -55,21 +55,21 @@
 		</div>
 
 		<div class="mb-3">
-			<label for="facture_date">Date achat</label>
+			<label for="facture_date">{{ 'Date achat'|trans }}</label>
 			<input type="date" class="form-control" name="facture_date" id="facture_date" value="{{ acquisition.facture_date ? acquisition.facture_date : "now"|date("Y-m-d") }}" required {{ is_readonly }}>
 		</div>
 		
 		<!-- Champ pour le téléchargement du PDF -->
 		<div class="mb-3">
 			<label for="facture_document" class="form-label">
-				Facture (PDF, JPG, PNG)
+				{{ 'Facture (PDF, JPG, PNG)'|trans }}
 				{# « facture à importer » = AcquisitionManager::FACTURE_A_IMPORTER (placeholder posé par l'import Excel/CSV) #}
 				{% if acquisition.facture_document == 'facture à importer' %}
-					<span class="badge bg-secondary">📄 facture à importer</span>
+					<span class="badge bg-secondary">📄 {{ 'facture à importer'|trans }}</span>
 				{% elseif not acquisition.facture_document and acquisition.id %}
-					<span class="badge bg-danger">⚠️ Requise pour valider</span>
+					<span class="badge bg-danger">⚠️ {{ 'Requise pour valider'|trans }}</span>
 				{% elseif acquisition.facture_document %}
-					<span class="badge bg-success">✅ Téléchargée</span>
+					<span class="badge bg-success">✅ {{ 'Téléchargée'|trans }}</span>
 				{% endif %}
 			</label>
 			<input type="file" 
@@ -85,17 +85,17 @@
 			
 			{% if acquisition.facture_document and acquisition.facture_document != 'facture à importer' %}
 			<div class="mt-2">
-				<span class="text-muted">Fichier actuel :</span>
+				<span class="text-muted">{{ 'Fichier actuel :'|trans }}</span>
 				<a href="/uploads/{{ acquisition.facture_document }}" target="_blank" class="btn btn-sm btn-outline-primary">
-					📄 Voir la facture
+					📄 {{ 'Voir la facture'|trans }}
 				</a>
 			</div>
 			{% endif %}
 			
 			<small class="form-text text-muted">
-				Taille maximum : 10 Mo. Formats acceptés : PDF, JPG, PNG.
+				{{ 'Taille maximum : 10 Mo. Formats acceptés : PDF, JPG, PNG.'|trans }}
 				{% if not acquisition.facture_document and acquisition.id %}
-					<span class="text-danger">⚠️ Une facture est obligatoire pour valider l'acquisition.</span>
+					<span class="text-danger">⚠️ {{ "Une facture est obligatoire pour valider l'acquisition."|trans }}</span>
 				{% endif %}
 			</small>
 		</div>
@@ -105,7 +105,7 @@
 			<!-- Formulaire d'ajout de ligne -->
 			<div class="row mb-3">
 				<div class="col-lg-2">
-					<label for="ligne_reference" title="Proposée automatiquement selon le modèle de référence dès que la catégorie est choisie">Référence équipement *</label>
+					<label for="ligne_reference" title="{{ 'Proposée automatiquement selon le modèle de référence dès que la catégorie est choisie'|trans }}">{{ 'Référence équipement *'|trans }}</label>
 					<input type="text" class="form-control {% if form_errors.ligne_reference %}is-invalid{% endif %}" 
 					       list="equipement_references" name="ligne[reference]" id="ligne_reference" 
 					       value="{{ ligne_data.reference ?? '' }}" {{ is_readonly }}/>
@@ -120,7 +120,7 @@
 				</div>
 
 				<div class="col-lg-4">
-					<label for="ligne_libelle">Libellé *</label>
+					<label for="ligne_libelle">{{ 'Libellé *'|trans }}</label>
 					<input type="text" class="form-control {% if form_errors.ligne_designation %}is-invalid{% endif %}" 
 					       list="equipement_libelles" name="ligne[designation]" id="ligne_libelle" 
 					       value="{{ ligne_data.designation ?? '' }}" {{ is_readonly }}/>
@@ -135,7 +135,7 @@
 				</div>
 
 				<div class="col-lg-3">
-					<label for="ligne_categorie">Catégorie *</label>
+					<label for="ligne_categorie">{{ 'Catégorie *'|trans }}</label>
 					<input type="text" class="form-control {% if form_errors.ligne_categorie %}is-invalid{% endif %}" 
 					       list="categories" name="ligne[categorie_libelle]" id="ligne_categorie" 
 					       value="{{ ligne_data.categorie_libelle ?? '' }}" {{ is_readonly }}/>
@@ -150,7 +150,7 @@
 				</div>
 
 				<div class="col-lg-1">
-					<label for="nombre">Nombre *</label>
+					<label for="nombre">{{ 'Nombre *'|trans }}</label>
 					<input type="number" class="form-control {% if form_errors.ligne_nombre %}is-invalid{% endif %}" 
 					       name="ligne[nombre]" id="nombre" min="1" 
 					       value="{{ ligne_data.nombre ?? 1 }}" {{ is_readonly }}/>
@@ -161,34 +161,34 @@
 
 				<!-- Case à cocher "Regrouper en lot" -->
 				<div class="col-lg-1">
-					<label for="regrouper_en_lot">Lot</label>
+					<label for="regrouper_en_lot">{{ 'Lot'|trans }}</label>
 					<input type="checkbox" class="form-check-input mt-4" name="ligne[regrouper_en_lot]" id="regrouper_en_lot" value="1" 
 					       {% if ligne_data.regrouper_en_lot %}checked{% endif %} {{ is_readonly }}>
 				</div>
 
 				<div class="col-lg-2 d-grid">
 					{% if not acquisition.est_validee %}
-						<button type="submit" class="btn btn-primary mt-4" name="action" value="add_ligne" id="ajout_entree_btn">Ajouter</button>
+						<button type="submit" class="btn btn-primary mt-4" name="action" value="add_ligne" id="ajout_entree_btn">{{ 'Ajouter'|trans }}</button>
 					{% else %}
-						<span class="text-muted mt-4">🔒 Verrouillée</span>
+						<span class="text-muted mt-4">🔒 {{ 'Verrouillée'|trans }}</span>
 					{% endif %}
 				</div>
 			</div>
 
 			<hr>
-			<h4>Lignes saisies</h4>
+			<h4>{{ 'Lignes saisies'|trans }}</h4>
 			{% if acquisition.lignes %}
 				<table class="table table-striped">
 					<thead>
 						<tr>
-							<th>Référence</th>
-							<th>Désignation</th>
-							<th>Catégorie</th>
-							<th>Nombre</th>
-							<th>Lot</th>
-							<th>EPI</th>   
-							<th>Équipements générés</th>
-							<th>Actions</th>
+							<th>{{ 'Référence'|trans }}</th>
+							<th>{{ 'Désignation'|trans }}</th>
+							<th>{{ 'Catégorie'|trans }}</th>
+							<th>{{ 'Nombre'|trans }}</th>
+							<th>{{ 'Lot'|trans }}</th>
+							<th>{{ 'EPI'|trans }}</th>   
+							<th>{{ 'Équipements générés'|trans }}</th>
+							<th>{{ 'Actions'|trans }}</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -200,39 +200,39 @@
 								<td>{{ ligne.nombre }}</td>
 								<td>
 									{% if ligne.regrouper_en_lot %}
-									<span class="badge bg-info">Lot</span>
+									<span class="badge bg-info">{{ 'Lot'|trans }}</span>
 									{% else %}
-									<span class="badge bg-secondary">Individuel</span>
+									<span class="badge bg-secondary">{{ 'Individuel'|trans }}</span>
 									{% endif %}
 								</td>
 								<td>
 									{% if ligne.categorie and ligne.categorie.est_epi %}
-									<span class="badge bg-success">EPI</span>
+									<span class="badge bg-success">{{ 'EPI'|trans }}</span>
 									{% else %}
-									<span class="badge bg-secondary">Non EPI</span>
+									<span class="badge bg-secondary">{{ 'Non EPI'|trans }}</span>
 									{% endif %}
 								</td>
 								<td>
 									{% if ligne.equipements_generes %}
-									<span class="badge bg-success">Générés</span>
+									<span class="badge bg-success">{{ 'Générés'|trans }}</span>
 									{% else %}
-									<span class="badge bg-warning">En attente</span>
+									<span class="badge bg-warning">{{ 'En attente'|trans }}</span>
 									{% endif %}
 								</td>
 								<td>
 									{% if ligne.equipements_generes == 0 and not acquisition.est_validee %}
-										<a href="/admin/acquisitions/ligne_modification-{{ ligne.id }}" class="btn btn-sm btn-warning">Modifier</a>
+										<a href="/admin/acquisitions/ligne_modification-{{ ligne.id }}" class="btn btn-sm btn-warning">{{ 'Modifier'|trans }}</a>
 										<form method="post" action="/admin/acquisitions/ligne_supprimer-{{ ligne.id }}" style="display:inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 											<button type="submit" class="btn btn-sm btn-danger"
-											        data-confirm="Supprimer cette ligne ?">
-												Supprimer
+											        data-confirm="{{ 'Supprimer cette ligne ?'|trans }}">
+												{{ 'Supprimer'|trans }}
 											</button>
 										</form>
 									{% elseif ligne.equipements_generes == 1 %}
-										<span class="text-muted">Verrouillée</span>
+										<span class="text-muted">{{ 'Verrouillée'|trans }}</span>
 									{% else %}
-										<span class="text-muted">🔒 Acquisition verrouillée</span>
+										<span class="text-muted">🔒 {{ 'Acquisition verrouillée'|trans }}</span>
 									{% endif %}
 								</td>
 							</tr>
@@ -240,21 +240,21 @@
 					</tbody>
 				</table>
 			{% else %}
-				<p class="text-muted">Aucune ligne saisie.</p>
+				<p class="text-muted">{{ 'Aucune ligne saisie.'|trans }}</p>
 			{% endif %}
 		{% endif %}
 
 		<!-- BOUTONS D'ACTION -->
 		<div class="mt-3">
 			{% if acquisition.id == false %}
-				<button type="submit" class="btn btn-primary" name="action" value="create">Enregistrer et saisir les lignes</button>
-				<a href="/admin/acquisitions" class="btn btn-secondary">Annuler</a>
+				<button type="submit" class="btn btn-primary" name="action" value="create">{{ 'Enregistrer et saisir les lignes'|trans }}</button>
+				<a href="/admin/acquisitions" class="btn btn-secondary">{{ 'Annuler'|trans }}</a>
 			{% else %}
 				<button type="submit" class="btn btn-primary" name="action" value="update" {% if is_readonly %}disabled{% endif %}>
-					💾 Enregistrer les modifications
+					💾 {{ 'Enregistrer les modifications'|trans }}
 				</button>
-				<a href="/admin/acquisitions" class="btn btn-secondary">Retour à la liste</a>
-				<a href="/admin/acquisitions/acquisition-{{ acquisition.id }}" class="btn btn-info">Voir la fiche</a>
+				<a href="/admin/acquisitions" class="btn btn-secondary">{{ 'Retour à la liste'|trans }}</a>
+				<a href="/admin/acquisitions/acquisition-{{ acquisition.id }}" class="btn btn-info">{{ 'Voir la fiche'|trans }}</a>
 			{% endif %}
 		</div>
 	</form>

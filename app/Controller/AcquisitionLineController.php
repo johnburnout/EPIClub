@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Epiclub\Controller;
 
+use Epiclub\Engine\Traducteur;
 use Epiclub\Domain\AcquisitionLigneManager;
 use Epiclub\Domain\AcquisitionManager;
 use Epiclub\Domain\AcquisitionValidator;
@@ -80,7 +81,7 @@ class AcquisitionLineController extends AbstractController
 
         $ligne = $acquisitionLigneManager->findId($id);
         if (!$ligne) {
-            $this->session->getFlashBag()->add('error', 'Ligne non trouvée.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Ligne non trouvée.'));
             return new RedirectResponse('/admin/acquisitions');
         }
 
@@ -88,7 +89,7 @@ class AcquisitionLineController extends AbstractController
         $acquisitionManager = $this->acquisitionManager();
         $acquisition = $acquisitionManager->findId($ligne['acquisition_id']);
         if ($acquisition && $acquisition['est_validee'] == 1) {
-            $this->session->getFlashBag()->add('error', 'Cette acquisition est validée, les lignes ne peuvent plus être modifiées.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Cette acquisition est validée, les lignes ne peuvent plus être modifiées.'));
             return new RedirectResponse("/admin/acquisitions/acquisition-{$acquisition['id']}");
         }
 
@@ -145,7 +146,7 @@ class AcquisitionLineController extends AbstractController
                     // [ROBUSTESSE] Race condition : la pré-vérification
                     // findByReference() a passé mais la contrainte UNIQUE
                     // a rejeté l'UPDATE. On ré-affiche le formulaire.
-                    $form_errors['reference'] = 'Cette référence existe déjà.';
+                    $form_errors['reference'] = Traducteur::t('Cette référence existe déjà.');
                 } catch (\Throwable $e) {
                     // [SÉCURITÉ] Log serveur, message générique au client
                     error_log(sprintf(
@@ -155,7 +156,7 @@ class AcquisitionLineController extends AbstractController
                         $e->getFile(),
                         $e->getLine()
                     ));
-                    $form_errors['general'] = 'Une erreur est survenue lors de la modification. Merci de réessayer.';
+                    $form_errors['general'] = Traducteur::t('Une erreur est survenue lors de la modification. Merci de réessayer.');
                 }
             }
 
@@ -166,7 +167,7 @@ class AcquisitionLineController extends AbstractController
                     JournalActiviteManager::libelleAcquisition($acquisition ?: ['id' => $ligne['acquisition_id']]),
                     AcquisitionController::libelleLigne($ligne)
                 ), $request);
-                $this->session->getFlashBag()->add('success', 'Ligne modifiée avec succès.');
+                $this->session->getFlashBag()->add('success', Traducteur::t('Ligne modifiée avec succès.'));
                 return new RedirectResponse("/admin/acquisitions/acquisition_modification-{$ligne['acquisition_id']}");
             }
         }
@@ -196,7 +197,7 @@ class AcquisitionLineController extends AbstractController
         $acquisitionLigneManager = $this->acquisitionLigneManager();
         $ligne = $acquisitionLigneManager->findId($id);
         if (!$ligne) {
-            $this->session->getFlashBag()->add('error', 'Ligne non trouvée.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Ligne non trouvée.'));
             return new RedirectResponse('/admin/acquisitions');
         }
 
@@ -204,13 +205,13 @@ class AcquisitionLineController extends AbstractController
         $acquisitionManager = $this->acquisitionManager();
         $acquisition = $acquisitionManager->findId($ligne['acquisition_id']);
         if ($acquisition && $acquisition['est_validee'] == 1) {
-            $this->session->getFlashBag()->add('error', 'Cette acquisition est validée, les lignes ne peuvent plus être supprimées.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Cette acquisition est validée, les lignes ne peuvent plus être supprimées.'));
             return new RedirectResponse("/admin/acquisitions/acquisition-{$acquisition['id']}");
         }
 
         // Si la ligne a déjà des équipements générés, empêcher la suppression
         if ($ligne['equipements_generes'] == 1) {
-            $this->session->getFlashBag()->add('error', 'Cette ligne a déjà généré des équipements, elle ne peut pas être supprimée.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Cette ligne a déjà généré des équipements, elle ne peut pas être supprimée.'));
             return new RedirectResponse("/admin/acquisitions/acquisition_modification-{$ligne['acquisition_id']}");
         }
 
@@ -224,7 +225,7 @@ class AcquisitionLineController extends AbstractController
                 $e->getFile(),
                 $e->getLine()
             ));
-            $this->session->getFlashBag()->add('error', 'Une erreur est survenue lors de la suppression. Merci de réessayer.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Une erreur est survenue lors de la suppression. Merci de réessayer.'));
             return new RedirectResponse("/admin/acquisitions/acquisition_modification-{$ligne['acquisition_id']}");
         }
 
@@ -233,7 +234,7 @@ class AcquisitionLineController extends AbstractController
             JournalActiviteManager::libelleAcquisition($acquisition ?: ['id' => $ligne['acquisition_id']]),
             AcquisitionController::libelleLigne($ligne)
         ), $request);
-        $this->session->getFlashBag()->add('success', 'Ligne supprimée avec succès.');
+        $this->session->getFlashBag()->add('success', Traducteur::t('Ligne supprimée avec succès.'));
         return new RedirectResponse("/admin/acquisitions/acquisition_modification-{$ligne['acquisition_id']}");
     }
 

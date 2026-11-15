@@ -35,6 +35,9 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
   leurs messages et les libellés de statut des lignes. Le libellé
   automatique d'un nouveau contrôle (« Contrôle du … ») est rédigé dans
   la langue de son créateur.
+- **Acquisitions traduites (5e étape).** Liste, saisie, fiche (correction
+  de la référence et de la date comprise), lignes et import Excel / CSV
+  (correspondance des colonnes, rapport d'import), avec leurs messages.
 
 ### Fixed
 

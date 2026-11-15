@@ -891,6 +891,9 @@ installeur et guide utilisateur ; la CLI reste en français).
   par le garde-fou (classe déduite du chemin PSR-4).
 - Pluriels : deux clés et un `if` (« 1 minute » / « {minutes} minutes »).
 - Le journal d'activité (texte stocké en base) reste en français.
+- Libellés tirés d'une constante tableau (ex. `AcquisitionImportService::CHAMPS`) :
+  méthode qui renvoie les mêmes clés avec `Traducteur::t('…')` littéral
+  (`libellesChamps()`), pour que le garde-fou voie les textes.
 - Textes dans une expression Twig (`|default('…')`, `? '…' : '…'`,
   `{% set x = {…: '…'} %}`, arguments de macro) : à marquer à la main
   (`'…'|trans`), le marquage automatique ne les voit pas.
@@ -904,8 +907,9 @@ installeur et guide utilisateur ; la CLI reste en français).
 | 1 | Infrastructure, sélecteur, bandeau (`_layout.twig`) | PR #123 |
 | 2 | Connexion, double authentification, mot de passe oublié, sécurité du compte (+ `passkey.js`) | PR #124 |
 | 3 | Équipements (liste, fiche, formulaire, modification groupée), `EquipementStatut`, `DissociationLot`, `RegroupementLot` | PR #125 |
-| 4 | Contrôles (liste, saisie, ligne, scanner), journaux de contrôle, `ControleLigneStatut` | PR en cours |
-| 5+ | Acquisitions, prêts, administration, autres enums, emails, PDF/CSV/étiquettes | à faire |
+| 4 | Contrôles (liste, saisie, ligne, scanner), journaux de contrôle, `ControleLigneStatut` | PR #126 |
+| 5 | Acquisitions (liste, saisie, fiche, lignes, import Excel / CSV) | PR en cours |
+| 6+ | Prêts, administration, autres enums, emails, PDF/CSV/étiquettes | à faire |
 | — | Installeur (`setup/`), guide (`docs/guide_utilisateur.md`) | à faire |
 
 ## Règles de travail établies

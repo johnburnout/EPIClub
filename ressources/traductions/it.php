@@ -1260,4 +1260,444 @@ return [
         => 'Non hai i permessi per modificare questa ispezione.',
     'Vous n\'avez pas les droits pour supprimer ce contrôle.'
         => 'Non hai i permessi per eliminare questa ispezione.',
+
+    // --- Acquisitions ---
+    '✅ Acquisition créée avec succès. Vous pouvez maintenant ajouter des lignes.'
+        => '✅ Acquisizione creata correttamente. Ora puoi aggiungere righe.',
+    '✅ Acquisition mise à jour avec succès.'
+        => '✅ Acquisizione aggiornata correttamente.',
+    '✅ Acquisition validée ! Les équipements ont été générés.'
+        => '✅ Acquisizione convalidata! Le attrezzature sono state generate.',
+    '❌ Impossible de valider : veuillez d\'abord télécharger la facture.'
+        => '❌ Impossibile convalidare: carica prima la fattura.',
+    '✅ La facture a été téléversée.'
+        => '✅ La fattura è stata caricata.',
+    '✅ Ligne ajoutée avec succès.'
+        => '✅ Riga aggiunta correttamente.',
+    '(colonne {numero})'
+        => '(colonna {numero})',
+    '(ignorer cette colonne)'
+        => '(ignora questa colonna)',
+    '(les lignes au-dessus ont été ignorées)'
+        => '(le righe sopra sono state ignorate)',
+    '{equipements_dates} équipement(s) issu(s) de cette acquisition : la date de mise en service égale à la date de facture et la date de fin d\'utilisation calculée (achat + 10 ans) suivront la nouvelle date. Les références des équipements ne changent pas.'
+        => '{equipements_dates} attrezzatura/e di questa acquisizione: la data di messa in servizio uguale alla data della fattura e la data di fine utilizzo calcolata (acquisto + 10 anni) seguiranno la nuova data. I riferimenti delle attrezzature non cambiano.',
+    '{lignes_exclues} ligne(s) non sélectionnée(s) : non importée(s).'
+        => '{lignes_exclues} riga/e non selezionata/e: non importata/e.',
+    '{lignes} ligne(s)'
+        => '{lignes} riga/e',
+    '{nb_lignes} ligne(s) de données détectée(s). Vérifiez que chaque colonne correspond au bon champ, puis lancez l\'import.'
+        => '{nb_lignes} riga/e di dati rilevata/e. Verifica che ogni colonna corrisponda al campo giusto, poi avvia l\'importazione.',
+    '{nom} (à créer)'
+        => '{nom} (da creare)',
+    '<strong>⚠️ {lignes_non_conformes} ligne(s) non conforme(s) — décochées, seront ignorées</strong> (cases fusionnées, données incompatibles avec le champ de la colonne, champs obligatoires manquants…) :'
+        => '<strong>⚠️ {lignes_non_conformes} riga/e non conforme/i — senza spunta, saranno ignorate</strong> (celle unite, dati incompatibili con il campo della colonna, campi obbligatori mancanti…):',
+    '<strong>{acquisitions} acquisition(s) créée(s) et validée(s)</strong> ({lignes_lues} ligne(s) lue(s)).'
+        => '<strong>{acquisitions} acquisizione/i creata/e e convalidata/e</strong> ({lignes_lues} riga/e letta/e).',
+    '<strong>Date d\'achat :</strong> {facture_date}'
+        => '<strong>Data di acquisto:</strong> {facture_date}',
+    '<strong>Dates saisies à la main : à confirmer ou corriger</strong> (la mise en service ne peut pas précéder la nouvelle date de facture).'
+        => '<strong>Date inserite a mano: da confermare o correggere</strong> (la messa in servizio non può precedere la nuova data della fattura).',
+    '<strong>Fournisseur :</strong> {nom}'
+        => '<strong>Fornitore:</strong> {nom}',
+    '<strong>Référence facture :</strong> {facture_reference}'
+        => '<strong>Riferimento fattura:</strong> {facture_reference}',
+    '<strong>Saisie par :</strong> {prenom} {nom}'
+        => '<strong>Inserita da:</strong> {prenom} {nom}',
+    'Nombre d\'éléments à l\'achat (> 1 → lot)'
+        => 'Numero di elementi all\'acquisto (> 1 → lotto)',
+    'Stock max'
+        => 'Scorta max',
+    '2 à 8 lettres sans accent ou chiffres (vide = automatique)'
+        => 'Da 2 a 8 lettere senza accento o cifre (vuoto = automatico)',
+    'Acquisition'
+        => 'Acquisizione',
+    'Acquisition #{id}'
+        => 'Acquisizione n. {id}',
+    'Acquisition invalide.'
+        => 'Acquisizione non valida.',
+    'Acquisition modifiée : {details} ; dates de {nombre} équipement(s) mises à jour.'
+        => 'Acquisizione modificata: {details}; date di {nombre} attrezzatura/e aggiornate.',
+    'Acquisition modifiée : {details}.'
+        => 'Acquisizione modificata: {details}.',
+    'Acquisition non trouvée.'
+        => 'Acquisizione non trovata.',
+    'Acquisition verrouillée'
+        => 'Acquisizione bloccata',
+    'Affichage de {acquisitions} acquisitions sur {total} (page {page}/{totalPages})'
+        => 'Visualizzazione di {acquisitions} acquisizioni su {total} (pagina {page}/{totalPages})',
+    'Ajouter'
+        => 'Aggiungi',
+    'Analyser le fichier'
+        => 'Analizza il file',
+    'Annuler la modification de la référence et de la date'
+        => 'Annulla la modifica del riferimento e della data',
+    'après le téléversement, vous pourrez <strong>vérifier la correspondance des colonnes</strong> avec les champs attendus avant de lancer l\'import ;'
+        => 'dopo il caricamento potrai <strong>verificare la corrispondenza delle colonne</strong> con i campi previsti prima di avviare l\'importazione;',
+    'au'
+        => 'al',
+    'Aucun document'
+        => 'Nessun documento',
+    'Aucun fichier valide n\'a été téléversé.'
+        => 'Non è stato caricato alcun file valido.',
+    'Aucune acquisition n\'a été créée.'
+        => 'Nessuna acquisizione è stata creata.',
+    'Aucune acquisition ne correspond aux filtres.'
+        => 'Nessuna acquisizione corrisponde ai filtri.',
+    'Aucune acquisition pour le moment.'
+        => 'Ancora nessuna acquisizione.',
+    'Aucune ligne d\'acquisition.'
+        => 'Nessuna riga di acquisizione.',
+    'Aucune ligne n\'a été sélectionnée pour l\'import.'
+        => 'Nessuna riga è stata selezionata per l\'importazione.',
+    'Aucune ligne saisie.'
+        => 'Nessuna riga inserita.',
+    'Aucune ligne sélectionnée.'
+        => 'Nessuna riga selezionata.',
+    'Aucune modification : la référence et la date sont inchangées.'
+        => 'Nessuna modifica: riferimento e data sono invariati.',
+    'Catégorie « {categorie} » : code « {code} » invalide (2 à 8 lettres ou chiffres), code attribué automatiquement.'
+        => 'Categoria «{categorie}»: codice «{code}» non valido (da 2 a 8 lettere o cifre), codice assegnato automaticamente.',
+    'Catégorie « {categorie} » : le code « {code} » est déjà utilisé, code attribué automatiquement.'
+        => 'Categoria «{categorie}»: il codice «{code}» è già in uso, codice assegnato automaticamente.',
+    'Catégorie « {categorie} » : une catégorie de ce nom existe déjà, elle a été utilisée.'
+        => 'Categoria «{categorie}»: esiste già una categoria con questo nome ed è stata usata.',
+    'Catégorie (code ou libellé) *'
+        => 'Categoria (codice o denominazione) *',
+    'Catégorie *'
+        => 'Categoria *',
+    'catégorie existante : « {libelle} »'
+        => 'categoria esistente: «{libelle}»',
+    'Catégories du fichier'
+        => 'Categorie del file',
+    'Catégories existantes'
+        => 'Categorie esistenti',
+    'Cette acquisition est déjà validée.'
+        => 'Questa acquisizione è già convalidata.',
+    'Cette acquisition est validée, les lignes ne peuvent plus être modifiées.'
+        => 'Questa acquisizione è convalidata, le righe non possono più essere modificate.',
+    'Cette acquisition est validée, les lignes ne peuvent plus être supprimées.'
+        => 'Questa acquisizione è convalidata, le righe non possono più essere eliminate.',
+    'Cette ligne a déjà généré des équipements, elle ne peut pas être supprimée.'
+        => 'Questa riga ha già generato attrezzature, non può essere eliminata.',
+    'Cette référence de facture est déjà utilisée par une autre acquisition.'
+        => 'Questo riferimento di fattura è già usato da un\'altra acquisizione.',
+    'Cette référence de facture existe déjà. Merci d\'en choisir une autre.'
+        => 'Questo riferimento di fattura esiste già. Scegline un altro.',
+    'Cette référence existe déjà.'
+        => 'Questo riferimento esiste già.',
+    'Cette référence existe déjà. Veuillez en saisir une autre.'
+        => 'Questo riferimento esiste già. Inseriscine un altro.',
+    'Champ correspondant'
+        => 'Campo corrispondente',
+    'chaque ligne peut être <strong>cochée ou décochée</strong> avant l\'import, et affectée à une autre catégorie ;'
+        => 'ogni riga può essere <strong>spuntata o no</strong> prima dell\'importazione e assegnata a un\'altra categoria;',
+    'Code'
+        => 'Codice',
+    'Colonne du fichier'
+        => 'Colonna del file',
+    'Correspondance incomplète : le champ « {champ} » doit être associé à une colonne.'
+        => 'Corrispondenza incompleta: il campo «{champ}» deve essere associato a una colonna.',
+    'Correspondance invalide : un même champ est associé à plusieurs colonnes.'
+        => 'Corrispondenza non valida: uno stesso campo è associato a più colonne.',
+    'Créer la catégorie (nom et code ci-dessous)'
+        => 'Crea la categoria (nome e codice qui sotto)',
+    'Date'
+        => 'Data',
+    'date {ancienne} → {nouvelle}'
+        => 'data {ancienne} → {nouvelle}',
+    'Date achat'
+        => 'Data acquisto',
+    'Date d\'achat (date de facture)'
+        => 'Data di acquisto (data della fattura)',
+    'Date d\'achat obligatoire pour un EPI à durée de vie limitée.'
+        => 'La data di acquisto è obbligatoria per un DPI a durata di vita limitata.',
+    'Date d\'achat ou fournisseur incohérent avec les autres lignes de la facture « {facture} ».'
+        => 'Data di acquisto o fornitore incoerente con le altre righe della fattura «{facture}».',
+    'Date de facture invalide.'
+        => 'Data della fattura non valida.',
+    'Date de péremption'
+        => 'Data di scadenza',
+    'Date du'
+        => 'Data dal',
+    'dates : année seule → 1er janvier (achat) ou 31 décembre (péremption) ; date d\'achat vide → date du jour ;'
+        => 'date: solo l\'anno → 1° gennaio (acquisto) o 31 dicembre (scadenza); data di acquisto vuota → data odierna;',
+    'Décochez les lignes à ne pas importer. « Stock max » et « Stock actuel » sont modifiables (un stock max supérieur à 1 crée un lot ; le stock actuel ne peut pas le dépasser). Les dates sont modifiables : pour un EPI à durée de vie limitée (⏳), la date d\'achat est obligatoire et la fin de vie est proposée au 31 décembre, 10 ans après l\'achat. La colonne « Catégorie » permet d\'affecter une ligne à une autre catégorie (du fichier, y compris une catégorie à créer, ou existante).'
+        => 'Togli la spunta alle righe da non importare. «Scorta max» e «Scorta attuale» sono modificabili (una scorta max superiore a 1 crea un lotto; la scorta attuale non può superarla). Le date sono modificabili: per un DPI a durata di vita limitata (⏳) la data di acquisto è obbligatoria e la fine vita è proposta al 31 dicembre, 10 anni dopo l\'acquisto. La colonna «Categoria» permette di assegnare una riga a un\'altra categoria (del file, anche da creare, o esistente).',
+    'Désignation *'
+        => 'Designazione *',
+    'Document :'
+        => 'Documento:',
+    'durée de vie limitée'
+        => 'durata di vita limitata',
+    'Durée de vie limitée'
+        => 'Durata di vita limitata',
+    'Durée de vie limitée (date d\'achat obligatoire, fin de vie par défaut à 10 ans)'
+        => 'Durata di vita limitata (data di acquisto obbligatoria, fine vita predefinita a 10 anni)',
+    'Éléments encore présents (≤ stock max)'
+        => 'Elementi ancora presenti (≤ scorta max)',
+    'En attente'
+        => 'In attesa',
+    'En attente de validation'
+        => 'In attesa di convalida',
+    'Enregistrer et saisir les lignes'
+        => 'Salva e inserisci le righe',
+    'Enregistrer la correction'
+        => 'Salva la correzione',
+    'Enregistrer les modifications'
+        => 'Salva le modifiche',
+    'EPI à <strong>durée de vie limitée</strong> : date d\'achat obligatoire (modifiable dans le tableau d\'import) ; fin de vie vide → 31 décembre, 10 ans après l\'achat (modifiable) ;'
+        => 'DPI a <strong>durata di vita limitata</strong>: data di acquisto obbligatoria (modificabile nella tabella di importazione); fine vita vuota → 31 dicembre, 10 anni dopo l\'acquisto (modificabile);',
+    'Équipement {reference} : date de fin d\'utilisation à confirmer.'
+        => 'Attrezzatura {reference}: data di fine utilizzo da confermare.',
+    'Équipement {reference} : date de mise en service à confirmer.'
+        => 'Attrezzatura {reference}: data di messa in servizio da confermare.',
+    'Équipement {reference} : la mise en service ne peut pas précéder la date de facture ({date}).'
+        => 'Attrezzatura {reference}: la messa in servizio non può precedere la data della fattura ({date}).',
+    'Équipements générés'
+        => 'Attrezzature generate',
+    'Erreur lors de l\'analyse du fichier (détail en journal serveur).'
+        => 'Errore durante l\'analisi del file (dettaglio nel log del server).',
+    'Erreur lors de l\'import (détail en journal serveur).'
+        => 'Errore durante l\'importazione (dettaglio nel log del server).',
+    'Erreur lors de l\'import du groupe (détail en journal serveur).'
+        => 'Errore durante l\'importazione del gruppo (dettaglio nel log del server).',
+    'Erreur lors de la création de l\'acquisition.'
+        => 'Errore durante la creazione dell\'acquisizione.',
+    'Étape 2 : vérifier la correspondance des colonnes'
+        => 'Passo 2: verifica la corrispondenza delle colonne',
+    'Exemples de valeurs'
+        => 'Esempi di valori',
+    'Facture'
+        => 'Fattura',
+    'Facture (PDF, JPG, PNG)'
+        => 'Fattura (PDF, JPG, PNG)',
+    'Facture requise avant validation'
+        => 'Fattura richiesta prima della convalida',
+    'Fichier à importer * :'
+        => 'File da importare *:',
+    'Fichier actuel :'
+        => 'File attuale:',
+    'Fichier Excel (<code>.xlsx</code>, <code>.xls</code>) ou CSV ; la <strong>ligne d\'en-tête est détectée automatiquement</strong> (dans les 10 premières lignes) ;'
+        => 'File Excel (<code>.xlsx</code>, <code>.xls</code>) o CSV; la <strong>riga di intestazione viene rilevata automaticamente</strong> (nelle prime 10 righe);',
+    'Fin de vie'
+        => 'Fine vita',
+    'Format non accepté : {formats} uniquement.'
+        => 'Formato non accettato: solo {formats}.',
+    'Fournisseur'
+        => 'Fornitore',
+    'Générés'
+        => 'Generate',
+    'Groupe « {groupe} » : plusieurs fournisseurs détectés, « {fournisseur} » retenu.'
+        => 'Gruppo «{groupe}»: rilevati più fornitori, mantenuto «{fournisseur}».',
+    'Groupes ignorés'
+        => 'Gruppi ignorati',
+    'Importer (Excel / CSV)'
+        => 'Importa (Excel / CSV)',
+    'Importer des acquisitions (Excel / CSV)'
+        => 'Importa acquisizioni (Excel / CSV)',
+    'Importer la facture'
+        => 'Carica la fattura',
+    'Impossible de supprimer cette acquisition : certaines lignes ont généré des équipements.'
+        => 'Impossibile eliminare questa acquisizione: alcune righe hanno generato attrezzature.',
+    'Impossible de supprimer une acquisition validée. Elle contient des équipements générés.'
+        => 'Impossibile eliminare un\'acquisizione convalidata. Contiene attrezzature generate.',
+    'Individuel'
+        => 'Singolo',
+    'Informations générales'
+        => 'Informazioni generali',
+    'la catégorie est recherchée par <strong>code</strong> (ex. <code>COR</code>), puis par libellé ; les catégories inconnues peuvent être créées (nom et code au choix), regroupées ou rattachées à une catégorie existante ;'
+        => 'la categoria è cercata per <strong>codice</strong> (es. <code>COR</code>), poi per denominazione; le categorie sconosciute possono essere create (nome e codice a scelta), raggruppate o collegate a una categoria esistente;',
+    'La date d\'achat est invalide (formats acceptés : AAAA-MM-JJ, JJ/MM/AAAA, ou année seule).'
+        => 'La data di acquisto non è valida (formati accettati: AAAA-MM-GG, GG/MM/AAAA o solo l\'anno).',
+    'La date de péremption est invalide (formats acceptés : AAAA-MM-JJ, JJ/MM/AAAA, ou année seule).'
+        => 'La data di scadenza non è valida (formati accettati: AAAA-MM-GG, GG/MM/AAAA o solo l\'anno).',
+    'La désignation est obligatoire.'
+        => 'La designazione è obbligatoria.',
+    'La facture pourra être téléversée ultérieurement'
+        => 'La fattura potrà essere caricata in seguito',
+    'La référence de facture « {reference} » est déjà utilisée par une autre acquisition.'
+        => 'Il riferimento di fattura «{reference}» è già usato da un\'altra acquisizione.',
+    'La référence de facture « {reference} » vient d\'être utilisée par une autre acquisition : rien n\'a été modifié.'
+        => 'Il riferimento di fattura «{reference}» è appena stato usato da un\'altra acquisizione: non è stato modificato nulla.',
+    'La référence de facture contient des caractères non autorisés.'
+        => 'Il riferimento di fattura contiene caratteri non consentiti.',
+    'La référence de facture est obligatoire.'
+        => 'Il riferimento di fattura è obbligatorio.',
+    'La référence de facture ne doit pas dépasser {max} caractères.'
+        => 'Il riferimento di fattura non deve superare {max} caratteri.',
+    'La référence dépasse 32 caractères.'
+        => 'Il riferimento supera 32 caratteri.',
+    'Lancer l\'import ('
+        => 'Avvia l\'importazione (',
+    'Lancer l\'import de {n} ligne(s) ?'
+        => 'Importare {n} riga/e?',
+    'Le fichier analysé n\'est plus disponible. Merci de le téléverser à nouveau.'
+        => 'Il file analizzato non è più disponibile. Caricalo di nuovo.',
+    'Le fichier est trop volumineux pour être traité par le serveur (limite PHP : {limite}). Réduisez la taille du fichier ou augmentez post_max_size.'
+        => 'Il file è troppo grande per essere elaborato dal server (limite PHP: {limite}). Riduci la dimensione del file o aumenta post_max_size.',
+    'Le fichier est vide ou sa ligne d\'en-tête est inexploitable.'
+        => 'Il file è vuoto o la sua riga di intestazione non è utilizzabile.',
+    'Le fichier est vide.'
+        => 'Il file è vuoto.',
+    'Le fichier n\'a pas pu être lu (format Excel ou CSV attendu).'
+        => 'Impossibile leggere il file (formato Excel o CSV previsto).',
+    'Le nombre doit être supérieur à 0.'
+        => 'Il numero deve essere maggiore di 0.',
+    'Le nombre doit être un entier supérieur ou égal à 1.'
+        => 'Il numero deve essere un intero maggiore o uguale a 1.',
+    'Le stock actuel doit être un entier supérieur ou égal à 1.'
+        => 'La scorta attuale deve essere un intero maggiore o uguale a 1.',
+    'Le stock actuel ne peut pas dépasser le nombre (stock max).'
+        => 'La scorta attuale non può superare il numero (scorta max).',
+    'les lignes d\'une même facture — ou, à défaut de n° de facture, d\'une même date d\'achat — sont groupées dans <strong>une même acquisition automatiquement validée</strong>, dont le document sera marqué « facture à importer » (téléversé plus tard) ;'
+        => 'le righe di una stessa fattura — o, in mancanza del n. di fattura, di una stessa data di acquisto — sono raggruppate in <strong>una stessa acquisizione convalidata automaticamente</strong>, il cui documento sarà contrassegnato «fattura da importare» (caricata in seguito);',
+    'Libellé *'
+        => 'Denominazione *',
+    'Ligne'
+        => 'Riga',
+    'Ligne {ligne}'
+        => 'Riga {ligne}',
+    'Ligne {ligne} : {raison}'
+        => 'Riga {ligne}: {raison}',
+    'Ligne d\'en-tête détectée : <strong>ligne {ligne_entete}</strong>'
+        => 'Riga di intestazione rilevata: <strong>riga {ligne_entete}</strong>',
+    'Ligne modifiée avec succès.'
+        => 'Riga modificata correttamente.',
+    'Ligne non trouvée.'
+        => 'Riga non trovata.',
+    'Ligne supprimée avec succès.'
+        => 'Riga eliminata correttamente.',
+    'ligne(s))'
+        => 'riga/e)',
+    'Lignes'
+        => 'Righe',
+    'Lignes à importer'
+        => 'Righe da importare',
+    'Lignes d\'acquisition'
+        => 'Righe di acquisizione',
+    'Lignes ignorées'
+        => 'Righe ignorate',
+    'Lignes saisies'
+        => 'Righe inserite',
+    'Même catégorie que « {nom} »'
+        => 'Stessa categoria di «{nom}»',
+    'Modification de la référence et de la date'
+        => 'Modifica del riferimento e della data',
+    'Modification verrouillée'
+        => 'Modifica bloccata',
+    'Modifier la ligne d\'acquisition'
+        => 'Modifica la riga di acquisizione',
+    'Modifier la référence et la date'
+        => 'Modifica il riferimento e la data',
+    'Nombre'
+        => 'Numero',
+    'Nombre *'
+        => 'Numero *',
+    'Nombre / stock max (> 1 → lot)'
+        => 'Numero / scorta max (> 1 → lotto)',
+    'Nouvel import'
+        => 'Nuova importazione',
+    'Nouvelle acquisition'
+        => 'Nuova acquisizione',
+    'Pour changer la date, saisissez le mot {mot} (en majuscules).'
+        => 'Per cambiare la data, digita la parola {mot} (in maiuscolo).',
+    'Pour chaque catégorie inconnue : créez-la en choisissant son <strong>nom</strong> et son <strong>code</strong> (utilisé dans les références, ex. <code>COR</code>), regroupez-la avec une autre catégorie à créer, ou rattachez-la à une catégorie existante.'
+        => 'Per ogni categoria sconosciuta: creala scegliendone il <strong>nome</strong> e il <strong>codice</strong> (usato nei riferimenti, es. <code>COR</code>), raggruppala con un\'altra categoria da creare o collegala a una categoria esistente.',
+    'Pour confirmer le changement de date, saisissez <code>{mot_confirmation_date}</code>'
+        => 'Per confermare il cambio di data, digita <code>{mot_confirmation_date}</code>',
+    'Pour confirmer le changement de référence, saisissez <code>{mot_confirmation_reference}</code>'
+        => 'Per confermare il cambio di riferimento, digita <code>{mot_confirmation_reference}</code>',
+    'Principe'
+        => 'Funzionamento',
+    'Proposée automatiquement selon le modèle de référence dès que la catégorie est choisie'
+        => 'Proposto automaticamente secondo il modello di riferimento appena si sceglie la categoria',
+    'Rapport d\'import'
+        => 'Rapporto di importazione',
+    'Rattacher à : {libelle}'
+        => 'Collega a: {libelle}',
+    'Rattacher à une catégorie existante'
+        => 'Collega a una categoria esistente',
+    'recalculée'
+        => 'ricalcolata',
+    'référence « {ancienne} » → « {nouvelle} »'
+        => 'riferimento «{ancienne}» → «{nouvelle}»',
+    'référence automatique'
+        => 'riferimento automatico',
+    'Référence équipement (vide → auto)'
+        => 'Riferimento attrezzatura (vuoto → auto)',
+    'Référence équipement *'
+        => 'Riferimento attrezzatura *',
+    'Référence facture'
+        => 'Riferimento fattura',
+    'référence vide →'
+        => 'riferimento vuoto →',
+    'Regrouper avec une autre catégorie à créer'
+        => 'Raggruppa con un\'altra categoria da creare',
+    'Remplacer la facture'
+        => 'Sostituisci la fattura',
+    'Requise pour valider'
+        => 'Necessaria per convalidare',
+    'Retour aux acquisitions'
+        => 'Torna alle acquisizioni',
+    'Selon le fichier'
+        => 'Secondo il file',
+    'Stock actuel'
+        => 'Scorta attuale',
+    'Stock actuel (≤ stock max)'
+        => 'Scorta attuale (≤ scorta max)',
+    'suit la date de facture'
+        => 'segue la data della fattura',
+    'Supprimer cette ligne ?'
+        => 'Eliminare questa riga?',
+    'Supprimer définitivement cette acquisition ({facture_reference}) ?&#10;&#10;Cette action est irréversible.'
+        => 'Eliminare definitivamente questa acquisizione ({facture_reference})?&#10;&#10;Questa azione è irreversibile.',
+    'Supprimer définitivement l\'acquisition #{id} ({facture_reference}) ?&#10;&#10;Cette action est irréversible.'
+        => 'Eliminare definitivamente l\'acquisizione n. {id} ({facture_reference})?&#10;&#10;Questa azione è irreversibile.',
+    'Supprimer le brouillon'
+        => 'Elimina la bozza',
+    'Taille maximum : 10 Mo. Formats acceptés : PDF, JPG, PNG.'
+        => 'Dimensione massima: 10 MB. Formati accettati: PDF, JPG, PNG.',
+    'Téléchargée'
+        => 'Caricata',
+    'Total équipements :'
+        => 'Totale attrezzature:',
+    'un <code>nombre</code> supérieur à 1 indique un <strong>lot</strong> (un seul équipement) ; le <strong>stock actuel</strong> d\'un lot (colonne « stock réel », ≤ nombre) peut être importé — si un seul des deux est fourni, l\'autre prend la même valeur, et à défaut les deux valent 1 (modifiables avant l\'import) ;'
+        => 'un <code>numero</code> superiore a 1 indica un <strong>lotto</strong> (una sola attrezzatura); la <strong>scorta attuale</strong> di un lotto (colonna «scorta reale», ≤ numero) può essere importata — se ne viene fornito solo uno dei due, l\'altro assume lo stesso valore, altrimenti entrambi valgono 1 (modificabili prima dell\'importazione);',
+    'Une acquisition avec cette référence de facture existe déjà.'
+        => 'Esiste già un\'acquisizione con questo riferimento di fattura.',
+    'Une erreur est survenue lors de l\'ajout de la ligne.'
+        => 'Si è verificato un errore durante l\'aggiunta della riga.',
+    'Une erreur est survenue lors de la création. Merci de réessayer.'
+        => 'Si è verificato un errore durante la creazione. Riprova.',
+    'Une erreur est survenue lors de la mise à jour. Merci de réessayer.'
+        => 'Si è verificato un errore durante l\'aggiornamento. Riprova.',
+    'Une erreur est survenue lors de la modification. Merci de réessayer.'
+        => 'Si è verificato un errore durante la modifica. Riprova.',
+    'Une erreur est survenue lors de la validation. Merci de réessayer ou de contacter un administrateur.'
+        => 'Si è verificato un errore durante la convalida. Riprova o contatta un amministratore.',
+    'Une erreur est survenue lors du téléversement. Merci de réessayer.'
+        => 'Si è verificato un errore durante il caricamento. Riprova.',
+    'Une facture est obligatoire pour valider l\'acquisition.'
+        => 'Una fattura è obbligatoria per convalidare l\'acquisizione.',
+    'Validée'
+        => 'Convalidata',
+    'Valider cette acquisition ? Les équipements seront générés définitivement et vous ne pourrez plus modifier les lignes.'
+        => 'Convalidare questa acquisizione? Le attrezzature saranno generate definitivamente e non potrai più modificare le righe.',
+    'Valider l\'acquisition'
+        => 'Convalida l\'acquisizione',
+    'Verrouillée'
+        => 'Bloccata',
+    'Veuillez choisir un fichier de facture.'
+        => 'Scegli un file di fattura.',
+    'Veuillez d\'abord télécharger la facture'
+        => 'Carica prima la fattura',
+    'Veuillez remplir les champs de la ligne.'
+        => 'Compila i campi della riga.',
+    'Voir la fiche'
+        => 'Vedi la scheda',
+    'Voir les acquisitions'
+        => 'Vedi le acquisizioni',
+    'Voir les équipements'
+        => 'Vedi le attrezzature',
 ];

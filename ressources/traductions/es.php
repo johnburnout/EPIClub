@@ -1260,4 +1260,444 @@ return [
         => 'No tiene permisos para modificar esta inspección.',
     'Vous n\'avez pas les droits pour supprimer ce contrôle.'
         => 'No tiene permisos para eliminar esta inspección.',
+
+    // --- Acquisitions ---
+    '✅ Acquisition créée avec succès. Vous pouvez maintenant ajouter des lignes.'
+        => '✅ Adquisición creada correctamente. Ya puede añadir líneas.',
+    '✅ Acquisition mise à jour avec succès.'
+        => '✅ Adquisición actualizada correctamente.',
+    '✅ Acquisition validée ! Les équipements ont été générés.'
+        => '✅ ¡Adquisición validada! Se han generado los equipos.',
+    '❌ Impossible de valider : veuillez d\'abord télécharger la facture.'
+        => '❌ No se puede validar: suba primero la factura.',
+    '✅ La facture a été téléversée.'
+        => '✅ Se ha subido la factura.',
+    '✅ Ligne ajoutée avec succès.'
+        => '✅ Línea añadida correctamente.',
+    '(colonne {numero})'
+        => '(columna {numero})',
+    '(ignorer cette colonne)'
+        => '(ignorar esta columna)',
+    '(les lignes au-dessus ont été ignorées)'
+        => '(las filas superiores se han ignorado)',
+    '{equipements_dates} équipement(s) issu(s) de cette acquisition : la date de mise en service égale à la date de facture et la date de fin d\'utilisation calculée (achat + 10 ans) suivront la nouvelle date. Les références des équipements ne changent pas.'
+        => '{equipements_dates} equipo(s) de esta adquisición: la fecha de puesta en servicio igual a la fecha de factura y la fecha de fin de uso calculada (compra + 10 años) seguirán la nueva fecha. Las referencias de los equipos no cambian.',
+    '{lignes_exclues} ligne(s) non sélectionnée(s) : non importée(s).'
+        => '{lignes_exclues} fila(s) no seleccionada(s): no importada(s).',
+    '{lignes} ligne(s)'
+        => '{lignes} línea(s)',
+    '{nb_lignes} ligne(s) de données détectée(s). Vérifiez que chaque colonne correspond au bon champ, puis lancez l\'import.'
+        => '{nb_lignes} fila(s) de datos detectada(s). Compruebe que cada columna corresponde al campo correcto y luego inicie la importación.',
+    '{nom} (à créer)'
+        => '{nom} (por crear)',
+    '<strong>⚠️ {lignes_non_conformes} ligne(s) non conforme(s) — décochées, seront ignorées</strong> (cases fusionnées, données incompatibles avec le champ de la colonne, champs obligatoires manquants…) :'
+        => '<strong>⚠️ {lignes_non_conformes} fila(s) no conforme(s) — desmarcadas, se ignorarán</strong> (celdas combinadas, datos incompatibles con el campo de la columna, campos obligatorios ausentes…):',
+    '<strong>{acquisitions} acquisition(s) créée(s) et validée(s)</strong> ({lignes_lues} ligne(s) lue(s)).'
+        => '<strong>{acquisitions} adquisición(es) creada(s) y validada(s)</strong> ({lignes_lues} fila(s) leída(s)).',
+    '<strong>Date d\'achat :</strong> {facture_date}'
+        => '<strong>Fecha de compra:</strong> {facture_date}',
+    '<strong>Dates saisies à la main : à confirmer ou corriger</strong> (la mise en service ne peut pas précéder la nouvelle date de facture).'
+        => '<strong>Fechas introducidas a mano: confírmelas o corríjalas</strong> (la puesta en servicio no puede preceder a la nueva fecha de factura).',
+    '<strong>Fournisseur :</strong> {nom}'
+        => '<strong>Proveedor:</strong> {nom}',
+    '<strong>Référence facture :</strong> {facture_reference}'
+        => '<strong>Referencia de factura:</strong> {facture_reference}',
+    '<strong>Saisie par :</strong> {prenom} {nom}'
+        => '<strong>Introducida por:</strong> {prenom} {nom}',
+    'Nombre d\'éléments à l\'achat (> 1 → lot)'
+        => 'Número de elementos en la compra (> 1 → lote)',
+    'Stock max'
+        => 'Stock máx.',
+    '2 à 8 lettres sans accent ou chiffres (vide = automatique)'
+        => 'De 2 a 8 letras sin acento o cifras (vacío = automático)',
+    'Acquisition'
+        => 'Adquisición',
+    'Acquisition #{id}'
+        => 'Adquisición n.º {id}',
+    'Acquisition invalide.'
+        => 'Adquisición no válida.',
+    'Acquisition modifiée : {details} ; dates de {nombre} équipement(s) mises à jour.'
+        => 'Adquisición modificada: {details}; fechas de {nombre} equipo(s) actualizadas.',
+    'Acquisition modifiée : {details}.'
+        => 'Adquisición modificada: {details}.',
+    'Acquisition non trouvée.'
+        => 'Adquisición no encontrada.',
+    'Acquisition verrouillée'
+        => 'Adquisición bloqueada',
+    'Affichage de {acquisitions} acquisitions sur {total} (page {page}/{totalPages})'
+        => 'Mostrando {acquisitions} adquisiciones de {total} (página {page}/{totalPages})',
+    'Ajouter'
+        => 'Añadir',
+    'Analyser le fichier'
+        => 'Analizar el archivo',
+    'Annuler la modification de la référence et de la date'
+        => 'Cancelar la modificación de la referencia y la fecha',
+    'après le téléversement, vous pourrez <strong>vérifier la correspondance des colonnes</strong> avec les champs attendus avant de lancer l\'import ;'
+        => 'tras subir el archivo, podrá <strong>comprobar la correspondencia de las columnas</strong> con los campos esperados antes de iniciar la importación;',
+    'au'
+        => 'al',
+    'Aucun document'
+        => 'Ningún documento',
+    'Aucun fichier valide n\'a été téléversé.'
+        => 'No se ha subido ningún archivo válido.',
+    'Aucune acquisition n\'a été créée.'
+        => 'No se ha creado ninguna adquisición.',
+    'Aucune acquisition ne correspond aux filtres.'
+        => 'Ninguna adquisición coincide con los filtros.',
+    'Aucune acquisition pour le moment.'
+        => 'Todavía no hay adquisiciones.',
+    'Aucune ligne d\'acquisition.'
+        => 'Ninguna línea de adquisición.',
+    'Aucune ligne n\'a été sélectionnée pour l\'import.'
+        => 'No se ha seleccionado ninguna fila para importar.',
+    'Aucune ligne saisie.'
+        => 'Ninguna línea introducida.',
+    'Aucune ligne sélectionnée.'
+        => 'Ninguna fila seleccionada.',
+    'Aucune modification : la référence et la date sont inchangées.'
+        => 'Sin cambios: la referencia y la fecha no han cambiado.',
+    'Catégorie « {categorie} » : code « {code} » invalide (2 à 8 lettres ou chiffres), code attribué automatiquement.'
+        => 'Categoría «{categorie}»: código «{code}» no válido (de 2 a 8 letras o cifras), código asignado automáticamente.',
+    'Catégorie « {categorie} » : le code « {code} » est déjà utilisé, code attribué automatiquement.'
+        => 'Categoría «{categorie}»: el código «{code}» ya está en uso, código asignado automáticamente.',
+    'Catégorie « {categorie} » : une catégorie de ce nom existe déjà, elle a été utilisée.'
+        => 'Categoría «{categorie}»: ya existe una categoría con este nombre y se ha utilizado.',
+    'Catégorie (code ou libellé) *'
+        => 'Categoría (código o denominación) *',
+    'Catégorie *'
+        => 'Categoría *',
+    'catégorie existante : « {libelle} »'
+        => 'categoría existente: «{libelle}»',
+    'Catégories du fichier'
+        => 'Categorías del archivo',
+    'Catégories existantes'
+        => 'Categorías existentes',
+    'Cette acquisition est déjà validée.'
+        => 'Esta adquisición ya está validada.',
+    'Cette acquisition est validée, les lignes ne peuvent plus être modifiées.'
+        => 'Esta adquisición está validada, sus líneas ya no pueden modificarse.',
+    'Cette acquisition est validée, les lignes ne peuvent plus être supprimées.'
+        => 'Esta adquisición está validada, sus líneas ya no pueden eliminarse.',
+    'Cette ligne a déjà généré des équipements, elle ne peut pas être supprimée.'
+        => 'Esta línea ya ha generado equipos, no puede eliminarse.',
+    'Cette référence de facture est déjà utilisée par une autre acquisition.'
+        => 'Esta referencia de factura ya la usa otra adquisición.',
+    'Cette référence de facture existe déjà. Merci d\'en choisir une autre.'
+        => 'Esta referencia de factura ya existe. Elija otra.',
+    'Cette référence existe déjà.'
+        => 'Esta referencia ya existe.',
+    'Cette référence existe déjà. Veuillez en saisir une autre.'
+        => 'Esta referencia ya existe. Introduzca otra.',
+    'Champ correspondant'
+        => 'Campo correspondiente',
+    'chaque ligne peut être <strong>cochée ou décochée</strong> avant l\'import, et affectée à une autre catégorie ;'
+        => 'cada fila puede <strong>marcarse o desmarcarse</strong> antes de la importación y asignarse a otra categoría;',
+    'Code'
+        => 'Código',
+    'Colonne du fichier'
+        => 'Columna del archivo',
+    'Correspondance incomplète : le champ « {champ} » doit être associé à une colonne.'
+        => 'Correspondencia incompleta: el campo «{champ}» debe asociarse a una columna.',
+    'Correspondance invalide : un même champ est associé à plusieurs colonnes.'
+        => 'Correspondencia no válida: un mismo campo está asociado a varias columnas.',
+    'Créer la catégorie (nom et code ci-dessous)'
+        => 'Crear la categoría (nombre y código abajo)',
+    'Date'
+        => 'Fecha',
+    'date {ancienne} → {nouvelle}'
+        => 'fecha {ancienne} → {nouvelle}',
+    'Date achat'
+        => 'Fecha de compra',
+    'Date d\'achat (date de facture)'
+        => 'Fecha de compra (fecha de factura)',
+    'Date d\'achat obligatoire pour un EPI à durée de vie limitée.'
+        => 'La fecha de compra es obligatoria para un EPI con vida útil limitada.',
+    'Date d\'achat ou fournisseur incohérent avec les autres lignes de la facture « {facture} ».'
+        => 'Fecha de compra o proveedor incoherente con las demás líneas de la factura «{facture}».',
+    'Date de facture invalide.'
+        => 'Fecha de factura no válida.',
+    'Date de péremption'
+        => 'Fecha de caducidad',
+    'Date du'
+        => 'Fecha del',
+    'dates : année seule → 1er janvier (achat) ou 31 décembre (péremption) ; date d\'achat vide → date du jour ;'
+        => 'fechas: solo el año → 1 de enero (compra) o 31 de diciembre (caducidad); fecha de compra vacía → fecha de hoy;',
+    'Décochez les lignes à ne pas importer. « Stock max » et « Stock actuel » sont modifiables (un stock max supérieur à 1 crée un lot ; le stock actuel ne peut pas le dépasser). Les dates sont modifiables : pour un EPI à durée de vie limitée (⏳), la date d\'achat est obligatoire et la fin de vie est proposée au 31 décembre, 10 ans après l\'achat. La colonne « Catégorie » permet d\'affecter une ligne à une autre catégorie (du fichier, y compris une catégorie à créer, ou existante).'
+        => 'Desmarque las filas que no desea importar. «Stock máx.» y «Stock actual» son modificables (un stock máx. superior a 1 crea un lote; el stock actual no puede superarlo). Las fechas son modificables: para un EPI con vida útil limitada (⏳), la fecha de compra es obligatoria y el fin de vida se propone el 31 de diciembre, 10 años después de la compra. La columna «Categoría» permite asignar una fila a otra categoría (del archivo, incluida una por crear, o existente).',
+    'Désignation *'
+        => 'Designación *',
+    'Document :'
+        => 'Documento:',
+    'durée de vie limitée'
+        => 'vida útil limitada',
+    'Durée de vie limitée'
+        => 'Vida útil limitada',
+    'Durée de vie limitée (date d\'achat obligatoire, fin de vie par défaut à 10 ans)'
+        => 'Vida útil limitada (fecha de compra obligatoria, fin de vida por defecto a 10 años)',
+    'Éléments encore présents (≤ stock max)'
+        => 'Elementos aún presentes (≤ stock máx.)',
+    'En attente'
+        => 'Pendiente',
+    'En attente de validation'
+        => 'Pendiente de validación',
+    'Enregistrer et saisir les lignes'
+        => 'Guardar e introducir las líneas',
+    'Enregistrer la correction'
+        => 'Guardar la corrección',
+    'Enregistrer les modifications'
+        => 'Guardar los cambios',
+    'EPI à <strong>durée de vie limitée</strong> : date d\'achat obligatoire (modifiable dans le tableau d\'import) ; fin de vie vide → 31 décembre, 10 ans après l\'achat (modifiable) ;'
+        => 'EPI con <strong>vida útil limitada</strong>: fecha de compra obligatoria (modificable en la tabla de importación); fin de vida vacío → 31 de diciembre, 10 años después de la compra (modificable);',
+    'Équipement {reference} : date de fin d\'utilisation à confirmer.'
+        => 'Equipo {reference}: fecha de fin de uso por confirmar.',
+    'Équipement {reference} : date de mise en service à confirmer.'
+        => 'Equipo {reference}: fecha de puesta en servicio por confirmar.',
+    'Équipement {reference} : la mise en service ne peut pas précéder la date de facture ({date}).'
+        => 'Equipo {reference}: la puesta en servicio no puede preceder a la fecha de factura ({date}).',
+    'Équipements générés'
+        => 'Equipos generados',
+    'Erreur lors de l\'analyse du fichier (détail en journal serveur).'
+        => 'Error al analizar el archivo (detalle en el registro del servidor).',
+    'Erreur lors de l\'import (détail en journal serveur).'
+        => 'Error durante la importación (detalle en el registro del servidor).',
+    'Erreur lors de l\'import du groupe (détail en journal serveur).'
+        => 'Error al importar el grupo (detalle en el registro del servidor).',
+    'Erreur lors de la création de l\'acquisition.'
+        => 'Error al crear la adquisición.',
+    'Étape 2 : vérifier la correspondance des colonnes'
+        => 'Paso 2: comprobar la correspondencia de las columnas',
+    'Exemples de valeurs'
+        => 'Ejemplos de valores',
+    'Facture'
+        => 'Factura',
+    'Facture (PDF, JPG, PNG)'
+        => 'Factura (PDF, JPG, PNG)',
+    'Facture requise avant validation'
+        => 'Factura necesaria antes de validar',
+    'Fichier à importer * :'
+        => 'Archivo para importar *:',
+    'Fichier actuel :'
+        => 'Archivo actual:',
+    'Fichier Excel (<code>.xlsx</code>, <code>.xls</code>) ou CSV ; la <strong>ligne d\'en-tête est détectée automatiquement</strong> (dans les 10 premières lignes) ;'
+        => 'Archivo Excel (<code>.xlsx</code>, <code>.xls</code>) o CSV; la <strong>fila de encabezado se detecta automáticamente</strong> (en las 10 primeras filas);',
+    'Fin de vie'
+        => 'Fin de vida',
+    'Format non accepté : {formats} uniquement.'
+        => 'Formato no aceptado: solo {formats}.',
+    'Fournisseur'
+        => 'Proveedor',
+    'Générés'
+        => 'Generados',
+    'Groupe « {groupe} » : plusieurs fournisseurs détectés, « {fournisseur} » retenu.'
+        => 'Grupo «{groupe}»: se han detectado varios proveedores, se conserva «{fournisseur}».',
+    'Groupes ignorés'
+        => 'Grupos ignorados',
+    'Importer (Excel / CSV)'
+        => 'Importar (Excel / CSV)',
+    'Importer des acquisitions (Excel / CSV)'
+        => 'Importar adquisiciones (Excel / CSV)',
+    'Importer la facture'
+        => 'Subir la factura',
+    'Impossible de supprimer cette acquisition : certaines lignes ont généré des équipements.'
+        => 'No se puede eliminar esta adquisición: algunas líneas han generado equipos.',
+    'Impossible de supprimer une acquisition validée. Elle contient des équipements générés.'
+        => 'No se puede eliminar una adquisición validada. Contiene equipos generados.',
+    'Individuel'
+        => 'Individual',
+    'Informations générales'
+        => 'Información general',
+    'la catégorie est recherchée par <strong>code</strong> (ex. <code>COR</code>), puis par libellé ; les catégories inconnues peuvent être créées (nom et code au choix), regroupées ou rattachées à une catégorie existante ;'
+        => 'la categoría se busca por <strong>código</strong> (p. ej. <code>COR</code>) y luego por denominación; las categorías desconocidas pueden crearse (nombre y código a elección), agruparse o vincularse a una categoría existente;',
+    'La date d\'achat est invalide (formats acceptés : AAAA-MM-JJ, JJ/MM/AAAA, ou année seule).'
+        => 'La fecha de compra no es válida (formatos aceptados: AAAA-MM-DD, DD/MM/AAAA o solo el año).',
+    'La date de péremption est invalide (formats acceptés : AAAA-MM-JJ, JJ/MM/AAAA, ou année seule).'
+        => 'La fecha de caducidad no es válida (formatos aceptados: AAAA-MM-DD, DD/MM/AAAA o solo el año).',
+    'La désignation est obligatoire.'
+        => 'La designación es obligatoria.',
+    'La facture pourra être téléversée ultérieurement'
+        => 'La factura podrá subirse más adelante',
+    'La référence de facture « {reference} » est déjà utilisée par une autre acquisition.'
+        => 'La referencia de factura «{reference}» ya la usa otra adquisición.',
+    'La référence de facture « {reference} » vient d\'être utilisée par une autre acquisition : rien n\'a été modifié.'
+        => 'La referencia de factura «{reference}» acaba de usarla otra adquisición: no se ha modificado nada.',
+    'La référence de facture contient des caractères non autorisés.'
+        => 'La referencia de factura contiene caracteres no permitidos.',
+    'La référence de facture est obligatoire.'
+        => 'La referencia de factura es obligatoria.',
+    'La référence de facture ne doit pas dépasser {max} caractères.'
+        => 'La referencia de factura no debe superar los {max} caracteres.',
+    'La référence dépasse 32 caractères.'
+        => 'La referencia supera los 32 caracteres.',
+    'Lancer l\'import ('
+        => 'Iniciar la importación (',
+    'Lancer l\'import de {n} ligne(s) ?'
+        => '¿Importar {n} fila(s)?',
+    'Le fichier analysé n\'est plus disponible. Merci de le téléverser à nouveau.'
+        => 'El archivo analizado ya no está disponible. Vuelva a subirlo.',
+    'Le fichier est trop volumineux pour être traité par le serveur (limite PHP : {limite}). Réduisez la taille du fichier ou augmentez post_max_size.'
+        => 'El archivo es demasiado grande para que el servidor lo procese (límite de PHP: {limite}). Reduzca su tamaño o aumente post_max_size.',
+    'Le fichier est vide ou sa ligne d\'en-tête est inexploitable.'
+        => 'El archivo está vacío o su fila de encabezado no es utilizable.',
+    'Le fichier est vide.'
+        => 'El archivo está vacío.',
+    'Le fichier n\'a pas pu être lu (format Excel ou CSV attendu).'
+        => 'No se pudo leer el archivo (se espera formato Excel o CSV).',
+    'Le nombre doit être supérieur à 0.'
+        => 'El número debe ser mayor que 0.',
+    'Le nombre doit être un entier supérieur ou égal à 1.'
+        => 'El número debe ser un entero mayor o igual que 1.',
+    'Le stock actuel doit être un entier supérieur ou égal à 1.'
+        => 'El stock actual debe ser un entero mayor o igual que 1.',
+    'Le stock actuel ne peut pas dépasser le nombre (stock max).'
+        => 'El stock actual no puede superar el número (stock máx.).',
+    'les lignes d\'une même facture — ou, à défaut de n° de facture, d\'une même date d\'achat — sont groupées dans <strong>une même acquisition automatiquement validée</strong>, dont le document sera marqué « facture à importer » (téléversé plus tard) ;'
+        => 'las filas de una misma factura — o, a falta de n.º de factura, de una misma fecha de compra — se agrupan en <strong>una misma adquisición validada automáticamente</strong>, cuyo documento se marcará «factura por importar» (se subirá más tarde);',
+    'Libellé *'
+        => 'Denominación *',
+    'Ligne'
+        => 'Fila',
+    'Ligne {ligne}'
+        => 'Fila {ligne}',
+    'Ligne {ligne} : {raison}'
+        => 'Fila {ligne}: {raison}',
+    'Ligne d\'en-tête détectée : <strong>ligne {ligne_entete}</strong>'
+        => 'Fila de encabezado detectada: <strong>fila {ligne_entete}</strong>',
+    'Ligne modifiée avec succès.'
+        => 'Línea modificada correctamente.',
+    'Ligne non trouvée.'
+        => 'Línea no encontrada.',
+    'Ligne supprimée avec succès.'
+        => 'Línea eliminada correctamente.',
+    'ligne(s))'
+        => 'fila(s))',
+    'Lignes'
+        => 'Líneas',
+    'Lignes à importer'
+        => 'Filas para importar',
+    'Lignes d\'acquisition'
+        => 'Líneas de adquisición',
+    'Lignes ignorées'
+        => 'Filas ignoradas',
+    'Lignes saisies'
+        => 'Líneas introducidas',
+    'Même catégorie que « {nom} »'
+        => 'Misma categoría que «{nom}»',
+    'Modification de la référence et de la date'
+        => 'Modificación de la referencia y la fecha',
+    'Modification verrouillée'
+        => 'Modificación bloqueada',
+    'Modifier la ligne d\'acquisition'
+        => 'Modificar la línea de adquisición',
+    'Modifier la référence et la date'
+        => 'Modificar la referencia y la fecha',
+    'Nombre'
+        => 'Número',
+    'Nombre *'
+        => 'Número *',
+    'Nombre / stock max (> 1 → lot)'
+        => 'Número / stock máx. (> 1 → lote)',
+    'Nouvel import'
+        => 'Nueva importación',
+    'Nouvelle acquisition'
+        => 'Nueva adquisición',
+    'Pour changer la date, saisissez le mot {mot} (en majuscules).'
+        => 'Para cambiar la fecha, escriba la palabra {mot} (en mayúsculas).',
+    'Pour chaque catégorie inconnue : créez-la en choisissant son <strong>nom</strong> et son <strong>code</strong> (utilisé dans les références, ex. <code>COR</code>), regroupez-la avec une autre catégorie à créer, ou rattachez-la à une catégorie existante.'
+        => 'Para cada categoría desconocida: créela eligiendo su <strong>nombre</strong> y su <strong>código</strong> (usado en las referencias, p. ej. <code>COR</code>), agrúpela con otra categoría por crear o vincúlela a una categoría existente.',
+    'Pour confirmer le changement de date, saisissez <code>{mot_confirmation_date}</code>'
+        => 'Para confirmar el cambio de fecha, escriba <code>{mot_confirmation_date}</code>',
+    'Pour confirmer le changement de référence, saisissez <code>{mot_confirmation_reference}</code>'
+        => 'Para confirmar el cambio de referencia, escriba <code>{mot_confirmation_reference}</code>',
+    'Principe'
+        => 'Funcionamiento',
+    'Proposée automatiquement selon le modèle de référence dès que la catégorie est choisie'
+        => 'Propuesta automáticamente según el modelo de referencia en cuanto se elige la categoría',
+    'Rapport d\'import'
+        => 'Informe de importación',
+    'Rattacher à : {libelle}'
+        => 'Vincular a: {libelle}',
+    'Rattacher à une catégorie existante'
+        => 'Vincular a una categoría existente',
+    'recalculée'
+        => 'recalculada',
+    'référence « {ancienne} » → « {nouvelle} »'
+        => 'referencia «{ancienne}» → «{nouvelle}»',
+    'référence automatique'
+        => 'referencia automática',
+    'Référence équipement (vide → auto)'
+        => 'Referencia del equipo (vacía → auto)',
+    'Référence équipement *'
+        => 'Referencia del equipo *',
+    'Référence facture'
+        => 'Referencia de factura',
+    'référence vide →'
+        => 'referencia vacía →',
+    'Regrouper avec une autre catégorie à créer'
+        => 'Agrupar con otra categoría por crear',
+    'Remplacer la facture'
+        => 'Reemplazar la factura',
+    'Requise pour valider'
+        => 'Necesaria para validar',
+    'Retour aux acquisitions'
+        => 'Volver a las adquisiciones',
+    'Selon le fichier'
+        => 'Según el archivo',
+    'Stock actuel'
+        => 'Stock actual',
+    'Stock actuel (≤ stock max)'
+        => 'Stock actual (≤ stock máx.)',
+    'suit la date de facture'
+        => 'sigue la fecha de factura',
+    'Supprimer cette ligne ?'
+        => '¿Eliminar esta línea?',
+    'Supprimer définitivement cette acquisition ({facture_reference}) ?&#10;&#10;Cette action est irréversible.'
+        => '¿Eliminar definitivamente esta adquisición ({facture_reference})?&#10;&#10;Esta acción es irreversible.',
+    'Supprimer définitivement l\'acquisition #{id} ({facture_reference}) ?&#10;&#10;Cette action est irréversible.'
+        => '¿Eliminar definitivamente la adquisición n.º {id} ({facture_reference})?&#10;&#10;Esta acción es irreversible.',
+    'Supprimer le brouillon'
+        => 'Eliminar el borrador',
+    'Taille maximum : 10 Mo. Formats acceptés : PDF, JPG, PNG.'
+        => 'Tamaño máximo: 10 MB. Formatos aceptados: PDF, JPG, PNG.',
+    'Téléchargée'
+        => 'Subida',
+    'Total équipements :'
+        => 'Total de equipos:',
+    'un <code>nombre</code> supérieur à 1 indique un <strong>lot</strong> (un seul équipement) ; le <strong>stock actuel</strong> d\'un lot (colonne « stock réel », ≤ nombre) peut être importé — si un seul des deux est fourni, l\'autre prend la même valeur, et à défaut les deux valent 1 (modifiables avant l\'import) ;'
+        => 'un <code>número</code> superior a 1 indica un <strong>lote</strong> (un solo equipo); el <strong>stock actual</strong> de un lote (columna «stock real», ≤ número) puede importarse — si solo se indica uno de los dos, el otro toma el mismo valor, y en su defecto ambos valen 1 (modificables antes de la importación);',
+    'Une acquisition avec cette référence de facture existe déjà.'
+        => 'Ya existe una adquisición con esta referencia de factura.',
+    'Une erreur est survenue lors de l\'ajout de la ligne.'
+        => 'Se ha producido un error al añadir la línea.',
+    'Une erreur est survenue lors de la création. Merci de réessayer.'
+        => 'Se ha producido un error al crear. Inténtelo de nuevo.',
+    'Une erreur est survenue lors de la mise à jour. Merci de réessayer.'
+        => 'Se ha producido un error al actualizar. Inténtelo de nuevo.',
+    'Une erreur est survenue lors de la modification. Merci de réessayer.'
+        => 'Se ha producido un error al modificar. Inténtelo de nuevo.',
+    'Une erreur est survenue lors de la validation. Merci de réessayer ou de contacter un administrateur.'
+        => 'Se ha producido un error durante la validación. Inténtelo de nuevo o contacte con un administrador.',
+    'Une erreur est survenue lors du téléversement. Merci de réessayer.'
+        => 'Se ha producido un error al subir el archivo. Inténtelo de nuevo.',
+    'Une facture est obligatoire pour valider l\'acquisition.'
+        => 'Se necesita una factura para validar la adquisición.',
+    'Validée'
+        => 'Validada',
+    'Valider cette acquisition ? Les équipements seront générés définitivement et vous ne pourrez plus modifier les lignes.'
+        => '¿Validar esta adquisición? Los equipos se generarán definitivamente y ya no podrá modificar las líneas.',
+    'Valider l\'acquisition'
+        => 'Validar la adquisición',
+    'Verrouillée'
+        => 'Bloqueada',
+    'Veuillez choisir un fichier de facture.'
+        => 'Elija un archivo de factura.',
+    'Veuillez d\'abord télécharger la facture'
+        => 'Suba primero la factura',
+    'Veuillez remplir les champs de la ligne.'
+        => 'Rellene los campos de la línea.',
+    'Voir la fiche'
+        => 'Ver la ficha',
+    'Voir les acquisitions'
+        => 'Ver las adquisiciones',
+    'Voir les équipements'
+        => 'Ver los equipos',
 ];

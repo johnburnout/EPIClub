@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Epiclub\Domain;
 
+use Epiclub\Engine\Traducteur;
+
 /**
  * [2026-10-24] Correction de la référence et de la date de facture d'une
  * acquisition (super-administrateur, depuis sa fiche).
@@ -37,13 +39,13 @@ final class CorrectionAcquisition
     public static function erreurReference(string $reference): ?string
     {
         if ($reference === '') {
-            return 'La référence de facture est obligatoire.';
+            return Traducteur::t('La référence de facture est obligatoire.');
         }
         if (!mb_check_encoding($reference, 'UTF-8') || preg_match('/[\x00-\x1F\x7F]/', $reference)) {
-            return 'La référence de facture contient des caractères non autorisés.';
+            return Traducteur::t('La référence de facture contient des caractères non autorisés.');
         }
         if (mb_strlen($reference) > self::REFERENCE_MAX) {
-            return sprintf('La référence de facture ne doit pas dépasser %d caractères.', self::REFERENCE_MAX);
+            return Traducteur::t('La référence de facture ne doit pas dépasser {max} caractères.', ['max' => self::REFERENCE_MAX]);
         }
         return null;
     }
@@ -101,13 +103,12 @@ final class CorrectionAcquisition
             if ($l['mes_manuelle']) {
                 $mes = trim((string) ($mesSaisies[$id] ?? ''));
                 if (!self::dateValide($mes)) {
-                    return sprintf('Équipement %s : date de mise en service à confirmer.', $l['reference']);
+                    return Traducteur::t('Équipement {reference} : date de mise en service à confirmer.', ['reference' => $l['reference']]);
                 }
                 if ($mes < $nouvelleDate) {
-                    return sprintf(
-                        'Équipement %s : la mise en service ne peut pas précéder la date de facture (%s).',
-                        $l['reference'],
-                        date('d/m/Y', (int) strtotime($nouvelleDate))
+                    return Traducteur::t(
+                        'Équipement {reference} : la mise en service ne peut pas précéder la date de facture ({date}).',
+                        ['reference' => $l['reference'], 'date' => date('d/m/Y', (int) strtotime($nouvelleDate))]
                     );
                 }
             } else {
@@ -119,7 +120,7 @@ final class CorrectionAcquisition
             } elseif ($l['fin_manuelle']) {
                 $fin = trim((string) ($finSaisies[$id] ?? ''));
                 if (!self::dateValide($fin)) {
-                    return sprintf('Équipement %s : date de fin d\'utilisation à confirmer.', $l['reference']);
+                    return Traducteur::t('Équipement {reference} : date de fin d\'utilisation à confirmer.', ['reference' => $l['reference']]);
                 }
             } else {
                 $fin = DureeDeVie::finDeVie($nouvelleDate);
