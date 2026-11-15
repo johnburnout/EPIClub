@@ -10,6 +10,10 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v3.0.2] — 2026-11-15
+
+Correctif : passkey de nouveau proposée après la mise à jour.
+
 ### Fixed
 
 - **Passkey absente après la mise à jour en v3.0.0.** Le navigateur
