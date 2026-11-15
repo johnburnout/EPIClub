@@ -12,6 +12,7 @@ Interface disponible en français, anglais, espagnol et italien (réglage du clu
 
 * php >= 8.4
 * MySQL >= 8.0 ou MariaDB >= 10.6 (MySQL 5.7 fonctionne encore mais n'est plus maintenu depuis octobre 2023)
+* une base de données **dédiée à EPIClub** : la restauration d'une sauvegarde vide **toute** la base configurée (tables et vues) avant de la recharger ; une autre application qui partagerait cette base perdrait ses données
 * ext-gd
 
 ## Installation
@@ -19,7 +20,7 @@ Interface disponible en français, anglais, espagnol et italien (réglage du clu
 * Téléchargez l'archive `epiclub-<version>.zip` de la dernière version [ici](https://github.com/johnburnout/EPIClub/releases)
   (et non « Source code », qui ne contient pas les dépendances `vendor/`).
 * Dézippez le dossier sur votre serveur.
-* Parametrez le serveur pour qu'il pointe sur le dossier `public`.
+* Parametrez le serveur pour qu'il pointe sur le dossier `public`. C'est indispensable : les dossiers `var/` (sauvegardes, journaux), `_storage/` (factures) et le fichier `.env.local.php` ne doivent jamais être servis. Les fichiers `.htaccess` qui les protègent par précaution ne valent que pour Apache ; sous **Nginx**, ils sont ignorés et seul le docroot `public/` protège ces fichiers.
 * Ouvrez l'url dans votre navigateur et suivez les instructions.
 
 > **SMTP est facultatif.** Vous pouvez passer cette étape lors de l'installation.
@@ -112,9 +113,19 @@ php bin/sauvegarder.php --quiet
 L'archive `var/backups/epiclub-sauvegarde-…-planifiee.zip` apparaît dans
 la page Sauvegarde / restauration. Seules les `BACKUP_RETENTION`
 dernières sauvegardes planifiées sont conservées (`--garder=N` pour
-changer). `--sql-seul` produit un simple dump SQL. Une sauvegarde ne
-démarre pas pendant une mise à jour ou une restauration (code de
-sortie 4).
+changer) ; l'ordre suit l'horodatage du nom des archives, pas leur date
+de fichier. La même commande supprime les archives téléversées dans la
+page mais jamais restaurées, au-delà de 24 h. `--sql-seul` produit un
+simple dump SQL. Une sauvegarde ne démarre pas pendant une mise à jour
+ou une restauration (code de sortie 4).
+
+> **Espace disque.** Les archives manuelles (`--manuelle`, bouton de la
+> page) et celles déposées par FTP ne sont soumises à **aucune**
+> rétention, et les 3 derniers filets « avant restauration » sont gardés.
+> Sur un hébergement à quota serré, surveillez `var/backups/` : la ligne
+> de fin de `bin/sauvegarder.php` (nom, taille, archives supprimées)
+> suffit au suivi en cron, et les anciennes archives se suppriment depuis
+> la page Sauvegarde / restauration.
 
 ## Développement
 

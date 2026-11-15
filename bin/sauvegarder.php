@@ -17,7 +17,9 @@ declare(strict_types=1);
  *    Sauvegarde / restauration), non concernée par --garder ;
  *  - --garder=N : nombre de sauvegardes planifiées conservées (défaut :
  *    BACKUP_RETENTION de .env.local.php, sinon 5). Les exports manuels et
- *    les filets « avant restauration » ne sont pas concernés.
+ *    les filets « avant restauration » ne sont pas concernés. La rétention
+ *    (ordre de l'horodatage du nom) et la purge des archives téléversées
+ *    non restaurées depuis plus de 24 h se font sous le verrou.
  *
  * Le verrou de l'instance (var/epiclub.lock) empêche de sauvegarder
  * pendant une mise à jour, une restauration ou une installation.
@@ -102,13 +104,14 @@ try {
             isset($config['PUBLIC_PATH']) ? rtrim((string) $config['PUBLIC_PATH'], '/') . '/images' : null,
             (string) $dossier,
         );
-        if ($cmd->drapeau('manuelle')) {
-            $fichier = $service->creer(SauvegardeService::TYPE_MANUELLE);
-            $supprimees = [];
-        } else {
-            $fichier = $service->creer(SauvegardeService::TYPE_PLANIFIEE);
-            $supprimees = $service->conserver(SauvegardeService::TYPE_PLANIFIEE, $garder);
-        }
+        // [Audit 2026-11-10, R1 et R5] Création, rétention des archives
+        // planifiées et purge des téléversements abandonnés (> 24 h) sous
+        // le même verrou.
+        $resultat = $cmd->drapeau('manuelle')
+            ? $service->creerAvecMenage(SauvegardeService::TYPE_MANUELLE)
+            : $service->creerAvecMenage(SauvegardeService::TYPE_PLANIFIEE, $garder);
+        $fichier = $resultat['chemin'];
+        $supprimees = $resultat['supprimees'];
     }
 } catch (VerrouOccupeException $e) {
     exit($cmd->terminer(Commande::VERROU_OCCUPE, $e->getMessage()));
