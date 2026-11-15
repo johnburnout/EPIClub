@@ -105,7 +105,8 @@ final class EquipementControllerDateMiseEnServiceTest extends TestCase
     {
         $html = (string) $this->editer('2026-04-01', [])->getContent();
 
-        self::assertStringContainsString('ne peut plus l\'être', $html);
+        // Texte affiché : les apostrophes traduites sortent échappées (&#039;).
+        self::assertStringContainsString('ne peut plus l\'être', html_entity_decode($html, ENT_QUOTES));
         self::assertStringNotContainsString('name="date_mise_en_service"', $html);
     }
 

@@ -26,6 +26,17 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
   compte (application d'authentification, passkeys, codes de secours),
   avec leurs messages et ceux des passkeys dans le navigateur. Le journal
   d'activité reste rédigé en français.
+- **Équipements traduits (3e étape).** Liste, fiche, formulaire (dont
+  dissociation et regroupement de lots) et modification groupée, avec
+  leurs messages, les libellés de statut et les scripts de la page. Les
+  exports PDF, CSV et étiquettes suivront avec les autres documents.
+
+### Fixed
+
+- La fenêtre « Nouvelle catégorie » du formulaire d'équipement affichait
+  ses boutons en anglais (« Close », « Save changes »).
+- Modification groupée d'un seul équipement : « Appliquer à l'équipement »
+  au lieu de « Appliquer aux 1 équipement ».
 
 ### Changed
 

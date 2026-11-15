@@ -2,7 +2,7 @@
 
 {% block body %}
 
-	<h3>Détail de l'équipement</h3>
+	<h3>{{ "Détail de l'équipement"|trans }}</h3>
 	<hr>
 
 	{% if equipement %}
@@ -14,56 +14,56 @@
 			<div class="card-body">
 				<div class="row">
 					<div class="col-md-6">
-						<p><strong>Référence :</strong> {{ equipement.reference }}</p>
+						<p>{{ '<strong>Référence :</strong> {reference}'|trans({reference: (equipement.reference)|e})|raw }}</p>
 						{% if equipement.nombre_initial is defined and equipement.nombre_initial > 1 %}
-							<p><strong>Lot :</strong> {{ equipement.nombre }} élément(s) restant(s) sur {{ equipement.nombre_initial }} initiaux</p>
+							<p>{{ '<strong>Lot :</strong> {nombre} élément(s) restant(s) sur {nombre_initial} initiaux'|trans({nombre: (equipement.nombre)|e, nombre_initial: (equipement.nombre_initial)|e})|raw }}</p>
 						{% endif %}
-						<p><strong>Catégorie :</strong> 
+						<p><strong>{{ 'Catégorie :'|trans }}</strong> 
 							{% if equipement.categorie %}
 								{{ equipement.categorie.libelle }}
 							{% else %}
-								<span class="text-muted">Non définie</span>
+								<span class="text-muted">{{ 'Non définie'|trans }}</span>
 							{% endif %}
 						</p>
-						<p><strong>EPI :</strong>
+						<p><strong>{{ 'EPI :'|trans }}</strong>
 							{% if equipement.categorie and equipement.categorie.est_epi %}
-								<span class="badge bg-success">Oui</span>
+								<span class="badge bg-success">{{ 'Oui'|trans }}</span>
 							{% elseif equipement.categorie and not equipement.categorie.est_epi %}
-								<span class="badge bg-secondary">Non</span>
+								<span class="badge bg-secondary">{{ 'Non'|trans }}</span>
 							{% else %}
-								<span class="text-muted">Non défini</span>
+								<span class="text-muted">{{ 'Non défini'|trans }}</span>
 							{% endif %}
 						</p>
-						<p><strong>Emplacement :</strong> 
+						<p><strong>{{ 'Emplacement :'|trans }}</strong> 
 							{% if equipement.emplacement %}
 								{{ equipement.emplacement.libelle }}
 							{% else %}
-								<span class="text-muted">Non défini</span>
+								<span class="text-muted">{{ 'Non défini'|trans }}</span>
 							{% endif %}
 						</p>
-						<p><strong>Date de mise en service :</strong> 
+						<p><strong>{{ 'Date de mise en service :'|trans }}</strong> 
 							{% if equipement.date_mise_en_service %}
 								{{ equipement.date_mise_en_service|date("d/m/Y") }}
 							{% else %}
-								<span class="text-muted">Non renseignée</span>
+								<span class="text-muted">{{ 'Non renseignée'|trans }}</span>
 							{% endif %}
 						</p>
-						<p><strong>Durée maximum d'utilisation :</strong>
+						<p><strong>{{ "Durée maximum d'utilisation :"|trans }}</strong>
 							{% if equipement.duree_max_utilisation %}
-							<span class="badge bg-warning text-dark">Oui — durée de vie limitée par le fabricant</span>
+							<span class="badge bg-warning text-dark">{{ 'Oui — durée de vie limitée par le fabricant'|trans }}</span>
 							{% else %}
-							<span class="text-muted">Non</span>
+							<span class="text-muted">{{ 'Non'|trans }}</span>
 							{% endif %}
 						</p>
 						{% if equipement.textile_remplacable|default(false) %}
-						<p><strong>Élément textile :</strong>
-							<span class="badge bg-info text-dark">Remplaçable</span>
+						<p><strong>{{ 'Élément textile :'|trans }}</strong>
+							<span class="badge bg-info text-dark">{{ 'Remplaçable'|trans }}</span>
 						</p>
 						{% endif %}
-						<p><strong>Date de fin d'utilisation :</strong> 
+						<p><strong>{{ "Date de fin d'utilisation :"|trans }}</strong> 
 							{% if not equipement.date_fin_utilisation or equipement.date_fin_utilisation > "now"|date("Y-m-d") %}
 							<span class="text-muted">
-								Toujours en service
+								{{ 'Toujours en service'|trans }}
 								{% if equipement.date_fin_utilisation %}
 								({{ equipement.date_fin_utilisation|date("d/m/Y") }})
 								{% endif %}
@@ -74,67 +74,67 @@
 						</p>
 					</div>
 					<div class="col-md-6">
-						<p><strong>Statut :</strong> 
+						<p><strong>{{ 'Statut :'|trans }}</strong> 
 							{% if equipement.controle_en_cours %}
-							<span class="badge bg-info">En contrôle</span>
+							<span class="badge bg-info">{{ 'En contrôle'|trans }}</span>
 							{% else %}
 							{% set s = statut_equipement(equipement.statut) %}
 							<span class="badge bg-{{ s.badge }}">{{ s.libelle }}</span>
 							{% if equipement.statut == 4 and equipement.date_egare|default(null) %}
-								<span class="small text-body-secondary">depuis le {{ equipement.date_egare|date('d/m/Y') }}{% if egare_supprimable_le|default(null) %} — supprimable à partir du {{ egare_supprimable_le|date('d/m/Y') }}{% endif %}</span>
+								<span class="small text-body-secondary">{{ 'depuis le {date_egare}'|trans({date_egare: (equipement.date_egare|date('d/m/Y'))}) }}{% if egare_supprimable_le|default(null) %} — {{ 'supprimable à partir du {egare_supprimable_le}'|trans({egare_supprimable_le: (egare_supprimable_le|date('d/m/Y'))}) }}{% endif %}</span>
 							{% endif %}
 							{% endif %}
 						</p>
-						<p><strong>Date dernier contrôle :</strong> 
+						<p><strong>{{ 'Date dernier contrôle :'|trans }}</strong> 
 							{% if equipement.date_dernier_controle %}
 								{{ equipement.date_dernier_controle|date("d/m/Y") }}
 							{% else %}
-								<span class="text-muted">Jamais contrôlé</span>
+								<span class="text-muted">{{ 'Jamais contrôlé'|trans }}</span>
 							{% endif %}
 						</p>
-						<p><strong>Remarques :</strong> 
+						<p><strong>{{ 'Remarques :'|trans }}</strong> 
 							{% if equipement.remarques %}
 								{{ equipement.remarques }}
 							{% else %}
-								<span class="text-muted">Aucune remarque</span>
+								<span class="text-muted">{{ 'Aucune remarque'|trans }}</span>
 							{% endif %}
 						</p>
-						<p><strong>Notice :</strong>
+						<p><strong>{{ 'Notice :'|trans }}</strong>
 							{% if equipement.notice_url|default(null) %}
 								<a href="{{ equipement.notice_url }}" target="_blank" rel="noopener noreferrer">
-									📄 Consulter la notice ↗
+									📄 {{ 'Consulter la notice ↗'|trans }}
 								</a>
 							{% else %}
-								<span class="text-muted">Non renseignée</span>
+								<span class="text-muted">{{ 'Non renseignée'|trans }}</span>
 							{% endif %}
 						</p>
 						
 						{# --- Acquisition d'origine --- #}
 						{% if acquisition is defined and acquisition %}
 						<div class="mt-3 border-top pt-3">
-							<p class="mb-2"><strong><i class="fas fa-file-invoice"></i> Acquisition d'origine :</strong></p>
+							<p class="mb-2"><strong><i class="fas fa-file-invoice"></i> {{ "Acquisition d'origine :"|trans }}</strong></p>
 							<div class="mb-2">
 								<span class="badge bg-secondary">#{{ acquisition.id }}</span>
 								{% if acquisition.facture_reference %}
-									<small class="text-muted">Facture : {{ acquisition.facture_reference }}</small>
+									<small class="text-muted">{{ 'Facture : {facture_reference}'|trans({facture_reference: acquisition.facture_reference}) }}</small>
 								{% endif %}
 							</div>
 							<div class="d-flex flex-wrap gap-2">
 								{# Lien vers la liste des équipements de la même acquisition #}
 								<a href="/equipements?acquisition={{ acquisition.id }}" class="btn btn-sm btn-outline-primary">
-									<i class="fas fa-list"></i> Voir tous les équipements de cette acquisition
+									<i class="fas fa-list"></i> {{ 'Voir tous les équipements de cette acquisition'|trans }}
 								</a>
 								{# Lien vers la fiche acquisition #}
 								<a href="/admin/acquisitions/acquisition-{{ acquisition.id }}" class="btn btn-sm btn-outline-secondary">
-									<i class="fas fa-eye"></i> Voir la fiche acquisition
+									<i class="fas fa-eye"></i> {{ 'Voir la fiche acquisition'|trans }}
 								</a>
 								{# Lien vers la facture (« facture à importer » = placeholder
 								   AcquisitionManager::FACTURE_A_IMPORTER, pas un fichier réel) #}
 								{% if acquisition.facture_document == 'facture à importer' %}
-								<span class="badge bg-secondary align-self-center">📄 facture à importer</span>
+								<span class="badge bg-secondary align-self-center">📄 {{ 'facture à importer'|trans }}</span>
 								{% elseif acquisition.facture_document %}
 								<a href="/uploads/{{ acquisition.facture_document }}" target="_blank" class="btn btn-sm btn-outline-info">
-									<i class="fas fa-file-pdf"></i> Voir la facture
+									<i class="fas fa-file-pdf"></i> {{ 'Voir la facture'|trans }}
 								</a>
 								{% endif %}
 							</div>
@@ -144,9 +144,9 @@
 						{# Affichage de la photo #}
 						{% if equipement.photo is defined and equipement.photo is not empty %}
 							<div class="mt-3">
-								<strong>Photo :</strong>
+								<strong>{{ 'Photo :'|trans }}</strong>
 								<div>
-									<img src="{{ equipement.photo }}" alt="Photo de l'équipement" style="max-width: 300px; max-height: 300px;" class="img-thumbnail">
+									<img src="{{ equipement.photo }}" alt="{{ "Photo de l'équipement"|trans }}" style="max-width: 300px; max-height: 300px;" class="img-thumbnail">
 								</div>
 							</div>
 						{% endif %}
@@ -155,53 +155,51 @@
 						{# === QR CODE === #}
 						{# ============================================ #}
 						<div class="mt-3 border-top pt-3">
-							<strong><i class="fas fa-qrcode"></i> QR Code :</strong>
+							<strong><i class="fas fa-qrcode"></i> {{ 'QR Code :'|trans }}</strong>
 							<div class="mt-2 d-flex align-items-start gap-3">
 								<!-- Image du QR Code avec ID pour le JavaScript -->
 								<img id="qr-code-image" 
 									 src="/qr/generate/{{ equipement.id }}" 
-									 alt="QR Code de {{ equipement.reference }}" 
+									 alt="{{ 'QR Code de {reference}'|trans({reference: equipement.reference}) }}" 
 									 style="width: 120px; height: 120px;" 
 									 class="img-thumbnail border-0 p-1"
 									 loading="lazy"
-									 data-fallback-src="/assets/img/qr-placeholder.png" data-fallback-alt="QR Code non disponible">
+									 data-fallback-src="/assets/img/qr-placeholder.png" data-fallback-alt="{{ 'QR Code non disponible'|trans }}">
 								
 								<!-- Actions du QR Code -->
 								<div class="d-flex flex-column gap-1">
 									<a href="/qr/choix/{{ equipement.id }}" 
 									   class="btn btn-sm btn-outline-info text-start" 
-									   title="Voir la page du QR code">
-										<i class="fas fa-eye"></i> Voir le QR
+									   title="{{ 'Voir la page du QR code'|trans }}">
+										<i class="fas fa-eye"></i> {{ 'Voir le QR'|trans }}
 									</a>
 									<a href="/qr/download/{{ equipement.id }}" 
 									   class="btn btn-sm btn-outline-success text-start" 
-									   title="Télécharger le QR code">
-										<i class="fas fa-download"></i> Télécharger
+									   title="{{ 'Télécharger le QR code'|trans }}">
+										<i class="fas fa-download"></i> {{ 'Télécharger'|trans }}
 									</a>
 									<a href="#" 
 									   class="btn btn-sm btn-outline-secondary text-start" 
-									   title="Sauvegarder sur le serveur"
+									   title="{{ 'Sauvegarder sur le serveur'|trans }}"
 									   data-qr-action="sauvegarder" data-equipement-id="{{ equipement.id }}">
-										<i class="fas fa-save"></i> Sauvegarder
+										<i class="fas fa-save"></i> {{ 'Sauvegarder'|trans }}
 									</a>
 									<a href="#" 
 									   class="btn btn-sm btn-outline-primary text-start" 
-									   title="Copier l'URL du QR code"
+									   title="{{ "Copier l'URL du QR code"|trans }}"
 									   data-qr-action="copier" data-equipement-id="{{ equipement.id }}">
-										<i class="fas fa-copy"></i> Copier l'URL
+										<i class="fas fa-copy"></i> {{ "Copier l'URL"|trans }}
 									</a>
 								</div>
 							</div>
 							<small class="text-muted d-block mt-1">
 								<i class="fas fa-info-circle"></i> 
-								Scannez ce QR code pour accéder rapidement à la fiche ou au contrôle
-							</small>
+								{{ 'Scannez ce QR code pour accéder rapidement à la fiche ou au contrôle'|trans }} </small>
 							{# Indicateur de sauvegarde #}
 							<div id="qr-status" class="mt-1">
 								<small class="text-muted" id="qr-status-text">
 									<i class="fas fa-circle" style="color: #6c757d; font-size: 8px;"></i> 
-									Généré à la demande
-								</small>
+									{{ 'Généré à la demande'|trans }} </small>
 							</div>
 						</div>
 						{# ============================================ #}
@@ -216,51 +214,51 @@
 		{% if isGranted('ROLE_CONTROLLEUR') and pret_actif() %}
 			<div class="card mt-4">
 				<div class="card-header bg-primary text-white">
-					<h5 class="mb-0">🤝 Prêts</h5>
+					<h5 class="mb-0">🤝 {{ 'Prêts'|trans }}</h5>
 				</div>
 				<div class="card-body">
 					{% if pret_ouvert %}
 						<p class="mb-2">
-							Inscrit sur le <a href="/prets/pret-{{ pret_ouvert.id }}">prêt n° {{ pret_ouvert.id }}</a>
-							({{ pret_ouvert.emprunteur_prenom }} {{ pret_ouvert.emprunteur_nom }}{% if pret_ouvert.statut == 'en_cours' %}, retour prévu le {{ pret_ouvert.date_retour_prevue|date('d/m/Y') }}{% elseif pret_ouvert.statut == 'termine' %}, retour à vérifier{% else %}, en saisie{% endif %}).
+							{{ 'Inscrit sur le'|trans }} <a href="/prets/pret-{{ pret_ouvert.id }}">{{ 'prêt n° {id}'|trans({id: pret_ouvert.id}) }}</a>
+							({{ pret_ouvert.emprunteur_prenom }} {{ pret_ouvert.emprunteur_nom }}{% if pret_ouvert.statut == 'en_cours' %}{{ ', retour prévu le {date_retour_prevue}'|trans({date_retour_prevue: (pret_ouvert.date_retour_prevue|date('d/m/Y'))}) }}{% elseif pret_ouvert.statut == 'termine' %}{{ ', retour à vérifier'|trans }}{% else %}{{ ', en saisie'|trans }}{% endif %}).
 						</p>
 					{% elseif pret_motif %}
-						<p class="text-muted mb-2">Non prêtable actuellement — {{ pret_motif }}</p>
+						<p class="text-muted mb-2">{{ 'Non prêtable actuellement — {pret_motif}'|trans({pret_motif: pret_motif}) }}</p>
 					{% elseif prets_en_saisie is not empty %}
 						<form method="post" action="/prets/ajouter" class="d-flex flex-wrap gap-2 align-items-center mb-2">
 							<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 							<input type="hidden" name="equipement_id" value="{{ equipement.id }}">
 							<input type="hidden" name="retour" value="/equipements/equipement-{{ equipement.id }}">
-							<select name="pret_id" class="form-select" style="max-width: 22rem;" aria-label="Prêt en saisie">
+							<select name="pret_id" class="form-select" style="max-width: 22rem;" aria-label="{{ 'Prêt en saisie'|trans }}">
 								{% for p in prets_en_saisie %}
-									<option value="{{ p.id }}">Prêt n° {{ p.id }} — {{ p.emprunteur_prenom }} {{ p.emprunteur_nom }}</option>
+									<option value="{{ p.id }}">{{ 'Prêt n° {id} — {emprunteur_prenom} {emprunteur_nom}'|trans({id: p.id, emprunteur_prenom: p.emprunteur_prenom, emprunteur_nom: p.emprunteur_nom}) }}</option>
 								{% endfor %}
 							</select>
-							<button type="submit" class="btn btn-primary">➕ Ajouter au prêt</button>
+							<button type="submit" class="btn btn-primary">➕ {{ 'Ajouter au prêt'|trans }}</button>
 						</form>
 					{% else %}
-						<p class="mb-2">Aucun prêt en saisie. <a href="/prets/nouveau">Créer une fiche de prêt</a></p>
+						<p class="mb-2">{{ 'Aucun prêt en saisie.'|trans }} <a href="/prets/nouveau">{{ 'Créer une fiche de prêt'|trans }}</a></p>
 					{% endif %}
 
 					{% if historique_prets is not empty %}
 						<div class="table-responsive">
 							<table class="table table-sm table-striped mb-0">
 								<thead>
-									<tr><th>Prêt</th><th>Emprunteur</th><th>Du</th><th>Au</th><th>Retour</th></tr>
+									<tr><th>{{ 'Prêt'|trans }}</th><th>{{ 'Emprunteur'|trans }}</th><th>{{ 'Du'|trans }}</th><th>{{ 'Au'|trans }}</th><th>{{ 'Retour'|trans }}</th></tr>
 								</thead>
 								<tbody>
 									{% for h in historique_prets %}
 										<tr>
-											<td><a href="/prets/pret-{{ h.id }}">n° {{ h.id }}</a></td>
+											<td><a href="/prets/pret-{{ h.id }}">{{ 'n° {id}'|trans({id: h.id}) }}</a></td>
 											<td>{{ h.emprunteur_prenom }} {{ h.emprunteur_nom }}</td>
 											<td>{{ h.date_pret|date('d/m/Y') }}</td>
-											<td>{{ h.date_retour ? h.date_retour|date('d/m/Y') : '(prévu ' ~ h.date_retour_prevue|date('d/m/Y') ~ ')' }}</td>
+											<td>{{ h.date_retour ? h.date_retour|date('d/m/Y') : '(prévu {date})'|trans({date: h.date_retour_prevue|date('d/m/Y')}) }}</td>
 											<td>
-												{% if h.etat_retour == 'disponible' %}<span class="badge bg-success">Rendu</span>
-												{% elseif h.etat_retour == 'maintenance' %}<span class="badge bg-warning">Rendu — maintenance</span>
-												{% elseif h.etat_retour == 'egare' %}<span class="badge bg-dark">Égaré</span>
-												{% elseif h.statut == 'saisie' %}<span class="badge bg-secondary">En saisie</span>
-												{% else %}<span class="badge bg-primary">{{ h.statut == 'termine' ? 'À vérifier' : 'En cours' }}</span>
+												{% if h.etat_retour == 'disponible' %}<span class="badge bg-success">{{ 'Rendu'|trans }}</span>
+												{% elseif h.etat_retour == 'maintenance' %}<span class="badge bg-warning">{{ 'Rendu — maintenance'|trans }}</span>
+												{% elseif h.etat_retour == 'egare' %}<span class="badge bg-dark">{{ 'Égaré'|trans }}</span>
+												{% elseif h.statut == 'saisie' %}<span class="badge bg-secondary">{{ 'En saisie'|trans }}</span>
+												{% else %}<span class="badge bg-primary">{{ h.statut == 'termine' ? 'À vérifier'|trans : 'En cours'|trans }}</span>
 												{% endif %}
 											</td>
 										</tr>
@@ -277,19 +275,19 @@
 		{% if historiqueControles %}
 			<div class="card mt-4">
 				<div class="card-header bg-primary text-white">
-					<h5 class="mb-0">📋 Historique des contrôles ({{ historiqueControles|length }})</h5>
+					<h5 class="mb-0">📋 {{ 'Historique des contrôles ({historiqueControles})'|trans({historiqueControles: (historiqueControles|length)}) }}</h5>
 				</div>
 				<div class="card-body p-0">
 					<div class="table-responsive">
 						<table class="table table-striped mb-0">
 							<thead>
 								<tr>
-									<th>Contrôle</th>
-									<th>Date contrôle</th>
-									<th>Contrôleur</th>
-									<th>Statut</th>
-									<th>Remarque</th>
-									<th>Actions</th>
+									<th>{{ 'Contrôle'|trans }}</th>
+									<th>{{ 'Date contrôle'|trans }}</th>
+									<th>{{ 'Contrôleur'|trans }}</th>
+									<th>{{ 'Statut'|trans }}</th>
+									<th>{{ 'Remarque'|trans }}</th>
+									<th>{{ 'Actions'|trans }}</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -315,17 +313,17 @@
 												'egare': 'dark'
 											} %}
 											{% set statutLabels = {
-												'a_controler': 'À contrôler',
+												'a_controler': 'À contrôler'|trans,
 												'controle_ok': 'OK',
 												'controle_ko': 'KO',
-												'hors_service': 'Hors service',
-												'egare': 'Égaré'
+												'hors_service': 'Hors service'|trans,
+												'egare': 'Égaré'|trans
 											} %}
 											<span class="badge bg-{{ statutClasses[ligne.statut]|default('secondary') }}">
 												{{ statutLabels[ligne.statut]|default(ligne.statut) }}
 											</span>
 											{% if ligne.textile_remplace|default(false) %}
-												<span class="badge bg-info text-dark">Textile remplacé</span>
+												<span class="badge bg-info text-dark">{{ 'Textile remplacé'|trans }}</span>
 											{% endif %}
 										</td>
 										<td>
@@ -339,7 +337,7 @@
 										</td>
 										<td>
 											<a href="/journaux/{{ ligne.controle_id }}" class="btn btn-sm btn-primary" target="_blank">
-												Voir le journal
+												{{ 'Voir le journal'|trans }}
 											</a>
 										</td>
 									</tr>
@@ -352,10 +350,10 @@
 		{% else %}
 			<div class="card mt-4">
 				<div class="card-header bg-secondary text-white">
-					<h5 class="mb-0">📋 Historique des contrôles</h5>
+					<h5 class="mb-0">📋 {{ 'Historique des contrôles'|trans }}</h5>
 				</div>
 				<div class="card-body">
-					<p class="text-muted mb-0">Cet équipement n'a pas encore été contrôlé ou aucun contrôle n'a été clôturé.</p>
+					<p class="text-muted mb-0">{{ "Cet équipement n'a pas encore été contrôlé ou aucun contrôle n'a été clôturé."|trans }}</p>
 				</div>
 			</div>
 		{% endif %}
@@ -363,31 +361,31 @@
 
 			<div class="mt-3 d-flex flex-wrap gap-2">
 				<a href="/equipements" class="btn btn-secondary">
-					<i class="fas fa-arrow-left"></i> Retour à la liste
+					<i class="fas fa-arrow-left"></i> {{ 'Retour à la liste'|trans }}
 				</a>
 				{% if isGranted('ROLE_CONTROLLEUR') %}
 				<a href="/equipements/equipement_modification-{{ equipement.id }}" class="btn btn-warning">
-					<i class="fas fa-edit"></i> Modifier{% if not isGranted('ROLE_ADMIN') %} l'emplacement{% endif %}
+					<i class="fas fa-edit"></i> {{ 'Modifier'|trans }}{% if not isGranted('ROLE_ADMIN') %} {{ "l'emplacement"|trans }}{% endif %}
 				</a>
 				{% endif %}
 				{# [2026-10-24] Contrôleur / admin : demander ce que son rôle ne permet pas #}
 				{% if isGranted('ROLE_CONTROLLEUR') and not isGranted('ROLE_SUPER_ADMIN') %}
 				<a href="/equipements/demande_modification-{{ equipement.id }}" class="btn btn-outline-warning">
-					<i class="fas fa-paper-plane"></i> Demander une modification
+					<i class="fas fa-paper-plane"></i> {{ 'Demander une modification'|trans }}
 				</a>
 				{% endif %}
 				<a href="/equipements/equipement-pdf-{{ equipement.id }}" class="btn btn-danger" target="_blank">
-					<i class="fas fa-file-pdf"></i> PDF
+					<i class="fas fa-file-pdf"></i> {{ 'PDF'|trans }}
 				</a>
 				<a href="/qr/choix/{{ equipement.id }}" class="btn btn-info">
-					<i class="fas fa-qrcode"></i> QR Code
+					<i class="fas fa-qrcode"></i> {{ 'QR Code'|trans }}
 				</a>
 				{% if isGranted('ROLE_CONTROLLEUR') %}
 				<form method="post" action="/admin/controles/creer" class="d-inline">
 					<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 					<input type="hidden" name="equipement_id" value="{{ equipement.id }}">
 					<button type="submit" class="btn btn-success">
-						<i class="fas fa-clipboard-check"></i> Démarrer un contrôle
+						<i class="fas fa-clipboard-check"></i> {{ 'Démarrer un contrôle'|trans }}
 					</button>
 				</form>
 				{% endif %}
@@ -396,23 +394,23 @@
 				<form method="post" action="/equipements/equipement_supprimer-{{ equipement.id }}" style="display:inline;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 					<button type="submit" class="btn btn-danger"
-						data-confirm="Confirmer la suppression définitive de cet équipement « {{ equipement.reference }} » ?&#10;&#10;Cette action est irréversible.">
-						<i class="fas fa-trash"></i> Supprimer
+						data-confirm="{{ 'Confirmer la suppression définitive de cet équipement « {reference} » ?&#10;&#10;Cette action est irréversible.'|trans({reference: (equipement.reference)|e})|raw }}">
+						<i class="fas fa-trash"></i> {{ 'Supprimer'|trans }}
 					</button>
 				</form>
 				{% else %}
 				<button type="button" class="btn btn-danger" disabled
 					title="{% if egare_supprimable_le|default(null) %}Équipement égaré : supprimable à partir du {{ egare_supprimable_le|date('d/m/Y') }}{% else %}Seul un équipement déclaré hors service par son dernier contrôle clôturé, ou égaré depuis le délai réglé sur la page Club (et sans contrôle en cours), peut être supprimé{% endif %}">
-					<i class="fas fa-trash"></i> Supprimer
+					<i class="fas fa-trash"></i> {{ 'Supprimer'|trans }}
 				</button>
 				{% endif %}
 				{% endif %}
 			</div>
 	{% else %}
 		<div class="alert alert-warning">
-			<i class="fas fa-exclamation-triangle"></i> Équipement non trouvé.
+			<i class="fas fa-exclamation-triangle"></i> {{ 'Équipement non trouvé.'|trans }}
 		</div>
-		<a href="/equipements" class="btn btn-secondary">Retour à la liste</a>
+		<a href="/equipements" class="btn btn-secondary">{{ 'Retour à la liste'|trans }}</a>
 	{% endif %}
 
 {% endblock %}
@@ -429,9 +427,9 @@
 		function updateQRStatus(saved) {
 			const statusText = document.getElementById('qr-status-text');
 			if (saved) {
-				statusText.innerHTML = '<i class="fas fa-circle" style="color: #28a745; font-size: 8px;"></i> Sauvegardé sur le serveur';
+				statusText.innerHTML = '<i class="fas fa-circle" style="color: #28a745; font-size: 8px;"></i> ' + {{ 'Sauvegardé sur le serveur'|trans|json_encode|raw }};
 			} else {
-				statusText.innerHTML = '<i class="fas fa-circle" style="color: #6c757d; font-size: 8px;"></i> Généré à la demande';
+				statusText.innerHTML = '<i class="fas fa-circle" style="color: #6c757d; font-size: 8px;"></i> ' + {{ 'Généré à la demande'|trans|json_encode|raw }};
 			}
 		}
 
@@ -443,14 +441,14 @@
 			const originalHtml = btn ? btn.innerHTML : '';
 			
 			if (btn) {
-				btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sauvegarde...';
+				btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + {{ 'Sauvegarde...'|trans|json_encode|raw }};
 				btn.disabled = true;
 			}
 
 			fetch('/qr/save/' + equipementId)
 				.then(response => {
 					if (!response.ok) {
-						throw new Error('Erreur HTTP: ' + response.status);
+						throw new Error({{ 'Erreur HTTP :'|trans|json_encode|raw }} + ' ' + response.status);
 					}
 					return response.json();
 				})
@@ -471,9 +469,9 @@
 						updateQRStatus(true);
 						
 						// Afficher la notification
-						showNotification('success', '✅ QR code sauvegardé !', 'Fichier : ' + data.filename);
+						showNotification('success', '✅ ' + {{ 'QR code sauvegardé !'|trans|json_encode|raw }}, {{ 'Fichier :'|trans|json_encode|raw }} + ' ' + data.filename);
 					} else {
-						showNotification('danger', '❌ Erreur', data.error || 'Erreur inconnue');
+						showNotification('danger', '❌ ' + {{ 'Erreur'|trans|json_encode|raw }}, data.error || {{ 'Erreur inconnue'|trans|json_encode|raw }});
 					}
 				})
 				.catch(error => {
@@ -494,7 +492,7 @@
 			if (navigator.clipboard && navigator.clipboard.writeText) {
 				navigator.clipboard.writeText(url)
 					.then(() => {
-						showNotification('success', '📋 URL copiée !', 'L\'URL du QR code a été copiée dans le presse-papier.');
+						showNotification('success', '📋 ' + {{ 'URL copiée !'|trans|json_encode|raw }}, {{ "L'URL du QR code a été copiée dans le presse-papier."|trans|json_encode|raw }});
 					})
 					.catch(() => {
 						copierUrlFallback(url);
@@ -518,9 +516,9 @@
 			
 			try {
 				document.execCommand('copy');
-				showNotification('success', '📋 URL copiée !', 'L\'URL du QR code a été copiée dans le presse-papier.');
+				showNotification('success', '📋 ' + {{ 'URL copiée !'|trans|json_encode|raw }}, {{ "L'URL du QR code a été copiée dans le presse-papier."|trans|json_encode|raw }});
 			} catch (err) {
-				showNotification('danger', '❌ Erreur', 'Impossible de copier l\'URL.');
+				showNotification('danger', '❌ ' + {{ 'Erreur'|trans|json_encode|raw }}, {{ "Impossible de copier l'URL."|trans|json_encode|raw }});
 			}
 			document.body.removeChild(textarea);
 		}
@@ -551,7 +549,7 @@
 						<strong>${title}</strong><br>
 						${message}
 					</div>
-					<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+					<button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="${ {{ 'Fermer'|trans|json_encode|raw }} }"></button>
 				</div>
 			`;
 			container.appendChild(toastEl);

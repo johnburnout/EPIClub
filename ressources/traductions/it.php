@@ -360,4 +360,668 @@ return [
         => '(indirizzo ROOT_URL delle impostazioni di sistema).',
     'Les passkeys sont liées à l\'adresse du site déclarée dans ROOT_URL ({origine}), mais vous naviguez sur {adresse}. Ouvrez le site par son adresse officielle, ou corrigez ROOT_URL dans les réglages système.'
         => 'Le passkey sono legate all\'indirizzo del sito dichiarato in ROOT_URL ({origine}), ma stai navigando su {adresse}. Apri il sito dal suo indirizzo ufficiale o correggi ROOT_URL nelle impostazioni di sistema.',
+
+    // --- Équipements ---
+    '« {saisie} » n\'est pas une taille de partie valide (entier ≥ 1).'
+        => '«{saisie}» non è una dimensione di parte valida (intero ≥ 1).',
+    '« Hors service » et « Égaré » s\'attribuent à l\'issue d\'un contrôle ; « Prêté » par un prêt.'
+        => '«Fuori servizio» e «Smarrito» si assegnano al termine di un\'ispezione; «In prestito» tramite un prestito.',
+    '« Hors service », « Prêté » et « Égaré » s\'attribuent par un contrôle ou un prêt ; le statut des équipements déjà dans l\'un de ces états n\'est pas modifié.'
+        => '«Fuori servizio», «In prestito» e «Smarrito» si assegnano tramite un\'ispezione o un prestito; lo stato delle attrezzature già in uno di questi stati non viene modificato.',
+    ', en saisie'
+        => ', in compilazione',
+    ', et pas avant le {date_facture}'
+        => ', e non prima del {date_facture}',
+    ', mais pas avant le {date_facture}'
+        => ', ma non prima del {date_facture}',
+    ', retour à vérifier'
+        => ', restituzione da verificare',
+    ', retour prévu le {date_retour_prevue}'
+        => ', restituzione prevista il {date_retour_prevue}',
+    ': seul un nouveau contrôle peut le lever.'
+        => ': solo una nuova ispezione può rimuoverlo.',
+    '(date déjà modifiée)'
+        => '(data già modificata)',
+    '(facture du {date})'
+        => '(fattura del {date})',
+    '{nombre} équipement modifié.'
+        => '{nombre} attrezzatura modificata.',
+    '{nombre} équipement sélectionné.'
+        => '{nombre} attrezzatura selezionata.',
+    '{nombre} équipement(s) regroupé(s) dans le lot « {reference} » : {references}. Retirez leurs étiquettes.'
+        => '{nombre} attrezzatura/e raggruppata/e nel lotto «{reference}»: {references}. Rimuovi le loro etichette.',
+    '{nombre} équipements modifiés.'
+        => '{nombre} attrezzature modificate.',
+    '{nombre} équipements sélectionnés.'
+        => '{nombre} attrezzature selezionate.',
+    '{restants} élément(s) restent sur l\'équipement actuel ; {nouveaux} nouvel(s) équipement(s).'
+        => '{restants} elemento/i restano sull\'attrezzatura attuale; {nouveaux} nuova/e attrezzatura/e.',
+    '<strong>EPI non vérifiés</strong> : dernier contrôle (ou, à défaut, mise en service) antérieur au {non_verifie_avant}, hors équipements « Hors service » et « Égaré ».'
+        => '<strong>DPI non verificati</strong>: ultima ispezione (o, in mancanza, messa in servizio) anteriore al {non_verifie_avant}, escluse le attrezzature «Fuori servizio» e «Smarrito».',
+    '<strong>Équipements à renouveler</strong> : date de fin d\'utilisation au plus tard le {fin_avant} (y compris les équipements déjà échus).'
+        => '<strong>Attrezzature da rinnovare</strong>: data di fine utilizzo entro il {fin_avant} (comprese le attrezzature già scadute).',
+    '<strong>Lot :</strong> {nombre} élément(s) restant(s) sur {nombre_initial} initiaux'
+        => '<strong>Lotto:</strong> {nombre} elemento/i rimanente/i su {nombre_initial} iniziali',
+    '<strong>Référence :</strong> {reference}'
+        => '<strong>Riferimento:</strong> {reference}',
+    'Acquisition d\'origine :'
+        => 'Acquisizione d\'origine:',
+    'Actions'
+        => 'Azioni',
+    'Adresse de la notice du fabricant (PDF ou page web). Laisser vide si aucune.'
+        => 'Indirizzo delle istruzioni del fabbricante (PDF o pagina web). Lasciare vuoto se assente.',
+    'Affichage de {equipements} équipements sur {total} (page {page}/{totalPages})'
+        => 'Visualizzazione di {equipements} attrezzature su {total} (pagina {page}/{totalPages})',
+    'Ajouter à la suite'
+        => 'Aggiungi in coda',
+    'Ajouter au prêt'
+        => 'Aggiungi al prestito',
+    'Ajouter la sélection au prêt ('
+        => 'Aggiungi la selezione al prestito (',
+    'Annuler la modification de la référence, de la catégorie et du lot'
+        => 'Annulla la modifica del riferimento, della categoria e del lotto',
+    'Appliquer'
+        => 'Applica',
+    'Appliquer à l\'équipement'
+        => 'Applica all\'attrezzatura',
+    'Appliquer aux {nombre} équipements'
+        => 'Applica alle {nombre} attrezzature',
+    'Appliquer ces modifications aux {nombre} équipement(s) sélectionné(s) ?'
+        => 'Applicare queste modifiche alle {nombre} attrezzatura/e selezionata/e?',
+    'Attribuée automatiquement.'
+        => 'Assegnato automaticamente.',
+    'Au'
+        => 'Al',
+    'Au plus {max} parties.'
+        => 'Al massimo {max} parti.',
+    'Aucun des équipements sélectionnés n\'existe.'
+        => 'Nessuna delle attrezzature selezionate esiste.',
+    'Aucun emplacement --'
+        => 'Nessuna ubicazione --',
+    'Aucun équipement sélectionné.'
+        => 'Nessuna attrezzatura selezionata.',
+    'Aucun prêt en saisie.'
+        => 'Nessun prestito in compilazione.',
+    'Aucune référence ne peut être proposée pour ce lot (catégorie ou modèle de référence) : demandez à un super-administrateur de le dissocier.'
+        => 'Nessun riferimento può essere proposto per questo lotto (categoria o modello di riferimento): chiedi a un super amministratore di dividerlo.',
+    'Aucune référence proposée : demandez à un super-administrateur.'
+        => 'Nessun riferimento proposto: chiedi a un super amministratore.',
+    'Aucune référence proposée pour cette catégorie.'
+        => 'Nessun riferimento proposto per questa categoria.',
+    'Aucune remarque'
+        => 'Nessuna osservazione',
+    'C\'est la référence actuelle.'
+        => 'È il riferimento attuale.',
+    'Catégorie'
+        => 'Categoria',
+    'Catégorie :'
+        => 'Categoria:',
+    'Catégorie modifiée : « {ancienne} » → « {nouvelle} » (nouvelle catégorie créée).'
+        => 'Categoria modificata: «{ancienne}» → «{nouvelle}» (nuova categoria creata).',
+    'Catégorie modifiée : « {ancienne} » → « {nouvelle} ».'
+        => 'Categoria modificata: «{ancienne}» → «{nouvelle}».',
+    'Cet équipement est dans un contrôle en cours : dissociation impossible avant sa clôture.'
+        => 'Questa attrezzatura è in un\'ispezione in corso: impossibile dividerla prima della chiusura.',
+    'Cet équipement est égaré : seul un contrôle peut lever ce statut.'
+        => 'Questa attrezzatura è smarrita: solo un\'ispezione può rimuovere questo stato.',
+    'Cet équipement est hors service : seul un contrôle peut lever ce statut.'
+        => 'Questa attrezzatura è fuori servizio: solo un\'ispezione può rimuovere questo stato.',
+    'Cet équipement est prêté : son statut changera à la vérification du retour du prêt.'
+        => 'Questa attrezzatura è in prestito: il suo stato cambierà alla verifica della restituzione.',
+    'Cet équipement n\'a pas encore été contrôlé ou aucun contrôle n\'a été clôturé.'
+        => 'Questa attrezzatura non è ancora stata ispezionata o nessuna ispezione è stata chiusa.',
+    'Cet équipement ne peut pas être regroupé ({erreur}).'
+        => 'Questa attrezzatura non può essere raggruppata ({erreur}).',
+    'Cette date a déjà été modifiée une fois et ne peut plus l\'être.'
+        => 'Questa data è già stata modificata una volta e non può più esserlo.',
+    'Cette date est déjà renseignée et ne peut plus être modifiée.'
+        => 'Questa data è già indicata e non può più essere modificata.',
+    'Cette référence est déjà attribuée à un autre équipement (éventuellement supprimé).'
+        => 'Questo riferimento è già assegnato a un\'altra attrezzatura (eventualmente eliminata).',
+    'Chaque partie doit être un entier ≥ 1.'
+        => 'Ogni parte deve essere un intero ≥ 1.',
+    'Choisissez une photo à appliquer.'
+        => 'Scegli una foto da applicare.',
+    'Choisissez une référence disponible.'
+        => 'Scegli un riferimento disponibile.',
+    'Cocher si le fabricant limite la durée de vie de cet équipement (généralement 10 ans) : la date de fin d\'utilisation ci-dessous fait alors office de date de péremption.'
+        => 'Spunta se il fabbricante limita la durata di vita di questa attrezzatura (di solito 10 anni): la data di fine utilizzo qui sotto vale allora come data di scadenza.',
+    'Cochez « Modifier » pour au moins un champ.'
+        => 'Spunta «Modifica» per almeno un campo.',
+    'Cochez au moins un équipement à regrouper.'
+        => 'Spunta almeno un\'attrezzatura da raggruppare.',
+    'Cochez les équipements à modifier ensemble (statut, emplacement, dates, photo…). Astuce : filtrez puis augmentez « Lignes par page » pour tout cocher d\'un coup.'
+        => 'Spunta le attrezzature da modificare insieme (stato, ubicazione, date, foto…). Suggerimento: filtra e poi aumenta «Righe per pagina» per spuntare tutto in una volta.',
+    'Confirmer la suppression de « {reference} » ?'
+        => 'Confermare l\'eliminazione di «{reference}»?',
+    'Confirmer la suppression définitive de cet équipement « {reference} » ?&#10;&#10;Cette action est irréversible.'
+        => 'Confermare l\'eliminazione definitiva di questa attrezzatura «{reference}»?&#10;&#10;Questa azione è irreversibile.',
+    'Consulter la notice ↗'
+        => 'Consulta le istruzioni ↗',
+    'Contrôle'
+        => 'Ispezione',
+    'contrôle en cours'
+        => 'ispezione in corso',
+    'Copier l\'URL'
+        => 'Copia l\'URL',
+    'Copier l\'URL du QR code'
+        => 'Copia l\'URL del codice QR',
+    'Créer une fiche de prêt'
+        => 'Crea una scheda di prestito',
+    'Croissant'
+        => 'Crescente',
+    'CSV (données)'
+        => 'CSV (dati)',
+    'Date contrôle'
+        => 'Data ispezione',
+    'Date d\'achat'
+        => 'Data di acquisto',
+    'Date de fin'
+        => 'Data di fine',
+    'Date de fin d\'utilisation :'
+        => 'Data di fine utilizzo:',
+    'Date de fin d\'utilisation (péremption)'
+        => 'Data di fine utilizzo (scadenza)',
+    'Date de mise en service'
+        => 'Data di messa in servizio',
+    'Date de mise en service :'
+        => 'Data di messa in servizio:',
+    'Date de mise en service invalide.'
+        => 'Data di messa in servizio non valida.',
+    'Date de mise en service non modifiée pour : {liste}.'
+        => 'Data di messa in servizio non modificata per: {liste}.',
+    'Date dernier contrôle :'
+        => 'Data ultima ispezione:',
+    'Date invalide.'
+        => 'Data non valida.',
+    'Décroissant'
+        => 'Decrescente',
+    'Défini lors de l\'acquisition ; modifiable par un administrateur.'
+        => 'Definito all\'acquisizione; modificabile da un amministratore.',
+    'Définie lors de l\'acquisition ; modifiable par un super-administrateur.'
+        => 'Definita all\'acquisizione; modificabile da un super amministratore.',
+    'Définie lors de l\'acquisition ; modifiable par un super-administrateur. Une catégorie inconnue est créée.'
+        => 'Definita all\'acquisizione; modificabile da un super amministratore. Una categoria sconosciuta viene creata.',
+    'Demander une modification'
+        => 'Richiedi una modifica',
+    'Démarrer un contrôle'
+        => 'Avvia un\'ispezione',
+    'depuis le {date_egare}'
+        => 'dal {date_egare}',
+    'Dernier'
+        => 'Ultima',
+    'Dernier contrôle'
+        => 'Ultima ispezione',
+    'Détail de l\'équipement'
+        => 'Dettaglio dell\'attrezzatura',
+    'Disponible'
+        => 'Disponibile',
+    'Dissocier le lot'
+        => 'Dividi il lotto',
+    'Du'
+        => 'Dal',
+    'Durée maximum d\'utilisation'
+        => 'Durata massima di utilizzo',
+    'Durée maximum d\'utilisation :'
+        => 'Durata massima di utilizzo:',
+    'Égaré'
+        => 'Smarrito',
+    'Élément textile :'
+        => 'Elemento tessile:',
+    'Élément textile remplaçable'
+        => 'Elemento tessile sostituibile',
+    'Éléments'
+        => 'Elementi',
+    'Elle ne peut être modifiée qu\'<strong>une seule fois</strong>'
+        => 'Può essere modificata <strong>una sola volta</strong>',
+    'Emplacement'
+        => 'Ubicazione',
+    'Emplacement :'
+        => 'Ubicazione:',
+    'Emplacement invalide.'
+        => 'Ubicazione non valida.',
+    'Emplacement retiré pour « {reference} ».'
+        => 'Ubicazione rimossa per «{reference}».',
+    'Emprunteur'
+        => 'Mutuatario',
+    'En contrôle'
+        => 'In ispezione',
+    'En équipements individuels'
+        => 'In attrezzature singole',
+    'En maintenance'
+        => 'In manutenzione',
+    'En orange : valeur différente de {reference} (celle de {reference2} est conservée).'
+        => 'In arancione: valore diverso da {reference} (si mantiene quello di {reference2}).',
+    'En service'
+        => 'In servizio',
+    'En tant que contrôleur, vous pouvez modifier uniquement l\'<strong>emplacement</strong> de cet équipement.'
+        => 'Come ispettore, puoi modificare solo l\'<strong>ubicazione</strong> di questa attrezzatura.',
+    'Enregistrer'
+        => 'Salva',
+    'Entre 1 et le nombre initial du lot.'
+        => 'Tra 1 e il numero iniziale del lotto.',
+    'EPI'
+        => 'DPI',
+    'EPI :'
+        => 'DPI:',
+    'Équipement'
+        => 'Attrezzatura',
+    'Équipement « {reference} » déplacé vers « {emplacement} ».'
+        => 'Attrezzatura «{reference}» spostata in «{emplacement}».',
+    'Équipement non trouvé.'
+        => 'Attrezzatura non trovata.',
+    'Equipements'
+        => 'Attrezzature',
+    'Équipements du fournisseur <strong>{nom}</strong>'
+        => 'Attrezzature del fornitore <strong>{nom}</strong>',
+    'Équipements identiques (même libellé, même catégorie, même acquisition). Ceux que vous cochez sont <strong>associés à {reference}</strong>, qui garde sa référence, ses dates, son emplacement et son historique ; leurs éléments s\'ajoutent au lot et ils sont <strong>archivés</strong> (leur historique est conservé). Pensez à retirer leurs étiquettes.'
+        => 'Attrezzature identiche (stessa denominazione, stessa categoria, stessa acquisizione). Quelle che spunti sono <strong>associate a {reference}</strong>, che mantiene riferimento, date, ubicazione e storico; i loro elementi si aggiungono al lotto e vengono <strong>archiviate</strong> (il loro storico è conservato). Ricordati di rimuovere le loro etichette.',
+    'Équipements sélectionnés'
+        => 'Attrezzature selezionate',
+    'Erreur lors du traitement de l\'image. Vérifiez que le fichier est bien une image (JPEG, PNG, WebP, GIF, AVIF).'
+        => 'Errore durante l\'elaborazione dell\'immagine. Verifica che il file sia un\'immagine (JPEG, PNG, WebP, GIF, AVIF).',
+    'Étiquettes'
+        => 'Etichette',
+    'ex. {nombre}'
+        => 'es. {nombre}',
+    'Excel (données)'
+        => 'Excel (dati)',
+    'Excel (photos + QR)'
+        => 'Excel (foto + QR)',
+    'Exporter'
+        => 'Esporta',
+    'Facture : {facture_reference}'
+        => 'Fattura: {facture_reference}',
+    'facture à importer'
+        => 'fattura da importare',
+    'Fin d\'utilisation'
+        => 'Fine utilizzo',
+    'Généré à la demande'
+        => 'Generato su richiesta',
+    'Historique des contrôles'
+        => 'Storico delle ispezioni',
+    'Historique des contrôles ({historiqueControles})'
+        => 'Storico delle ispezioni ({historiqueControles})',
+    'Hors service'
+        => 'Fuori servizio',
+    'Impossible : {erreur_regroupement}'
+        => 'Impossibile: {erreur_regroupement}',
+    'Impossible de supprimer cet équipement : il doit avoir été déclaré « Hors service » lors de son dernier contrôle clôturé, ou être égaré depuis au moins {mois} mois.'
+        => 'Impossibile eliminare questa attrezzatura: deve essere stata dichiarata «Fuori servizio» nell\'ultima ispezione chiusa, o essere smarrita da almeno {mois} mesi.',
+    'Impossible de supprimer cet équipement : un contrôle est en cours.'
+        => 'Impossibile eliminare questa attrezzatura: è in corso un\'ispezione.',
+    'Inconnu'
+        => 'Sconosciuto',
+    'Indiquez au moins deux parties (ex. « 4, 3, 3 »).'
+        => 'Indica almeno due parti (es. «4, 3, 3»).',
+    'Indiquez au moins deux parties.'
+        => 'Indica almeno due parti.',
+    'Inscrit sur le'
+        => 'Iscritto nel',
+    'inscrit sur un prêt'
+        => 'iscritto in un prestito',
+    'Jamais avant la date de facture de chaque équipement.'
+        => 'Mai prima della data di fattura di ciascuna attrezzatura.',
+    'Jamais contrôlé'
+        => 'Mai ispezionata',
+    'l\'emplacement'
+        => 'l\'ubicazione',
+    'L\'équipement « {reference} » ne peut pas être regroupé ({raison}).'
+        => 'L\'attrezzatura «{reference}» non può essere raggruppata ({raison}).',
+    'L\'équipement \'{reference}\' a été supprimé.'
+        => 'L\'attrezzatura \'{reference}\' è stata eliminata.',
+    'L\'équipement demandé n\'existe pas.'
+        => 'L\'attrezzatura richiesta non esiste.',
+    'L\'équipement quitte la catégorie <strong>{libelle}</strong> ; une référence libre dans la nouvelle catégorie est proposée ci-dessous.'
+        => 'L\'attrezzatura lascia la categoria <strong>{libelle}</strong>; qui sotto è proposto un riferimento libero nella nuova categoria.',
+    'La catégorie contient des caractères non autorisés.'
+        => 'La categoria contiene caratteri non consentiti.',
+    'La catégorie est définie lors de l\'acquisition.'
+        => 'La categoria è definita all\'acquisizione.',
+    'La catégorie est obligatoire.'
+        => 'La categoria è obbligatoria.',
+    'La catégorie ne doit pas dépasser {max} caractères.'
+        => 'La categoria non deve superare {max} caratteri.',
+    'La date d\'achat est définie lors de l\'acquisition.'
+        => 'La data di acquisto è definita all\'acquisizione.',
+    'La date de mise en service ne peut pas être antérieure à la date de facture ({date}).'
+        => 'La data di messa in servizio non può essere anteriore alla data della fattura ({date}).',
+    'La date de mise en service ne pourra plus être modifiée ensuite. Confirmer ?'
+        => 'La data di messa in servizio non potrà più essere modificata in seguito. Confermare?',
+    'La même photo est affectée à tous les équipements sélectionnés (photo existante remplacée).'
+        => 'La stessa foto viene assegnata a tutte le attrezzature selezionate (la foto esistente viene sostituita).',
+    'La référence « {reference} » est déjà attribuée à un autre équipement.'
+        => 'Il riferimento «{reference}» è già assegnato a un\'altra attrezzatura.',
+    'La référence « {reference} » est utilisée deux fois.'
+        => 'Il riferimento «{reference}» è usato due volte.',
+    'La référence contient des caractères non autorisés.'
+        => 'Il riferimento contiene caratteri non consentiti.',
+    'La référence est définie lors de l\'acquisition.'
+        => 'Il riferimento è definito all\'acquisizione.',
+    'La référence est obligatoire.'
+        => 'Il riferimento è obbligatorio.',
+    'La référence ne doit pas dépasser {max} caractères.'
+        => 'Il riferimento non deve superare {max} caratteri.',
+    'La somme des parties ({somme}) doit être égale au nombre actuel d\'éléments du lot ({nombre}).'
+        => 'La somma delle parti ({somme}) deve essere uguale al numero attuale di elementi del lotto ({nombre}).',
+    'Laisser vide pour effacer la date.'
+        => 'Lasciare vuoto per cancellare la data.',
+    'Laisser vide si l\'équipement est toujours en service.'
+        => 'Lasciare vuoto se l\'attrezzatura è ancora in servizio.',
+    'Le fichier est trop volumineux pour être traité par le serveur (limite PHP : {limite}).'
+        => 'Il file è troppo grande per essere elaborato dal server (limite PHP: {limite}).',
+    'Le libellé est défini lors de l\'acquisition.'
+        => 'La denominazione è definita all\'acquisizione.',
+    'Le libellé est obligatoire.'
+        => 'La denominazione è obbligatoria.',
+    'Le libellé ne doit pas dépasser {max} caractères.'
+        => 'La denominazione non deve superare {max} caratteri.',
+    'Le lien vers la notice doit commencer par http:// ou https://'
+        => 'Il link alle istruzioni deve iniziare con http:// o https://',
+    'Le lien vers la notice n\'est pas une URL valide.'
+        => 'Il link alle istruzioni non è un URL valido.',
+    'Le lien vers la notice ne doit pas dépasser {max} caractères.'
+        => 'Il link alle istruzioni non deve superare {max} caratteri.',
+    'Le lot compte <strong>{nombre}</strong> élément(s) restant(s). Indiquez la taille de chaque partie, séparées par des virgules : la <strong>première</strong> reste à l\'équipement <strong>{reference}</strong> (avec son historique), chacune des autres devient un <strong>nouvel équipement</strong> (lot ou équipement individuel), avec les mêmes caractéristiques.'
+        => 'Il lotto conta <strong>{nombre}</strong> elemento/i rimanente/i. Indica la dimensione di ogni parte, separate da virgole: la <strong>prima</strong> resta all\'attrezzatura <strong>{reference}</strong> (con il suo storico), ciascuna delle altre diventa una <strong>nuova attrezzatura</strong> (lotto o attrezzatura singola), con le stesse caratteristiche.',
+    'Le nombre d\'éléments du lot doit être compris entre 1 et {max} (nombre initial).'
+        => 'Il numero di elementi del lotto deve essere compreso tra 1 e {max} (numero iniziale).',
+    'Le nombre initial d\'un lot doit être compris entre 2 et {max}.'
+        => 'Il numero iniziale di un lotto deve essere compreso tra 2 e {max}.',
+    'Le statut « Égaré » ne peut être attribué qu\'à l\'issue d\'un contrôle ou du retour d\'un prêt.'
+        => 'Lo stato «Smarrito» può essere assegnato solo al termine di un\'ispezione o della restituzione di un prestito.',
+    'Le statut « Hors service » ne peut être attribué qu\'à l\'issue d\'un contrôle.'
+        => 'Lo stato «Fuori servizio» può essere assegnato solo al termine di un\'ispezione.',
+    'Le statut « Prêté » est attribué par la validation d\'un prêt.'
+        => 'Lo stato «In prestito» viene assegnato alla convalida di un prestito.',
+    'Le statut EPI est défini par la catégorie de l\'équipement.'
+        => 'Lo stato DPI è definito dalla categoria dell\'attrezzatura.',
+    'Les équipements dont la date a déjà été modifiée une fois sont ignorés (et signalés).'
+        => 'Le attrezzature la cui data è già stata modificata una volta vengono ignorate (e segnalate).',
+    'Les étiquettes et fiches déjà imprimées portent l\'ancienne référence <strong>{reference}</strong> ; le QR code reste valable.'
+        => 'Le etichette e le schede già stampate riportano il vecchio riferimento <strong>{reference}</strong>; il codice QR resta valido.',
+    'Leurs références sont attribuées automatiquement selon le modèle de référence.'
+        => 'I loro riferimenti sono assegnati automaticamente secondo il modello di riferimento.',
+    'Libellé'
+        => 'Denominazione',
+    'Libellé ou référence'
+        => 'Denominazione o riferimento',
+    'Lien vers la notice'
+        => 'Link alle istruzioni',
+    'Lignes par page'
+        => 'Righe per pagina',
+    'Lot'
+        => 'Lotto',
+    'Lot « {reference} » dissocié : {restants} élément(s) restent sur « {reference} » ; {nombre} nouvel(s) équipement(s) : {references}. Pensez à imprimer leurs étiquettes.'
+        => 'Lotto «{reference}» diviso: {restants} elemento/i restano su «{reference}»; {nombre} nuova/e attrezzatura/e: {references}. Ricordati di stampare le loro etichette.',
+    'Lot : {nombre} élément(s) restant(s) sur {nombre_initial} initiaux'
+        => 'Lotto: {nombre} elemento/i rimanente/i su {nombre_initial} iniziali',
+    'Lot : {nombre}/{nombre_initial}'
+        => 'Lotto: {nombre}/{nombre_initial}',
+    'Lot obtenu : {nombre} élément(s) (nombre initial {initial}) ; {archives} équipement(s) archivé(s).'
+        => 'Lotto risultante: {nombre} elemento/i (numero iniziale {initial}); {archives} attrezzatura/e archiviata/e.',
+    'Matériel prêté : son statut changera à la vérification du retour du prêt.'
+        => 'Materiale in prestito: il suo stato cambierà alla verifica della restituzione.',
+    'Même notice pour tous les équipements sélectionnés. Laisser vide pour effacer le lien.'
+        => 'Stesse istruzioni per tutte le attrezzature selezionate. Lasciare vuoto per cancellare il link.',
+    'Mise en service'
+        => 'Messa in servizio',
+    'Modification de la référence, de la catégorie et du lot'
+        => 'Modifica del riferimento, della categoria e del lotto',
+    'Modification groupée'
+        => 'Modifica di gruppo',
+    'Modifier'
+        => 'Modifica',
+    'Modifier : {libelle}'
+        => 'Modifica: {libelle}',
+    'Modifier la référence, la catégorie et le lot (dissocier, regrouper)'
+        => 'Modifica il riferimento, la categoria e il lotto (dividi, raggruppa)',
+    'Modifier la sélection ('
+        => 'Modifica la selezione (',
+    'Moins d\'un an'
+        => 'Meno di un anno',
+    'n° {id}'
+        => 'n. {id}',
+    'Nombre actuel d\'éléments'
+        => 'Numero attuale di elementi',
+    'Nombre d\'éléments du lot à la création — non modifiable.'
+        => 'Numero di elementi del lotto alla creazione — non modificabile.',
+    'Nombre d\'éléments du lot à la création ; modifiable par un super-administrateur.'
+        => 'Numero di elementi del lotto alla creazione; modificabile da un super amministratore.',
+    'Nombre initial du lot'
+        => 'Numero iniziale del lotto',
+    'Non'
+        => 'No',
+    'Non défini'
+        => 'Non definito',
+    'Non définie'
+        => 'Non definita',
+    'Non EPI'
+        => 'Non DPI',
+    'Non prêtable actuellement — {pret_motif}'
+        => 'Non prestabile al momento — {pret_motif}',
+    'Non renseignée'
+        => 'Non indicata',
+    'Notice :'
+        => 'Istruzioni:',
+    'Nouvel équipement {numero} — équipement individuel : référence'
+        => 'Nuova attrezzatura {numero} — attrezzatura singola: riferimento',
+    'Nouvel équipement {numero} — lot de {taille} éléments : référence'
+        => 'Nuova attrezzatura {numero} — lotto di {taille} elementi: riferimento',
+    'Nouvel équipement n° {numero} : {erreur}'
+        => 'Nuova attrezzatura n. {numero}: {erreur}',
+    'Nouvelle catégorie'
+        => 'Nuova categoria',
+    'Nouvelle catégorie : elle sera créée à l\'enregistrement.'
+        => 'Nuova categoria: verrà creata al salvataggio.',
+    'Ordre'
+        => 'Ordine',
+    'ou un prêt'
+        => 'o un prestito',
+    'Oui'
+        => 'Sì',
+    'Oui — durée de vie limitée par le fabricant'
+        => 'Sì — durata di vita limitata dal fabbricante',
+    'Oui (durée de vie limitée par le fabricant)'
+        => 'Sì (durata di vita limitata dal fabbricante)',
+    'Page {page} sur {totalPages}'
+        => 'Pagina {page} di {totalPages}',
+    'Pagination'
+        => 'Paginazione',
+    'Par défaut, la date de la facture.'
+        => 'Per impostazione predefinita, la data della fattura.',
+    'Passez l\'équipement « En maintenance » pour changer son élément textile : au contrôle suivant, le contrôleur indique le remplacement et met le statut à OK ; la date de fin d\'utilisation devient alors la date du contrôle + 10 ans (fin de mois).'
+        => 'Metti l\'attrezzatura «In manutenzione» per sostituirne l\'elemento tessile: all\'ispezione successiva, l\'ispettore indica la sostituzione e mette lo stato su OK; la data di fine utilizzo diventa allora la data dell\'ispezione + 10 anni (fine mese).',
+    'PDF'
+        => 'PDF',
+    'Photo'
+        => 'Foto',
+    'Photo :'
+        => 'Foto:',
+    'Photo actuelle'
+        => 'Foto attuale',
+    'Photo actuelle (remplacée si vous en téléchargez une nouvelle).'
+        => 'Foto attuale (sostituita se ne carichi una nuova).',
+    'Photo de l\'équipement'
+        => 'Foto dell\'attrezzatura',
+    'Plus d\'un an'
+        => 'Più di un anno',
+    'Plusieurs éléments identiques sous une même référence. Décocher ramène le nombre initial et le nombre actuel à 1.'
+        => 'Più elementi identici sotto uno stesso riferimento. Togliere la spunta riporta il numero iniziale e quello attuale a 1.',
+    'Pour changer la catégorie, saisissez le mot {mot} (en majuscules).'
+        => 'Per cambiare la categoria, digita la parola {mot} (in maiuscolo).',
+    'Pour changer la référence, saisissez le mot {mot} (en majuscules).'
+        => 'Per cambiare il riferimento, digita la parola {mot} (in maiuscolo).',
+    'Pour confirmer la dissociation, saisissez <code>{mot_confirmation_dissociation}</code>'
+        => 'Per confermare la divisione, digita <code>{mot_confirmation_dissociation}</code>',
+    'Pour confirmer le changement, saisissez <code>{mot_confirmation_categorie}</code>'
+        => 'Per confermare la modifica, digita <code>{mot_confirmation_categorie}</code>',
+    'Pour confirmer le changement, saisissez <code>{mot_confirmation_reference}</code>'
+        => 'Per confermare la modifica, digita <code>{mot_confirmation_reference}</code>',
+    'Pour confirmer le regroupement, saisissez <code>{mot_confirmation_regroupement}</code>'
+        => 'Per confermare il raggruppamento, digita <code>{mot_confirmation_regroupement}</code>',
+    'Pour dissocier le lot, saisissez le mot {mot} (en majuscules).'
+        => 'Per dividere il lotto, digita la parola {mot} (in maiuscolo).',
+    'Pour regrouper, saisissez le mot {mot} (en majuscules).'
+        => 'Per raggruppare, digita la parola {mot} (in maiuscolo).',
+    'Précédent'
+        => 'Precedente',
+    'Premier'
+        => 'Prima',
+    'Prêt'
+        => 'Prestito',
+    'Prêt en saisie'
+        => 'Prestito in compilazione',
+    'prêt n° {id}'
+        => 'prestito n. {id}',
+    'Prêt n° {id} — {emprunteur_prenom} {emprunteur_nom}'
+        => 'Prestito n. {id} — {emprunteur_prenom} {emprunteur_nom}',
+    'Prêté'
+        => 'In prestito',
+    'Proposition de référence impossible, réessayez.'
+        => 'Impossibile proporre un riferimento, riprova.',
+    'QR Code'
+        => 'Codice QR',
+    'QR Code :'
+        => 'Codice QR:',
+    'QR Code de {reference}'
+        => 'Codice QR di {reference}',
+    'QR Code non disponible'
+        => 'Codice QR non disponibile',
+    'QR code sauvegardé !'
+        => 'Codice QR salvato!',
+    'Recherche'
+        => 'Ricerca',
+    'Recherche d\'une référence libre…'
+        => 'Ricerca di un riferimento libero…',
+    'Référence disponible.'
+        => 'Riferimento disponibile.',
+    'Référence modifiée : « {ancienne} » → « {nouvelle} ». Pensez à réimprimer l\'étiquette.'
+        => 'Riferimento modificato: «{ancienne}» → «{nouvelle}». Ricordati di ristampare l\'etichetta.',
+    'Référence proposée ({annee}) : {reference}'
+        => 'Riferimento proposto ({annee}): {reference}',
+    'Référence saisie deux fois.'
+        => 'Riferimento inserito due volte.',
+    'Regrouper en lot'
+        => 'Raggruppa in lotto',
+    'Remarque'
+        => 'Osservazione',
+    'Remarques'
+        => 'Osservazioni',
+    'Remarques :'
+        => 'Osservazioni:',
+    'Remplaçable'
+        => 'Sostituibile',
+    'Remplacer'
+        => 'Sostituisci',
+    'Rendu'
+        => 'Restituito',
+    'Rendu — maintenance'
+        => 'Restituito — manutenzione',
+    'Répartition'
+        => 'Ripartizione',
+    'Retirer ce filtre'
+        => 'Rimuovi questo filtro',
+    'Retour'
+        => 'Restituzione',
+    'Retour à la liste'
+        => 'Torna all\'elenco',
+    'Sauvegardé sur le serveur'
+        => 'Salvato sul server',
+    'Sauvegarder'
+        => 'Salva',
+    'Sauvegarder sur le serveur'
+        => 'Salva sul server',
+    'Scannez ce QR code pour accéder rapidement à la fiche ou au contrôle'
+        => 'Scansiona questo codice QR per accedere rapidamente alla scheda o all\'ispezione',
+    'Sélection trop importante ({max} équipements maximum).'
+        => 'Selezione troppo ampia ({max} attrezzature al massimo).',
+    'Sélectionner {reference}'
+        => 'Seleziona {reference}',
+    'Seul le matériel disponible (hors contrôle, non périmé) est ajouté.'
+        => 'Viene aggiunto solo il materiale disponibile (non in ispezione, non scaduto).',
+    'Seul un lot d\'au moins 2 éléments restants peut être dissocié.'
+        => 'Solo un lotto con almeno 2 elementi rimanenti può essere diviso.',
+    'Seuls des équipements identiques (même libellé, même catégorie, même acquisition) peuvent être regroupés.'
+        => 'Solo attrezzature identiche (stessa denominazione, stessa categoria, stessa acquisizione) possono essere raggruppate.',
+    'Seuls les champs dont la case « Modifier » est cochée sont appliqués ; les autres restent inchangés.'
+        => 'Vengono applicati solo i campi con la casella «Modifica» spuntata; gli altri restano invariati.',
+    'Somme des parties : {somme} ; elle doit être égale à {nombre}.'
+        => 'Somma delle parti: {somme}; deve essere uguale a {nombre}.',
+    'Statut'
+        => 'Stato',
+    'statut « {statut} »'
+        => 'stato «{statut}»',
+    'Statut :'
+        => 'Stato:',
+    'statut différent'
+        => 'stato diverso',
+    'Statut fixé par un contrôle'
+        => 'Stato fissato da un\'ispezione',
+    'Statut invalide.'
+        => 'Stato non valido.',
+    'Statut non modifié pour : {liste} (hors service, prêté ou égaré : statut fixé par un contrôle ou un prêt).'
+        => 'Stato non modificato per: {liste} (fuori servizio, in prestito o smarrito: stato fissato da un\'ispezione o da un prestito).',
+    'Suivant'
+        => 'Successiva',
+    'Super-administrateur : modifiable à tout moment'
+        => 'Super amministratore: modificabile in qualsiasi momento',
+    'supprimable à partir du {egare_supprimable_le}'
+        => 'eliminabile a partire dal {egare_supprimable_le}',
+    'Télécharger'
+        => 'Scarica',
+    'Télécharger le QR code'
+        => 'Scarica il codice QR',
+    'Textile remplacé'
+        => 'Tessile sostituito',
+    'Toujours en service'
+        => 'Ancora in servizio',
+    'Tous'
+        => 'Tutti',
+    'Tout cocher'
+        => 'Spunta tutto',
+    'Tout cocher / décocher'
+        => 'Spunta / togli la spunta a tutto',
+    'Toutes'
+        => 'Tutte',
+    'Trier par'
+        => 'Ordina per',
+    'Un équipement au statut « {statut} » ne peut pas être dissocié.'
+        => 'Un\'attrezzatura con stato «{statut}» non può essere divisa.',
+    'Une des références vient d\'être attribuée à un autre équipement : rien n\'a été modifié, réessayez.'
+        => 'Uno dei riferimenti è appena stato assegnato a un\'altra attrezzatura: non è stato modificato nulla, riprova.',
+    'Vérification de la référence en cours, réessayez dans un instant.'
+        => 'Verifica del riferimento in corso, riprova tra un istante.',
+    'Vérification en cours, réessayez dans un instant.'
+        => 'Verifica in corso, riprova tra un istante.',
+    'Vérification impossible, réessayez.'
+        => 'Verifica impossibile, riprova.',
+    'Voir'
+        => 'Vedi',
+    'Voir la facture'
+        => 'Vedi la fattura',
+    'Voir la fiche acquisition'
+        => 'Vedi la scheda acquisizione',
+    'Voir la page du QR code'
+        => 'Vedi la pagina del codice QR',
+    'Voir le journal'
+        => 'Vedi il registro',
+    'Voir le QR'
+        => 'Vedi il QR',
+    'Voir tous les équipements de cette acquisition'
+        => 'Vedi tutte le attrezzature di questa acquisizione',
+
+    // --- Équipements (expressions) ---
+    'À vérifier'
+        => 'Da verificare',
+    '(prévu {date})'
+        => '(previsto {date})',
+    'À contrôler'
+        => 'Da ispezionare',
+    'Dissocier ou regrouper'
+        => 'Dividi o raggruppa',
+
+    // --- Équipements (libellés de champ) ---
+    'Date de fin d\'utilisation'
+        => 'Data di fine utilizzo',
 ];

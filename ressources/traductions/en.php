@@ -360,4 +360,668 @@ return [
         => '(ROOT_URL address in the system settings).',
     'Les passkeys sont liées à l\'adresse du site déclarée dans ROOT_URL ({origine}), mais vous naviguez sur {adresse}. Ouvrez le site par son adresse officielle, ou corrigez ROOT_URL dans les réglages système.'
         => 'Passkeys are tied to the site address declared in ROOT_URL ({origine}), but you are browsing {adresse}. Open the site at its official address, or correct ROOT_URL in the system settings.',
+
+    // --- Équipements ---
+    '« {saisie} » n\'est pas une taille de partie valide (entier ≥ 1).'
+        => '“{saisie}” is not a valid part size (integer ≥ 1).',
+    '« Hors service » et « Égaré » s\'attribuent à l\'issue d\'un contrôle ; « Prêté » par un prêt.'
+        => '“Out of service” and “Lost” are set by an inspection; “On loan” by a loan.',
+    '« Hors service », « Prêté » et « Égaré » s\'attribuent par un contrôle ou un prêt ; le statut des équipements déjà dans l\'un de ces états n\'est pas modifié.'
+        => '“Out of service”, “On loan” and “Lost” are set by an inspection or a loan; items already in one of these states keep their status.',
+    ', en saisie'
+        => ', being entered',
+    ', et pas avant le {date_facture}'
+        => ', and not before {date_facture}',
+    ', mais pas avant le {date_facture}'
+        => ', but not before {date_facture}',
+    ', retour à vérifier'
+        => ', return to be checked',
+    ', retour prévu le {date_retour_prevue}'
+        => ', due back on {date_retour_prevue}',
+    ': seul un nouveau contrôle peut le lever.'
+        => ': only a new inspection can clear it.',
+    '(date déjà modifiée)'
+        => '(date already changed)',
+    '(facture du {date})'
+        => '(invoice dated {date})',
+    '{nombre} équipement modifié.'
+        => '{nombre} item updated.',
+    '{nombre} équipement sélectionné.'
+        => '{nombre} item selected.',
+    '{nombre} équipement(s) regroupé(s) dans le lot « {reference} » : {references}. Retirez leurs étiquettes.'
+        => '{nombre} item(s) merged into batch “{reference}”: {references}. Remove their labels.',
+    '{nombre} équipements modifiés.'
+        => '{nombre} items updated.',
+    '{nombre} équipements sélectionnés.'
+        => '{nombre} items selected.',
+    '{restants} élément(s) restent sur l\'équipement actuel ; {nouveaux} nouvel(s) équipement(s).'
+        => '{restants} unit(s) stay on the current item; {nouveaux} new item(s).',
+    '<strong>EPI non vérifiés</strong> : dernier contrôle (ou, à défaut, mise en service) antérieur au {non_verifie_avant}, hors équipements « Hors service » et « Égaré ».'
+        => '<strong>Unchecked PPE</strong>: last inspection (or, failing that, commissioning) before {non_verifie_avant}, excluding “Out of service” and “Lost” items.',
+    '<strong>Équipements à renouveler</strong> : date de fin d\'utilisation au plus tard le {fin_avant} (y compris les équipements déjà échus).'
+        => '<strong>Items to replace</strong>: end-of-use date on or before {fin_avant} (including items already expired).',
+    '<strong>Lot :</strong> {nombre} élément(s) restant(s) sur {nombre_initial} initiaux'
+        => '<strong>Batch:</strong> {nombre} unit(s) left out of {nombre_initial}',
+    '<strong>Référence :</strong> {reference}'
+        => '<strong>Reference:</strong> {reference}',
+    'Acquisition d\'origine :'
+        => 'Original purchase:',
+    'Actions'
+        => 'Actions',
+    'Adresse de la notice du fabricant (PDF ou page web). Laisser vide si aucune.'
+        => 'Address of the manufacturer\'s instructions (PDF or web page). Leave empty if none.',
+    'Affichage de {equipements} équipements sur {total} (page {page}/{totalPages})'
+        => 'Showing {equipements} items out of {total} (page {page}/{totalPages})',
+    'Ajouter à la suite'
+        => 'Append',
+    'Ajouter au prêt'
+        => 'Add to loan',
+    'Ajouter la sélection au prêt ('
+        => 'Add selection to loan (',
+    'Annuler la modification de la référence, de la catégorie et du lot'
+        => 'Cancel changing the reference, category and batch',
+    'Appliquer'
+        => 'Apply',
+    'Appliquer à l\'équipement'
+        => 'Apply to the item',
+    'Appliquer aux {nombre} équipements'
+        => 'Apply to the {nombre} items',
+    'Appliquer ces modifications aux {nombre} équipement(s) sélectionné(s) ?'
+        => 'Apply these changes to the {nombre} selected item(s)?',
+    'Attribuée automatiquement.'
+        => 'Assigned automatically.',
+    'Au'
+        => 'To',
+    'Au plus {max} parties.'
+        => 'At most {max} parts.',
+    'Aucun des équipements sélectionnés n\'existe.'
+        => 'None of the selected items exists.',
+    'Aucun emplacement --'
+        => 'No location --',
+    'Aucun équipement sélectionné.'
+        => 'No item selected.',
+    'Aucun prêt en saisie.'
+        => 'No loan being entered.',
+    'Aucune référence ne peut être proposée pour ce lot (catégorie ou modèle de référence) : demandez à un super-administrateur de le dissocier.'
+        => 'No reference can be suggested for this batch (category or reference pattern): ask a super administrator to split it.',
+    'Aucune référence proposée : demandez à un super-administrateur.'
+        => 'No reference suggested: ask a super administrator.',
+    'Aucune référence proposée pour cette catégorie.'
+        => 'No reference suggested for this category.',
+    'Aucune remarque'
+        => 'No remarks',
+    'C\'est la référence actuelle.'
+        => 'This is the current reference.',
+    'Catégorie'
+        => 'Category',
+    'Catégorie :'
+        => 'Category:',
+    'Catégorie modifiée : « {ancienne} » → « {nouvelle} » (nouvelle catégorie créée).'
+        => 'Category changed: “{ancienne}” → “{nouvelle}” (new category created).',
+    'Catégorie modifiée : « {ancienne} » → « {nouvelle} ».'
+        => 'Category changed: “{ancienne}” → “{nouvelle}”.',
+    'Cet équipement est dans un contrôle en cours : dissociation impossible avant sa clôture.'
+        => 'This item is in an ongoing inspection: it cannot be split until the inspection is closed.',
+    'Cet équipement est égaré : seul un contrôle peut lever ce statut.'
+        => 'This item is lost: only an inspection can clear this status.',
+    'Cet équipement est hors service : seul un contrôle peut lever ce statut.'
+        => 'This item is out of service: only an inspection can clear this status.',
+    'Cet équipement est prêté : son statut changera à la vérification du retour du prêt.'
+        => 'This item is on loan: its status will change when the loan return is checked.',
+    'Cet équipement n\'a pas encore été contrôlé ou aucun contrôle n\'a été clôturé.'
+        => 'This item has not been inspected yet, or no inspection has been closed.',
+    'Cet équipement ne peut pas être regroupé ({erreur}).'
+        => 'This item cannot be merged ({erreur}).',
+    'Cette date a déjà été modifiée une fois et ne peut plus l\'être.'
+        => 'This date has already been changed once and cannot be changed again.',
+    'Cette date est déjà renseignée et ne peut plus être modifiée.'
+        => 'This date is already set and can no longer be changed.',
+    'Cette référence est déjà attribuée à un autre équipement (éventuellement supprimé).'
+        => 'This reference is already assigned to another item (possibly deleted).',
+    'Chaque partie doit être un entier ≥ 1.'
+        => 'Each part must be an integer ≥ 1.',
+    'Choisissez une photo à appliquer.'
+        => 'Choose a photo to apply.',
+    'Choisissez une référence disponible.'
+        => 'Choose an available reference.',
+    'Cocher si le fabricant limite la durée de vie de cet équipement (généralement 10 ans) : la date de fin d\'utilisation ci-dessous fait alors office de date de péremption.'
+        => 'Tick if the manufacturer limits this item\'s lifespan (usually 10 years): the end-of-use date below then acts as the expiry date.',
+    'Cochez « Modifier » pour au moins un champ.'
+        => 'Tick “Change” for at least one field.',
+    'Cochez au moins un équipement à regrouper.'
+        => 'Tick at least one item to merge.',
+    'Cochez les équipements à modifier ensemble (statut, emplacement, dates, photo…). Astuce : filtrez puis augmentez « Lignes par page » pour tout cocher d\'un coup.'
+        => 'Tick the items to change together (status, location, dates, photo…). Tip: filter, then increase “Rows per page” to tick everything at once.',
+    'Confirmer la suppression de « {reference} » ?'
+        => 'Confirm deleting “{reference}”?',
+    'Confirmer la suppression définitive de cet équipement « {reference} » ?&#10;&#10;Cette action est irréversible.'
+        => 'Confirm permanently deleting this item “{reference}”?&#10;&#10;This cannot be undone.',
+    'Consulter la notice ↗'
+        => 'View the instructions ↗',
+    'Contrôle'
+        => 'Inspection',
+    'contrôle en cours'
+        => 'inspection in progress',
+    'Copier l\'URL'
+        => 'Copy URL',
+    'Copier l\'URL du QR code'
+        => 'Copy the QR code URL',
+    'Créer une fiche de prêt'
+        => 'Create a loan form',
+    'Croissant'
+        => 'Ascending',
+    'CSV (données)'
+        => 'CSV (data)',
+    'Date contrôle'
+        => 'Inspection date',
+    'Date d\'achat'
+        => 'Purchase date',
+    'Date de fin'
+        => 'End date',
+    'Date de fin d\'utilisation :'
+        => 'End-of-use date:',
+    'Date de fin d\'utilisation (péremption)'
+        => 'End-of-use date (expiry)',
+    'Date de mise en service'
+        => 'Commissioning date',
+    'Date de mise en service :'
+        => 'Commissioning date:',
+    'Date de mise en service invalide.'
+        => 'Invalid commissioning date.',
+    'Date de mise en service non modifiée pour : {liste}.'
+        => 'Commissioning date not changed for: {liste}.',
+    'Date dernier contrôle :'
+        => 'Last inspection date:',
+    'Date invalide.'
+        => 'Invalid date.',
+    'Décroissant'
+        => 'Descending',
+    'Défini lors de l\'acquisition ; modifiable par un administrateur.'
+        => 'Set at purchase; can be changed by an administrator.',
+    'Définie lors de l\'acquisition ; modifiable par un super-administrateur.'
+        => 'Set at purchase; can be changed by a super administrator.',
+    'Définie lors de l\'acquisition ; modifiable par un super-administrateur. Une catégorie inconnue est créée.'
+        => 'Set at purchase; can be changed by a super administrator. An unknown category is created.',
+    'Demander une modification'
+        => 'Request a change',
+    'Démarrer un contrôle'
+        => 'Start an inspection',
+    'depuis le {date_egare}'
+        => 'since {date_egare}',
+    'Dernier'
+        => 'Last',
+    'Dernier contrôle'
+        => 'Last inspection',
+    'Détail de l\'équipement'
+        => 'Item details',
+    'Disponible'
+        => 'Available',
+    'Dissocier le lot'
+        => 'Split the batch',
+    'Du'
+        => 'From',
+    'Durée maximum d\'utilisation'
+        => 'Maximum service life',
+    'Durée maximum d\'utilisation :'
+        => 'Maximum service life:',
+    'Égaré'
+        => 'Lost',
+    'Élément textile :'
+        => 'Textile component:',
+    'Élément textile remplaçable'
+        => 'Replaceable textile component',
+    'Éléments'
+        => 'Units',
+    'Elle ne peut être modifiée qu\'<strong>une seule fois</strong>'
+        => 'It can be changed <strong>only once</strong>',
+    'Emplacement'
+        => 'Location',
+    'Emplacement :'
+        => 'Location:',
+    'Emplacement invalide.'
+        => 'Invalid location.',
+    'Emplacement retiré pour « {reference} ».'
+        => 'Location removed for “{reference}”.',
+    'Emprunteur'
+        => 'Borrower',
+    'En contrôle'
+        => 'Under inspection',
+    'En équipements individuels'
+        => 'Into individual items',
+    'En maintenance'
+        => 'Under maintenance',
+    'En orange : valeur différente de {reference} (celle de {reference2} est conservée).'
+        => 'In orange: value different from {reference} (the one of {reference2} is kept).',
+    'En service'
+        => 'In service',
+    'En tant que contrôleur, vous pouvez modifier uniquement l\'<strong>emplacement</strong> de cet équipement.'
+        => 'As an inspector, you can only change this item\'s <strong>location</strong>.',
+    'Enregistrer'
+        => 'Save',
+    'Entre 1 et le nombre initial du lot.'
+        => 'Between 1 and the initial batch size.',
+    'EPI'
+        => 'PPE',
+    'EPI :'
+        => 'PPE:',
+    'Équipement'
+        => 'Item',
+    'Équipement « {reference} » déplacé vers « {emplacement} ».'
+        => 'Item “{reference}” moved to “{emplacement}”.',
+    'Équipement non trouvé.'
+        => 'Item not found.',
+    'Equipements'
+        => 'Equipment',
+    'Équipements du fournisseur <strong>{nom}</strong>'
+        => 'Items from supplier <strong>{nom}</strong>',
+    'Équipements identiques (même libellé, même catégorie, même acquisition). Ceux que vous cochez sont <strong>associés à {reference}</strong>, qui garde sa référence, ses dates, son emplacement et son historique ; leurs éléments s\'ajoutent au lot et ils sont <strong>archivés</strong> (leur historique est conservé). Pensez à retirer leurs étiquettes.'
+        => 'Identical items (same name, same category, same purchase). Those you tick are <strong>merged into {reference}</strong>, which keeps its reference, dates, location and history; their units are added to the batch and they are <strong>archived</strong> (their history is kept). Remember to remove their labels.',
+    'Équipements sélectionnés'
+        => 'Selected items',
+    'Erreur lors du traitement de l\'image. Vérifiez que le fichier est bien une image (JPEG, PNG, WebP, GIF, AVIF).'
+        => 'Error while processing the image. Check that the file is an image (JPEG, PNG, WebP, GIF, AVIF).',
+    'Étiquettes'
+        => 'Labels',
+    'ex. {nombre}'
+        => 'e.g. {nombre}',
+    'Excel (données)'
+        => 'Excel (data)',
+    'Excel (photos + QR)'
+        => 'Excel (photos + QR)',
+    'Exporter'
+        => 'Export',
+    'Facture : {facture_reference}'
+        => 'Invoice: {facture_reference}',
+    'facture à importer'
+        => 'invoice to be uploaded',
+    'Fin d\'utilisation'
+        => 'End of use',
+    'Généré à la demande'
+        => 'Generated on demand',
+    'Historique des contrôles'
+        => 'Inspection history',
+    'Historique des contrôles ({historiqueControles})'
+        => 'Inspection history ({historiqueControles})',
+    'Hors service'
+        => 'Out of service',
+    'Impossible : {erreur_regroupement}'
+        => 'Not possible: {erreur_regroupement}',
+    'Impossible de supprimer cet équipement : il doit avoir été déclaré « Hors service » lors de son dernier contrôle clôturé, ou être égaré depuis au moins {mois} mois.'
+        => 'This item cannot be deleted: it must have been declared “Out of service” at its last closed inspection, or have been lost for at least {mois} months.',
+    'Impossible de supprimer cet équipement : un contrôle est en cours.'
+        => 'This item cannot be deleted: an inspection is in progress.',
+    'Inconnu'
+        => 'Unknown',
+    'Indiquez au moins deux parties (ex. « 4, 3, 3 »).'
+        => 'Enter at least two parts (e.g. “4, 3, 3”).',
+    'Indiquez au moins deux parties.'
+        => 'Enter at least two parts.',
+    'Inscrit sur le'
+        => 'Listed on',
+    'inscrit sur un prêt'
+        => 'listed on a loan',
+    'Jamais avant la date de facture de chaque équipement.'
+        => 'Never before each item\'s invoice date.',
+    'Jamais contrôlé'
+        => 'Never inspected',
+    'l\'emplacement'
+        => 'the location',
+    'L\'équipement « {reference} » ne peut pas être regroupé ({raison}).'
+        => 'Item “{reference}” cannot be merged ({raison}).',
+    'L\'équipement \'{reference}\' a été supprimé.'
+        => 'Item \'{reference}\' has been deleted.',
+    'L\'équipement demandé n\'existe pas.'
+        => 'The requested item does not exist.',
+    'L\'équipement quitte la catégorie <strong>{libelle}</strong> ; une référence libre dans la nouvelle catégorie est proposée ci-dessous.'
+        => 'The item leaves the category <strong>{libelle}</strong>; a free reference in the new category is suggested below.',
+    'La catégorie contient des caractères non autorisés.'
+        => 'The category contains forbidden characters.',
+    'La catégorie est définie lors de l\'acquisition.'
+        => 'The category is set at purchase.',
+    'La catégorie est obligatoire.'
+        => 'The category is required.',
+    'La catégorie ne doit pas dépasser {max} caractères.'
+        => 'The category must not exceed {max} characters.',
+    'La date d\'achat est définie lors de l\'acquisition.'
+        => 'The purchase date is set at purchase.',
+    'La date de mise en service ne peut pas être antérieure à la date de facture ({date}).'
+        => 'The commissioning date cannot be earlier than the invoice date ({date}).',
+    'La date de mise en service ne pourra plus être modifiée ensuite. Confirmer ?'
+        => 'The commissioning date can no longer be changed afterwards. Confirm?',
+    'La même photo est affectée à tous les équipements sélectionnés (photo existante remplacée).'
+        => 'The same photo is applied to all selected items (existing photo replaced).',
+    'La référence « {reference} » est déjà attribuée à un autre équipement.'
+        => 'Reference “{reference}” is already assigned to another item.',
+    'La référence « {reference} » est utilisée deux fois.'
+        => 'Reference “{reference}” is used twice.',
+    'La référence contient des caractères non autorisés.'
+        => 'The reference contains forbidden characters.',
+    'La référence est définie lors de l\'acquisition.'
+        => 'The reference is set at purchase.',
+    'La référence est obligatoire.'
+        => 'The reference is required.',
+    'La référence ne doit pas dépasser {max} caractères.'
+        => 'The reference must not exceed {max} characters.',
+    'La somme des parties ({somme}) doit être égale au nombre actuel d\'éléments du lot ({nombre}).'
+        => 'The sum of the parts ({somme}) must equal the current number of units in the batch ({nombre}).',
+    'Laisser vide pour effacer la date.'
+        => 'Leave empty to clear the date.',
+    'Laisser vide si l\'équipement est toujours en service.'
+        => 'Leave empty if the item is still in service.',
+    'Le fichier est trop volumineux pour être traité par le serveur (limite PHP : {limite}).'
+        => 'The file is too large for the server to process (PHP limit: {limite}).',
+    'Le libellé est défini lors de l\'acquisition.'
+        => 'The name is set at purchase.',
+    'Le libellé est obligatoire.'
+        => 'The name is required.',
+    'Le libellé ne doit pas dépasser {max} caractères.'
+        => 'The name must not exceed {max} characters.',
+    'Le lien vers la notice doit commencer par http:// ou https://'
+        => 'The instructions link must start with http:// or https://',
+    'Le lien vers la notice n\'est pas une URL valide.'
+        => 'The instructions link is not a valid URL.',
+    'Le lien vers la notice ne doit pas dépasser {max} caractères.'
+        => 'The instructions link must not exceed {max} characters.',
+    'Le lot compte <strong>{nombre}</strong> élément(s) restant(s). Indiquez la taille de chaque partie, séparées par des virgules : la <strong>première</strong> reste à l\'équipement <strong>{reference}</strong> (avec son historique), chacune des autres devient un <strong>nouvel équipement</strong> (lot ou équipement individuel), avec les mêmes caractéristiques.'
+        => 'The batch has <strong>{nombre}</strong> unit(s) left. Enter the size of each part, separated by commas: the <strong>first</strong> stays with item <strong>{reference}</strong> (with its history), each of the others becomes a <strong>new item</strong> (batch or individual item) with the same characteristics.',
+    'Le nombre d\'éléments du lot doit être compris entre 1 et {max} (nombre initial).'
+        => 'The number of units in the batch must be between 1 and {max} (initial number).',
+    'Le nombre initial d\'un lot doit être compris entre 2 et {max}.'
+        => 'The initial size of a batch must be between 2 and {max}.',
+    'Le statut « Égaré » ne peut être attribué qu\'à l\'issue d\'un contrôle ou du retour d\'un prêt.'
+        => 'The “Lost” status can only be set by an inspection or a loan return.',
+    'Le statut « Hors service » ne peut être attribué qu\'à l\'issue d\'un contrôle.'
+        => 'The “Out of service” status can only be set by an inspection.',
+    'Le statut « Prêté » est attribué par la validation d\'un prêt.'
+        => 'The “On loan” status is set when a loan is validated.',
+    'Le statut EPI est défini par la catégorie de l\'équipement.'
+        => 'The PPE status is set by the item\'s category.',
+    'Les équipements dont la date a déjà été modifiée une fois sont ignorés (et signalés).'
+        => 'Items whose date has already been changed once are skipped (and reported).',
+    'Les étiquettes et fiches déjà imprimées portent l\'ancienne référence <strong>{reference}</strong> ; le QR code reste valable.'
+        => 'Labels and forms already printed show the old reference <strong>{reference}</strong>; the QR code remains valid.',
+    'Leurs références sont attribuées automatiquement selon le modèle de référence.'
+        => 'Their references are assigned automatically from the reference pattern.',
+    'Libellé'
+        => 'Name',
+    'Libellé ou référence'
+        => 'Name or reference',
+    'Lien vers la notice'
+        => 'Instructions link',
+    'Lignes par page'
+        => 'Rows per page',
+    'Lot'
+        => 'Batch',
+    'Lot « {reference} » dissocié : {restants} élément(s) restent sur « {reference} » ; {nombre} nouvel(s) équipement(s) : {references}. Pensez à imprimer leurs étiquettes.'
+        => 'Batch “{reference}” split: {restants} unit(s) stay on “{reference}”; {nombre} new item(s): {references}. Remember to print their labels.',
+    'Lot : {nombre} élément(s) restant(s) sur {nombre_initial} initiaux'
+        => 'Batch: {nombre} unit(s) left out of {nombre_initial}',
+    'Lot : {nombre}/{nombre_initial}'
+        => 'Batch: {nombre}/{nombre_initial}',
+    'Lot obtenu : {nombre} élément(s) (nombre initial {initial}) ; {archives} équipement(s) archivé(s).'
+        => 'Resulting batch: {nombre} unit(s) (initial number {initial}); {archives} item(s) archived.',
+    'Matériel prêté : son statut changera à la vérification du retour du prêt.'
+        => 'Item on loan: its status will change when the loan return is checked.',
+    'Même notice pour tous les équipements sélectionnés. Laisser vide pour effacer le lien.'
+        => 'Same instructions for all selected items. Leave empty to clear the link.',
+    'Mise en service'
+        => 'Commissioning',
+    'Modification de la référence, de la catégorie et du lot'
+        => 'Changing the reference, category and batch',
+    'Modification groupée'
+        => 'Bulk edit',
+    'Modifier'
+        => 'Edit',
+    'Modifier : {libelle}'
+        => 'Edit: {libelle}',
+    'Modifier la référence, la catégorie et le lot (dissocier, regrouper)'
+        => 'Change the reference, category and batch (split, merge)',
+    'Modifier la sélection ('
+        => 'Edit selection (',
+    'Moins d\'un an'
+        => 'Less than a year',
+    'n° {id}'
+        => 'no. {id}',
+    'Nombre actuel d\'éléments'
+        => 'Current number of units',
+    'Nombre d\'éléments du lot à la création — non modifiable.'
+        => 'Number of units in the batch when created — cannot be changed.',
+    'Nombre d\'éléments du lot à la création ; modifiable par un super-administrateur.'
+        => 'Number of units in the batch when created; can be changed by a super administrator.',
+    'Nombre initial du lot'
+        => 'Initial batch size',
+    'Non'
+        => 'No',
+    'Non défini'
+        => 'Not set',
+    'Non définie'
+        => 'Not set',
+    'Non EPI'
+        => 'Not PPE',
+    'Non prêtable actuellement — {pret_motif}'
+        => 'Cannot be loaned at the moment — {pret_motif}',
+    'Non renseignée'
+        => 'Not provided',
+    'Notice :'
+        => 'Instructions:',
+    'Nouvel équipement {numero} — équipement individuel : référence'
+        => 'New item {numero} — individual item: reference',
+    'Nouvel équipement {numero} — lot de {taille} éléments : référence'
+        => 'New item {numero} — batch of {taille} units: reference',
+    'Nouvel équipement n° {numero} : {erreur}'
+        => 'New item no. {numero}: {erreur}',
+    'Nouvelle catégorie'
+        => 'New category',
+    'Nouvelle catégorie : elle sera créée à l\'enregistrement.'
+        => 'New category: it will be created when you save.',
+    'Ordre'
+        => 'Order',
+    'ou un prêt'
+        => 'or a loan',
+    'Oui'
+        => 'Yes',
+    'Oui — durée de vie limitée par le fabricant'
+        => 'Yes — lifespan limited by the manufacturer',
+    'Oui (durée de vie limitée par le fabricant)'
+        => 'Yes (lifespan limited by the manufacturer)',
+    'Page {page} sur {totalPages}'
+        => 'Page {page} of {totalPages}',
+    'Pagination'
+        => 'Pagination',
+    'Par défaut, la date de la facture.'
+        => 'By default, the invoice date.',
+    'Passez l\'équipement « En maintenance » pour changer son élément textile : au contrôle suivant, le contrôleur indique le remplacement et met le statut à OK ; la date de fin d\'utilisation devient alors la date du contrôle + 10 ans (fin de mois).'
+        => 'Set the item to “Under maintenance” to replace its textile component: at the next inspection, the inspector records the replacement and sets the status to OK; the end-of-use date then becomes the inspection date + 10 years (end of month).',
+    'PDF'
+        => 'PDF',
+    'Photo'
+        => 'Photo',
+    'Photo :'
+        => 'Photo:',
+    'Photo actuelle'
+        => 'Current photo',
+    'Photo actuelle (remplacée si vous en téléchargez une nouvelle).'
+        => 'Current photo (replaced if you upload a new one).',
+    'Photo de l\'équipement'
+        => 'Item photo',
+    'Plus d\'un an'
+        => 'More than a year',
+    'Plusieurs éléments identiques sous une même référence. Décocher ramène le nombre initial et le nombre actuel à 1.'
+        => 'Several identical units under one reference. Unticking sets the initial and current numbers back to 1.',
+    'Pour changer la catégorie, saisissez le mot {mot} (en majuscules).'
+        => 'To change the category, type the word {mot} (in capitals).',
+    'Pour changer la référence, saisissez le mot {mot} (en majuscules).'
+        => 'To change the reference, type the word {mot} (in capitals).',
+    'Pour confirmer la dissociation, saisissez <code>{mot_confirmation_dissociation}</code>'
+        => 'To confirm the split, type <code>{mot_confirmation_dissociation}</code>',
+    'Pour confirmer le changement, saisissez <code>{mot_confirmation_categorie}</code>'
+        => 'To confirm the change, type <code>{mot_confirmation_categorie}</code>',
+    'Pour confirmer le changement, saisissez <code>{mot_confirmation_reference}</code>'
+        => 'To confirm the change, type <code>{mot_confirmation_reference}</code>',
+    'Pour confirmer le regroupement, saisissez <code>{mot_confirmation_regroupement}</code>'
+        => 'To confirm the merge, type <code>{mot_confirmation_regroupement}</code>',
+    'Pour dissocier le lot, saisissez le mot {mot} (en majuscules).'
+        => 'To split the batch, type the word {mot} (in capitals).',
+    'Pour regrouper, saisissez le mot {mot} (en majuscules).'
+        => 'To merge, type the word {mot} (in capitals).',
+    'Précédent'
+        => 'Previous',
+    'Premier'
+        => 'First',
+    'Prêt'
+        => 'Loan',
+    'Prêt en saisie'
+        => 'Loan being entered',
+    'prêt n° {id}'
+        => 'loan no. {id}',
+    'Prêt n° {id} — {emprunteur_prenom} {emprunteur_nom}'
+        => 'Loan no. {id} — {emprunteur_prenom} {emprunteur_nom}',
+    'Prêté'
+        => 'On loan',
+    'Proposition de référence impossible, réessayez.'
+        => 'Unable to suggest a reference, try again.',
+    'QR Code'
+        => 'QR code',
+    'QR Code :'
+        => 'QR code:',
+    'QR Code de {reference}'
+        => 'QR code of {reference}',
+    'QR Code non disponible'
+        => 'QR code not available',
+    'QR code sauvegardé !'
+        => 'QR code saved!',
+    'Recherche'
+        => 'Search',
+    'Recherche d\'une référence libre…'
+        => 'Looking for a free reference…',
+    'Référence disponible.'
+        => 'Reference available.',
+    'Référence modifiée : « {ancienne} » → « {nouvelle} ». Pensez à réimprimer l\'étiquette.'
+        => 'Reference changed: “{ancienne}” → “{nouvelle}”. Remember to reprint the label.',
+    'Référence proposée ({annee}) : {reference}'
+        => 'Suggested reference ({annee}): {reference}',
+    'Référence saisie deux fois.'
+        => 'Reference entered twice.',
+    'Regrouper en lot'
+        => 'Merge into a batch',
+    'Remarque'
+        => 'Remark',
+    'Remarques'
+        => 'Remarks',
+    'Remarques :'
+        => 'Remarks:',
+    'Remplaçable'
+        => 'Replaceable',
+    'Remplacer'
+        => 'Replace',
+    'Rendu'
+        => 'Returned',
+    'Rendu — maintenance'
+        => 'Returned — maintenance',
+    'Répartition'
+        => 'Split',
+    'Retirer ce filtre'
+        => 'Remove this filter',
+    'Retour'
+        => 'Return',
+    'Retour à la liste'
+        => 'Back to the list',
+    'Sauvegardé sur le serveur'
+        => 'Saved on the server',
+    'Sauvegarder'
+        => 'Save',
+    'Sauvegarder sur le serveur'
+        => 'Save on the server',
+    'Scannez ce QR code pour accéder rapidement à la fiche ou au contrôle'
+        => 'Scan this QR code to quickly open the record or the inspection',
+    'Sélection trop importante ({max} équipements maximum).'
+        => 'Selection too large ({max} items maximum).',
+    'Sélectionner {reference}'
+        => 'Select {reference}',
+    'Seul le matériel disponible (hors contrôle, non périmé) est ajouté.'
+        => 'Only available items (not under inspection, not expired) are added.',
+    'Seul un lot d\'au moins 2 éléments restants peut être dissocié.'
+        => 'Only a batch with at least 2 units left can be split.',
+    'Seuls des équipements identiques (même libellé, même catégorie, même acquisition) peuvent être regroupés.'
+        => 'Only identical items (same name, same category, same purchase) can be merged.',
+    'Seuls les champs dont la case « Modifier » est cochée sont appliqués ; les autres restent inchangés.'
+        => 'Only fields whose “Change” box is ticked are applied; the others stay unchanged.',
+    'Somme des parties : {somme} ; elle doit être égale à {nombre}.'
+        => 'Sum of the parts: {somme}; it must equal {nombre}.',
+    'Statut'
+        => 'Status',
+    'statut « {statut} »'
+        => 'status “{statut}”',
+    'Statut :'
+        => 'Status:',
+    'statut différent'
+        => 'different status',
+    'Statut fixé par un contrôle'
+        => 'Status set by an inspection',
+    'Statut invalide.'
+        => 'Invalid status.',
+    'Statut non modifié pour : {liste} (hors service, prêté ou égaré : statut fixé par un contrôle ou un prêt).'
+        => 'Status not changed for: {liste} (out of service, on loan or lost: status set by an inspection or a loan).',
+    'Suivant'
+        => 'Next',
+    'Super-administrateur : modifiable à tout moment'
+        => 'Super administrator: can be changed at any time',
+    'supprimable à partir du {egare_supprimable_le}'
+        => 'can be deleted from {egare_supprimable_le}',
+    'Télécharger'
+        => 'Download',
+    'Télécharger le QR code'
+        => 'Download the QR code',
+    'Textile remplacé'
+        => 'Textile replaced',
+    'Toujours en service'
+        => 'Still in service',
+    'Tous'
+        => 'All',
+    'Tout cocher'
+        => 'Tick all',
+    'Tout cocher / décocher'
+        => 'Tick / untick all',
+    'Toutes'
+        => 'All',
+    'Trier par'
+        => 'Sort by',
+    'Un équipement au statut « {statut} » ne peut pas être dissocié.'
+        => 'An item with status “{statut}” cannot be split.',
+    'Une des références vient d\'être attribuée à un autre équipement : rien n\'a été modifié, réessayez.'
+        => 'One of the references has just been assigned to another item: nothing was changed, try again.',
+    'Vérification de la référence en cours, réessayez dans un instant.'
+        => 'Checking the reference, try again in a moment.',
+    'Vérification en cours, réessayez dans un instant.'
+        => 'Checking, try again in a moment.',
+    'Vérification impossible, réessayez.'
+        => 'Unable to check, try again.',
+    'Voir'
+        => 'View',
+    'Voir la facture'
+        => 'View the invoice',
+    'Voir la fiche acquisition'
+        => 'View the purchase record',
+    'Voir la page du QR code'
+        => 'View the QR code page',
+    'Voir le journal'
+        => 'View the log',
+    'Voir le QR'
+        => 'View QR',
+    'Voir tous les équipements de cette acquisition'
+        => 'View all items from this purchase',
+
+    // --- Équipements (expressions) ---
+    'À vérifier'
+        => 'To be checked',
+    '(prévu {date})'
+        => '(due {date})',
+    'À contrôler'
+        => 'To inspect',
+    'Dissocier ou regrouper'
+        => 'Split or merge',
+
+    // --- Équipements (libellés de champ) ---
+    'Date de fin d\'utilisation'
+        => 'End-of-use date',
 ];

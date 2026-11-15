@@ -360,4 +360,668 @@ return [
         => '(dirección ROOT_URL de los ajustes del sistema).',
     'Les passkeys sont liées à l\'adresse du site déclarée dans ROOT_URL ({origine}), mais vous naviguez sur {adresse}. Ouvrez le site par son adresse officielle, ou corrigez ROOT_URL dans les réglages système.'
         => 'Las llaves de acceso están vinculadas a la dirección del sitio declarada en ROOT_URL ({origine}), pero está navegando en {adresse}. Abra el sitio por su dirección oficial o corrija ROOT_URL en los ajustes del sistema.',
+
+    // --- Équipements ---
+    '« {saisie} » n\'est pas une taille de partie valide (entier ≥ 1).'
+        => '«{saisie}» no es un tamaño de parte válido (entero ≥ 1).',
+    '« Hors service » et « Égaré » s\'attribuent à l\'issue d\'un contrôle ; « Prêté » par un prêt.'
+        => '«Fuera de servicio» y «Extraviado» se asignan tras una inspección; «Prestado», mediante un préstamo.',
+    '« Hors service », « Prêté » et « Égaré » s\'attribuent par un contrôle ou un prêt ; le statut des équipements déjà dans l\'un de ces états n\'est pas modifié.'
+        => '«Fuera de servicio», «Prestado» y «Extraviado» se asignan mediante una inspección o un préstamo; el estado de los equipos que ya están en uno de ellos no se modifica.',
+    ', en saisie'
+        => ', en edición',
+    ', et pas avant le {date_facture}'
+        => ', y no antes del {date_facture}',
+    ', mais pas avant le {date_facture}'
+        => ', pero no antes del {date_facture}',
+    ', retour à vérifier'
+        => ', devolución por verificar',
+    ', retour prévu le {date_retour_prevue}'
+        => ', devolución prevista el {date_retour_prevue}',
+    ': seul un nouveau contrôle peut le lever.'
+        => ': solo una nueva inspección puede levantarlo.',
+    '(date déjà modifiée)'
+        => '(fecha ya modificada)',
+    '(facture du {date})'
+        => '(factura del {date})',
+    '{nombre} équipement modifié.'
+        => '{nombre} equipo modificado.',
+    '{nombre} équipement sélectionné.'
+        => '{nombre} equipo seleccionado.',
+    '{nombre} équipement(s) regroupé(s) dans le lot « {reference} » : {references}. Retirez leurs étiquettes.'
+        => '{nombre} equipo(s) agrupado(s) en el lote «{reference}»: {references}. Retire sus etiquetas.',
+    '{nombre} équipements modifiés.'
+        => '{nombre} equipos modificados.',
+    '{nombre} équipements sélectionnés.'
+        => '{nombre} equipos seleccionados.',
+    '{restants} élément(s) restent sur l\'équipement actuel ; {nouveaux} nouvel(s) équipement(s).'
+        => '{restants} elemento(s) permanecen en el equipo actual; {nouveaux} equipo(s) nuevo(s).',
+    '<strong>EPI non vérifiés</strong> : dernier contrôle (ou, à défaut, mise en service) antérieur au {non_verifie_avant}, hors équipements « Hors service » et « Égaré ».'
+        => '<strong>EPI no verificados</strong>: última inspección (o, en su defecto, puesta en servicio) anterior al {non_verifie_avant}, sin contar los equipos «Fuera de servicio» y «Extraviado».',
+    '<strong>Équipements à renouveler</strong> : date de fin d\'utilisation au plus tard le {fin_avant} (y compris les équipements déjà échus).'
+        => '<strong>Equipos por renovar</strong>: fecha de fin de uso como muy tarde el {fin_avant} (incluidos los equipos ya caducados).',
+    '<strong>Lot :</strong> {nombre} élément(s) restant(s) sur {nombre_initial} initiaux'
+        => '<strong>Lote:</strong> {nombre} elemento(s) restante(s) de {nombre_initial} iniciales',
+    '<strong>Référence :</strong> {reference}'
+        => '<strong>Referencia:</strong> {reference}',
+    'Acquisition d\'origine :'
+        => 'Adquisición de origen:',
+    'Actions'
+        => 'Acciones',
+    'Adresse de la notice du fabricant (PDF ou page web). Laisser vide si aucune.'
+        => 'Dirección del manual del fabricante (PDF o página web). Dejar vacío si no hay.',
+    'Affichage de {equipements} équipements sur {total} (page {page}/{totalPages})'
+        => 'Mostrando {equipements} equipos de {total} (página {page}/{totalPages})',
+    'Ajouter à la suite'
+        => 'Añadir a continuación',
+    'Ajouter au prêt'
+        => 'Añadir al préstamo',
+    'Ajouter la sélection au prêt ('
+        => 'Añadir la selección al préstamo (',
+    'Annuler la modification de la référence, de la catégorie et du lot'
+        => 'Cancelar la modificación de la referencia, la categoría y el lote',
+    'Appliquer'
+        => 'Aplicar',
+    'Appliquer à l\'équipement'
+        => 'Aplicar al equipo',
+    'Appliquer aux {nombre} équipements'
+        => 'Aplicar a los {nombre} equipos',
+    'Appliquer ces modifications aux {nombre} équipement(s) sélectionné(s) ?'
+        => '¿Aplicar estos cambios a los {nombre} equipo(s) seleccionado(s)?',
+    'Attribuée automatiquement.'
+        => 'Asignada automáticamente.',
+    'Au'
+        => 'Hasta',
+    'Au plus {max} parties.'
+        => 'Como máximo {max} partes.',
+    'Aucun des équipements sélectionnés n\'existe.'
+        => 'Ninguno de los equipos seleccionados existe.',
+    'Aucun emplacement --'
+        => 'Ninguna ubicación --',
+    'Aucun équipement sélectionné.'
+        => 'Ningún equipo seleccionado.',
+    'Aucun prêt en saisie.'
+        => 'Ningún préstamo en edición.',
+    'Aucune référence ne peut être proposée pour ce lot (catégorie ou modèle de référence) : demandez à un super-administrateur de le dissocier.'
+        => 'No se puede proponer ninguna referencia para este lote (categoría o modelo de referencia): pida a un superadministrador que lo divida.',
+    'Aucune référence proposée : demandez à un super-administrateur.'
+        => 'Ninguna referencia propuesta: pregunte a un superadministrador.',
+    'Aucune référence proposée pour cette catégorie.'
+        => 'Ninguna referencia propuesta para esta categoría.',
+    'Aucune remarque'
+        => 'Sin observaciones',
+    'C\'est la référence actuelle.'
+        => 'Es la referencia actual.',
+    'Catégorie'
+        => 'Categoría',
+    'Catégorie :'
+        => 'Categoría:',
+    'Catégorie modifiée : « {ancienne} » → « {nouvelle} » (nouvelle catégorie créée).'
+        => 'Categoría modificada: «{ancienne}» → «{nouvelle}» (nueva categoría creada).',
+    'Catégorie modifiée : « {ancienne} » → « {nouvelle} ».'
+        => 'Categoría modificada: «{ancienne}» → «{nouvelle}».',
+    'Cet équipement est dans un contrôle en cours : dissociation impossible avant sa clôture.'
+        => 'Este equipo está en una inspección en curso: no se puede dividir antes de su cierre.',
+    'Cet équipement est égaré : seul un contrôle peut lever ce statut.'
+        => 'Este equipo está extraviado: solo una inspección puede levantar este estado.',
+    'Cet équipement est hors service : seul un contrôle peut lever ce statut.'
+        => 'Este equipo está fuera de servicio: solo una inspección puede levantar este estado.',
+    'Cet équipement est prêté : son statut changera à la vérification du retour du prêt.'
+        => 'Este equipo está prestado: su estado cambiará al verificar la devolución del préstamo.',
+    'Cet équipement n\'a pas encore été contrôlé ou aucun contrôle n\'a été clôturé.'
+        => 'Este equipo aún no ha sido inspeccionado o no se ha cerrado ninguna inspección.',
+    'Cet équipement ne peut pas être regroupé ({erreur}).'
+        => 'Este equipo no se puede agrupar ({erreur}).',
+    'Cette date a déjà été modifiée une fois et ne peut plus l\'être.'
+        => 'Esta fecha ya se modificó una vez y no puede volver a modificarse.',
+    'Cette date est déjà renseignée et ne peut plus être modifiée.'
+        => 'Esta fecha ya está indicada y no puede modificarse.',
+    'Cette référence est déjà attribuée à un autre équipement (éventuellement supprimé).'
+        => 'Esta referencia ya está asignada a otro equipo (posiblemente eliminado).',
+    'Chaque partie doit être un entier ≥ 1.'
+        => 'Cada parte debe ser un entero ≥ 1.',
+    'Choisissez une photo à appliquer.'
+        => 'Elija una foto para aplicar.',
+    'Choisissez une référence disponible.'
+        => 'Elija una referencia disponible.',
+    'Cocher si le fabricant limite la durée de vie de cet équipement (généralement 10 ans) : la date de fin d\'utilisation ci-dessous fait alors office de date de péremption.'
+        => 'Marque si el fabricante limita la vida útil de este equipo (normalmente 10 años): la fecha de fin de uso de abajo hace entonces de fecha de caducidad.',
+    'Cochez « Modifier » pour au moins un champ.'
+        => 'Marque «Modificar» en al menos un campo.',
+    'Cochez au moins un équipement à regrouper.'
+        => 'Marque al menos un equipo para agrupar.',
+    'Cochez les équipements à modifier ensemble (statut, emplacement, dates, photo…). Astuce : filtrez puis augmentez « Lignes par page » pour tout cocher d\'un coup.'
+        => 'Marque los equipos que desea modificar juntos (estado, ubicación, fechas, foto…). Consejo: filtre y luego aumente «Filas por página» para marcarlos todos de una vez.',
+    'Confirmer la suppression de « {reference} » ?'
+        => '¿Confirmar la eliminación de «{reference}»?',
+    'Confirmer la suppression définitive de cet équipement « {reference} » ?&#10;&#10;Cette action est irréversible.'
+        => '¿Confirmar la eliminación definitiva de este equipo «{reference}»?&#10;&#10;Esta acción es irreversible.',
+    'Consulter la notice ↗'
+        => 'Consultar el manual ↗',
+    'Contrôle'
+        => 'Inspección',
+    'contrôle en cours'
+        => 'inspección en curso',
+    'Copier l\'URL'
+        => 'Copiar la URL',
+    'Copier l\'URL du QR code'
+        => 'Copiar la URL del código QR',
+    'Créer une fiche de prêt'
+        => 'Crear una ficha de préstamo',
+    'Croissant'
+        => 'Ascendente',
+    'CSV (données)'
+        => 'CSV (datos)',
+    'Date contrôle'
+        => 'Fecha de inspección',
+    'Date d\'achat'
+        => 'Fecha de compra',
+    'Date de fin'
+        => 'Fecha de fin',
+    'Date de fin d\'utilisation :'
+        => 'Fecha de fin de uso:',
+    'Date de fin d\'utilisation (péremption)'
+        => 'Fecha de fin de uso (caducidad)',
+    'Date de mise en service'
+        => 'Fecha de puesta en servicio',
+    'Date de mise en service :'
+        => 'Fecha de puesta en servicio:',
+    'Date de mise en service invalide.'
+        => 'Fecha de puesta en servicio no válida.',
+    'Date de mise en service non modifiée pour : {liste}.'
+        => 'Fecha de puesta en servicio no modificada para: {liste}.',
+    'Date dernier contrôle :'
+        => 'Fecha de la última inspección:',
+    'Date invalide.'
+        => 'Fecha no válida.',
+    'Décroissant'
+        => 'Descendente',
+    'Défini lors de l\'acquisition ; modifiable par un administrateur.'
+        => 'Definido en la adquisición; modificable por un administrador.',
+    'Définie lors de l\'acquisition ; modifiable par un super-administrateur.'
+        => 'Definida en la adquisición; modificable por un superadministrador.',
+    'Définie lors de l\'acquisition ; modifiable par un super-administrateur. Une catégorie inconnue est créée.'
+        => 'Definida en la adquisición; modificable por un superadministrador. Una categoría desconocida se crea.',
+    'Demander une modification'
+        => 'Solicitar una modificación',
+    'Démarrer un contrôle'
+        => 'Iniciar una inspección',
+    'depuis le {date_egare}'
+        => 'desde el {date_egare}',
+    'Dernier'
+        => 'Último',
+    'Dernier contrôle'
+        => 'Última inspección',
+    'Détail de l\'équipement'
+        => 'Detalle del equipo',
+    'Disponible'
+        => 'Disponible',
+    'Dissocier le lot'
+        => 'Dividir el lote',
+    'Du'
+        => 'Desde',
+    'Durée maximum d\'utilisation'
+        => 'Vida útil máxima',
+    'Durée maximum d\'utilisation :'
+        => 'Vida útil máxima:',
+    'Égaré'
+        => 'Extraviado',
+    'Élément textile :'
+        => 'Elemento textil:',
+    'Élément textile remplaçable'
+        => 'Elemento textil reemplazable',
+    'Éléments'
+        => 'Elementos',
+    'Elle ne peut être modifiée qu\'<strong>une seule fois</strong>'
+        => 'Solo puede modificarse <strong>una vez</strong>',
+    'Emplacement'
+        => 'Ubicación',
+    'Emplacement :'
+        => 'Ubicación:',
+    'Emplacement invalide.'
+        => 'Ubicación no válida.',
+    'Emplacement retiré pour « {reference} ».'
+        => 'Ubicación retirada para «{reference}».',
+    'Emprunteur'
+        => 'Prestatario',
+    'En contrôle'
+        => 'En inspección',
+    'En équipements individuels'
+        => 'En equipos individuales',
+    'En maintenance'
+        => 'En mantenimiento',
+    'En orange : valeur différente de {reference} (celle de {reference2} est conservée).'
+        => 'En naranja: valor distinto de {reference} (se conserva el de {reference2}).',
+    'En service'
+        => 'En servicio',
+    'En tant que contrôleur, vous pouvez modifier uniquement l\'<strong>emplacement</strong> de cet équipement.'
+        => 'Como inspector, solo puede modificar la <strong>ubicación</strong> de este equipo.',
+    'Enregistrer'
+        => 'Guardar',
+    'Entre 1 et le nombre initial du lot.'
+        => 'Entre 1 y el número inicial del lote.',
+    'EPI'
+        => 'EPI',
+    'EPI :'
+        => 'EPI:',
+    'Équipement'
+        => 'Equipo',
+    'Équipement « {reference} » déplacé vers « {emplacement} ».'
+        => 'Equipo «{reference}» trasladado a «{emplacement}».',
+    'Équipement non trouvé.'
+        => 'Equipo no encontrado.',
+    'Equipements'
+        => 'Equipos',
+    'Équipements du fournisseur <strong>{nom}</strong>'
+        => 'Equipos del proveedor <strong>{nom}</strong>',
+    'Équipements identiques (même libellé, même catégorie, même acquisition). Ceux que vous cochez sont <strong>associés à {reference}</strong>, qui garde sa référence, ses dates, son emplacement et son historique ; leurs éléments s\'ajoutent au lot et ils sont <strong>archivés</strong> (leur historique est conservé). Pensez à retirer leurs étiquettes.'
+        => 'Equipos idénticos (misma denominación, misma categoría, misma adquisición). Los que marque se <strong>asocian a {reference}</strong>, que conserva su referencia, sus fechas, su ubicación y su historial; sus elementos se suman al lote y quedan <strong>archivados</strong> (se conserva su historial). Recuerde retirar sus etiquetas.',
+    'Équipements sélectionnés'
+        => 'Equipos seleccionados',
+    'Erreur lors du traitement de l\'image. Vérifiez que le fichier est bien une image (JPEG, PNG, WebP, GIF, AVIF).'
+        => 'Error al procesar la imagen. Compruebe que el archivo es una imagen (JPEG, PNG, WebP, GIF, AVIF).',
+    'Étiquettes'
+        => 'Etiquetas',
+    'ex. {nombre}'
+        => 'p. ej. {nombre}',
+    'Excel (données)'
+        => 'Excel (datos)',
+    'Excel (photos + QR)'
+        => 'Excel (fotos + QR)',
+    'Exporter'
+        => 'Exportar',
+    'Facture : {facture_reference}'
+        => 'Factura: {facture_reference}',
+    'facture à importer'
+        => 'factura por importar',
+    'Fin d\'utilisation'
+        => 'Fin de uso',
+    'Généré à la demande'
+        => 'Generado bajo demanda',
+    'Historique des contrôles'
+        => 'Historial de inspecciones',
+    'Historique des contrôles ({historiqueControles})'
+        => 'Historial de inspecciones ({historiqueControles})',
+    'Hors service'
+        => 'Fuera de servicio',
+    'Impossible : {erreur_regroupement}'
+        => 'Imposible: {erreur_regroupement}',
+    'Impossible de supprimer cet équipement : il doit avoir été déclaré « Hors service » lors de son dernier contrôle clôturé, ou être égaré depuis au moins {mois} mois.'
+        => 'No se puede eliminar este equipo: debe haber sido declarado «Fuera de servicio» en su última inspección cerrada, o estar extraviado desde hace al menos {mois} meses.',
+    'Impossible de supprimer cet équipement : un contrôle est en cours.'
+        => 'No se puede eliminar este equipo: hay una inspección en curso.',
+    'Inconnu'
+        => 'Desconocido',
+    'Indiquez au moins deux parties (ex. « 4, 3, 3 »).'
+        => 'Indique al menos dos partes (p. ej. «4, 3, 3»).',
+    'Indiquez au moins deux parties.'
+        => 'Indique al menos dos partes.',
+    'Inscrit sur le'
+        => 'Inscrito en el',
+    'inscrit sur un prêt'
+        => 'inscrito en un préstamo',
+    'Jamais avant la date de facture de chaque équipement.'
+        => 'Nunca antes de la fecha de factura de cada equipo.',
+    'Jamais contrôlé'
+        => 'Nunca inspeccionado',
+    'l\'emplacement'
+        => 'la ubicación',
+    'L\'équipement « {reference} » ne peut pas être regroupé ({raison}).'
+        => 'El equipo «{reference}» no se puede agrupar ({raison}).',
+    'L\'équipement \'{reference}\' a été supprimé.'
+        => 'El equipo \'{reference}\' se ha eliminado.',
+    'L\'équipement demandé n\'existe pas.'
+        => 'El equipo solicitado no existe.',
+    'L\'équipement quitte la catégorie <strong>{libelle}</strong> ; une référence libre dans la nouvelle catégorie est proposée ci-dessous.'
+        => 'El equipo deja la categoría <strong>{libelle}</strong>; a continuación se propone una referencia libre en la nueva categoría.',
+    'La catégorie contient des caractères non autorisés.'
+        => 'La categoría contiene caracteres no permitidos.',
+    'La catégorie est définie lors de l\'acquisition.'
+        => 'La categoría se define en la adquisición.',
+    'La catégorie est obligatoire.'
+        => 'La categoría es obligatoria.',
+    'La catégorie ne doit pas dépasser {max} caractères.'
+        => 'La categoría no debe superar los {max} caracteres.',
+    'La date d\'achat est définie lors de l\'acquisition.'
+        => 'La fecha de compra se define en la adquisición.',
+    'La date de mise en service ne peut pas être antérieure à la date de facture ({date}).'
+        => 'La fecha de puesta en servicio no puede ser anterior a la fecha de factura ({date}).',
+    'La date de mise en service ne pourra plus être modifiée ensuite. Confirmer ?'
+        => 'La fecha de puesta en servicio ya no podrá modificarse después. ¿Confirmar?',
+    'La même photo est affectée à tous les équipements sélectionnés (photo existante remplacée).'
+        => 'La misma foto se asigna a todos los equipos seleccionados (se sustituye la foto existente).',
+    'La référence « {reference} » est déjà attribuée à un autre équipement.'
+        => 'La referencia «{reference}» ya está asignada a otro equipo.',
+    'La référence « {reference} » est utilisée deux fois.'
+        => 'La referencia «{reference}» se usa dos veces.',
+    'La référence contient des caractères non autorisés.'
+        => 'La referencia contiene caracteres no permitidos.',
+    'La référence est définie lors de l\'acquisition.'
+        => 'La referencia se define en la adquisición.',
+    'La référence est obligatoire.'
+        => 'La referencia es obligatoria.',
+    'La référence ne doit pas dépasser {max} caractères.'
+        => 'La referencia no debe superar los {max} caracteres.',
+    'La somme des parties ({somme}) doit être égale au nombre actuel d\'éléments du lot ({nombre}).'
+        => 'La suma de las partes ({somme}) debe ser igual al número actual de elementos del lote ({nombre}).',
+    'Laisser vide pour effacer la date.'
+        => 'Dejar vacío para borrar la fecha.',
+    'Laisser vide si l\'équipement est toujours en service.'
+        => 'Dejar vacío si el equipo sigue en servicio.',
+    'Le fichier est trop volumineux pour être traité par le serveur (limite PHP : {limite}).'
+        => 'El archivo es demasiado grande para que el servidor lo procese (límite de PHP: {limite}).',
+    'Le libellé est défini lors de l\'acquisition.'
+        => 'La denominación se define en la adquisición.',
+    'Le libellé est obligatoire.'
+        => 'La denominación es obligatoria.',
+    'Le libellé ne doit pas dépasser {max} caractères.'
+        => 'La denominación no debe superar los {max} caracteres.',
+    'Le lien vers la notice doit commencer par http:// ou https://'
+        => 'El enlace al manual debe empezar por http:// o https://',
+    'Le lien vers la notice n\'est pas une URL valide.'
+        => 'El enlace al manual no es una URL válida.',
+    'Le lien vers la notice ne doit pas dépasser {max} caractères.'
+        => 'El enlace al manual no debe superar los {max} caracteres.',
+    'Le lot compte <strong>{nombre}</strong> élément(s) restant(s). Indiquez la taille de chaque partie, séparées par des virgules : la <strong>première</strong> reste à l\'équipement <strong>{reference}</strong> (avec son historique), chacune des autres devient un <strong>nouvel équipement</strong> (lot ou équipement individuel), avec les mêmes caractéristiques.'
+        => 'El lote tiene <strong>{nombre}</strong> elemento(s) restante(s). Indique el tamaño de cada parte, separadas por comas: la <strong>primera</strong> se queda en el equipo <strong>{reference}</strong> (con su historial), cada una de las demás se convierte en un <strong>equipo nuevo</strong> (lote o equipo individual), con las mismas características.',
+    'Le nombre d\'éléments du lot doit être compris entre 1 et {max} (nombre initial).'
+        => 'El número de elementos del lote debe estar entre 1 y {max} (número inicial).',
+    'Le nombre initial d\'un lot doit être compris entre 2 et {max}.'
+        => 'El número inicial de un lote debe estar entre 2 y {max}.',
+    'Le statut « Égaré » ne peut être attribué qu\'à l\'issue d\'un contrôle ou du retour d\'un prêt.'
+        => 'El estado «Extraviado» solo puede asignarse tras una inspección o la devolución de un préstamo.',
+    'Le statut « Hors service » ne peut être attribué qu\'à l\'issue d\'un contrôle.'
+        => 'El estado «Fuera de servicio» solo puede asignarse tras una inspección.',
+    'Le statut « Prêté » est attribué par la validation d\'un prêt.'
+        => 'El estado «Prestado» se asigna al validar un préstamo.',
+    'Le statut EPI est défini par la catégorie de l\'équipement.'
+        => 'El carácter de EPI lo define la categoría del equipo.',
+    'Les équipements dont la date a déjà été modifiée une fois sont ignorés (et signalés).'
+        => 'Los equipos cuya fecha ya se modificó una vez se ignoran (y se indican).',
+    'Les étiquettes et fiches déjà imprimées portent l\'ancienne référence <strong>{reference}</strong> ; le QR code reste valable.'
+        => 'Las etiquetas y fichas ya impresas llevan la referencia antigua <strong>{reference}</strong>; el código QR sigue siendo válido.',
+    'Leurs références sont attribuées automatiquement selon le modèle de référence.'
+        => 'Sus referencias se asignan automáticamente según el modelo de referencia.',
+    'Libellé'
+        => 'Denominación',
+    'Libellé ou référence'
+        => 'Denominación o referencia',
+    'Lien vers la notice'
+        => 'Enlace al manual',
+    'Lignes par page'
+        => 'Filas por página',
+    'Lot'
+        => 'Lote',
+    'Lot « {reference} » dissocié : {restants} élément(s) restent sur « {reference} » ; {nombre} nouvel(s) équipement(s) : {references}. Pensez à imprimer leurs étiquettes.'
+        => 'Lote «{reference}» dividido: {restants} elemento(s) permanecen en «{reference}»; {nombre} equipo(s) nuevo(s): {references}. Recuerde imprimir sus etiquetas.',
+    'Lot : {nombre} élément(s) restant(s) sur {nombre_initial} initiaux'
+        => 'Lote: {nombre} elemento(s) restante(s) de {nombre_initial} iniciales',
+    'Lot : {nombre}/{nombre_initial}'
+        => 'Lote: {nombre}/{nombre_initial}',
+    'Lot obtenu : {nombre} élément(s) (nombre initial {initial}) ; {archives} équipement(s) archivé(s).'
+        => 'Lote resultante: {nombre} elemento(s) (número inicial {initial}); {archives} equipo(s) archivado(s).',
+    'Matériel prêté : son statut changera à la vérification du retour du prêt.'
+        => 'Material prestado: su estado cambiará al verificar la devolución del préstamo.',
+    'Même notice pour tous les équipements sélectionnés. Laisser vide pour effacer le lien.'
+        => 'Mismo manual para todos los equipos seleccionados. Dejar vacío para borrar el enlace.',
+    'Mise en service'
+        => 'Puesta en servicio',
+    'Modification de la référence, de la catégorie et du lot'
+        => 'Modificación de la referencia, la categoría y el lote',
+    'Modification groupée'
+        => 'Modificación en bloque',
+    'Modifier'
+        => 'Modificar',
+    'Modifier : {libelle}'
+        => 'Modificar: {libelle}',
+    'Modifier la référence, la catégorie et le lot (dissocier, regrouper)'
+        => 'Modificar la referencia, la categoría y el lote (dividir, agrupar)',
+    'Modifier la sélection ('
+        => 'Modificar la selección (',
+    'Moins d\'un an'
+        => 'Menos de un año',
+    'n° {id}'
+        => 'n.º {id}',
+    'Nombre actuel d\'éléments'
+        => 'Número actual de elementos',
+    'Nombre d\'éléments du lot à la création — non modifiable.'
+        => 'Número de elementos del lote al crearlo — no modificable.',
+    'Nombre d\'éléments du lot à la création ; modifiable par un super-administrateur.'
+        => 'Número de elementos del lote al crearlo; modificable por un superadministrador.',
+    'Nombre initial du lot'
+        => 'Número inicial del lote',
+    'Non'
+        => 'No',
+    'Non défini'
+        => 'No definido',
+    'Non définie'
+        => 'No definida',
+    'Non EPI'
+        => 'No EPI',
+    'Non prêtable actuellement — {pret_motif}'
+        => 'No se puede prestar actualmente — {pret_motif}',
+    'Non renseignée'
+        => 'No indicada',
+    'Notice :'
+        => 'Manual:',
+    'Nouvel équipement {numero} — équipement individuel : référence'
+        => 'Equipo nuevo {numero} — equipo individual: referencia',
+    'Nouvel équipement {numero} — lot de {taille} éléments : référence'
+        => 'Equipo nuevo {numero} — lote de {taille} elementos: referencia',
+    'Nouvel équipement n° {numero} : {erreur}'
+        => 'Equipo nuevo n.º {numero}: {erreur}',
+    'Nouvelle catégorie'
+        => 'Nueva categoría',
+    'Nouvelle catégorie : elle sera créée à l\'enregistrement.'
+        => 'Nueva categoría: se creará al guardar.',
+    'Ordre'
+        => 'Orden',
+    'ou un prêt'
+        => 'o un préstamo',
+    'Oui'
+        => 'Sí',
+    'Oui — durée de vie limitée par le fabricant'
+        => 'Sí — vida útil limitada por el fabricante',
+    'Oui (durée de vie limitée par le fabricant)'
+        => 'Sí (vida útil limitada por el fabricante)',
+    'Page {page} sur {totalPages}'
+        => 'Página {page} de {totalPages}',
+    'Pagination'
+        => 'Paginación',
+    'Par défaut, la date de la facture.'
+        => 'Por defecto, la fecha de la factura.',
+    'Passez l\'équipement « En maintenance » pour changer son élément textile : au contrôle suivant, le contrôleur indique le remplacement et met le statut à OK ; la date de fin d\'utilisation devient alors la date du contrôle + 10 ans (fin de mois).'
+        => 'Ponga el equipo «En mantenimiento» para cambiar su elemento textil: en la siguiente inspección, el inspector indica el reemplazo y pone el estado en OK; la fecha de fin de uso pasa a ser la fecha de la inspección + 10 años (fin de mes).',
+    'PDF'
+        => 'PDF',
+    'Photo'
+        => 'Foto',
+    'Photo :'
+        => 'Foto:',
+    'Photo actuelle'
+        => 'Foto actual',
+    'Photo actuelle (remplacée si vous en téléchargez une nouvelle).'
+        => 'Foto actual (se sustituye si sube una nueva).',
+    'Photo de l\'équipement'
+        => 'Foto del equipo',
+    'Plus d\'un an'
+        => 'Más de un año',
+    'Plusieurs éléments identiques sous une même référence. Décocher ramène le nombre initial et le nombre actuel à 1.'
+        => 'Varios elementos idénticos bajo una misma referencia. Desmarcar devuelve el número inicial y el actual a 1.',
+    'Pour changer la catégorie, saisissez le mot {mot} (en majuscules).'
+        => 'Para cambiar la categoría, escriba la palabra {mot} (en mayúsculas).',
+    'Pour changer la référence, saisissez le mot {mot} (en majuscules).'
+        => 'Para cambiar la referencia, escriba la palabra {mot} (en mayúsculas).',
+    'Pour confirmer la dissociation, saisissez <code>{mot_confirmation_dissociation}</code>'
+        => 'Para confirmar la división, escriba <code>{mot_confirmation_dissociation}</code>',
+    'Pour confirmer le changement, saisissez <code>{mot_confirmation_categorie}</code>'
+        => 'Para confirmar el cambio, escriba <code>{mot_confirmation_categorie}</code>',
+    'Pour confirmer le changement, saisissez <code>{mot_confirmation_reference}</code>'
+        => 'Para confirmar el cambio, escriba <code>{mot_confirmation_reference}</code>',
+    'Pour confirmer le regroupement, saisissez <code>{mot_confirmation_regroupement}</code>'
+        => 'Para confirmar la agrupación, escriba <code>{mot_confirmation_regroupement}</code>',
+    'Pour dissocier le lot, saisissez le mot {mot} (en majuscules).'
+        => 'Para dividir el lote, escriba la palabra {mot} (en mayúsculas).',
+    'Pour regrouper, saisissez le mot {mot} (en majuscules).'
+        => 'Para agrupar, escriba la palabra {mot} (en mayúsculas).',
+    'Précédent'
+        => 'Anterior',
+    'Premier'
+        => 'Primero',
+    'Prêt'
+        => 'Préstamo',
+    'Prêt en saisie'
+        => 'Préstamo en edición',
+    'prêt n° {id}'
+        => 'préstamo n.º {id}',
+    'Prêt n° {id} — {emprunteur_prenom} {emprunteur_nom}'
+        => 'Préstamo n.º {id} — {emprunteur_prenom} {emprunteur_nom}',
+    'Prêté'
+        => 'Prestado',
+    'Proposition de référence impossible, réessayez.'
+        => 'No se pudo proponer una referencia, inténtelo de nuevo.',
+    'QR Code'
+        => 'Código QR',
+    'QR Code :'
+        => 'Código QR:',
+    'QR Code de {reference}'
+        => 'Código QR de {reference}',
+    'QR Code non disponible'
+        => 'Código QR no disponible',
+    'QR code sauvegardé !'
+        => '¡Código QR guardado!',
+    'Recherche'
+        => 'Búsqueda',
+    'Recherche d\'une référence libre…'
+        => 'Buscando una referencia libre…',
+    'Référence disponible.'
+        => 'Referencia disponible.',
+    'Référence modifiée : « {ancienne} » → « {nouvelle} ». Pensez à réimprimer l\'étiquette.'
+        => 'Referencia modificada: «{ancienne}» → «{nouvelle}». Recuerde volver a imprimir la etiqueta.',
+    'Référence proposée ({annee}) : {reference}'
+        => 'Referencia propuesta ({annee}): {reference}',
+    'Référence saisie deux fois.'
+        => 'Referencia introducida dos veces.',
+    'Regrouper en lot'
+        => 'Agrupar en lote',
+    'Remarque'
+        => 'Observación',
+    'Remarques'
+        => 'Observaciones',
+    'Remarques :'
+        => 'Observaciones:',
+    'Remplaçable'
+        => 'Reemplazable',
+    'Remplacer'
+        => 'Reemplazar',
+    'Rendu'
+        => 'Devuelto',
+    'Rendu — maintenance'
+        => 'Devuelto — mantenimiento',
+    'Répartition'
+        => 'Reparto',
+    'Retirer ce filtre'
+        => 'Quitar este filtro',
+    'Retour'
+        => 'Devolución',
+    'Retour à la liste'
+        => 'Volver a la lista',
+    'Sauvegardé sur le serveur'
+        => 'Guardado en el servidor',
+    'Sauvegarder'
+        => 'Guardar',
+    'Sauvegarder sur le serveur'
+        => 'Guardar en el servidor',
+    'Scannez ce QR code pour accéder rapidement à la fiche ou au contrôle'
+        => 'Escanee este código QR para acceder rápidamente a la ficha o a la inspección',
+    'Sélection trop importante ({max} équipements maximum).'
+        => 'Selección demasiado grande ({max} equipos como máximo).',
+    'Sélectionner {reference}'
+        => 'Seleccionar {reference}',
+    'Seul le matériel disponible (hors contrôle, non périmé) est ajouté.'
+        => 'Solo se añade el material disponible (fuera de inspección, no caducado).',
+    'Seul un lot d\'au moins 2 éléments restants peut être dissocié.'
+        => 'Solo se puede dividir un lote con al menos 2 elementos restantes.',
+    'Seuls des équipements identiques (même libellé, même catégorie, même acquisition) peuvent être regroupés.'
+        => 'Solo se pueden agrupar equipos idénticos (misma denominación, misma categoría, misma adquisición).',
+    'Seuls les champs dont la case « Modifier » est cochée sont appliqués ; les autres restent inchangés.'
+        => 'Solo se aplican los campos cuya casilla «Modificar» está marcada; los demás no cambian.',
+    'Somme des parties : {somme} ; elle doit être égale à {nombre}.'
+        => 'Suma de las partes: {somme}; debe ser igual a {nombre}.',
+    'Statut'
+        => 'Estado',
+    'statut « {statut} »'
+        => 'estado «{statut}»',
+    'Statut :'
+        => 'Estado:',
+    'statut différent'
+        => 'estado distinto',
+    'Statut fixé par un contrôle'
+        => 'Estado fijado por una inspección',
+    'Statut invalide.'
+        => 'Estado no válido.',
+    'Statut non modifié pour : {liste} (hors service, prêté ou égaré : statut fixé par un contrôle ou un prêt).'
+        => 'Estado no modificado para: {liste} (fuera de servicio, prestado o extraviado: estado fijado por una inspección o un préstamo).',
+    'Suivant'
+        => 'Siguiente',
+    'Super-administrateur : modifiable à tout moment'
+        => 'Superadministrador: modificable en cualquier momento',
+    'supprimable à partir du {egare_supprimable_le}'
+        => 'se puede eliminar a partir del {egare_supprimable_le}',
+    'Télécharger'
+        => 'Descargar',
+    'Télécharger le QR code'
+        => 'Descargar el código QR',
+    'Textile remplacé'
+        => 'Textil reemplazado',
+    'Toujours en service'
+        => 'Sigue en servicio',
+    'Tous'
+        => 'Todos',
+    'Tout cocher'
+        => 'Marcar todo',
+    'Tout cocher / décocher'
+        => 'Marcar / desmarcar todo',
+    'Toutes'
+        => 'Todas',
+    'Trier par'
+        => 'Ordenar por',
+    'Un équipement au statut « {statut} » ne peut pas être dissocié.'
+        => 'Un equipo con el estado «{statut}» no se puede dividir.',
+    'Une des références vient d\'être attribuée à un autre équipement : rien n\'a été modifié, réessayez.'
+        => 'Una de las referencias acaba de asignarse a otro equipo: no se ha modificado nada, inténtelo de nuevo.',
+    'Vérification de la référence en cours, réessayez dans un instant.'
+        => 'Verificando la referencia, inténtelo de nuevo en un momento.',
+    'Vérification en cours, réessayez dans un instant.'
+        => 'Verificación en curso, inténtelo de nuevo en un momento.',
+    'Vérification impossible, réessayez.'
+        => 'No se pudo verificar, inténtelo de nuevo.',
+    'Voir'
+        => 'Ver',
+    'Voir la facture'
+        => 'Ver la factura',
+    'Voir la fiche acquisition'
+        => 'Ver la ficha de adquisición',
+    'Voir la page du QR code'
+        => 'Ver la página del código QR',
+    'Voir le journal'
+        => 'Ver el registro',
+    'Voir le QR'
+        => 'Ver el QR',
+    'Voir tous les équipements de cette acquisition'
+        => 'Ver todos los equipos de esta adquisición',
+
+    // --- Équipements (expressions) ---
+    'À vérifier'
+        => 'Por verificar',
+    '(prévu {date})'
+        => '(previsto {date})',
+    'À contrôler'
+        => 'Por inspeccionar',
+    'Dissocier ou regrouper'
+        => 'Dividir o agrupar',
+
+    // --- Équipements (libellés de champ) ---
+    'Date de fin d\'utilisation'
+        => 'Fecha de fin de uso',
 ];

@@ -3,6 +3,7 @@
 namespace Epiclub\Controller;
 
 use Epiclub\Domain\CategorieManager;
+use Epiclub\Engine\Traducteur;
 use Epiclub\Domain\EquipementManager;
 use Epiclub\Domain\EmplacementManager;
 use Epiclub\Domain\AcquisitionManager;
@@ -520,7 +521,7 @@ class EquipementController extends AbstractController
         $equipement = $equipementManager->findId($id);
         
         if (!$equipement) {
-            $this->session->getFlashBag()->add('danger', 'Équipement non trouvé.');
+            $this->session->getFlashBag()->add('danger', Traducteur::t('Équipement non trouvé.'));
             return $this->redirectTo('/equipements');
         }
         
@@ -571,19 +572,19 @@ class EquipementController extends AbstractController
     /** Longueur de club_equipement.reference (VARCHAR(32)). */
     public const REFERENCE_MAX = ReferenceGenerator::REFERENCE_MAX;
 
-    private const MESSAGE_REFERENCE_PRISE = 'La référence « %s » est déjà attribuée à un autre équipement.';
+    private const MESSAGE_REFERENCE_PRISE = 'La référence « {reference} » est déjà attribuée à un autre équipement.';
 
     /** Message d'erreur de format, ou null si la référence est recevable. */
     public static function erreurFormatReference(string $reference): ?string
     {
         if ($reference === '') {
-            return 'La référence est obligatoire.';
+            return Traducteur::t('La référence est obligatoire.');
         }
         if (!mb_check_encoding($reference, 'UTF-8') || preg_match('/[\x00-\x1F\x7F]/', $reference)) {
-            return 'La référence contient des caractères non autorisés.';
+            return Traducteur::t('La référence contient des caractères non autorisés.');
         }
         if (mb_strlen($reference) > self::REFERENCE_MAX) {
-            return sprintf('La référence ne doit pas dépasser %d caractères.', self::REFERENCE_MAX);
+            return Traducteur::t('La référence ne doit pas dépasser {max} caractères.', ['max' => self::REFERENCE_MAX]);
         }
         return null;
     }
@@ -608,7 +609,7 @@ class EquipementController extends AbstractController
         if ($id !== null) {
             $equipement = $this->equipementManager()->findId($id);
             if ($equipement && (string) $equipement['reference'] === $reference) {
-                return new JsonResponse(['disponible' => false, 'message' => 'C\'est la référence actuelle.']);
+                return new JsonResponse(['disponible' => false, 'message' => Traducteur::t('C\'est la référence actuelle.')]);
             }
         }
 
@@ -616,8 +617,8 @@ class EquipementController extends AbstractController
         return new JsonResponse([
             'disponible' => !$prise,
             'message' => $prise
-                ? 'Cette référence est déjà attribuée à un autre équipement (éventuellement supprimé).'
-                : 'Référence disponible.',
+                ? Traducteur::t('Cette référence est déjà attribuée à un autre équipement (éventuellement supprimé).')
+                : Traducteur::t('Référence disponible.'),
         ]);
     }
 
@@ -640,13 +641,13 @@ class EquipementController extends AbstractController
     public static function erreurLibelleCategorie(string $libelle): ?string
     {
         if ($libelle === '') {
-            return 'La catégorie est obligatoire.';
+            return Traducteur::t('La catégorie est obligatoire.');
         }
         if (!mb_check_encoding($libelle, 'UTF-8') || preg_match('/[\x00-\x1F\x7F]/', $libelle)) {
-            return 'La catégorie contient des caractères non autorisés.';
+            return Traducteur::t('La catégorie contient des caractères non autorisés.');
         }
         if (mb_strlen($libelle) > self::CATEGORIE_LIBELLE_MAX) {
-            return sprintf('La catégorie ne doit pas dépasser %d caractères.', self::CATEGORIE_LIBELLE_MAX);
+            return Traducteur::t('La catégorie ne doit pas dépasser {max} caractères.', ['max' => self::CATEGORIE_LIBELLE_MAX]);
         }
         return null;
     }
@@ -779,7 +780,7 @@ class EquipementController extends AbstractController
         $id = $this->getValidId($request);
         $equipement = $id !== null ? $this->equipementManager()->findId($id) : null;
         if (!$equipement) {
-            $this->session->getFlashBag()->add('error', 'Équipement non trouvé.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Équipement non trouvé.'));
             return $this->redirectTo('/equipements');
         }
         $flash = $this->session->getFlashBag();
@@ -802,8 +803,7 @@ class EquipementController extends AbstractController
             } else {
                 $postees = $this->referencesProposees($equipement, count($parties) - 1);
                 if (count($postees) !== count($parties) - 1) {
-                    $erreur = 'Aucune référence ne peut être proposée pour ce lot (catégorie ou modèle de référence) : '
-                        . 'demandez à un super-administrateur de le dissocier.';
+                    $erreur = Traducteur::t('Aucune référence ne peut être proposée pour ce lot (catégorie ou modèle de référence) : demandez à un super-administrateur de le dissocier.');
                 }
             }
         }
@@ -811,15 +811,15 @@ class EquipementController extends AbstractController
             foreach (array_slice($parties, 1) as $i => $taille) {
                 $reference = trim((string) ($postees[$i] ?? ''));
                 if (($erreur = self::erreurFormatReference($reference)) !== null) {
-                    $erreur = sprintf('Nouvel équipement n° %d : %s', $i + 1, $erreur);
+                    $erreur = Traducteur::t('Nouvel équipement n° {numero} : {erreur}', ['numero' => $i + 1, 'erreur' => $erreur]);
                     break;
                 }
                 if ($reference === (string) $equipement['reference'] || in_array($reference, $references, true)) {
-                    $erreur = sprintf('La référence « %s » est utilisée deux fois.', $reference);
+                    $erreur = Traducteur::t('La référence « {reference} » est utilisée deux fois.', ['reference' => $reference]);
                     break;
                 }
                 if ($this->equipementManager()->referenceExists($reference)) {
-                    $erreur = sprintf(self::MESSAGE_REFERENCE_PRISE, $reference);
+                    $erreur = Traducteur::t(self::MESSAGE_REFERENCE_PRISE, ['reference' => $reference]);
                     break;
                 }
                 $references[] = $reference;
@@ -827,7 +827,7 @@ class EquipementController extends AbstractController
         }
         if ($erreur === null
             && trim((string) $request->request->get('confirmation_dissociation', '')) !== DissociationLot::MOT_CONFIRMATION) {
-            $erreur = sprintf('Pour dissocier le lot, saisissez le mot %s (en majuscules).', DissociationLot::MOT_CONFIRMATION);
+            $erreur = Traducteur::t('Pour dissocier le lot, saisissez le mot {mot} (en majuscules).', ['mot' => DissociationLot::MOT_CONFIRMATION]);
         }
         if ($erreur !== null) {
             $flash->add('error', $erreur);
@@ -841,7 +841,7 @@ class EquipementController extends AbstractController
             if ((string) $e->getCode() !== '23000') {
                 throw $e;
             }
-            $flash->add('error', 'Une des références vient d\'être attribuée à un autre équipement : rien n\'a été modifié, réessayez.');
+            $flash->add('error', Traducteur::t('Une des références vient d\'être attribuée à un autre équipement : rien n\'a été modifié, réessayez.'));
             return $this->redirectTo($retour);
         }
 
@@ -862,9 +862,9 @@ class EquipementController extends AbstractController
                 array_slice($parties, 1)
             ))
         ), $request);
-        $flash->add('success', sprintf(
-            'Lot « %s » dissocié : %d élément(s) restent sur « %s » ; %d nouvel(s) équipement(s) : %s. Pensez à imprimer leurs étiquettes.',
-            $equipement['reference'], $parties[0], $equipement['reference'], count($references), implode(', ', $references)
+        $flash->add('success', Traducteur::t(
+            'Lot « {reference} » dissocié : {restants} élément(s) restent sur « {reference} » ; {nombre} nouvel(s) équipement(s) : {references}. Pensez à imprimer leurs étiquettes.',
+            ['reference' => $equipement['reference'], 'restants' => $parties[0], 'nombre' => count($references), 'references' => implode(', ', $references)]
         ));
         return $this->redirectTo('/equipements/equipement-' . $id);
     }
@@ -929,7 +929,7 @@ class EquipementController extends AbstractController
         $id = $this->getValidId($request);
         $depart = $id !== null ? $this->equipementManager()->findId($id) : null;
         if (!$depart) {
-            $this->session->getFlashBag()->add('error', 'Équipement non trouvé.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Équipement non trouvé.'));
             return $this->redirectTo('/equipements');
         }
         $flash = $this->session->getFlashBag();
@@ -938,7 +938,7 @@ class EquipementController extends AbstractController
         $enPret = $this->equipementsEnPret();
         $erreur = RegroupementLot::erreurEquipement($depart, in_array($id, $enPret, true));
         if ($erreur !== null) {
-            $erreur = sprintf('L\'équipement « %s » ne peut pas être regroupé (%s).', $depart['reference'], $erreur);
+            $erreur = Traducteur::t('L\'équipement « {reference} » ne peut pas être regroupé ({raison}).', ['reference' => $depart['reference'], 'raison' => $erreur]);
         }
 
         $autres = [];
@@ -947,23 +947,23 @@ class EquipementController extends AbstractController
             foreach ($ids as $idRaw) {
                 $autre = ctype_digit($idRaw) ? $this->equipementManager()->findId((int) $idRaw) : null;
                 if (!$autre || !RegroupementLot::identiques($depart, $autre)) {
-                    $erreur = 'Seuls des équipements identiques (même libellé, même catégorie, même acquisition) peuvent être regroupés.';
+                    $erreur = Traducteur::t('Seuls des équipements identiques (même libellé, même catégorie, même acquisition) peuvent être regroupés.');
                     break;
                 }
                 $raison = RegroupementLot::erreurEquipement($autre, in_array((int) $autre['id'], $enPret, true), $depart);
                 if ($raison !== null) {
-                    $erreur = sprintf('L\'équipement « %s » ne peut pas être regroupé (%s).', $autre['reference'], $raison);
+                    $erreur = Traducteur::t('L\'équipement « {reference} » ne peut pas être regroupé ({raison}).', ['reference' => $autre['reference'], 'raison' => $raison]);
                     break;
                 }
                 $autres[] = $autre;
             }
             if ($erreur === null && $autres === []) {
-                $erreur = 'Cochez au moins un équipement à regrouper.';
+                $erreur = Traducteur::t('Cochez au moins un équipement à regrouper.');
             }
         }
         if ($erreur === null
             && trim((string) $request->request->get('confirmation_regroupement', '')) !== RegroupementLot::MOT_CONFIRMATION) {
-            $erreur = sprintf('Pour regrouper, saisissez le mot %s (en majuscules).', RegroupementLot::MOT_CONFIRMATION);
+            $erreur = Traducteur::t('Pour regrouper, saisissez le mot {mot} (en majuscules).', ['mot' => RegroupementLot::MOT_CONFIRMATION]);
         }
         if ($erreur !== null) {
             $flash->add('error', $erreur);
@@ -987,9 +987,9 @@ class EquipementController extends AbstractController
             $total,
             $total > 1 ? 's' : ''
         ), $request);
-        $flash->add('success', sprintf(
-            '%d équipement(s) regroupé(s) dans le lot « %s » : %s. Retirez leurs étiquettes.',
-            count($autres), $depart['reference'], implode(', ', $references)
+        $flash->add('success', Traducteur::t(
+            '{nombre} équipement(s) regroupé(s) dans le lot « {reference} » : {references}. Retirez leurs étiquettes.',
+            ['nombre' => count($autres), 'reference' => $depart['reference'], 'references' => implode(', ', $references)]
         ));
         return $this->redirectTo('/equipements/equipement-' . $id);
     }
@@ -1066,11 +1066,11 @@ class EquipementController extends AbstractController
                 if ($dmsRaw !== '') {
                     $dms = \DateTimeImmutable::createFromFormat('!Y-m-d', $dmsRaw);
                     if ($dms === false || $dms->format('Y-m-d') !== $dmsRaw) {
-                        $form_errors['date_mise_en_service'] = 'Date de mise en service invalide.';
+                        $form_errors['date_mise_en_service'] = Traducteur::t('Date de mise en service invalide.');
                     } elseif ($dateFacture !== null && $dmsRaw < $dateFacture) {
-                        $form_errors['date_mise_en_service'] = sprintf(
-                            'La date de mise en service ne peut pas être antérieure à la date de facture (%s).',
-                            date('d/m/Y', strtotime($dateFacture))
+                        $form_errors['date_mise_en_service'] = Traducteur::t(
+                            'La date de mise en service ne peut pas être antérieure à la date de facture ({date}).',
+                            ['date' => date('d/m/Y', strtotime($dateFacture))]
                         );
                     } else {
                         $date_mise_en_service = $dmsRaw;
@@ -1101,7 +1101,7 @@ class EquipementController extends AbstractController
                     // On ne remonte pas $e->getMessage() tel quel : il peut contenir
                     // des chemins serveur. On garde le message court.
                     error_log('[EquipementController] Photo processing failed: ' . $e->getMessage());
-                    $form_errors['photo'] = self::MESSAGE_PHOTO_ILLISIBLE;
+                    $form_errors['photo'] = Traducteur::t(self::MESSAGE_PHOTO_ILLISIBLE);
                 }
             }
             
@@ -1118,9 +1118,9 @@ class EquipementController extends AbstractController
                     if ($lotPoste) {
                         if (!is_string($niRaw) || !ctype_digit($niRaw)
                             || (int) $niRaw < 2 || (int) $niRaw > self::LOT_MAX) {
-                            $form_errors['nombre_initial'] = sprintf(
-                                'Le nombre initial d\'un lot doit être compris entre 2 et %d.',
-                                self::LOT_MAX
+                            $form_errors['nombre_initial'] = Traducteur::t(
+                                'Le nombre initial d\'un lot doit être compris entre 2 et {max}.',
+                                ['max' => self::LOT_MAX]
                             );
                         } else {
                             $niPoste = (int) $niRaw;
@@ -1148,9 +1148,9 @@ class EquipementController extends AbstractController
                     }
                     if (!is_string($nombreRaw) || !ctype_digit($nombreRaw)
                         || (int) $nombreRaw < 1 || (int) $nombreRaw > $nombreInitial) {
-                        $form_errors['nombre'] = sprintf(
-                            'Le nombre d\'éléments du lot doit être compris entre 1 et %d (nombre initial).',
-                            $nombreInitial
+                        $form_errors['nombre'] = Traducteur::t(
+                            'Le nombre d\'éléments du lot doit être compris entre 1 et {max} (nombre initial).',
+                            ['max' => $nombreInitial]
                         );
                     } else {
                         $nombreLot = (int) $nombreRaw;
@@ -1174,7 +1174,7 @@ class EquipementController extends AbstractController
                         $id ?? 'new',
                         is_scalar($statutRaw) ? substr((string) $statutRaw, 0, 50) : gettype($statutRaw)
                     ));
-                    $this->session->getFlashBag()->add('error', 'Statut invalide.');
+                    $this->session->getFlashBag()->add('error', Traducteur::t('Statut invalide.'));
                     return $this->redirectTo('/equipements');
                 }
                 
@@ -1211,12 +1211,12 @@ class EquipementController extends AbstractController
                         if (($erreur = self::erreurFormatReference($referencePostee)) !== null) {
                             $form_errors['reference'] = $erreur;
                         } elseif ($confirmation !== self::MOT_CONFIRMATION_REFERENCE) {
-                            $form_errors['confirmation_reference'] = sprintf(
-                                'Pour changer la référence, saisissez le mot %s (en majuscules).',
-                                self::MOT_CONFIRMATION_REFERENCE
+                            $form_errors['confirmation_reference'] = Traducteur::t(
+                                'Pour changer la référence, saisissez le mot {mot} (en majuscules).',
+                                ['mot' => self::MOT_CONFIRMATION_REFERENCE]
                             );
                         } elseif ($equipementManager->referenceExists($referencePostee, $id)) {
-                            $form_errors['reference'] = sprintf(self::MESSAGE_REFERENCE_PRISE, $referencePostee);
+                            $form_errors['reference'] = Traducteur::t(self::MESSAGE_REFERENCE_PRISE, ['reference' => $referencePostee]);
                         } else {
                             $nouvelleReference = $referencePostee;
                         }
@@ -1240,9 +1240,9 @@ class EquipementController extends AbstractController
                             $form_errors['categorie_libelle'] = $erreur;
                         } elseif ($confirmation !== self::MOT_CONFIRMATION_CATEGORIE) {
                             $categorieSaisie = $categoriePostee;
-                            $form_errors['confirmation_categorie'] = sprintf(
-                                'Pour changer la catégorie, saisissez le mot %s (en majuscules).',
-                                self::MOT_CONFIRMATION_CATEGORIE
+                            $form_errors['confirmation_categorie'] = Traducteur::t(
+                                'Pour changer la catégorie, saisissez le mot {mot} (en majuscules).',
+                                ['mot' => self::MOT_CONFIRMATION_CATEGORIE]
                             );
                         } else {
                             $categorieSaisie = $categoriePostee;
@@ -1317,7 +1317,7 @@ class EquipementController extends AbstractController
                     if ($nouvelleReference === null || (string) $e->getCode() !== '23000') {
                         throw $e;
                     }
-                    $form_errors['reference'] = sprintf(self::MESSAGE_REFERENCE_PRISE, $nouvelleReference);
+                    $form_errors['reference'] = Traducteur::t(self::MESSAGE_REFERENCE_PRISE, ['reference' => $nouvelleReference]);
                     $equipement['reference'] = $ancienneReference;
                     $equipement['categorie_id'] = $ancienneCategorieId;
                 }
@@ -1343,9 +1343,9 @@ class EquipementController extends AbstractController
                         '[EquipementController] Référence de l\'équipement id=%d modifiée : « %s » → « %s » (utilisateur id=%s)',
                         $id, $ancienneReference, $nouvelleReference, $user['id'] ?? '?'
                     ));
-                    $this->session->getFlashBag()->add('success', sprintf(
-                        'Référence modifiée : « %s » → « %s ». Pensez à réimprimer l\'étiquette.',
-                        $ancienneReference, $nouvelleReference
+                    $this->session->getFlashBag()->add('success', Traducteur::t(
+                        'Référence modifiée : « {ancienne} » → « {nouvelle} ». Pensez à réimprimer l\'étiquette.',
+                        ['ancienne' => $ancienneReference, 'nouvelle' => $nouvelleReference]
                     ));
                 }
                 if ($nouvelleCategorie !== null) {
@@ -1355,11 +1355,15 @@ class EquipementController extends AbstractController
                         $id, $ancienneCategorie, $nouvelleCategorie['libelle'],
                         isset($categorieACreer) ? ' (créée)' : '', $user['id'] ?? '?'
                     ));
-                    $this->session->getFlashBag()->add('success', sprintf(
-                        'Catégorie modifiée : « %s » → « %s »%s.',
-                        $ancienneCategorie, $nouvelleCategorie['libelle'],
-                        isset($categorieACreer) ? ' (nouvelle catégorie créée)' : ''
-                    ));
+                    $this->session->getFlashBag()->add('success', isset($categorieACreer)
+                        ? Traducteur::t(
+                            'Catégorie modifiée : « {ancienne} » → « {nouvelle} » (nouvelle catégorie créée).',
+                            ['ancienne' => $ancienneCategorie, 'nouvelle' => $nouvelleCategorie['libelle']]
+                        )
+                        : Traducteur::t(
+                            'Catégorie modifiée : « {ancienne} » → « {nouvelle} ».',
+                            ['ancienne' => $ancienneCategorie, 'nouvelle' => $nouvelleCategorie['libelle']]
+                        ));
                 }
                 return $this->redirectTo("/equipements");
             }
@@ -1413,7 +1417,7 @@ class EquipementController extends AbstractController
             // Whitelist : id d'un emplacement existant.
             if (!is_string($raw) || !ctype_digit($raw)
                 || !($emplacement = $this->emplacementManager()->findId((int) $raw))) {
-                $this->session->getFlashBag()->add('error', 'Emplacement invalide.');
+                $this->session->getFlashBag()->add('error', Traducteur::t('Emplacement invalide.'));
                 return $this->redirectTo('/equipements/equipement_modification-' . $id);
             }
             $emplacementId = (int) $raw;
@@ -1423,8 +1427,8 @@ class EquipementController extends AbstractController
         if ($actuel !== $emplacementId) {
             $this->equipementManager()->save(['id' => $id, 'emplacement_id' => $emplacementId]);
             $this->session->getFlashBag()->add('success', $emplacement
-                ? sprintf('Équipement « %s » déplacé vers « %s ».', $equipement['reference'] ?? '', $emplacement['libelle'])
-                : sprintf('Emplacement retiré pour « %s ».', $equipement['reference'] ?? ''));
+                ? Traducteur::t('Équipement « {reference} » déplacé vers « {emplacement} ».', ['reference' => $equipement['reference'] ?? '', 'emplacement' => $emplacement['libelle']])
+                : Traducteur::t('Emplacement retiré pour « {reference} ».', ['reference' => $equipement['reference'] ?? '']));
         }
 
         return $this->redirectTo('/equipements/equipement-' . $id);
@@ -1479,7 +1483,7 @@ class EquipementController extends AbstractController
         $equipement = $equipementManager->findId($id);
         
         if (!$equipement) {
-            $this->session->getFlashBag()->add('error', "L'équipement demandé n'existe pas.");
+            $this->session->getFlashBag()->add('error', Traducteur::t('L\'équipement demandé n\'existe pas.'));
             return $this->redirectTo('/equipements');
         }
         
@@ -1487,7 +1491,7 @@ class EquipementController extends AbstractController
         if (!empty($equipement['controle_en_cours'])) {
             $this->session->getFlashBag()->add(
                 'error',
-                "Impossible de supprimer cet équipement : un contrôle est en cours."
+                Traducteur::t('Impossible de supprimer cet équipement : un contrôle est en cours.')
             );
             return $this->redirectTo("/equipements/equipement-{$id}");
         }
@@ -1498,9 +1502,9 @@ class EquipementController extends AbstractController
         if (!self::suppressionAutorisee($equipement, $equipementManager->getHistoriqueControles($id), $this->dateLimiteEgare())) {
             $this->session->getFlashBag()->add(
                 'error',
-                sprintf(
-                    "Impossible de supprimer cet équipement : il doit avoir été déclaré « Hors service » lors de son dernier contrôle clôturé, ou être égaré depuis au moins %d mois.",
-                    $this->delaiSuppressionEgare()
+                Traducteur::t(
+                    'Impossible de supprimer cet équipement : il doit avoir été déclaré « Hors service » lors de son dernier contrôle clôturé, ou être égaré depuis au moins {mois} mois.',
+                    ['mois' => $this->delaiSuppressionEgare()]
                 )
             );
             return $this->redirectTo("/equipements/equipement-{$id}");
@@ -1516,7 +1520,7 @@ class EquipementController extends AbstractController
                 ? 'égaré'
                 : 'hors service au dernier contrôle'
         ), $request);
-        $this->session->getFlashBag()->add('success', "L'équipement '{$equipement['reference']}' a été supprimé.");
+        $this->session->getFlashBag()->add('success', Traducteur::t('L\'équipement \'{reference}\' a été supprimé.', ['reference' => $equipement['reference']]));
         
         return $this->redirectTo('/equipements');
     }
@@ -1547,7 +1551,7 @@ class EquipementController extends AbstractController
         
         $equipement = $this->equipementManager()->findId($id);
         if (!$equipement) {
-            $this->session->getFlashBag()->add('danger', 'Équipement non trouvé.');
+            $this->session->getFlashBag()->add('danger', Traducteur::t('Équipement non trouvé.'));
             return $this->redirectTo('/equipements');
         }
         $equipement = $this->avecCategorieEtEmplacement($equipement);
@@ -2220,22 +2224,22 @@ HTML;
         $superAdmin = $this->isGranted('ROLE_SUPER_ADMIN');
 
         if ($estPost && $this->isPostTruncated($request)) {
-            $this->session->getFlashBag()->add('error', sprintf(
-                'Le fichier est trop volumineux pour être traité par le serveur (limite PHP : %s).',
-                ini_get('post_max_size')
+            $this->session->getFlashBag()->add('error', Traducteur::t(
+                'Le fichier est trop volumineux pour être traité par le serveur (limite PHP : {limite}).',
+                ['limite' => ini_get('post_max_size')]
             ));
             return $this->redirectTo($retour);
         }
 
         $ids = self::idsSelectionnes($source);
         if ($ids === []) {
-            $this->session->getFlashBag()->add('error', 'Aucun équipement sélectionné.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Aucun équipement sélectionné.'));
             return $this->redirectTo($retour);
         }
         if (count($ids) > self::GROUPE_MAX) {
-            $this->session->getFlashBag()->add('error', sprintf(
-                'Sélection trop importante (%d équipements maximum).',
-                self::GROUPE_MAX
+            $this->session->getFlashBag()->add('error', Traducteur::t(
+                'Sélection trop importante ({max} équipements maximum).',
+                ['max' => self::GROUPE_MAX]
             ));
             return $this->redirectTo($retour);
         }
@@ -2243,7 +2247,7 @@ HTML;
         $equipementManager = $this->equipementManager();
         $equipements = $equipementManager->findByIds($ids);
         if ($equipements === []) {
-            $this->session->getFlashBag()->add('error', 'Aucun des équipements sélectionnés n\'existe.');
+            $this->session->getFlashBag()->add('error', Traducteur::t('Aucun des équipements sélectionnés n\'existe.'));
             return $this->redirectTo($retour);
         }
 
@@ -2261,7 +2265,7 @@ HTML;
             $saisie = ['appliquer' => array_fill_keys($actifs, true)] + $request->request->all();
 
             if ($actifs === []) {
-                $form_errors['general'] = 'Cochez « Modifier » pour au moins un champ.';
+                $form_errors['general'] = Traducteur::t('Cochez « Modifier » pour au moins un champ.');
             }
 
             $valeurs = [];
@@ -2271,7 +2275,7 @@ HTML;
                     case 'statut':
                         $statut = is_string($brut) && ctype_digit($brut) ? EquipementStatut::tryFrom((int) $brut) : null;
                         if ($statut === null) {
-                            $form_errors['statut'] = 'Statut invalide.';
+                            $form_errors['statut'] = Traducteur::t('Statut invalide.');
                         } elseif ($statut->estReserve()) {
                             $form_errors['statut'] = $statut->messageAttribution();
                         } else {
@@ -2285,7 +2289,7 @@ HTML;
                         } elseif (is_string($brut) && ctype_digit($brut) && in_array((int) $brut, $idsEmplacements, true)) {
                             $valeurs['emplacement_id'] = (int) $brut;
                         } else {
-                            $form_errors['emplacement_id'] = 'Emplacement invalide.';
+                            $form_errors['emplacement_id'] = Traducteur::t('Emplacement invalide.');
                         }
                         break;
                     case 'date_fin_utilisation':
@@ -2296,7 +2300,7 @@ HTML;
                         } elseif (self::dateValide($brut)) {
                             $valeurs[$champ] = $brut;
                         } else {
-                            $form_errors[$champ] = 'Date invalide.';
+                            $form_errors[$champ] = Traducteur::t('Date invalide.');
                         }
                         break;
                     case 'duree_max_utilisation':
@@ -2325,7 +2329,7 @@ HTML;
                     case 'photo':
                         $fichier = $request->files->get('photo');
                         if (!$fichier instanceof UploadedFile || !$fichier->isValid()) {
-                            $form_errors['photo'] = 'Choisissez une photo à appliquer.';
+                            $form_errors['photo'] = Traducteur::t('Choisissez une photo à appliquer.');
                         } else {
                             $valeurs['photo'] = $fichier;
                         }
@@ -2340,7 +2344,7 @@ HTML;
                     $form_errors['photo'] = $e->getMessage();
                 } catch (\Throwable $e) {
                     error_log('[EquipementController] Modification groupée (photo) : ' . $e->getMessage());
-                    $form_errors['photo'] = self::MESSAGE_PHOTO_ILLISIBLE;
+                    $form_errors['photo'] = Traducteur::t(self::MESSAGE_PHOTO_ILLISIBLE);
                 }
             }
 
@@ -2412,10 +2416,10 @@ HTML;
                 $dms = $valeurs['date_mise_en_service'];
 
                 if (!$superAdmin && self::dateMiseEnServiceVerrouillee($equipement, $dateFacture)) {
-                    $ignores[] = ($equipement['reference'] ?? '#' . $equipement['id']) . ' (date déjà modifiée)';
+                    $ignores[] = ($equipement['reference'] ?? '#' . $equipement['id']) . ' ' . Traducteur::t('(date déjà modifiée)');
                 } elseif ($dateFacture !== null && $dms < $dateFacture) {
                     $ignores[] = ($equipement['reference'] ?? '#' . $equipement['id'])
-                        . ' (facture du ' . date('d/m/Y', strtotime($dateFacture)) . ')';
+                        . ' ' . Traducteur::t('(facture du {date})', ['date' => date('d/m/Y', strtotime($dateFacture))]);
                 } else {
                     $data['date_mise_en_service'] = $dms;
                 }
@@ -2434,20 +2438,16 @@ HTML;
             $this->supprimerPhotoSiOrpheline($ancienne);
         }
 
-        $this->session->getFlashBag()->add('success', sprintf(
-            '%d équipement%s modifié%s.',
-            $modifies,
-            $modifies > 1 ? 's' : '',
-            $modifies > 1 ? 's' : ''
-        ));
+        $this->session->getFlashBag()->add('success', $modifies > 1
+            ? Traducteur::t('{nombre} équipements modifiés.', ['nombre' => $modifies])
+            : Traducteur::t('{nombre} équipement modifié.', ['nombre' => $modifies]));
         if ($ignores !== []) {
             $this->session->getFlashBag()->add('warning',
-                'Date de mise en service non modifiée pour : ' . implode(', ', $ignores) . '.');
+                Traducteur::t('Date de mise en service non modifiée pour : {liste}.', ['liste' => implode(', ', $ignores)]));
         }
         if ($horsService !== []) {
             $this->session->getFlashBag()->add('warning',
-                'Statut non modifié pour : ' . implode(', ', $horsService)
-                . ' (hors service, prêté ou égaré : statut fixé par un contrôle ou un prêt).');
+                Traducteur::t('Statut non modifié pour : {liste} (hors service, prêté ou égaré : statut fixé par un contrôle ou un prêt).', ['liste' => implode(', ', $horsService)]));
         }
 
         return $this->redirectTo($retour);
@@ -2493,8 +2493,7 @@ HTML;
     // UTILITAIRES
     // --------------------------------------------------------------
 
-    private const MESSAGE_PHOTO_ILLISIBLE = 'Erreur lors du traitement de l\'image. '
-        . 'Vérifiez que le fichier est bien une image (JPEG, PNG, WebP, GIF, AVIF).';
+    private const MESSAGE_PHOTO_ILLISIBLE = 'Erreur lors du traitement de l\'image. Vérifiez que le fichier est bien une image (JPEG, PNG, WebP, GIF, AVIF).';
 
     /** Échappe une valeur insérée dans le HTML des PDF (Dompdf). */
     private static function html(mixed $valeur): string
@@ -2517,14 +2516,14 @@ HTML;
             return null;
         }
         if (mb_strlen($url) > self::NOTICE_URL_MAX) {
-            return sprintf('Le lien vers la notice ne doit pas dépasser %d caractères.', self::NOTICE_URL_MAX);
+            return Traducteur::t('Le lien vers la notice ne doit pas dépasser {max} caractères.', ['max' => self::NOTICE_URL_MAX]);
         }
         if (!filter_var($url, FILTER_VALIDATE_URL)) {
-            return "Le lien vers la notice n'est pas une URL valide.";
+            return Traducteur::t('Le lien vers la notice n\'est pas une URL valide.');
         }
         $schema = strtolower((string) parse_url($url, PHP_URL_SCHEME));
         if (!in_array($schema, ['http', 'https'], true)) {
-            return 'Le lien vers la notice doit commencer par http:// ou https://';
+            return Traducteur::t('Le lien vers la notice doit commencer par http:// ou https://');
         }
         return null;
     }
@@ -2532,10 +2531,10 @@ HTML;
     private static function erreurLibelle(string $libelle): ?string
     {
         if ($libelle === '') {
-            return 'Le libellé est obligatoire.';
+            return Traducteur::t('Le libellé est obligatoire.');
         }
         if (mb_strlen($libelle) > 255) {
-            return 'Le libellé ne doit pas dépasser 255 caractères.';
+            return Traducteur::t('Le libellé ne doit pas dépasser {max} caractères.', ['max' => 255]);
         }
         return null;
     }

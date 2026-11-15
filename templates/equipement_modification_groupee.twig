@@ -5,17 +5,17 @@
 		<input class="form-check-input case-appliquer" type="checkbox" role="switch"
 		       name="appliquer[{{ nom }}]" id="appliquer_{{ nom }}" value="1" data-cible="bloc_{{ nom }}"
 		       {% if saisie.appliquer[nom] is defined %}checked{% endif %}>
-		<label class="form-check-label fw-bold" for="appliquer_{{ nom }}">Modifier : {{ libelle }}</label>
+		<label class="form-check-label fw-bold" for="appliquer_{{ nom }}">{{ 'Modifier : {libelle}'|trans({libelle: libelle}) }}</label>
 	</div>
 {% endmacro %}
 
 {% block body %}
 	{% import _self as m %}
 
-	<h3>Modification groupée</h3>
+	<h3>{{ 'Modification groupée'|trans }}</h3>
 	<p class="text-body-secondary mb-2">
-		{{ equipements|length }} équipement{{ equipements|length > 1 ? 's' : '' }} sélectionné{{ equipements|length > 1 ? 's' : '' }}.
-		Seuls les champs dont la case « Modifier » est cochée sont appliqués ; les autres restent inchangés.
+		{% if equipements|length > 1 %}{{ '{nombre} équipements sélectionnés.'|trans({nombre: equipements|length}) }}{% else %}{{ '{nombre} équipement sélectionné.'|trans({nombre: equipements|length}) }}{% endif %}
+		{{ 'Seuls les champs dont la case « Modifier » est cochée sont appliqués ; les autres restent inchangés.'|trans }}
 	</p>
 	<hr>
 
@@ -34,23 +34,23 @@
 
 				{# --- Statut --- #}
 				<div class="card card-body mb-3">
-					{{ m.champ('statut', 'Statut', saisie, form_errors) }}
+					{{ m.champ('statut', 'Statut'|trans, saisie, form_errors) }}
 					<div id="bloc_statut">
 						<select name="statut" class="form-select">
 							{% for libelle, valeur in equipement_statuts %}
 								<option value="{{ valeur }}" {% if saisie.statut is defined and saisie.statut == valeur %}selected{% endif %}>{{ libelle }}</option>
 							{% endfor %}
 						</select>
-						<small class="text-muted">« Hors service », « Prêté » et « Égaré » s'attribuent par un contrôle ou un prêt ; le statut des équipements déjà dans l'un de ces états n'est pas modifié.</small>
+						<small class="text-muted">{{ "« Hors service », « Prêté » et « Égaré » s'attribuent par un contrôle ou un prêt ; le statut des équipements déjà dans l'un de ces états n'est pas modifié."|trans }}</small>
 					</div>
 				</div>
 
 				{# --- Emplacement --- #}
 				<div class="card card-body mb-3">
-					{{ m.champ('emplacement_id', 'Emplacement', saisie, form_errors) }}
+					{{ m.champ('emplacement_id', 'Emplacement'|trans, saisie, form_errors) }}
 					<div id="bloc_emplacement_id">
 						<select name="emplacement_id" class="form-select">
-							<option value="">Non défini</option>
+							<option value="">{{ 'Non défini'|trans }}</option>
 							{% for emplacement in emplacements|tri_alpha('libelle') %}
 								<option value="{{ emplacement.id }}" {% if saisie.emplacement_id is defined and saisie.emplacement_id == emplacement.id %}selected{% endif %}>{{ emplacement.libelle }}</option>
 							{% endfor %}
@@ -60,7 +60,7 @@
 
 				{# --- Libellé (administrateur et plus, depuis le 2026-10-24) --- #}
 				<div class="card card-body mb-3">
-					{{ m.champ('libelle', 'Libellé', saisie, form_errors) }}
+					{{ m.champ('libelle', 'Libellé'|trans, saisie, form_errors) }}
 					<div id="bloc_libelle">
 						<input type="text" name="libelle" class="form-control" maxlength="255" value="{{ saisie.libelle ?? '' }}">
 					</div>
@@ -68,13 +68,13 @@
 
 				{# --- Date de mise en service --- #}
 				<div class="card card-body mb-3">
-					{{ m.champ('date_mise_en_service', 'Date de mise en service', saisie, form_errors) }}
+					{{ m.champ('date_mise_en_service', 'Date de mise en service'|trans, saisie, form_errors) }}
 					<div id="bloc_date_mise_en_service">
 						<input type="date" name="date_mise_en_service" class="form-control" value="{{ saisie.date_mise_en_service ?? '' }}">
 						<small class="text-muted">
-							Jamais avant la date de facture de chaque équipement.
+							{{ 'Jamais avant la date de facture de chaque équipement.'|trans }}
 							{% if not super_admin %}
-								Les équipements dont la date a déjà été modifiée une fois sont ignorés (et signalés).
+								{{ 'Les équipements dont la date a déjà été modifiée une fois sont ignorés (et signalés).'|trans }}
 							{% endif %}
 						</small>
 					</div>
@@ -82,71 +82,71 @@
 
 				{# --- Date de fin d'utilisation --- #}
 				<div class="card card-body mb-3">
-					{{ m.champ('date_fin_utilisation', "Date de fin d'utilisation", saisie, form_errors) }}
+					{{ m.champ('date_fin_utilisation', "Date de fin d'utilisation"|trans, saisie, form_errors) }}
 					<div id="bloc_date_fin_utilisation">
 						<input type="date" name="date_fin_utilisation" class="form-control" value="{{ saisie.date_fin_utilisation ?? '' }}">
-						<small class="text-muted">Laisser vide pour effacer la date.</small>
+						<small class="text-muted">{{ 'Laisser vide pour effacer la date.'|trans }}</small>
 					</div>
 				</div>
 
 				{# --- Durée maximum d'utilisation --- #}
 				<div class="card card-body mb-3">
-					{{ m.champ('duree_max_utilisation', "Durée maximum d'utilisation", saisie, form_errors) }}
+					{{ m.champ('duree_max_utilisation', "Durée maximum d'utilisation"|trans, saisie, form_errors) }}
 					<div id="bloc_duree_max_utilisation">
 						<select name="duree_max_utilisation" class="form-select">
-							<option value="1" {% if (saisie.duree_max_utilisation ?? '') == '1' %}selected{% endif %}>Oui (durée de vie limitée par le fabricant)</option>
-							<option value="0" {% if (saisie.duree_max_utilisation ?? '') == '0' %}selected{% endif %}>Non</option>
+							<option value="1" {% if (saisie.duree_max_utilisation ?? '') == '1' %}selected{% endif %}>{{ 'Oui (durée de vie limitée par le fabricant)'|trans }}</option>
+							<option value="0" {% if (saisie.duree_max_utilisation ?? '') == '0' %}selected{% endif %}>{{ 'Non'|trans }}</option>
 						</select>
 					</div>
 				</div>
 
 				{# --- Remarques --- #}
 				<div class="card card-body mb-3">
-					{{ m.champ('remarques', 'Remarques', saisie, form_errors) }}
+					{{ m.champ('remarques', 'Remarques'|trans, saisie, form_errors) }}
 					<div id="bloc_remarques">
 						<textarea name="remarques" class="form-control mb-2" rows="3">{{ saisie.remarques ?? '' }}</textarea>
 						<div class="form-check form-check-inline">
 							<input class="form-check-input" type="radio" name="remarques_mode" id="remarques_ajouter" value="ajouter"
 							       {% if (saisie.remarques_mode ?? 'ajouter') == 'ajouter' %}checked{% endif %}>
-							<label class="form-check-label" for="remarques_ajouter">Ajouter à la suite</label>
+							<label class="form-check-label" for="remarques_ajouter">{{ 'Ajouter à la suite'|trans }}</label>
 						</div>
 						<div class="form-check form-check-inline">
 							<input class="form-check-input" type="radio" name="remarques_mode" id="remarques_remplacer" value="remplacer"
 							       {% if (saisie.remarques_mode ?? '') == 'remplacer' %}checked{% endif %}>
-							<label class="form-check-label" for="remarques_remplacer">Remplacer</label>
+							<label class="form-check-label" for="remarques_remplacer">{{ 'Remplacer'|trans }}</label>
 						</div>
 					</div>
 				</div>
 
 				{# --- Lien vers la notice --- #}
 				<div class="card card-body mb-3">
-					{{ m.champ('notice_url', 'Lien vers la notice', saisie, form_errors) }}
+					{{ m.champ('notice_url', 'Lien vers la notice'|trans, saisie, form_errors) }}
 					<div id="bloc_notice_url">
 						<input type="url" name="notice_url" class="form-control" maxlength="2048" placeholder="https://" value="{{ saisie.notice_url ?? '' }}">
-						<small class="text-muted">Même notice pour tous les équipements sélectionnés. Laisser vide pour effacer le lien.</small>
+						<small class="text-muted">{{ 'Même notice pour tous les équipements sélectionnés. Laisser vide pour effacer le lien.'|trans }}</small>
 					</div>
 				</div>
 
 				{# --- Photo --- #}
 				<div class="card card-body mb-3">
-					{{ m.champ('photo', 'Photo', saisie, form_errors) }}
+					{{ m.champ('photo', 'Photo'|trans, saisie, form_errors) }}
 					<div id="bloc_photo">
 						<input type="file" name="photo" class="form-control" accept="image/jpeg,image/png,image/webp,image/gif,image/avif">
-						<small class="text-muted">La même photo est affectée à tous les équipements sélectionnés (photo existante remplacée).</small>
+						<small class="text-muted">{{ 'La même photo est affectée à tous les équipements sélectionnés (photo existante remplacée).'|trans }}</small>
 					</div>
 				</div>
 
-				<button type="submit" class="btn btn-primary">Appliquer aux {{ equipements|length }} équipement{{ equipements|length > 1 ? 's' : '' }}</button>
-				<a href="{{ retour_url }}" class="btn btn-secondary">Annuler</a>
+				<button type="submit" class="btn btn-primary">{% if equipements|length > 1 %}{{ 'Appliquer aux {nombre} équipements'|trans({nombre: equipements|length}) }}{% else %}{{ "Appliquer à l'équipement"|trans }}{% endif %}</button>
+				<a href="{{ retour_url }}" class="btn btn-secondary">{{ 'Annuler'|trans }}</a>
 			</form>
 		</div>
 
 		<div class="col-lg-5">
-			<h5>Équipements sélectionnés</h5>
+			<h5>{{ 'Équipements sélectionnés'|trans }}</h5>
 			<div class="table-responsive" style="max-height: 70vh;">
 				<table class="table table-sm table-striped">
 					<thead>
-						<tr><th>Référence</th><th>Libellé</th><th>Mise en service</th><th>Photo</th></tr>
+						<tr><th>{{ 'Référence'|trans }}</th><th>{{ 'Libellé'|trans }}</th><th>{{ 'Mise en service'|trans }}</th><th>{{ 'Photo'|trans }}</th></tr>
 					</thead>
 					<tbody>
 						{% for equipement in equipements %}
@@ -185,10 +185,10 @@
 				const nb = Array.from(cases).filter(c => c.checked).length;
 				if (nb === 0) {
 					e.preventDefault();
-					alert('Cochez « Modifier » pour au moins un champ.');
+					alert({{ 'Cochez « Modifier » pour au moins un champ.'|trans|json_encode|raw }});
 					return;
 				}
-				if (!confirm('Appliquer ces modifications aux {{ equipements|length }} équipement(s) sélectionné(s) ?')) {
+				if (!confirm({{ 'Appliquer ces modifications aux {nombre} équipement(s) sélectionné(s) ?'|trans({nombre: equipements|length})|json_encode|raw }})) {
 					e.preventDefault();
 				}
 			});
