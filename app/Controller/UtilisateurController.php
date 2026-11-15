@@ -128,7 +128,7 @@ class UtilisateurController extends AbstractController
             $email = $this->createEmail(
                 $club['email'],
                 $utilisateur['email'],
-                sprintf('Votre compte %s', $club['nom'] ?? 'EPIClub'),
+                Traducteur::t('Votre compte {club}', ['club' => $club['nom'] ?? 'EPIClub']),
                 'email/compte_cree.twig',
                 [
                     'club' => $club,

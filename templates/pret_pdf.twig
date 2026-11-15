@@ -1,9 +1,9 @@
 {# templates/pret_pdf.twig — fiche de prêt (Dompdf) #}
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="{{ langue() }}">
 <head>
 	<meta charset="UTF-8">
-	<title>Fiche de prêt n° {{ pret.id }}</title>
+	<title>{{ 'Fiche de prêt n° {id}'|trans({id: pret.id}) }}</title>
 	<style>
 		@page { margin: 18mm 15mm; }
 		body { font-family: 'DejaVu Sans', Arial, sans-serif; font-size: 11px; color: #222; }
@@ -29,8 +29,8 @@
 	<table class="entete">
 		<tr>
 			<td>
-				<h1>Fiche de prêt de matériel n° {{ pret.id }}</h1>
-				<div class="muted">{{ statut.label }}{% if pret.date_validation %} — validé le {{ pret.date_validation|date('d/m/Y') }}{% endif %}</div>
+				<h1>{{ 'Fiche de prêt de matériel n° {id}'|trans({id: pret.id}) }}</h1>
+				<div class="muted">{{ statut.label }}{% if pret.date_validation %} — {{ 'validé le {date_validation}'|trans({date_validation: (pret.date_validation|date('d/m/Y'))}) }}{% endif %}</div>
 			</td>
 			<td style="text-align: right;">
 				<strong>{{ club.nom|default('') }}</strong><br>
@@ -42,25 +42,25 @@
 	</table>
 
 	<table class="bloc">
-		<tr><td class="l">Emprunteur</td><td>{{ pret.emprunteur_prenom }} {{ pret.emprunteur_nom|upper }}</td></tr>
-		<tr><td class="l">Numéro de licence</td><td>{{ pret.emprunteur_licence|default('—') }}</td></tr>
-		<tr><td class="l">Téléphone</td><td>{{ pret.emprunteur_telephone|default('—') }}</td></tr>
-		<tr><td class="l">Date du prêt</td><td>{{ pret.date_pret|date('d/m/Y') }}</td></tr>
-		<tr><td class="l">Date de retour prévue</td><td>{{ pret.date_retour_prevue|date('d/m/Y') }}</td></tr>
+		<tr><td class="l">{{ 'Emprunteur'|trans }}</td><td>{{ pret.emprunteur_prenom }} {{ pret.emprunteur_nom|upper }}</td></tr>
+		<tr><td class="l">{{ 'Numéro de licence'|trans }}</td><td>{{ pret.emprunteur_licence|default('—') }}</td></tr>
+		<tr><td class="l">{{ 'Téléphone'|trans }}</td><td>{{ pret.emprunteur_telephone|default('—') }}</td></tr>
+		<tr><td class="l">{{ 'Date du prêt'|trans }}</td><td>{{ pret.date_pret|date('d/m/Y') }}</td></tr>
+		<tr><td class="l">{{ 'Date de retour prévue'|trans }}</td><td>{{ pret.date_retour_prevue|date('d/m/Y') }}</td></tr>
 		{% if pret.date_retour %}
-			<tr><td class="l">Date de retour</td><td>{{ pret.date_retour|date('d/m/Y') }}</td></tr>
+			<tr><td class="l">{{ 'Date de retour'|trans }}</td><td>{{ pret.date_retour|date('d/m/Y') }}</td></tr>
 		{% endif %}
 		{% if pret.remarques %}
-			<tr><td class="l">Remarques</td><td>{{ pret.remarques|nl2br }}</td></tr>
+			<tr><td class="l">{{ 'Remarques'|trans }}</td><td>{{ pret.remarques|nl2br }}</td></tr>
 		{% endif %}
 	</table>
 
 	<table class="materiel">
 		<thead>
 			<tr>
-				<th style="width: 18%;">Référence</th>
-				<th>Désignation</th>
-				<th style="width: 20%;">Catégorie</th>
+				<th style="width: 18%;">{{ 'Référence'|trans }}</th>
+				<th>{{ 'Désignation'|trans }}</th>
+				<th style="width: 20%;">{{ 'Catégorie'|trans }}</th>
 				<th style="width: 18%;">{{ statut.value == 'termine' ? 'État au retour' : 'Rendu (cocher)' }}</th>
 			</tr>
 		</thead>
@@ -71,40 +71,38 @@
 					<td>{{ l.libelle }}</td>
 					<td>{{ l.categorie_libelle|default('—') }}</td>
 					<td>
-						{% if l.etat_retour == 'disponible' %}Rendu
-						{% elseif l.etat_retour == 'maintenance' %}Rendu — maintenance
-						{% elseif l.etat_retour == 'egare' %}Égaré
-						{% elseif statut.value == 'termine' %}À vérifier
+						{% if l.etat_retour == 'disponible' %}{{ 'Rendu'|trans }}
+						{% elseif l.etat_retour == 'maintenance' %}{{ 'Rendu — maintenance'|trans }}
+						{% elseif l.etat_retour == 'egare' %}{{ 'Égaré'|trans }}
+						{% elseif statut.value == 'termine' %}{{ 'À vérifier'|trans }}
 						{% else %}☐{% endif %}
 					</td>
 				</tr>
 			{% endfor %}
 		</tbody>
 	</table>
-	<p class="muted">{{ lignes|length }} matériel(s).</p>
+	<p class="muted">{{ '{lignes} matériel(s).'|trans({lignes: (lignes|length)}) }}</p>
 
 	<div class="engagement">
-		Je soussigné(e) {{ pret.emprunteur_prenom }} {{ pret.emprunteur_nom|upper }} reconnais avoir reçu le matériel
-		ci-dessus en bon état et m'engage à l'utiliser conformément aux consignes du club et à le restituer au plus
-		tard le {{ pret.date_retour_prevue|date('d/m/Y') }}. Toute perte ou détérioration doit être signalée au club.
+		{{ "Je soussigné(e) {emprunteur_prenom} {emprunteur_nom} reconnais avoir reçu le matériel ci-dessus en bon état et m'engage à l'utiliser conformément aux consignes du club et à le restituer au plus tard le {date_retour_prevue}. Toute perte ou détérioration doit être signalée au club."|trans({emprunteur_prenom: pret.emprunteur_prenom, emprunteur_nom: (pret.emprunteur_nom|upper), date_retour_prevue: (pret.date_retour_prevue|date('d/m/Y'))}) }}
 	</div>
 
 	<table class="signatures">
 		<tr>
 			<td>
-				<strong>Signature de l'emprunteur</strong>
-				{% if pret.date_signature %}<span class="muted"> (signé le {{ pret.date_signature|date('d/m/Y H:i') }})</span>{% else %}<span class="muted"> — date :</span>{% endif %}
+				<strong>{{ "Signature de l'emprunteur"|trans }}</strong>
+				{% if pret.date_signature %}<span class="muted"> {{ '(signé le {date_signature})'|trans({date_signature: (pret.date_signature|date('d/m/Y H:i'))}) }}</span>{% else %}<span class="muted"> — {{ 'date :'|trans }}</span>{% endif %}
 				<div class="cadre">
-					{% if pret.signature %}<img src="{{ pret.signature }}" alt="Signature">{% endif %}
+					{% if pret.signature %}<img src="{{ pret.signature }}" alt="{{ 'Signature'|trans }}">{% endif %}
 				</div>
 			</td>
 			<td>
-				<strong>Pour le club</strong>{% if pret.valide_par_nom %} — {{ pret.valide_par_prenom }} {{ pret.valide_par_nom }}{% endif %}
+				<strong>{{ 'Pour le club'|trans }}</strong>{% if pret.valide_par_nom %} — {{ pret.valide_par_prenom }} {{ pret.valide_par_nom }}{% endif %}
 				<div class="cadre"></div>
 			</td>
 		</tr>
 	</table>
 
-	<div class="pied">Fiche générée le {{ date_generation }} — EPIClub {{ app_version }}</div>
+	<div class="pied">{{ 'Fiche générée le {date_generation} — EPIClub {app_version}'|trans({date_generation: date_generation, app_version: app_version}) }}</div>
 </body>
 </html>

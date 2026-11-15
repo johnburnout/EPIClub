@@ -46,7 +46,14 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
   modèle de référence, demandes de modification, journal d'activité,
   paramètres système, mise à jour, sauvegarde et restauration, page du
   QR code, avec leurs messages et les libellés de rôles. Le journal
-  d'activité, son export et les e-mails restent pour l'instant en français.
+  d'activité reste rédigé en français.
+- **Documents traduits (8e étape).** E-mails (mot de passe oublié, compte
+  créé, demande de modification, test SMTP), PDF (fiche et liste des
+  équipements, étiquettes, fiche de prêt, journal de contrôle), exports
+  CSV et Excel, en-tête de l'export du journal d'activité. Chaque e-mail
+  part dans la langue choisie par son destinataire ; à défaut (nouveau
+  compte, préférence non choisie), dans celle de la personne qui le
+  déclenche.
 
 ### Fixed
 

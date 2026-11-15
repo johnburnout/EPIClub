@@ -149,10 +149,12 @@ class AppUserRegisterController extends AbstractController
                 $resetUrl = $this->getBaseUrl() . '/regenerer_mot_de_passe?token=' . $token;
 
                 if (!empty($club['email'])) {
-                    $emailContent = $this->createEmail(
+                    // [Localisation] Dans la langue préférée du compte, sinon
+                    // celle de la page.
+                    $emailContent = Traducteur::dans($user['langue'] ?? null, fn () => $this->createEmail(
                         $club['email'],
                         $user['email'],
-                        'Changement de mot de passe',
+                        Traducteur::t('Changement de mot de passe'),
                         'email/reset_password.twig',
                         [
                             'club' => $club,
@@ -160,7 +162,7 @@ class AppUserRegisterController extends AbstractController
                             'reset_url' => $resetUrl,
                             'expiration_date' => new \DateTime(self::RESET_TOKEN_LIFETIME),
                         ]
-                    );
+                    ));
 
                     try {
                         $this->mailerService()->sendEmail($emailContent);

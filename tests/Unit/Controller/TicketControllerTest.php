@@ -73,6 +73,8 @@ final class TicketControllerTest extends TestCase
             ['id' => 3, 'prenom' => 'Zoé', 'nom' => 'Z', 'email' => 'absente@club.test', 'role' => 'ROLE_SUPER_ADMIN',
              'last_activity' => '2026-10-20 08:00:00', 'ticket_mail_envoye_le' => '2026-10-21 08:00:00'],
         ]);
+        // [Localisation] Le super-admin (id 2) a choisi l'italien.
+        $utilisateurs->method('languesPreferees')->willReturn([2 => 'it']);
         $utilisateurs->method('marquerMailTicket')->willReturnCallback(function (int $id) {
             $this->marques[] = $id;
         });
@@ -137,6 +139,26 @@ final class TicketControllerTest extends TestCase
         self::assertStringContainsString('https://club.test/tickets/ticket-102', (string) $this->mails[1]->getHtmlBody());
         self::assertStringNotContainsString('ticket-102', (string) $this->mails[0]->getHtmlBody());
         self::assertStringContainsString('2 tickets', implode(' ', $this->session->getFlashBag()->peek('success')));
+    }
+
+    /**
+     * [Localisation] Chaque mail part dans la langue préférée de son
+     * destinataire ; sans préférence, dans celle de la page (ici français).
+     */
+    public function testMailDansLaLangueDuDestinataire(): void
+    {
+        $this->demander('ROLE_CONTROLLEUR', [
+            'types' => ['dissociation', 'categorie'],
+            'remarques' => ['dissociation' => 'En 2 + 1', 'categorie' => 'Longe'],
+        ]);
+
+        self::assertSame('Demande de modification : 24COR003', $this->mails[0]->getSubject());
+        self::assertStringContainsString('Bonjour Ada', (string) $this->mails[0]->getHtmlBody());
+        self::assertSame('Richiesta di modifica: 24COR003', $this->mails[1]->getSubject());
+        self::assertStringContainsString('Ciao Sam', (string) $this->mails[1]->getHtmlBody());
+        self::assertStringContainsString('lang="it"', (string) $this->mails[1]->getHtmlBody());
+        // La langue de la requête est rétablie après l'envoi.
+        self::assertSame('fr', \Epiclub\Engine\Traducteur::langue());
     }
 
     public function testRemarqueObligatoire(): void

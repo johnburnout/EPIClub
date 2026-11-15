@@ -92,33 +92,35 @@ class JournalActiviteController extends AbstractController
     public static function texte(array $entrees, array $filtres, \DateTimeImmutable $genereLe): string
     {
         $lignes = [
-            "Journal d'activité EPIClub",
-            'Exporté le ' . $genereLe->format('d/m/Y à H:i:s'),
+            Traducteur::t("Journal d'activité EPIClub"),
+            Traducteur::t('Exporté le {date}', ['date' => $genereLe->format(Traducteur::t('d/m/Y à H:i:s'))]),
         ];
 
         $criteres = [];
         if (!empty($filtres['type'])) {
-            $criteres[] = 'type : ' . (JournalActiviteManager::TYPES[$filtres['type']] ?? $filtres['type']);
+            $criteres[] = Traducteur::t('type : {valeur}', ['valeur' => JournalActiviteManager::libellesTypes()[$filtres['type']] ?? $filtres['type']]);
         }
         if (!empty($filtres['du'])) {
-            $criteres[] = 'du ' . date('d/m/Y', (int) strtotime($filtres['du']));
+            $criteres[] = Traducteur::t('du {date}', ['date' => date('d/m/Y', (int) strtotime($filtres['du']))]);
         }
         if (!empty($filtres['au'])) {
-            $criteres[] = 'au ' . date('d/m/Y', (int) strtotime($filtres['au']));
+            $criteres[] = Traducteur::t('au {date}', ['date' => date('d/m/Y', (int) strtotime($filtres['au']))]);
         }
         if (!empty($filtres['q'])) {
-            $criteres[] = 'recherche : « ' . $filtres['q'] . ' »';
+            $criteres[] = Traducteur::t('recherche : « {texte} »', ['texte' => $filtres['q']]);
         }
         if ($criteres !== []) {
-            $lignes[] = 'Filtres : ' . implode(', ', $criteres);
+            $lignes[] = Traducteur::t('Filtres : {liste}', ['liste' => implode(', ', $criteres)]);
         }
-        $lignes[] = sprintf('%d entrée%s', count($entrees), count($entrees) > 1 ? 's' : '');
+        $lignes[] = count($entrees) > 1
+            ? Traducteur::t('{nombre} entrées', ['nombre' => count($entrees)])
+            : Traducteur::t('{nombre} entrée', ['nombre' => count($entrees)]);
         $lignes[] = str_repeat('=', 72);
 
         foreach ($entrees as $e) {
             $lignes[] = implode(' | ', [
                 date('d/m/Y H:i:s', (int) strtotime((string) $e['date_action'])),
-                JournalActiviteManager::TYPES[$e['type']] ?? (string) $e['type'],
+                JournalActiviteManager::libellesTypes()[$e['type']] ?? (string) $e['type'],
                 ($e['utilisateur'] ?? '') !== '' ? self::uneLigne((string) $e['utilisateur']) : '—',
                 self::uneLigne((string) $e['action']),
                 'IP ' . (($e['ip'] ?? '') !== '' ? $e['ip'] : '—'),

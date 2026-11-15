@@ -891,6 +891,11 @@ installeur et guide utilisateur ; la CLI reste en français).
   par le garde-fou (classe déduite du chemin PSR-4).
 - Pluriels : deux clés et un `if` (« 1 minute » / « {minutes} minutes »).
 - Le journal d'activité (texte stocké en base) reste en français.
+- E-mails : `Traducteur::dans($langueDuDestinataire, fn () => $this->createEmail(…))`
+  (objet compris) ; préférences lues par `UtilisateurManager::languesPreferees()`,
+  vide si la migration 022 n'est pas passée.
+- Documents HTML écrits en PHP (heredoc) : libellés traduits et échappés
+  dans un tableau `$L`, puis `{$L['cle']}` dans le heredoc.
 - Pluriels : jamais de paramètre « s » (`équipement{s}`) ; deux clés et un
   `{% if %}`. Mots passés aux gabarits partiels (`elements: '…'|trans`).
   Si son texte réutilise un libellé traduit (`label()` d'un enum),
@@ -916,8 +921,9 @@ installeur et guide utilisateur ; la CLI reste en français).
 | 4 | Contrôles (liste, saisie, ligne, scanner), journaux de contrôle, `ControleLigneStatut` | PR #126 |
 | 5 | Acquisitions (liste, saisie, fiche, lignes, import Excel / CSV) | PR #127 |
 | 6 | Prêts (liste, fiche, scanner, validation, retour), `PretStatut`, `PretEtatRetour`, `PretRegles` | PR #128 |
-| 7 | Administration : tableau de bord, club, utilisateurs, référentiels, tickets, journal d'activité, système, mise à jour, sauvegarde, page QR ; `UserRole`, `DemandeModification`, `JournalActiviteManager::libellesTypes()` | PR en cours |
-| 8 | Documents : e-mails, PDF, CSV, étiquettes, export du journal | à faire |
+| 7 | Administration : tableau de bord, club, utilisateurs, référentiels, tickets, journal d'activité, système, mise à jour, sauvegarde, page QR ; `UserRole`, `DemandeModification`, `JournalActiviteManager::libellesTypes()` | PR #129 |
+| 8 | Documents : e-mails (langue du destinataire), PDF, CSV/Excel, étiquettes, en-tête de l'export du journal | PR en cours |
+| 9 | Installeur (`setup/`), guide utilisateur | à faire |
 | — | Installeur (`setup/`), guide (`docs/guide_utilisateur.md`) | à faire |
 
 ## Règles de travail établies
