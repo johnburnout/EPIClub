@@ -10,6 +10,8 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v3.0.1] — 2026-11-15
+
 Suites de l'audit du 2026-11-10 (`docs/audit-2026-11-10.md`), consacré
 à la sauvegarde, à la restauration et au nettoyage. L'audit n'a relevé
 aucune vulnérabilité : ce sont des durcissements et des notes
