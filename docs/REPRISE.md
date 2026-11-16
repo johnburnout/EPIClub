@@ -32,7 +32,7 @@ Mailer, Mime), Twig, MySQL, PHPUnit 11.
 
 | Version | Ticket | Description | Commit |
 |---|---|---|---|
-| v3.1.1 | PR à venir | Filtres de la liste des équipements perdus au retour : le bouton « Appliquer » envoie `action=filter`, pris pour un export par `FiltresListe` ; seules les actions `export`, `excel`, `pdf` sont ignorées. | — |
+| v3.1.1 | PR #140 | Filtres de la liste des équipements perdus au retour : le bouton « Appliquer » envoie `action=filter`, pris pour un export par `FiltresListe` ; seules les actions `export`, `excel`, `pdf` sont ignorées. | `98b9777` |
 | v3.1.0 | PR #139 | Fiche contrôle d'un lot : nombre d'éléments restants / initial. Filtres des listes conservés (`FiltresListe` : requête de chaque liste et de la fiche d'un contrôle mémorisée en session par `public/index.php`, reprise par `AbstractController::redirectTo` et la fonction Twig `url_liste`, effacée par la liste ouverte sans paramètre). Dissociation depuis la fiche contrôle écartée (décision du 2026-11-15). | `49e0865` |
 | v3.0.2 | PR #137 | Passkey absente après la mise à jour en v3.0.0 : ancien `passkey.js` en cache sans `definirTextes()`. Scripts et feuilles de style de `/assets/` chargés avec `?v={{ app_version }}` (`TemplatesAssetsVersionTest`), appel de `definirTextes()` gardé. | `39c67be` |
 | v3.0.1 | PR #135 + #136 | Audit du 2026-11-10 (sauvegarde et nettoyage), R1 à R7 : rétention par l'horodatage du nom, `creerAvecMenage()` (rétention et purge des téléversements sous le verrou), toutes les routes POST-only testées (405), notes base dédiée / Nginx / espace disque. | `2b2d3b1` |
