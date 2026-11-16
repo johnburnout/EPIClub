@@ -90,6 +90,27 @@ final class FiltresListeTest extends TestCase
         self::assertSame('/equipements?recherche=corde', FiltresListe::url($this->session, '/equipements'));
     }
 
+    /**
+     * Bug de la v3.1.0 : le bouton « Appliquer » de la liste des
+     * équipements envoie action=filter ; ces filtres n'étaient pas
+     * mémorisés (toute requête avec « action » était prise pour un export).
+     */
+    public function testLesFiltresDuBoutonAppliquerSontMemorises(): void
+    {
+        $this->afficher('/equipements?q=corde&categorie=3&order_by=categorie&action=filter&export_type=pdf');
+
+        self::assertSame('/equipements?q=corde&categorie=3&order_by=categorie', FiltresListe::url($this->session, '/equipements'));
+    }
+
+    public function testLesAnciensExportsDirectsNeModifientPasLesFiltres(): void
+    {
+        $this->afficher('/equipements?q=corde');
+        $this->afficher('/equipements?q=sangle&action=excel');
+        $this->afficher('/equipements?q=baudrier&action=pdf');
+
+        self::assertSame('/equipements?q=corde', FiltresListe::url($this->session, '/equipements'));
+    }
+
     public function testSeulsLesAffichagesReussisSontMemorises(): void
     {
         $this->afficher('/equipements?recherche=corde');
