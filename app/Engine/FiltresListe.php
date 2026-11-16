@@ -45,6 +45,13 @@ final class FiltresListe
     /** Paramètres jamais repris (ils déclenchent un export). */
     private const PARAMETRES_EXCLUS = ['action', 'export_type'];
 
+    /**
+     * Valeurs de « action » qui produisent un export (cf.
+     * EquipementController::list) ; « filter » (bouton « Appliquer »)
+     * affiche la liste.
+     */
+    private const ACTIONS_EXPORT = ['export', 'excel', 'pdf'];
+
     public static function estListe(string $chemin): bool
     {
         return in_array($chemin, self::LISTES, true)
@@ -52,7 +59,7 @@ final class FiltresListe
     }
 
     /**
-     * Après l'affichage d'une liste (GET, 200, sans export) : mémorise sa
+     * Après l'affichage d'une liste (GET, 200, hors export) : mémorise sa
      * requête, ou l'efface si la liste est ouverte sans paramètre.
      */
     public static function memoriser(SessionInterface $session, Request $request, Response $response): void
@@ -61,7 +68,7 @@ final class FiltresListe
         if (!$request->isMethod('GET')
             || $response->getStatusCode() !== Response::HTTP_OK
             || !self::estListe($chemin)
-            || $request->query->has('action')
+            || in_array($request->query->get('action'), self::ACTIONS_EXPORT, true)
         ) {
             return;
         }
