@@ -10,6 +10,18 @@ Les versions antérieures à 0.17.9 ne sont pas documentées ici ; se référer
 
 ## [Unreleased]
 
+## [v3.1.1] — 2026-11-16
+
+Correctif : filtres de la liste des équipements conservés.
+
+### Fixed
+
+- **Filtres de la liste des équipements perdus au retour.** Après un
+  filtrage par le bouton « Appliquer », la consultation d'un équipement
+  puis « Retour à la liste » affichait tous les équipements : le bouton
+  envoie `action=filter`, que la mémorisation des filtres prenait pour un
+  export. Seuls les exports sont désormais ignorés.
+
 ## [v3.1.0] — 2026-11-15
 
 Lot sur la fiche contrôle et filtres des listes conservés.
@@ -2922,6 +2934,18 @@ sur le nombre de requêtes — instanciation en dur de
 `FournisseurManager` / `UtilisateurManager`).
 
 ## [Unreleased]
+
+## [v3.1.1] — 2026-11-16
+
+Correctif : filtres de la liste des équipements conservés.
+
+### Fixed
+
+- **Filtres de la liste des équipements perdus au retour.** Après un
+  filtrage par le bouton « Appliquer », la consultation d'un équipement
+  puis « Retour à la liste » affichait tous les équipements : le bouton
+  envoie `action=filter`, que la mémorisation des filtres prenait pour un
+  export. Seuls les exports sont désormais ignorés.
 
 ## [v3.1.0] — 2026-11-15
 
